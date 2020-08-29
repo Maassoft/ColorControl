@@ -1,4 +1,6 @@
 ﻿using LgTv;
+using Newtonsoft.Json;
+using NLog.Config;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,6 +19,8 @@ namespace ColorControl
         public static string LgControllerExe = "LgController.exe";
         public static string LgListAppsJson = "listApps.json";
 
+        public static string LgDeviceSearchKey = "OLED55C9PLA";
+
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public string FriendlyScreenName { get; private set; }
@@ -24,10 +28,19 @@ namespace ColorControl
         public List<PnpDev> Devices { get; private set; }
         public PnpDev SelectedDevice { get; set; }
 
-        private LgTvApi _lgTvApi;
+        public LgServiceConfig Config { get; private set; }
 
-        public LgService()
+        private LgTvApi _lgTvApi;
+        private string _dataDir;
+        private string _configFilename;
+        private bool _allowPowerOn;
+
+        public LgService(string dataDir, bool allowPowerOn)
         {
+            _dataDir = dataDir;
+            _allowPowerOn = allowPowerOn;
+            LoadConfig();
+
             foreach (var screen in Screen.AllScreens)
             {
                 var name = screen.DeviceFriendlyName();
@@ -42,17 +55,44 @@ namespace ColorControl
 
         ~LgService()
         {
+            SaveConfig();
+        }
+
+        private void LoadConfig()
+        {
+            _configFilename = Path.Combine(_dataDir, "LgConfig.json");
+            if (File.Exists(_configFilename))
+            {
+                Config = JsonConvert.DeserializeObject<LgServiceConfig>(File.ReadAllText(_configFilename));
+            }
+            else
+            {
+                Config = new LgServiceConfig();
+            }
+        }
+
+        public void SaveConfig()
+        {
+            var json = JsonConvert.SerializeObject(Config);
+            File.WriteAllText(_configFilename, json);
         }
 
         public void RefreshDevices(Action callBack = null)
         {
-            Utils.GetPnpDevices("[LG]", Utils.PKEY_PNPX_IpAddress).ContinueWith((task) =>
+            Utils.GetPnpDevices(LgDeviceSearchKey).ContinueWith((task) =>
             {
                 SetDevicesTask(task);
                 callBack?.Invoke();
                 if (callBack == null && SelectedDevice != null)
                 {
-                    ConnectToSelectedDevice();
+                    if (Config.PowerOnAfterStartup && _allowPowerOn)
+                    {
+                        WakeAndConnectToSelectedDevice(0);
+                    }
+                    else
+                    {
+                        ConnectToSelectedDevice();
+                    }
                 }
             }
             );
@@ -67,23 +107,23 @@ namespace ColorControl
             }
         }
 
-        public async Task<bool> ConnectToSelectedDevice(int retries = 1)
+        public async Task<bool> ConnectToSelectedDevice(int retries = 3)
         {
             try
             {
                 DisposeConnection();
-                _lgTvApi = await LgTvApi.CreateLgTvApi(SelectedDevice.ipAddress, retries);
-                return true;
+                _lgTvApi = await LgTvApi.CreateLgTvApi(SelectedDevice.IpAddress, retries);
+                return _lgTvApi != null;
             }
             catch (Exception ex)
             {
                 string logMessage = ex.ToLogString(Environment.StackTrace);
-                Logger.Error($"Error while connecting to {SelectedDevice.ipAddress}: {logMessage}");
+                Logger.Error($"Error while connecting to {SelectedDevice.IpAddress}: {logMessage}");
                 return false;
             }
         }
 
-        public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
+        private async Task<bool> Connected(bool reconnect = false)
         {
             if (SelectedDevice == null)
             {
@@ -91,13 +131,23 @@ namespace ColorControl
                 return false;
             }
 
-            if (reconnect || _lgTvApi == null || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.ipAddress))
+            if (reconnect || _lgTvApi == null || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
             {
                 if (!await ConnectToSelectedDevice())
                 {
                     Logger.Debug("Cannot apply LG-preset: no connection could be made");
                     return false;
                 }
+            }
+            return true;
+        }
+
+
+        public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
+        {
+            if (!await Connected(reconnect))
+            {
+                return false;
             }
 
             var hasApp = !string.IsNullOrEmpty(preset.appId);
@@ -126,6 +176,12 @@ namespace ColorControl
             }
 
             return true;
+        }
+
+        public async Task PowerOn()
+        {
+            var mouse = await _lgTvApi.GetMouse();
+            mouse.SendButton(ButtonType.POWER);
         }
 
         private async Task ExecuteSteps(LgTvApi api, LgPreset preset)
@@ -164,7 +220,7 @@ namespace ColorControl
                 return null;
             }
 
-            var api = await LgTvApi.CreateLgTvApi(SelectedDevice.ipAddress);
+            var api = await LgTvApi.CreateLgTvApi(SelectedDevice.IpAddress);
             var list = await api.GetApps(force);
 
             return list.ToList();
@@ -177,6 +233,64 @@ namespace ColorControl
                 _lgTvApi.Dispose();
                 _lgTvApi = null;
             }
+        }
+
+        internal async Task<bool> PowerOff()
+        {
+            if (!await Connected(true))
+            {
+                return false;
+            }
+
+            await _lgTvApi.TurnOff();
+            return true;
+        }
+
+        internal void WakeSelectedDevice()
+        {
+            if (SelectedDevice != null)
+            {
+                WOL.WakeFunction(SelectedDevice.MacAddress);
+            }
+            else
+            {
+                Logger.Debug("Cannot wake device: no device has been selected");
+            }
+        }
+
+        internal void WakeAfterResume()
+        {
+            if (Config.PowerOnAfterResume)
+            {
+                WakeAndConnectToSelectedDevice(Config.PowerOnDelayAfterResume);
+            }
+        }
+
+        private void WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 1000)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    //if (wakeDelay == 0)
+                    //{
+                    //    if (await ConnectToSelectedDevice())
+                    //    {
+                    //        Logger.Debug("Already connected, no wake needed?");
+                    //        return;
+                    //    };
+                    //}
+
+                    await Task.Delay(wakeDelay);
+                    WakeSelectedDevice();
+                    await Task.Delay(connectDelay);
+                    await ConnectToSelectedDevice();
+                }
+                catch (Exception e)
+                {
+                    Logger.Error("WakeAndConnectToSelectedDevice: " + e.ToLogString());
+                }
+            });
         }
     }
 }

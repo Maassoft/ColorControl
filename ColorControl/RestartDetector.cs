@@ -1,6 +1,8 @@
-﻿using NLog;
+﻿using Microsoft.Win32;
+using NLog;
 using System;
 using System.Diagnostics.Eventing.Reader;
+using System.Linq;
 
 namespace ColorControl
 {
@@ -33,6 +35,13 @@ namespace ColorControl
             catch (EventLogReadingException e)
             {
             }
+        }
+
+        public bool IsRebootInProgress()
+        {
+            var registry = Registry.LocalMachine;
+            var subKey = registry.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Component Based Servicing");
+            return subKey.GetValueNames().Any(x => x.Equals("RebootInProgress"));
         }
 
         public void EventLogEventRead(object obj, EventRecordWrittenEventArgs arg)

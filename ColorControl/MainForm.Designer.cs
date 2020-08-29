@@ -59,6 +59,7 @@
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
+            this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.btnLgAddButton = new System.Windows.Forms.Button();
             this.mnuLgButtons = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.label3 = new System.Windows.Forms.Label();
@@ -82,10 +83,21 @@
             this.btnApplyLg = new System.Windows.Forms.Button();
             this.lvLgPresets = new System.Windows.Forms.ListView();
             this.tabOptions = new System.Windows.Forms.TabPage();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.grpMiscellaneousOptions = new System.Windows.Forms.GroupBox();
+            this.btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
+            this.label11 = new System.Windows.Forms.Label();
+            this.edtBlankScreenSaverShortcut = new System.Windows.Forms.TextBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
+            this.grpLGOptions = new System.Windows.Forms.GroupBox();
+            this.btnLGTestPower = new System.Windows.Forms.Button();
+            this.label9 = new System.Windows.Forms.Label();
+            this.edtLgPowerOnAfterResumeDelay = new System.Windows.Forms.NumericUpDown();
+            this.label8 = new System.Windows.Forms.Label();
+            this.grpHDROptions = new System.Windows.Forms.GroupBox();
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             this.tabLog = new System.Windows.Forms.TabPage();
@@ -103,9 +115,12 @@
             this.mnuNvPresets.SuspendLayout();
             this.tabLG.SuspendLayout();
             this.tabOptions.SuspendLayout();
-            this.groupBox2.SuspendLayout();
+            this.grpMiscellaneousOptions.SuspendLayout();
+            this.grpLGOptions.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgPowerOnAfterResumeDelay)).BeginInit();
+            this.grpHDROptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtDelayDisplaySettings)).BeginInit();
-            this.groupBox1.SuspendLayout();
+            this.grpGeneralOptions.SuspendLayout();
             this.tabLog.SuspendLayout();
             this.tabInfo.SuspendLayout();
             this.grpNVIDIAInfo.SuspendLayout();
@@ -400,6 +415,7 @@
             // 
             // tabLG
             // 
+            this.tabLG.Controls.Add(this.clbLgPower);
             this.tabLG.Controls.Add(this.btnLgAddButton);
             this.tabLG.Controls.Add(this.label3);
             this.tabLG.Controls.Add(this.cbxLgDevices);
@@ -428,6 +444,27 @@
             this.tabLG.TabIndex = 1;
             this.tabLG.Text = "LG controller";
             this.tabLG.UseVisualStyleBackColor = true;
+            // 
+            // clbLgPower
+            // 
+            this.clbLgPower.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.clbLgPower.CheckOnClick = true;
+            this.clbLgPower.FormattingEnabled = true;
+            this.clbLgPower.Items.AddRange(new object[] {
+            "Automatically power on after startup. Requires \"Automatically start after login\" " +
+                "- see Options.",
+            "Automatically power on after resume from standby. Needs a system dependent delay " +
+                "before waking TV, see Options.",
+            "Automatically power off on shutdown. Because this app cannot detect a restart, re" +
+                "starting could also trigger this. Hold down SHIFT on restart to prevent power of" +
+                "f.",
+            "Automatically power off on standby"});
+            this.clbLgPower.Location = new System.Drawing.Point(6, 33);
+            this.clbLgPower.Name = "clbLgPower";
+            this.clbLgPower.Size = new System.Drawing.Size(829, 64);
+            this.clbLgPower.TabIndex = 34;
+            this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
             // 
             // btnLgAddButton
             // 
@@ -525,7 +562,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(384, 10);
+            this.label4.Location = new System.Drawing.Point(466, 9);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(110, 13);
             this.label4.TabIndex = 24;
@@ -534,7 +571,7 @@
             // edtLgTvName
             // 
             this.edtLgTvName.Enabled = false;
-            this.edtLgTvName.Location = new System.Drawing.Point(497, 7);
+            this.edtLgTvName.Location = new System.Drawing.Point(579, 6);
             this.edtLgTvName.Name = "edtLgTvName";
             this.edtLgTvName.Size = new System.Drawing.Size(142, 20);
             this.edtLgTvName.TabIndex = 23;
@@ -654,10 +691,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvLgPresets.FullRowSelect = true;
             this.lvLgPresets.HideSelection = false;
-            this.lvLgPresets.Location = new System.Drawing.Point(6, 33);
+            this.lvLgPresets.Location = new System.Drawing.Point(6, 103);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(829, 315);
+            this.lvLgPresets.Size = new System.Drawing.Size(829, 245);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -666,8 +703,10 @@
             // 
             // tabOptions
             // 
-            this.tabOptions.Controls.Add(this.groupBox2);
-            this.tabOptions.Controls.Add(this.groupBox1);
+            this.tabOptions.Controls.Add(this.grpMiscellaneousOptions);
+            this.tabOptions.Controls.Add(this.grpLGOptions);
+            this.tabOptions.Controls.Add(this.grpHDROptions);
+            this.tabOptions.Controls.Add(this.grpGeneralOptions);
             this.tabOptions.Location = new System.Drawing.Point(4, 22);
             this.tabOptions.Name = "tabOptions";
             this.tabOptions.Padding = new System.Windows.Forms.Padding(3);
@@ -676,16 +715,140 @@
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
             // 
-            // groupBox2
+            // grpMiscellaneousOptions
             // 
-            this.groupBox2.Controls.Add(this.edtDelayDisplaySettings);
-            this.groupBox2.Controls.Add(this.label6);
-            this.groupBox2.Location = new System.Drawing.Point(6, 119);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(376, 107);
-            this.groupBox2.TabIndex = 3;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "HDR";
+            this.grpMiscellaneousOptions.Controls.Add(this.btnSetShortcutScreenSaver);
+            this.grpMiscellaneousOptions.Controls.Add(this.label11);
+            this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
+            this.grpMiscellaneousOptions.Controls.Add(this.label10);
+            this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 275);
+            this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
+            this.grpMiscellaneousOptions.Size = new System.Drawing.Size(400, 130);
+            this.grpMiscellaneousOptions.TabIndex = 5;
+            this.grpMiscellaneousOptions.TabStop = false;
+            this.grpMiscellaneousOptions.Text = "Miscellaneous";
+            // 
+            // btnSetShortcutScreenSaver
+            // 
+            this.btnSetShortcutScreenSaver.Location = new System.Drawing.Point(154, 90);
+            this.btnSetShortcutScreenSaver.Name = "btnSetShortcutScreenSaver";
+            this.btnSetShortcutScreenSaver.Size = new System.Drawing.Size(34, 23);
+            this.btnSetShortcutScreenSaver.TabIndex = 10;
+            this.btnSetShortcutScreenSaver.Text = "Set";
+            this.btnSetShortcutScreenSaver.UseVisualStyleBackColor = true;
+            this.btnSetShortcutScreenSaver.Click += new System.EventHandler(this.btnSetShortcutScreenSaver_Click);
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(3, 74);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(219, 13);
+            this.label11.TabIndex = 9;
+            this.label11.Text = "Set a shortcut to start the blank screensaver:";
+            // 
+            // edtBlankScreenSaverShortcut
+            // 
+            this.edtBlankScreenSaverShortcut.Location = new System.Drawing.Point(6, 92);
+            this.edtBlankScreenSaverShortcut.Name = "edtBlankScreenSaverShortcut";
+            this.edtBlankScreenSaverShortcut.ReadOnly = true;
+            this.edtBlankScreenSaverShortcut.Size = new System.Drawing.Size(142, 20);
+            this.edtBlankScreenSaverShortcut.TabIndex = 7;
+            this.edtBlankScreenSaverShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
+            this.edtBlankScreenSaverShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(3, 39);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(373, 13);
+            this.label10.TabIndex = 6;
+            this.label10.Text = "This will add the parameter --disable-lcd-text to Chrome and requires elevation.";
+            // 
+            // chkFixChromeFonts
+            // 
+            this.chkFixChromeFonts.AutoSize = true;
+            this.chkFixChromeFonts.Location = new System.Drawing.Point(6, 19);
+            this.chkFixChromeFonts.Name = "chkFixChromeFonts";
+            this.chkFixChromeFonts.Size = new System.Drawing.Size(335, 17);
+            this.chkFixChromeFonts.TabIndex = 4;
+            this.chkFixChromeFonts.Text = "ClearType: fix bad fonts in Chrome (turn on grayscale anti-aliasing)";
+            this.chkFixChromeFonts.UseVisualStyleBackColor = true;
+            this.chkFixChromeFonts.CheckedChanged += new System.EventHandler(this.chkFixChromeFonts_CheckedChanged);
+            // 
+            // grpLGOptions
+            // 
+            this.grpLGOptions.Controls.Add(this.btnLGTestPower);
+            this.grpLGOptions.Controls.Add(this.label9);
+            this.grpLGOptions.Controls.Add(this.edtLgPowerOnAfterResumeDelay);
+            this.grpLGOptions.Controls.Add(this.label8);
+            this.grpLGOptions.Location = new System.Drawing.Point(6, 162);
+            this.grpLGOptions.Name = "grpLGOptions";
+            this.grpLGOptions.Size = new System.Drawing.Size(403, 107);
+            this.grpLGOptions.TabIndex = 4;
+            this.grpLGOptions.TabStop = false;
+            this.grpLGOptions.Text = "LG controller";
+            // 
+            // btnLGTestPower
+            // 
+            this.btnLGTestPower.Location = new System.Drawing.Point(9, 68);
+            this.btnLGTestPower.Name = "btnLGTestPower";
+            this.btnLGTestPower.Size = new System.Drawing.Size(143, 23);
+            this.btnLGTestPower.TabIndex = 6;
+            this.btnLGTestPower.Text = "Test power off/on";
+            this.btnLGTestPower.UseVisualStyleBackColor = true;
+            this.btnLGTestPower.Click += new System.EventHandler(this.btnLGTestPower_Click);
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(6, 40);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(332, 13);
+            this.label9.TabIndex = 5;
+            this.label9.Text = "This delay is necessary to wait for the network link to be established. ";
+            // 
+            // edtLgPowerOnAfterResumeDelay
+            // 
+            this.edtLgPowerOnAfterResumeDelay.Increment = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.edtLgPowerOnAfterResumeDelay.Location = new System.Drawing.Point(299, 17);
+            this.edtLgPowerOnAfterResumeDelay.Maximum = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.edtLgPowerOnAfterResumeDelay.Name = "edtLgPowerOnAfterResumeDelay";
+            this.edtLgPowerOnAfterResumeDelay.ReadOnly = true;
+            this.edtLgPowerOnAfterResumeDelay.Size = new System.Drawing.Size(74, 20);
+            this.edtLgPowerOnAfterResumeDelay.TabIndex = 1;
+            this.edtLgPowerOnAfterResumeDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.edtLgPowerOnAfterResumeDelay.ValueChanged += new System.EventHandler(this.edtLgPowerOnAfterResumeDelay_ValueChanged);
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(6, 19);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(214, 13);
+            this.label8.TabIndex = 0;
+            this.label8.Text = "Delay before powering on after resume (ms):";
+            // 
+            // grpHDROptions
+            // 
+            this.grpHDROptions.Controls.Add(this.edtDelayDisplaySettings);
+            this.grpHDROptions.Controls.Add(this.label6);
+            this.grpHDROptions.Location = new System.Drawing.Point(6, 84);
+            this.grpHDROptions.Name = "grpHDROptions";
+            this.grpHDROptions.Size = new System.Drawing.Size(400, 72);
+            this.grpHDROptions.TabIndex = 3;
+            this.grpHDROptions.TabStop = false;
+            this.grpHDROptions.Text = "HDR";
             // 
             // edtDelayDisplaySettings
             // 
@@ -716,16 +879,16 @@
             this.label6.TabIndex = 0;
             this.label6.Text = "Delay opening display settings (ms):";
             // 
-            // groupBox1
+            // grpGeneralOptions
             // 
-            this.groupBox1.Controls.Add(this.chkStartMinimized);
-            this.groupBox1.Controls.Add(this.chkStartAfterLogin);
-            this.groupBox1.Location = new System.Drawing.Point(6, 6);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(376, 107);
-            this.groupBox1.TabIndex = 2;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "General";
+            this.grpGeneralOptions.Controls.Add(this.chkStartMinimized);
+            this.grpGeneralOptions.Controls.Add(this.chkStartAfterLogin);
+            this.grpGeneralOptions.Location = new System.Drawing.Point(6, 6);
+            this.grpGeneralOptions.Name = "grpGeneralOptions";
+            this.grpGeneralOptions.Size = new System.Drawing.Size(400, 72);
+            this.grpGeneralOptions.TabIndex = 2;
+            this.grpGeneralOptions.TabStop = false;
+            this.grpGeneralOptions.Text = "General";
             // 
             // chkStartMinimized
             // 
@@ -881,11 +1044,16 @@
             this.tabLG.ResumeLayout(false);
             this.tabLG.PerformLayout();
             this.tabOptions.ResumeLayout(false);
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.grpMiscellaneousOptions.ResumeLayout(false);
+            this.grpMiscellaneousOptions.PerformLayout();
+            this.grpLGOptions.ResumeLayout(false);
+            this.grpLGOptions.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgPowerOnAfterResumeDelay)).EndInit();
+            this.grpHDROptions.ResumeLayout(false);
+            this.grpHDROptions.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtDelayDisplaySettings)).EndInit();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
+            this.grpGeneralOptions.ResumeLayout(false);
+            this.grpGeneralOptions.PerformLayout();
             this.tabLog.ResumeLayout(false);
             this.tabLog.PerformLayout();
             this.tabInfo.ResumeLayout(false);
@@ -941,10 +1109,10 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.Button btnDeleteLg;
         private System.Windows.Forms.Button btnAddLg;
-        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
-        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox grpHDROptions;
         private System.Windows.Forms.NumericUpDown edtDelayDisplaySettings;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.ToolStripMenuItem mnuNvDisplay;
@@ -966,6 +1134,18 @@
         private System.Windows.Forms.ContextMenuStrip mnuLgButtons;
         private System.Windows.Forms.ToolStripMenuItem mnuNvPresetsColorSettings;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetColorSettings;
+        private System.Windows.Forms.CheckedListBox clbLgPower;
+        private System.Windows.Forms.GroupBox grpLGOptions;
+        private System.Windows.Forms.NumericUpDown edtLgPowerOnAfterResumeDelay;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Button btnLGTestPower;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
+        private System.Windows.Forms.CheckBox chkFixChromeFonts;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Button btnSetShortcutScreenSaver;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.TextBox edtBlankScreenSaverShortcut;
     }
 }
 

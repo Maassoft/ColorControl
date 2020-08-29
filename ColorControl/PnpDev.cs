@@ -1,22 +1,30 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Windows.Devices.Enumeration;
+using Windows.Devices.Enumeration.Pnp;
 
 namespace ColorControl
 {
     class PnpDev
     {
-        public string name { get; set; }
-        public string ipAddress { get; set; }
+        public DeviceInformation DevInfo { get; private set; }
+        public PnpObject PnpObject { get; private set; }
 
-        public PnpDev(string name, string ipAddress)
+        public string Name { get; private set; }
+        public string IpAddress { get; private set; }
+
+        public string MacAddress { get; private set; }
+
+        public PnpDev(DeviceInformation devInfo, PnpObject pnpObject, string name, string ipAddress, string macAddress)
         {
-            this.name = name;
-            this.ipAddress = ipAddress;
+            DevInfo = devInfo;
+            PnpObject = pnpObject;
+            Name = name;
+            IpAddress = ipAddress;
+            MacAddress = macAddress;
         }
 
         public override string ToString()
         {
-            return name + " (" + ipAddress + ")";
+            return Name + " (" + IpAddress + ")";
         }
     }
 }

@@ -16,7 +16,7 @@ namespace ColorControl
         /// </summary>
         /// <param name="exception">Exception object.</param>
         /// <param name="environmentStackTrace">Environment stack trace, for pulling additional stack frames.</param>
-        public static string ToLogString(this Exception exception, string environmentStackTrace)
+        public static string ToLogString(this Exception exception, string environmentStackTrace = "")
         {
             List<string> environmentStackTraceLines = ExceptionExtensions.GetUserStackTraceLines(environmentStackTrace);
             environmentStackTraceLines.RemoveAt(0);

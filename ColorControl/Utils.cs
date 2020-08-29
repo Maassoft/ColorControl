@@ -1,10 +1,12 @@
-﻿using NWin32.NativeTypes;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
@@ -23,7 +25,8 @@ namespace ColorControl
             Win = 8
         }
 
-        public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
+        public static string PKEY_PNPX_IpAddress        = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
+        public static string PKEY_PNPX_PhysicalAddress  = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -121,76 +124,150 @@ namespace ColorControl
             return (mods, key);
         }
 
-        public static async Task<string> GetDeviceProperty(string deviceName, string propertyName)
+        internal static bool ExecuteElevated(string args)
         {
-            string value = null;
-            string name = null;
-            var list = await DeviceInformation.FindAllAsync("", new List<string>());
-
-            var reqs = new List<string>();
-            reqs.Add(propertyName);
-
-            foreach (var dev in list)
+            var info = new ProcessStartInfo(Assembly.GetEntryAssembly().Location, args)
             {
-                name = dev.Name;
-                if (dev.IsEnabled && dev.Name.Contains(deviceName))
+                Verb = "runas", // indicates to elevate privileges
+            };
+
+            var process = new Process
+            {
+                EnableRaisingEvents = true, // enable WaitForExit()
+                StartInfo = info
+            };
+            try
+            {
+                process.Start();
+                process.WaitForExit(); // sleep calling process thread until evoked process exit
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Error("ExecuteElevated: " + e.Message);
+            }
+            return false;
+        }
+
+        internal static bool IsChromeFixInstalled()
+        {
+            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
+            return key != null && key.GetValue(null).ToString().Contains("--disable-lcd-text");
+        }
+
+        internal static bool InstallChromeFix(bool install)
+        {
+            //var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command", true);
+            //if (key != null)
+            //{
+            //    var value = key.GetValue(null).ToString();
+            //    if (install)
+            //    {
+            //        value = value.Replace("chrome.exe\" -- \"", "chrome.exe\" --disable-lcd-text -- \"");
+            //    }
+            //    else
+            //    {
+            //        value = value.Replace("chrome.exe\" --disable-lcd-text -- \"", "chrome.exe\" -- \"");
+            //    }
+            //    key.SetValue(null, value);
+            //}
+
+            var argument = "--disable-lcd-text";
+
+            var roamingFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk"), argument, !install);
+            UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\Google Chrome.lnk"), argument, !install);
+
+            var allUsersStartMenuFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
+            UpdateShortcut(Path.Combine(allUsersStartMenuFolder, @"Programs\Google Chrome.lnk"), argument, !install);
+
+            return true;
+        }
+
+        internal static bool IsChromeInstalled()
+        {
+            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
+            return key != null;
+        }
+
+        internal static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
+        {
+            if (File.Exists(path))
+            {
+                IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
+
+                // C:\Users\All Users\Microsoft\Windows\Start Menu\Programs
+                // C:\Users\vinni\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch
+                // C:\Users\vinni\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk
+
+                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);
+
+                shortcut.Arguments = shortcut.Arguments.Replace(arguments, "");
+                if (!removeArguments)
                 {
-                    //Debug.WriteLine(dev.Name);
-                    //foreach (var key in dev.Properties.Keys)
-                    //{
-                    //    Debug.WriteLine($"* {key}: {dev.Properties[key]}");
-                    //}
-
-                    var guid = dev.Properties["System.Devices.DeviceInstanceId"];
-
-                    var aqs = "System.Devices.DeviceInstanceId:=\"" + guid + "\"";
-                    var list2 = await PnpObject.FindAllAsync(PnpObjectType.Device, reqs, aqs);
-
-                    foreach (var dev2 in list2)
+                    if (!string.IsNullOrEmpty(shortcut.Arguments))
                     {
-                        foreach (var key in dev2.Properties.Keys)
-                        {
-                            var obj = dev2.Properties[key];
-                            string newValue = null;
-                            if (obj is string[])
-                            {
-                                var arr = obj as string[];
-                                if (arr.Length > 0)
-                                {
-                                    newValue = arr[0];
-                                }
-                            }
-                            else
-                            {
-                                newValue = dev2.Properties[key].ToString();
-                            }
-                            if (newValue != value)
-                            {
-                                value = newValue;
-                                Logger.Debug($"LG TV with name {dev.Name} found at {value}");
-                            }
-                            //Debug.WriteLine($"* {key}: {value}");
-                        }
+                        shortcut.Arguments = shortcut.Arguments + " ";
                     }
+                    shortcut.Arguments = shortcut.Arguments + arguments;
+                }
 
+                // save it / create
+                shortcut.Save();
+
+                return true;
+            }
+            return false;
+        }
+
+        public static string GetDeviceProperty(PnpObject device, string propertyName)
+        {
+            object objValue;
+            string value = null;
+
+            foreach (var key in device.Properties.Keys)
+            {
+                Debug.WriteLine(key);
+            }
+
+            if (device.Properties.TryGetValue(propertyName, out objValue))
+            {
+                if (objValue is string[])
+                {
+                    var arr = objValue as string[];
+                    if (arr.Length > 0)
+                    {
+                        value = arr[0];
+                    }
+                }
+                else if (objValue is byte[])
+                {
+                    value = BitConverter.ToString((byte[])objValue);
+                }
+                else
+                {
+                    value = objValue.ToString();
                 }
             }
+
             return value;
         }
 
-        public static async Task<List<PnpDev>> GetPnpDevices(string deviceName, string propertyName)
+        public static async Task<List<PnpDev>> GetPnpDevices(string deviceName)
         {
             var devices = new List<PnpDev>();
 
             var list = await DeviceInformation.FindAllAsync("", new List<string>());
 
             var reqs = new List<string>();
-            reqs.Add(propertyName);
+            reqs.Add(PKEY_PNPX_IpAddress);
+            reqs.Add(PKEY_PNPX_PhysicalAddress);
 
             foreach (var dev in list)
             {
                 string name = dev.Name;
-                if (dev.IsEnabled && dev.Name.Contains(deviceName))
+                if (/*dev.IsEnabled &&*/ dev.Name.Contains(deviceName))
                 {
                     var guid = dev.Properties["System.Devices.DeviceInstanceId"];
 
@@ -199,33 +276,28 @@ namespace ColorControl
 
                     foreach (var dev2 in list2)
                     {
-                        foreach (var key in dev2.Properties.Keys)
+                        var ipAddress = GetDeviceProperty(dev2, "System.Devices.IpAddress");
+                        var macAddress = GetDeviceProperty(dev2, PKEY_PNPX_PhysicalAddress);
+
+                        if (!devices.Any(x => x.Name.Equals(name) && x.IpAddress.Equals(ipAddress)))
                         {
-                            var obj = dev2.Properties[key];
-                            string value = null;
-                            if (obj is string[])
-                            {
-                                var arr = obj as string[];
-                                if (arr.Length > 0)
-                                {
-                                    value = arr[0];
-                                }
-                            }
-                            else
-                            {
-                                value = dev2.Properties[key].ToString();
-                            }
-                            if (!devices.Any(x => x.name.Equals(name) && x.ipAddress.Equals(value)))
-                            {
-                                var device = new PnpDev(name, value);
-                                devices.Add(device);
-                            }
+                            var device = new PnpDev(dev, dev2, name, ipAddress, macAddress);
+                            devices.Add(device);
                         }
                     }
 
                 }
             }
             return devices;
+        }
+
+        public static void WaitForTask(Task task)
+        {
+            while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
+            {
+                Thread.Sleep(100);
+                Application.DoEvents();
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ namespace ColorControl
         private static int WM_HOTKEY = 0x0312;
         private static string TS_TASKNAME = "ColorControl";
         private static bool SystemShutdown = false;
+        private static int SHORTCUTID_SCREENSAVER = -100;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -74,9 +75,12 @@ namespace ColorControl
         private MenuItem _nvTrayMenu;
         private MenuItem _lgTrayMenu;
 
-        public MainForm()
+        private StartUpParams StartUpParams { get; }
+
+        public MainForm(StartUpParams startUpParams)
         {
             InitializeComponent();
+            StartUpParams = startUpParams;
 
             _dataDir = Utils.GetDataPath();
 
@@ -102,6 +106,12 @@ namespace ColorControl
             trayIcon.ContextMenu.Popup += trayIconContextMenu_Popup;
 
             chkStartAfterLogin.Checked = TaskExists(true);
+
+            chkFixChromeFonts.Enabled = Utils.IsChromeInstalled();
+            if (chkFixChromeFonts.Enabled)
+            {
+                chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
+            }
 
             _JsonSerializer = new JavaScriptSerializer();
             _JsonDeserializer = new JavaScriptSerializer();
@@ -139,14 +149,18 @@ namespace ColorControl
             }
             try
             {
-                _lgService = new LgService();
+                _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
+
+                clbLgPower.SetItemChecked(0, _lgService.Config.PowerOnAfterStartup);
+                clbLgPower.SetItemChecked(1, _lgService.Config.PowerOnAfterResume);
+                clbLgPower.SetItemChecked(2, _lgService.Config.PowerOffOnShutdown);
+                clbLgPower.SetItemChecked(3, _lgService.Config.PowerOffOnStandby);
+                edtLgPowerOnAfterResumeDelay.Value = _lgService.Config.PowerOnDelayAfterResume;
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
             }
-            //_nvService.SetDithering(true);
-            //_nvService.SetRefreshRate(120);
 
             InitInfo();
 
@@ -162,10 +176,15 @@ namespace ColorControl
                 item.Click += miLgAddButton_Click;
             }
 
-            SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
-            SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
+            if (_lgService != null)
+            {
+                SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
+                SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
+            }
 
             _restartDetector = new RestartDetector();
+
+            //Scale(new SizeF(1.25F, 1.25F));
 
             _initialized = true;
         }
@@ -174,35 +193,32 @@ namespace ColorControl
         {
             var powerOn = e.Mode == PowerModes.Resume;
 
+            Logger.Debug($"PowerModeChanged: {e.Mode}");
+
             if (powerOn)
             {
                 _lgService.DisposeConnection();
+                _lgService.WakeAfterResume();
                 return;
             }
 
-            Logger.Debug($"PowerModeChanged: {e.Mode}");
-
-            ExecPowerOffPreset();
+            if (_lgService.Config.PowerOffOnStandby)
+            {
+                _lgService.PowerOff();
+            }
         }
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
         {
-            if (e.Reason == SessionEndReasons.SystemShutdown)
-            {
-                Logger.Debug($"SessionEnded: {e.Reason}");
+            //if (e.Reason == SessionEndReasons.SystemShutdown)
+            //{
+            //    Logger.Debug($"SessionEnded: {e.Reason}");
 
-                ExecPowerOffPreset();
-            }
-        }
-
-        private void ExecPowerOffPreset(bool wait = false)
-        {
-            var preset = _lgPresets.FirstOrDefault(x => x.steps.Contains("POWER"));
-            if (preset != null)
-            {
-                Logger.Debug($"ExecPowerOffPreset: preset found: {preset.name}");
-                ApplyLgPreset(preset, wait: wait);
-            }
+            //    if (_lgService.Config.PowerOffOnShutdown)
+            //    {
+            //        _lgService.PowerOff();
+            //    }
+            //}
         }
 
         private void InitLogger()
@@ -316,23 +332,23 @@ namespace ColorControl
             foreach (var preset in _presets)
             {
                 AddOrUpdateItem(preset);
-                RegisterShortcut(preset);
+                RegisterShortcut(preset.id, preset.shortcut);
             }
 
             //UpdateTrayMenuNv();
         }
 
-        private void RegisterShortcut(PresetBase preset, bool clear = false)
+        private void RegisterShortcut(int id, string shortcut, bool clear = false)
         {
             if (clear)
             {
-                UnregisterHotKey(Handle, preset.id);
+                UnregisterHotKey(Handle, id);
             }
 
-            if (!string.IsNullOrEmpty(preset.shortcut))
+            if (!string.IsNullOrEmpty(shortcut))
             {
-                var (mods, key) = Utils.ParseShortcut(preset.shortcut);
-                bool registered = RegisterHotKey(Handle, preset.id, mods, key);
+                var (mods, key) = Utils.ParseShortcut(shortcut);
+                bool registered = RegisterHotKey(Handle, id, mods, key);
             }
         }
 
@@ -380,18 +396,24 @@ namespace ColorControl
             SaveLgPresets();
 
             SaveConfig();
-
-            if (SystemShutdown)
+            
+            if (SystemShutdown && _lgService.Config.PowerOffOnShutdown)
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
 
-                if (_restartDetector != null && _restartDetector.RestartDetected)
+                if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
                 {
                     Logger.Debug("Not powering off because of a restart");
                 }
+                else if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_LSHIFT) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RSHIFT) < 0)
+                {
+                    Logger.Debug("Not powering off because SHIFT-key is down");
+                }
                 else
                 {
-                    ExecPowerOffPreset(true);
+                    var task = _lgService.PowerOff();
+                    Utils.WaitForTask(task);
+                    //ExecPowerOffPreset(true);
                 }
             }
         }
@@ -443,17 +465,24 @@ namespace ColorControl
                 // MessageBox.Show(string.Format("Hotkey #{0} pressed", id));
 
                 // 6. Handle what will happen once a respective hotkey is pressed
-
-                var preset = _presets.FirstOrDefault(x => x.id == id);
-                if (preset != null)
+                if (id == SHORTCUTID_SCREENSAVER)
                 {
-                    ApplyNvPreset(preset);
+                    var screenSaver = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
+                    Process.Start(screenSaver);
                 }
-
-                var lgPreset = _lgPresets.FirstOrDefault(x => x.id == id);
-                if (lgPreset != null)
+                else
                 {
-                    ApplyLgPreset(lgPreset);
+                    var preset = _presets.FirstOrDefault(x => x.id == id);
+                    if (preset != null)
+                    {
+                        ApplyNvPreset(preset);
+                    }
+
+                    var lgPreset = _lgPresets.FirstOrDefault(x => x.id == id);
+                    if (lgPreset != null)
+                    {
+                        ApplyLgPreset(lgPreset);
+                    }
                 }
 
                 //switch (id)
@@ -523,7 +552,7 @@ namespace ColorControl
 
             AddOrUpdateItem();
 
-            RegisterShortcut(preset, clear);
+            RegisterShortcut(preset.id, preset.shortcut, clear);
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -555,23 +584,30 @@ namespace ColorControl
             var file = Assembly.GetExecutingAssembly().Location;
             var directory = Path.GetDirectoryName(file);
 
-            using (TaskService ts = new TaskService())
+            try
             {
-                if (enabled)
+                using (TaskService ts = new TaskService())
                 {
-                    TaskDefinition td = ts.NewTask();
-                    td.RegistrationInfo.Description = "Start ColorControl";
+                    if (enabled)
+                    {
+                        TaskDefinition td = ts.NewTask();
+                        td.RegistrationInfo.Description = "Start ColorControl";
 
-                    td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
+                        td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
 
-                    td.Actions.Add(new ExecAction(file, null, directory));
+                        td.Actions.Add(new ExecAction(file, StartUpParams.RunningFromScheduledTaskParam, directory));
 
-                    ts.RootFolder.RegisterTaskDefinition(TS_TASKNAME, td);
+                        ts.RootFolder.RegisterTaskDefinition(TS_TASKNAME, td);
+                    }
+                    else
+                    {
+                        ts.RootFolder.DeleteTask(TS_TASKNAME, false);
+                    }
                 }
-                else
-                {
-                    ts.RootFolder.DeleteTask(TS_TASKNAME, false);
-                }
+            }
+            catch (Exception e)
+            {
+                ErrorOk("Could not create/delete task: " + e.Message);
             }
         }
 
@@ -617,14 +653,32 @@ namespace ColorControl
 
             chkStartMinimized.Checked = _config.StartMinimized;
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
+            edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
+
+            if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
+            {
+                RegisterShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut);
+            }
+
+            Width = _config.FormWidth;
+            Height = _config.FormHeight;
         }
 
         private void SaveConfig()
         {
             _config.StartMinimized = chkStartMinimized.Checked;
+            _config.FormWidth = Width;
+            _config.FormHeight = Height;
 
-            var data = _JsonSerializer.Serialize(_config);
-            File.WriteAllText(_configFilename, data);
+            try
+            {
+                var data = _JsonSerializer.Serialize(_config);
+                File.WriteAllText(_configFilename, data);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -1021,7 +1075,7 @@ namespace ColorControl
             foreach (var preset in _lgPresets)
             {
                 AddOrUpdateItemLg(preset);
-                RegisterShortcut(preset);
+                RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -1183,7 +1237,7 @@ namespace ColorControl
 
             if (shortcutChanged)
             {
-                RegisterShortcut(preset, clear);
+                RegisterShortcut(preset.id, preset.shortcut, clear);
             }
         }
 
@@ -1474,11 +1528,7 @@ namespace ColorControl
             var applyTask = _lgService.ApplyPreset(preset, reconnect).ContinueWith((task) => BeginInvoke(new Action<Task<bool>>(LgPresetApplied), new[] { task }));
             if (wait)
             {
-                while (applyTask != null && (applyTask.Status < TaskStatus.WaitingForChildrenToComplete))
-                {
-                    Thread.Sleep(100);
-                    Application.DoEvents();
-                }
+                Utils.WaitForTask(applyTask);
             }
         }
 
@@ -1540,6 +1590,11 @@ namespace ColorControl
             MessageBox.Show(text, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private DialogResult QuestionYesNo(string text)
+        {
+            return MessageBox.Show(text, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+        }
+
         private void lvLgPresets_DoubleClick(object sender, EventArgs e)
         {
             ApplySelectedLgPreset();
@@ -1599,6 +1654,93 @@ namespace ColorControl
                 }
             }
             edtStepsLg.Text = text.Trim();
+        }
+
+        private void clbLgPower_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            if (!(_lgService.Config.PowerOnAfterResume || _lgService.Config.PowerOnAfterStartup))
+            {
+                InfoOk(
+@"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
+
+Connection > Mobile TV On > Turn on via Wi-Fi
+
+See Options to test this functionality."
+                );
+            }
+
+            this.BeginInvoke(new Action(() =>
+            {
+                _lgService.Config.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
+                _lgService.Config.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
+                _lgService.Config.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
+                _lgService.Config.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
+            }));
+        }
+
+        private void edtLgPowerOnAfterResumeDelay_ValueChanged(object sender, EventArgs e)
+        {
+            _lgService.Config.PowerOnDelayAfterResume = (int)edtLgPowerOnAfterResumeDelay.Value;
+        }
+
+        private void chkFixChromeFonts_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_initialized)
+            {
+                if (chkFixChromeFonts.Checked)
+                {
+                    Utils.ExecuteElevated(StartUpParams.ActivateChromeFontFixParam);
+                }
+                else
+                {
+                    Utils.ExecuteElevated(StartUpParams.DeactivateChromeFontFixParam);
+                }
+            }
+        }
+
+        private void btnLGTestPower_Click(object sender, EventArgs e)
+        {
+            var text =
+@"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
+For waking up to work, you need to activate the following setting on the TV:
+
+Connection > Mobile TV On > Turn on via Wi-Fi
+
+It will also work over a wired connection.
+Do you want to continue?";
+
+            if (QuestionYesNo(text) == DialogResult.Yes)
+            {
+                _lgService.PowerOff();
+
+                InfoOk("Press ENTER to wake the TV.");
+
+                _lgService.WakeSelectedDevice();
+            }
+        }
+
+        private void btnSetShortcutScreenSaver_Click(object sender, EventArgs e)
+        {
+            var shortcut = edtBlankScreenSaverShortcut.Text.Trim();
+
+            if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
+            {
+                WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+                return;
+            }
+
+            var oldShortcut = _config.ScreenSaverShortcut;
+
+            var clear = !string.IsNullOrEmpty(oldShortcut);
+
+            _config.ScreenSaverShortcut = shortcut;
+
+            RegisterShortcut(SHORTCUTID_SCREENSAVER, shortcut, clear);
         }
     }
 }
