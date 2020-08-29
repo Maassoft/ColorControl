@@ -314,7 +314,7 @@ namespace ColorControl
                 }
 
                 var header = lvNvPresets.Columns.Add(columnName);
-                header.Width = width;
+                header.Width = width == 120 ? -2 : width;
             }
 
             if (File.Exists(_nvPresetsFilename))
@@ -1058,7 +1058,7 @@ namespace ColorControl
                 }
 
                 var header = lvLgPresets.Columns.Add(columnName);
-                header.Width = width;
+                header.Width = width == 120 ? -2 : width;
             }
 
             if (File.Exists(_lgPresetsFilename))

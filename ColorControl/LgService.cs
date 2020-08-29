@@ -19,7 +19,7 @@ namespace ColorControl
         public static string LgControllerExe = "LgController.exe";
         public static string LgListAppsJson = "listApps.json";
 
-        public static string LgDeviceSearchKey = "OLED55C9PLA";
+        public static string LgDeviceSearchKey = "[LG]";
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -34,6 +34,7 @@ namespace ColorControl
         private string _dataDir;
         private string _configFilename;
         private bool _allowPowerOn;
+        private bool _justWokeUp;
 
         public LgService(string dataDir, bool allowPowerOn)
         {
@@ -155,6 +156,12 @@ namespace ColorControl
             if (hasApp)
             {
                 await _lgTvApi.LaunchApp(preset.appId);
+
+                if (_justWokeUp)
+                {
+                    _justWokeUp = false;
+                    await Task.Delay(500);
+                }
             }
 
             if (preset.steps.Any())
@@ -251,6 +258,7 @@ namespace ColorControl
             if (SelectedDevice != null)
             {
                 WOL.WakeFunction(SelectedDevice.MacAddress);
+                _justWokeUp = true;
             }
             else
             {

@@ -157,22 +157,22 @@ namespace ColorControl
 
         internal static bool InstallChromeFix(bool install)
         {
-            //var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command", true);
-            //if (key != null)
-            //{
-            //    var value = key.GetValue(null).ToString();
-            //    if (install)
-            //    {
-            //        value = value.Replace("chrome.exe\" -- \"", "chrome.exe\" --disable-lcd-text -- \"");
-            //    }
-            //    else
-            //    {
-            //        value = value.Replace("chrome.exe\" --disable-lcd-text -- \"", "chrome.exe\" -- \"");
-            //    }
-            //    key.SetValue(null, value);
-            //}
-
             var argument = "--disable-lcd-text";
+
+            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command", true);
+            if (key != null)
+            {
+                var value = key.GetValue(null).ToString();
+                if (install)
+                {
+                    value = value.Replace("chrome.exe\" -- \"", "chrome.exe\" " + argument + " -- \"");
+                }
+                else
+                {
+                    value = value.Replace("chrome.exe\" " + argument + " -- \"", "chrome.exe\" -- \"");
+                }
+                key.SetValue(null, value);
+            }
 
             var roamingFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
@@ -196,10 +196,6 @@ namespace ColorControl
             if (File.Exists(path))
             {
                 IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
-
-                // C:\Users\All Users\Microsoft\Windows\Start Menu\Programs
-                // C:\Users\vinni\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch
-                // C:\Users\vinni\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk
 
                 IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);
 
