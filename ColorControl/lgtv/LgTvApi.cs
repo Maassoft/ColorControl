@@ -21,6 +21,8 @@ namespace LgTv
     }
     public class LgTvApi:IDisposable
     {
+        public bool ConnectionClosed { get => _connection == null || _connection.ConnectionClosed; }
+
         private readonly LgTvApiCore _connection;
         private LgWebOsMouseService _mouseConnection;
 
@@ -61,7 +63,7 @@ namespace LgTv
             return null;
         }
 
-        public LgTvApi(string ip, LgTvApiCore connection, ClientKeyStore keyStore)
+        private LgTvApi(string ip, LgTvApiCore connection, ClientKeyStore keyStore)
         {
             webSocketUri = "ws://" + ip + ":3000";
             _ip = ip;
@@ -92,7 +94,6 @@ namespace LgTv
 
         public async Task<bool> Connect()
         {
-
             var ctx =  _connection.Connect(new Uri(webSocketUri));
             return await ctx;
         }

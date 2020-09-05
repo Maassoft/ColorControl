@@ -4,6 +4,8 @@
     {
         public bool StartMinimized { get; set; }
 
+        public bool MinimizeOnClose { get; set; }
+
         public int DisplaySettingsDelay { get; set; }
 
         public string ScreenSaverShortcut { get; set; }

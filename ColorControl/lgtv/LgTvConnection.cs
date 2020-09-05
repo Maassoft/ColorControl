@@ -23,6 +23,8 @@ namespace LgTv
    
     public class LgTvApiCore : IDisposable
     {
+        public bool ConnectionClosed { get; private set; }
+
         private MessageWebSocket _connection;
         private DataWriter _messageWriter;
         private int _commandCount;
@@ -37,6 +39,7 @@ namespace LgTv
         {
             try
             {
+                ConnectionClosed = false;
                 _commandCount = 0;
                 _connection = new MessageWebSocket();
                 _connection.Control.MessageType = SocketMessageType.Utf8;
@@ -66,11 +69,21 @@ namespace LgTv
             }
 
         }
+
         public async void SendMessageAsync(string message)
         {
-            _messageWriter.WriteString(message);
-            await _messageWriter.StoreAsync();
+            try
+            {
+                _messageWriter.WriteString(message);
+                await _messageWriter.StoreAsync();
+            }
+            catch (Exception e)
+            {
+                ConnectionClosed = true;
+                _messageWriter?.Dispose();
+            }
         }
+
         public Task<dynamic> SendCommandAsync(string message)
         {
             var obj = JsonConvert.DeserializeObject<dynamic>(message);
@@ -84,15 +97,17 @@ namespace LgTv
                 var taskSource = new TaskCompletionSource<dynamic>();
                 _tokens.TryAdd(id, taskSource);
                 SendMessageAsync(message);
+                if (ConnectionClosed)
+                {
+                    throw new Exception("Connection closed");
+                }
                 return taskSource.Task;
             }
             catch (Exception e)
             {
                 throw new SendMessageException("Can't send message", e);
             }
-
         }
-
 
         public Task<dynamic> SendCommandAsync(RequestMessage message)
         {
@@ -109,6 +124,7 @@ namespace LgTv
         {
             MessageWebSocket webSocket = Interlocked.Exchange(ref _connection, null);
             webSocket?.Dispose();
+            ConnectionClosed = true;
         }
 
         private void Connection_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)

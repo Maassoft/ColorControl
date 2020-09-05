@@ -98,6 +98,7 @@
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            this.chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             this.tabLog = new System.Windows.Forms.TabPage();
@@ -722,7 +723,7 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.label10);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 275);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 309);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             this.grpMiscellaneousOptions.Size = new System.Drawing.Size(400, 130);
             this.grpMiscellaneousOptions.TabIndex = 5;
@@ -784,7 +785,7 @@
             this.grpLGOptions.Controls.Add(this.label9);
             this.grpLGOptions.Controls.Add(this.edtLgPowerOnAfterResumeDelay);
             this.grpLGOptions.Controls.Add(this.label8);
-            this.grpLGOptions.Location = new System.Drawing.Point(6, 162);
+            this.grpLGOptions.Location = new System.Drawing.Point(6, 196);
             this.grpLGOptions.Name = "grpLGOptions";
             this.grpLGOptions.Size = new System.Drawing.Size(403, 107);
             this.grpLGOptions.TabIndex = 4;
@@ -843,7 +844,7 @@
             // 
             this.grpHDROptions.Controls.Add(this.edtDelayDisplaySettings);
             this.grpHDROptions.Controls.Add(this.label6);
-            this.grpHDROptions.Location = new System.Drawing.Point(6, 84);
+            this.grpHDROptions.Location = new System.Drawing.Point(6, 118);
             this.grpHDROptions.Name = "grpHDROptions";
             this.grpHDROptions.Size = new System.Drawing.Size(400, 72);
             this.grpHDROptions.TabIndex = 3;
@@ -881,14 +882,26 @@
             // 
             // grpGeneralOptions
             // 
+            this.grpGeneralOptions.Controls.Add(this.chkMinimizeOnClose);
             this.grpGeneralOptions.Controls.Add(this.chkStartMinimized);
             this.grpGeneralOptions.Controls.Add(this.chkStartAfterLogin);
             this.grpGeneralOptions.Location = new System.Drawing.Point(6, 6);
             this.grpGeneralOptions.Name = "grpGeneralOptions";
-            this.grpGeneralOptions.Size = new System.Drawing.Size(400, 72);
+            this.grpGeneralOptions.Size = new System.Drawing.Size(400, 106);
             this.grpGeneralOptions.TabIndex = 2;
             this.grpGeneralOptions.TabStop = false;
             this.grpGeneralOptions.Text = "General";
+            // 
+            // chkMinimizeOnClose
+            // 
+            this.chkMinimizeOnClose.AutoSize = true;
+            this.chkMinimizeOnClose.Location = new System.Drawing.Point(6, 65);
+            this.chkMinimizeOnClose.Name = "chkMinimizeOnClose";
+            this.chkMinimizeOnClose.Size = new System.Drawing.Size(109, 17);
+            this.chkMinimizeOnClose.TabIndex = 4;
+            this.chkMinimizeOnClose.Text = "Minimize on close";
+            this.chkMinimizeOnClose.UseVisualStyleBackColor = true;
+            this.chkMinimizeOnClose.CheckedChanged += new System.EventHandler(this.chkMinimizeOnClose_CheckedChanged);
             // 
             // chkStartMinimized
             // 
@@ -1032,6 +1045,7 @@
             this.MinimumSize = new System.Drawing.Size(800, 398);
             this.Name = "MainForm";
             this.Text = "ColorControl";
+            this.Activated += new System.EventHandler(this.MainForm_Activated);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Load += new System.EventHandler(this.MainForm_Load);
@@ -1146,6 +1160,7 @@
         private System.Windows.Forms.Button btnSetShortcutScreenSaver;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox edtBlankScreenSaverShortcut;
+        private System.Windows.Forms.CheckBox chkMinimizeOnClose;
     }
 }
 

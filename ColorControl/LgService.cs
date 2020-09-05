@@ -132,7 +132,7 @@ namespace ColorControl
                 return false;
             }
 
-            if (reconnect || _lgTvApi == null || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
+            if (reconnect || _lgTvApi == null || _lgTvApi.ConnectionClosed || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
             {
                 if (!await ConnectToSelectedDevice())
                 {
@@ -146,40 +146,64 @@ namespace ColorControl
 
         public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
         {
-            if (!await Connected(reconnect))
-            {
-                return false;
-            }
-
             var hasApp = !string.IsNullOrEmpty(preset.appId);
 
-            if (hasApp)
+            for (var tries = 0; tries <= 1; tries++)
             {
-                await _lgTvApi.LaunchApp(preset.appId);
-
-                if (_justWokeUp)
+                if (!await Connected(reconnect || tries == 1))
                 {
-                    _justWokeUp = false;
-                    await Task.Delay(500);
-                }
-            }
-
-            if (preset.steps.Any())
-            {
-                if (hasApp)
-                {
-                    await Task.Delay(1500);
-                }
-                try
-                {
-                    await ExecuteSteps(_lgTvApi, preset);
-                }
-                catch (Exception ex)
-                {
-                    string logMessage = ex.ToLogString(Environment.StackTrace);
-                    Logger.Error("Error while executing steps: " + logMessage);
                     return false;
                 }
+
+                if (hasApp)
+                {
+                    try
+                    {
+                        await _lgTvApi.LaunchApp(preset.appId);
+                    }
+                    catch (Exception ex)
+                    {
+                        string logMessage = ex.ToLogString(Environment.StackTrace);
+                        Logger.Error("Error while launching app: " + logMessage);
+
+                        if (tries == 0)
+                        {
+                            continue;
+                        }
+                        return false;
+                    }
+
+                    if (_justWokeUp)
+                    {
+                        _justWokeUp = false;
+                        await Task.Delay(1000);
+                    }
+                }
+
+                if (preset.steps.Any())
+                {
+                    if (hasApp)
+                    {
+                        await Task.Delay(1500);
+                    }
+                    try
+                    {
+                        await ExecuteSteps(_lgTvApi, preset);
+                    }
+                    catch (Exception ex)
+                    {
+                        string logMessage = ex.ToLogString(Environment.StackTrace);
+                        Logger.Error("Error while executing steps: " + logMessage);
+
+                        if (tries == 0)
+                        {
+                            continue;
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             return true;
@@ -227,8 +251,13 @@ namespace ColorControl
                 return null;
             }
 
-            var api = await LgTvApi.CreateLgTvApi(SelectedDevice.IpAddress);
-            var list = await api.GetApps(force);
+            if (!await Connected(force))
+            {
+                Logger.Debug("Cannot refresh apps: no connection could be made");
+                return null;
+            }
+
+            var list = await _lgTvApi.GetApps(force);
 
             return list.ToList();
         }

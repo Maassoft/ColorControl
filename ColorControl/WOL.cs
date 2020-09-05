@@ -32,13 +32,13 @@ namespace ColorControl
 
             foreach (var device in devices)
             {
-                if (device is NpcapDevice npcapDevice)
-                {
-                    if (!npcapDevice.Interface.GatewayAddresses.Any())
-                    {
-                        continue;
-                    }
-                }
+                //if (device is NpcapDevice npcapDevice)
+                //{
+                //    if (!npcapDevice.Interface.GatewayAddresses.Any())
+                //    {
+                //        continue;
+                //    }
+                //}
 
                 Logger.Debug("Opening network device: " + device.Name);
 

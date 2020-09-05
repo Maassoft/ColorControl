@@ -1,9 +1,6 @@
 ﻿using NvAPIWrapper;
 using NvAPIWrapper.Display;
-using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.Display;
-using NvAPIWrapper.Native.Display.Structures;
-using NvAPIWrapper.Native.Exceptions;
 using NvAPIWrapper.Native.GPU.Structures;
 using NWin32;
 using NWin32.NativeTypes;
@@ -38,6 +35,20 @@ namespace ColorControl
             [In] uint bits,
             [In] uint mode
         );
+
+        public delegate long NvAPI_Disp_GetDitherControl(
+            [In] PhysicalGPUHandle physicalGpu,
+            [Out] uint OutputId,
+            [In] [Out] IntPtr ditherControl);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct NV_GPU_DITHER_CONTROL_V1
+        {
+            public int version;
+            public uint state;
+            public uint bits;
+            public uint mode;
+        };
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -147,6 +158,37 @@ namespace ColorControl
                     Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {result}");
                 }
             }
+        }
+
+        public bool GetDithering()
+        {
+            var ptr = NvAPI64_QueryInterface(0x932AC8FB);
+            if (ptr != IntPtr.Zero)
+            {
+                var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetDitherControl)) as NvAPI_Disp_GetDitherControl;
+
+                var displayDevice = GetCurrentDisplay().DisplayDevice;
+
+                var gpuHandle = displayDevice.PhysicalGPU.Handle;
+                var displayId = displayDevice.DisplayId;
+
+                NV_GPU_DITHER_CONTROL_V1 info = new NV_GPU_DITHER_CONTROL_V1();
+                info.version = 1;
+                IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(info));
+                Marshal.StructureToPtr(info, bla, false);
+
+                // Does not work yet...What is the exact interface of NvAPI_Disp_GetDitherControl?
+
+                //var result = delegateValue(gpuHandle, displayId, bla);
+                //if (result != 0)
+                //{
+                //    Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
+                //}
+
+                return info.state == 1;
+            }
+
+            return false;
         }
 
         public bool SetRefreshRate(uint refreshRate)

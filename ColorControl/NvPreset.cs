@@ -69,7 +69,7 @@ namespace ColorControl
         public static string[] GetColumnNames()
         {
             //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "Display|80", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut" };
+            return new[] { "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut" };
         }
 
         public List<string> GetDisplayValues()

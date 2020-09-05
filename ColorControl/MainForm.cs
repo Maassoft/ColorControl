@@ -45,6 +45,8 @@ namespace ColorControl
         private static int WM_HOTKEY = 0x0312;
         private static string TS_TASKNAME = "ColorControl";
         private static bool SystemShutdown = false;
+        private static bool EndSession = false;
+        private static bool UserExit = false;
         private static int SHORTCUTID_SCREENSAVER = -100;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -119,6 +121,14 @@ namespace ColorControl
             var converter = new ColorDataConverter();
             _JsonDeserializer.RegisterConverters(new[] { converter });
 
+            try
+            {
+                _nvService = new NvService();
+            }
+            catch (Exception)
+            {
+            }
+
             _nvPresetsFilename = Path.Combine(_dataDir, "NvPresets.json");
             FillNvPresets();
 
@@ -140,13 +150,6 @@ namespace ColorControl
             _configFilename = Path.Combine(_dataDir, "Settings.json");
             LoadConfig();
 
-            try
-            {
-                _nvService = new NvService();
-            }
-            catch (Exception)
-            {
-            }
             try
             {
                 _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
@@ -268,6 +271,7 @@ namespace ColorControl
 
         void Exit(object sender, EventArgs e)
         {
+            UserExit = true;
             Close();
         }
 
@@ -329,6 +333,8 @@ namespace ColorControl
 
             }
 
+            UpdateDisplayInfoItems();
+
             foreach (var preset in _presets)
             {
                 AddOrUpdateItem(preset);
@@ -336,6 +342,79 @@ namespace ColorControl
             }
 
             //UpdateTrayMenuNv();
+        }
+
+        private void UpdateDisplayInfoItems()
+        {
+            if (_nvService == null)
+            {
+                return;
+            }
+
+            var displays = _nvService.GetDisplays();
+            foreach (var display in displays)
+            {
+                var id = Math.Abs((int)display.Handle.MemoryAddress.ToInt64());
+
+                ListViewItem item = null;
+                for (var i = 0; i < lvNvPresets.Items.Count; i++)
+                {
+                    item = lvNvPresets.Items[i];
+
+                    if (item.Tag == null && item.ImageIndex == id)
+                    {
+                        break;
+                    }
+                    item = null;
+                }
+
+                if (item == null)
+                {
+                    item = lvNvPresets.Items.Add(display.Name);
+                    item.ImageIndex = id;
+                    item.Font = new Font(item.Font, item.Font.Style | FontStyle.Bold);
+                    item.BackColor = Color.LightGray;
+                }
+
+                var values = new List<string>();
+
+                var name = display.Name;
+
+                var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
+                if (screen != null)
+                {
+                    name += " (" + screen.DeviceFriendlyName() + ")";
+                }
+
+                values.Add(name);
+
+                var colorData = display.DisplayDevice.CurrentColorData;
+                var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
+
+                values.Add(colorSettings);
+
+                var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
+
+                values.Add($"{refreshRate}Hz");
+
+                //values.Add(_nvService.GetDithering() ? "Yes" : "No");
+                values.Add(string.Empty);
+
+                values.Add(_nvService.IsHDREnabled() ? "Yes" : "No");
+
+                item.Text = values[0];
+                for (var i = 1; i < values.Count; i++)
+                {
+                    if (item.SubItems.Count - 1 >= i)
+                    {
+                        item.SubItems[i].Text = values[i];
+                    }
+                    else
+                    {
+                        item.SubItems.Add(values[i]);
+                    }
+                }
+            }
         }
 
         private void RegisterShortcut(int id, string shortcut, bool clear = false)
@@ -392,6 +471,14 @@ namespace ColorControl
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if (!(SystemShutdown || EndSession || UserExit) && _config.MinimizeOnClose)
+            {
+                e.Cancel = true;
+                WindowState = FormWindowState.Minimized;
+                UserExit = false;
+                return;
+            }
+            
             SaveNvPresets();
             SaveLgPresets();
 
@@ -430,14 +517,11 @@ namespace ColorControl
             File.WriteAllText(_lgPresetsFilename, json);
         }
 
-        private void button1_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
         private void lvNvPresets_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var enabled = lvNvPresets.SelectedItems.Count > 0;
+            var preset = GetSelectedNvPreset();
+            var enabled = preset != null;
+
             btnApply.Enabled = enabled;
             btnChange.Enabled = enabled;
             edtShortcut.Enabled = enabled;
@@ -445,7 +529,6 @@ namespace ColorControl
             btnClone.Enabled = enabled;
             btnNvPresetDelete.Enabled = enabled;
 
-            var preset = GetSelectedNvPreset();
             if (preset != null)
             {
                 edtShortcut.Text = preset.shortcut;
@@ -495,6 +578,10 @@ namespace ColorControl
             else if (m.Msg == NativeConstants.WM_QUERYENDSESSION)
             {
                 SystemShutdown = true;
+            }
+            else if (m.Msg == NativeConstants.WM_ENDSESSION)
+            {
+                EndSession = true;
             }
 
             base.WndProc(ref m);
@@ -652,6 +739,7 @@ namespace ColorControl
             }
 
             chkStartMinimized.Checked = _config.StartMinimized;
+            chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
 
@@ -820,6 +908,7 @@ namespace ColorControl
             miNvApply.Enabled = preset != null;
             mnuNvDisplay.Enabled = preset != null;
             miNvPresetColorSettings.Enabled = preset != null;
+            mnuNvPresetsColorSettings.Enabled = preset != null;
             mnuRefreshRate.Enabled = preset != null;
             miNvPresetDithering.Enabled = preset != null;
             miNvHDR.Enabled = preset != null;
@@ -1511,6 +1600,8 @@ namespace ColorControl
                 {
                     throw new Exception("Error while applying NVIDIA preset");
                 }
+
+                UpdateDisplayInfoItems();
             }
             catch (Exception e)
             {
@@ -1674,7 +1765,7 @@ See Options to test this functionality."
                 );
             }
 
-            this.BeginInvoke(new Action(() =>
+            BeginInvoke(new Action(() =>
             {
                 _lgService.Config.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
                 _lgService.Config.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
@@ -1741,6 +1832,16 @@ Do you want to continue?";
             _config.ScreenSaverShortcut = shortcut;
 
             RegisterShortcut(SHORTCUTID_SCREENSAVER, shortcut, clear);
+        }
+
+        private void chkMinimizeOnClose_CheckedChanged(object sender, EventArgs e)
+        {
+            _config.MinimizeOnClose = chkMinimizeOnClose.Checked;
+        }
+
+        private void MainForm_Activated(object sender, EventArgs e)
+        {
+            UpdateDisplayInfoItems();
         }
     }
 }
