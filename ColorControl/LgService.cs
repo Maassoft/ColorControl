@@ -16,7 +16,6 @@ namespace ColorControl
 {
     class LgService
     {
-        public static string LgControllerExe = "LgController.exe";
         public static string LgListAppsJson = "listApps.json";
 
         public static string LgDeviceSearchKey = "[LG]";
@@ -26,7 +25,15 @@ namespace ColorControl
         public string FriendlyScreenName { get; private set; }
 
         public List<PnpDev> Devices { get; private set; }
-        public PnpDev SelectedDevice { get; set; }
+        public PnpDev SelectedDevice
+        {
+            get { return _selectedDevice; }
+            set
+            {
+                _selectedDevice = value;
+                Config.PreferredMacAddress = _selectedDevice != null ? _selectedDevice.MacAddress : null;
+            }
+        }
 
         public LgServiceConfig Config { get; private set; }
 
@@ -35,6 +42,7 @@ namespace ColorControl
         private string _configFilename;
         private bool _allowPowerOn;
         private bool _justWokeUp;
+        private PnpDev _selectedDevice;
 
         public LgService(string dataDir, bool allowPowerOn)
         {
@@ -104,7 +112,9 @@ namespace ColorControl
             Devices = task.Result;
             if (Devices?.Count > 0)
             {
-                SelectedDevice = Devices[0];
+                var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
+
+                SelectedDevice = preferredDevice;
             }
         }
 

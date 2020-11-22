@@ -2,31 +2,18 @@
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.GPU.Structures;
-using NWin32;
-using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace ColorControl
 {
-    class NvService
+    class NvService : GraphicsService
     {
-        const UInt32 WM_KEYDOWN = 0x0100;
-        const UInt32 WM_KEYUP = 0x0101;
-        const int VK_TAB = 0x09;
-        const int VK_SPACE = 0x20;
-
-        [DllImport("user32.dll")]
-        static extern bool PostMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
-
         [DllImport(@"nvapi64", EntryPoint = @"nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl,
                     PreserveSig = true)]
         private static extern IntPtr NvAPI64_QueryInterface(uint interfaceId);
-
 
         public delegate long NvAPI_Disp_SetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
@@ -38,10 +25,10 @@ namespace ColorControl
 
         public delegate long NvAPI_Disp_GetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
-            [Out] uint OutputId,
-            [In] [Out] IntPtr ditherControl);
+            [In] uint OutputId,
+            [In][Out] IntPtr ditherControl);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct NV_GPU_DITHER_CONTROL_V1
         {
             public int version;
@@ -50,18 +37,10 @@ namespace ColorControl
             public uint mode;
         };
 
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
         private Display _currentDisplay;
 
         public NvService()
         {
-            NVIDIA.Initialize();
-        }
-
-        ~NvService()
-        {
-            NVIDIA.Unload();
         }
 
         public Display GetCurrentDisplay()
@@ -125,21 +104,6 @@ namespace ColorControl
             return true;
         }
 
-        public void ToggleHDR(int delay = 1000)
-        {
-            Process.Start("ms-settings:display");
-            Thread.Sleep(delay);
-
-            var process = Process.GetProcessesByName("SystemSettings").FirstOrDefault();
-            if (process != null)
-            {
-                System.Windows.Forms.SendKeys.SendWait("{TAB}");
-                System.Windows.Forms.SendKeys.SendWait("{TAB}");
-                System.Windows.Forms.SendKeys.SendWait(" ");
-                System.Windows.Forms.SendKeys.SendWait("%{F4}");
-            }
-        }
-
         public void SetDithering(bool enabled)
         {
             var ptr = NvAPI64_QueryInterface(0xDF0DFCDD);
@@ -174,16 +138,16 @@ namespace ColorControl
 
                 NV_GPU_DITHER_CONTROL_V1 info = new NV_GPU_DITHER_CONTROL_V1();
                 info.version = 1;
-                IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(info));
+                IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(info.GetType()));
                 Marshal.StructureToPtr(info, bla, false);
 
                 // Does not work yet...What is the exact interface of NvAPI_Disp_GetDitherControl?
 
-                //var result = delegateValue(gpuHandle, displayId, bla);
-                //if (result != 0)
-                //{
-                //    Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
-                //}
+                var result = delegateValue(gpuHandle, displayId, bla);
+                if (result != 0)
+                {
+                    Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
+                }
 
                 return info.state == 1;
             }
@@ -197,34 +161,11 @@ namespace ColorControl
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
             var timing = display.DisplayDevice.CurrentTiming;
 
-            uint i = 0;
-            DEVMODEA devMode;
-            while (NativeMethods.EnumDisplaySettingsA(display.Name, i, out devMode))
-            {
-                // Also compare width with vertical and height with horizontal in case of portrait mode
-                if (((!portrait && devMode.dmPelsWidth == timing.HorizontalVisible && devMode.dmPelsHeight == timing.VerticalVisible) ||
-                    (portrait && devMode.dmPelsWidth == timing.VerticalVisible && devMode.dmPelsHeight == timing.HorizontalVisible))
-                    && devMode.dmBitsPerPel == 32 && devMode.dmDisplayFrequency == refreshRate)
-                {
-                    IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(devMode));
-                    Marshal.StructureToPtr(devMode, bla, false);
-                    var result = NativeMethods.ChangeDisplaySettingsExA(display.Name, bla, IntPtr.Zero, 0, IntPtr.Zero);
-                    if (result != NativeConstants.DISP_CHANGE_SUCCESSFUL)
-                    {
-                        Logger.Error($"Could not set refreshrate {refreshRate} on display {display.Name} because ChangeDisplaySettingsExA returned a non-zero return code: {result}");
-                    }
-                    return result == NativeConstants.DISP_CHANGE_SUCCESSFUL;
-                }
-                i++;
-            }
-            Logger.Info($"Could not set refreshrate {refreshRate} on display {display.Name} because EnumDisplaySettings did not report it as a valid refreshrate");
-            return false;
+            return SetRefreshRateInternal(display.Name, refreshRate, portrait, timing.HorizontalVisible, timing.VerticalVisible);
         }
 
         public List<uint> GetAvailableRefreshRates(NvPreset preset = null)
         {
-            var list = new List<uint>();
-
             if (preset != null)
             {
                 SetCurrentDisplay(preset);
@@ -234,18 +175,7 @@ namespace ColorControl
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
             var timing = display.DisplayDevice.CurrentTiming;
 
-            uint i = 0;
-            DEVMODEA devMode;
-            while (NativeMethods.EnumDisplaySettingsA(display.Name, i, out devMode))
-            {
-                if ((!portrait && devMode.dmPelsWidth == timing.HorizontalVisible && devMode.dmPelsHeight == timing.VerticalVisible) ||
-                    (portrait && devMode.dmPelsWidth == timing.VerticalVisible && devMode.dmPelsHeight == timing.HorizontalVisible))
-                {
-                    list.Add(devMode.dmDisplayFrequency);
-                }
-                i++;
-            }
-            return list;
+            return GetAvailableRefreshRatesInternal(display.Name, portrait, timing.HorizontalVisible, timing.VerticalVisible);
         }
 
         public bool IsHDREnabled()
@@ -258,6 +188,16 @@ namespace ColorControl
         public Display[] GetDisplays()
         {
             return Display.GetDisplays();
+        }
+
+        protected override void Initialize()
+        {
+            NVIDIA.Initialize();
+        }
+
+        protected override void Uninitialize()
+        {
+            NVIDIA.Unload();
         }
     }
 }

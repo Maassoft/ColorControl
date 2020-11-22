@@ -163,13 +163,10 @@ namespace ColorControl
             if (key != null)
             {
                 var value = key.GetValue(null).ToString();
+                value = value.Replace("chrome.exe\" " + argument + " --", "chrome.exe\" --");
                 if (install)
                 {
-                    value = value.Replace("chrome.exe\" -- \"", "chrome.exe\" " + argument + " -- \"");
-                }
-                else
-                {
-                    value = value.Replace("chrome.exe\" " + argument + " -- \"", "chrome.exe\" -- \"");
+                    value = value.Replace("chrome.exe\" --", "chrome.exe\" " + argument + " --");
                 }
                 key.SetValue(null, value);
             }
@@ -294,6 +291,16 @@ namespace ColorControl
                 Thread.Sleep(100);
                 Application.DoEvents();
             }
+        }
+
+        public static void SetNotifyIconText(NotifyIcon ni, string text)
+        {
+            text = text.Substring(0, Math.Min(text.Length, 127));
+            Type t = typeof(NotifyIcon);
+            BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            t.GetField("text", hidden).SetValue(ni, text);
+            if ((bool)t.GetField("added", hidden).GetValue(ni))
+                t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
         }
     }
 }

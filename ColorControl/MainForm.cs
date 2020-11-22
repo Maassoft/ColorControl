@@ -79,6 +79,8 @@ namespace ColorControl
 
         private StartUpParams StartUpParams { get; }
 
+        private AmdService _amdService;
+
         public MainForm(StartUpParams startUpParams)
         {
             InitializeComponent();
@@ -131,6 +133,16 @@ namespace ColorControl
 
             _nvPresetsFilename = Path.Combine(_dataDir, "NvPresets.json");
             FillNvPresets();
+
+            try
+            {
+                _amdService = new AmdService();
+                lblErrorAMD.Text = "If you see this message, it means you have AMD graphics drivers installed. Unfortunately, this feature is not completed yet. If I get an AMD card I might finish it.";
+            }
+            catch (Exception)
+            {
+                tcMain.TabPages.Remove(tabAMD);
+            }
 
             _lgPresetsFilename = Path.Combine(_dataDir, "LgPresets.json");
             var toCopy = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
@@ -351,6 +363,8 @@ namespace ColorControl
                 return;
             }
 
+            var text = "ColorControl";
+
             var displays = _nvService.GetDisplays();
             foreach (var display in displays)
             {
@@ -414,7 +428,11 @@ namespace ColorControl
                         item.SubItems.Add(values[i]);
                     }
                 }
+
+                text += "\n" + string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, _nvService.IsHDREnabled() ? "Yes" : "No");
             }
+
+            Utils.SetNotifyIconText(trayIcon, text);
         }
 
         private void RegisterShortcut(int id, string shortcut, bool clear = false)
@@ -483,7 +501,7 @@ namespace ColorControl
             SaveLgPresets();
 
             SaveConfig();
-            
+
             if (SystemShutdown && _lgService.Config.PowerOffOnShutdown)
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
@@ -492,14 +510,16 @@ namespace ColorControl
                 {
                     Logger.Debug("Not powering off because of a restart");
                 }
-                else if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_LSHIFT) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RSHIFT) < 0)
+                else if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_CONTROL) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RCONTROL) < 0)
                 {
-                    Logger.Debug("Not powering off because SHIFT-key is down");
+                    Logger.Debug("Not powering off because CONTROL-key is down");
                 }
                 else
                 {
+                    Logger.Debug("Powering off tv...");
                     var task = _lgService.PowerOff();
                     Utils.WaitForTask(task);
+                    Logger.Debug("Done powering off tv");
                     //ExecPowerOffPreset(true);
                 }
             }
@@ -654,6 +674,11 @@ namespace ColorControl
             {
                 Hide();
             }
+            else if (WindowState == FormWindowState.Normal)
+            {
+                _config.FormWidth = Width;
+                _config.FormHeight = Height;
+            }
         }
 
         private void chkStartAfterLogin_CheckedChanged(object sender, EventArgs e)
@@ -755,8 +780,11 @@ namespace ColorControl
         private void SaveConfig()
         {
             _config.StartMinimized = chkStartMinimized.Checked;
-            _config.FormWidth = Width;
-            _config.FormHeight = Height;
+            if (WindowState != FormWindowState.Minimized)
+            {
+                _config.FormWidth = Width;
+                _config.FormHeight = Height;
+            }
 
             try
             {
@@ -793,6 +821,14 @@ namespace ColorControl
 
                 lblError.Text = "Error while initializing the NVIDIA-wrapper. You either don't have a NVIDIA GPU or it is disabled. NVIDIA controls will not be available.";
                 lblError.Visible = true;
+            }
+
+            if (_amdService == null)
+            {
+                ShowControls(tabAMD, false, lblErrorAMD);
+
+                lblErrorAMD.Text = "Error while initializing the ADL-wrapper. You either don't have a AMD GPU or it is disabled. AMD controls will not be available.";
+                lblErrorAMD.Visible = true;
             }
 
             if (_lgService == null)
@@ -1842,6 +1878,16 @@ Do you want to continue?";
         private void MainForm_Activated(object sender, EventArgs e)
         {
             UpdateDisplayInfoItems();
+        }
+
+        private void btnClearLog_Click(object sender, EventArgs e)
+        {
+            var filename = Path.Combine(_dataDir, "LogFile.txt");
+            if (File.Exists(filename))
+            {
+                File.Delete(filename);
+                edtLog.Clear();
+            }
         }
     }
 }

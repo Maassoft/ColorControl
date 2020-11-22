@@ -12,6 +12,8 @@
 
         public int PowerOnDelayAfterResume { get; set; }
 
+        public string PreferredMacAddress { get; set; }
+
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;
