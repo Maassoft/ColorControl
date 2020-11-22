@@ -1419,7 +1419,7 @@ namespace ColorControl
                     var devices = _lgService.Devices;
                     if (devices == null || !devices.Any())
                     {
-                        _lgService.RefreshDevices(() => BeginInvoke(new Action(FillLgDevices)));
+                        _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(new Action(FillLgDevices)));
                     }
                     else
                     {

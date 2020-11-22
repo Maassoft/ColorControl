@@ -86,30 +86,26 @@ namespace ColorControl
             File.WriteAllText(_configFilename, json);
         }
 
-        public void RefreshDevices(Action callBack = null)
+        public async Task RefreshDevices(bool connect = true)
         {
-            Utils.GetPnpDevices(LgDeviceSearchKey).ContinueWith((task) =>
+            var devices = await Utils.GetPnpDevices(LgDeviceSearchKey);
+            SetDevices(devices);
+            if (connect && SelectedDevice != null)
             {
-                SetDevicesTask(task);
-                callBack?.Invoke();
-                if (callBack == null && SelectedDevice != null)
+                if (Config.PowerOnAfterStartup && _allowPowerOn)
                 {
-                    if (Config.PowerOnAfterStartup && _allowPowerOn)
-                    {
-                        WakeAndConnectToSelectedDevice(0);
-                    }
-                    else
-                    {
-                        ConnectToSelectedDevice();
-                    }
+                    WakeAndConnectToSelectedDevice(0);
+                }
+                else
+                {
+                    ConnectToSelectedDevice();
                 }
             }
-            );
         }
 
-        private void SetDevicesTask(Task<List<PnpDev>> task)
+        private void SetDevices(List<PnpDev> devices)
         {
-            Devices = task.Result;
+            Devices = devices;
             if (Devices?.Count > 0)
             {
                 var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress != null && x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];

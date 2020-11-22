@@ -12,6 +12,12 @@ namespace ColorControl
         [STAThread]
         static void Main(string[] args)
         {
+            var currentDomain = AppDomain.CurrentDomain;
+            // Handler for unhandled exceptions.
+            currentDomain.UnhandledException += GlobalUnhandledExceptionHandler;
+            // Handler for exceptions in threads behind forms.
+            Application.ThreadException += GlobalThreadExceptionHandler;
+
             var startUpParams = StartUpParams.Parse(args);
 
             if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
@@ -50,6 +56,18 @@ namespace ColorControl
                     mutex.Dispose();
                 }
             }
+        }
+
+        private static void GlobalUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = (Exception)e.ExceptionObject;
+            MessageBox.Show("Unhandled exception: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private static void GlobalThreadExceptionHandler(object sender, System.Threading.ThreadExceptionEventArgs e)
+        {
+            var ex = e.Exception;
+            MessageBox.Show("Exception in thread: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

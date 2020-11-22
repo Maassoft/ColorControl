@@ -38,6 +38,7 @@ namespace ColorControl
         };
 
         private Display _currentDisplay;
+        private bool _initialized = false;
 
         public NvService()
         {
@@ -193,11 +194,15 @@ namespace ColorControl
         protected override void Initialize()
         {
             NVIDIA.Initialize();
+            _initialized = true;
         }
 
         protected override void Uninitialize()
         {
-            NVIDIA.Unload();
+            if (_initialized)
+            {
+                NVIDIA.Unload();
+            }
         }
     }
 }
