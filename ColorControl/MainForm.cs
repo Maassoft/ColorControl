@@ -193,7 +193,7 @@ namespace ColorControl
 
             if (_lgService != null)
             {
-                SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
+                //SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
                 SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
             }
 

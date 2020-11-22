@@ -112,7 +112,7 @@ namespace ColorControl
             Devices = task.Result;
             if (Devices?.Count > 0)
             {
-                var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
+                var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress != null && x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
 
                 SelectedDevice = preferredDevice;
             }

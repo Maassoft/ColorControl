@@ -31,9 +31,16 @@ namespace ColorControl
                 }
                 else
                 {
-                    Application.EnableVisualStyles();
-                    Application.SetCompatibleTextRenderingDefault(false);
-                    Application.Run(new MainForm(startUpParams));
+                    try
+                    {
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        Application.Run(new MainForm(startUpParams));
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error while initializing application: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
             finally
