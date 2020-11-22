@@ -1,9 +1,6 @@
-﻿using ATI.ADL;
-using NvAPIWrapper.Display;
+﻿//using ATI.ADL;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace ColorControl
 {
@@ -81,7 +78,7 @@ namespace ColorControl
             var vertical = 2160;
             var display = GetCurrentDisplay();
 
-            ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
+            //ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
 
             return SetRefreshRateInternal(display, refreshRate, portrait, horizontal, vertical);
         }
@@ -98,7 +95,7 @@ namespace ColorControl
             var vertical = 2160;
             var display = GetCurrentDisplay();
 
-            ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
+            //ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
 
             return GetAvailableRefreshRatesInternal(display, portrait, horizontal, vertical);
         }
@@ -112,22 +109,24 @@ namespace ColorControl
             return false;
         }
 
-        public List<ADLDisplayInfo> GetDisplays()
+        public List<string> GetDisplays()
         {
-            return ADLWrapper.GetAllDisplays();
+            //return ADLWrapper.GetAllDisplays();
+            return null;
         }
 
         protected override void Initialize()
         {
-            if (!ADLWrapper.Initialize())
-            {
-                throw new InvalidOperationException("Cannot load AMD API");
-            }
+            //if (!ADLWrapper.Initialize())
+            //{
+            //    throw new InvalidOperationException("Cannot load AMD API");
+            //}
+            throw new InvalidOperationException("Cannot load AMD API");
         }
 
         protected override void Uninitialize()
         {
-            ADLWrapper.Uninitialze();
+            //ADLWrapper.Uninitialze();
         }
     }
 }

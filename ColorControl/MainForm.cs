@@ -134,15 +134,16 @@ namespace ColorControl
             _nvPresetsFilename = Path.Combine(_dataDir, "NvPresets.json");
             FillNvPresets();
 
-            try
-            {
-                _amdService = new AmdService();
-                lblErrorAMD.Text = "If you see this message, it means you have AMD graphics drivers installed. Unfortunately, this feature is not completed yet. If I get an AMD card I might finish it.";
-            }
-            catch (Exception)
-            {
-                tcMain.TabPages.Remove(tabAMD);
-            }
+            //try
+            //{
+            //    _amdService = new AmdService();
+            //    lblErrorAMD.Text = "If you see this message, it means you have AMD graphics drivers installed. Unfortunately, this feature is not completed yet. If I get an AMD card I might finish it.";
+            //}
+            //catch (Exception)
+            //{
+            //    tcMain.TabPages.Remove(tabAMD);
+            //}
+            tcMain.TabPages.Remove(tabAMD);
 
             _lgPresetsFilename = Path.Combine(_dataDir, "LgPresets.json");
             var toCopy = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
