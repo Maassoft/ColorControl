@@ -19,7 +19,10 @@ namespace ColorControl
         public static string ToLogString(this Exception exception, string environmentStackTrace = "")
         {
             List<string> environmentStackTraceLines = ExceptionExtensions.GetUserStackTraceLines(environmentStackTrace);
-            environmentStackTraceLines.RemoveAt(0);
+            if (environmentStackTraceLines.Any())
+            {
+                environmentStackTraceLines.RemoveAt(0);
+            }
 
             List<string> stackTraceLines = ExceptionExtensions.GetStackTraceLines(exception.StackTrace);
             stackTraceLines.AddRange(environmentStackTraceLines);
@@ -46,7 +49,7 @@ namespace ColorControl
         private static List<string> GetUserStackTraceLines(string fullStackTrace)
         {
             List<string> outputList = new List<string>();
-            Regex regex = new Regex(@"([^\)]*\)) in (.*):line (\d)*$");
+            Regex regex = new Regex(@"([^\)]*\)) in (.*):([A-z]*) (\d)*$");
 
             List<string> stackTraceLines = ExceptionExtensions.GetStackTraceLines(fullStackTrace);
             foreach (string stackTraceLine in stackTraceLines)
