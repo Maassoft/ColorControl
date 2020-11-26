@@ -675,7 +675,7 @@ namespace ColorControl
             {
                 Hide();
             }
-            else if (WindowState == FormWindowState.Normal)
+            else if (WindowState == FormWindowState.Normal && _config != null)
             {
                 _config.FormWidth = Width;
                 _config.FormHeight = Height;
