@@ -88,8 +88,14 @@ namespace ColorControl
             if (preset.applyColorData)
             {
                 var display = GetCurrentDisplay();
-                //var data = new ColorData(ColorDataFormat.YUV444, ColorDataColorimetry.YCC709, ColorDataDynamicRange.Auto, ColorDataDepth.BPC8, preset.colorData.SelectionPolicy, ColorDataDesktopDepth.Default);
-                display.DisplayDevice.SetColorData(preset.colorData);
+                //var data = new ColorData(ColorDataFormat.YUV444, ColorDataColorimetry.Auto, ColorDataDynamicRange.Auto, ColorDataDepth.BPC10, preset.colorData.SelectionPolicy, ColorDataDesktopDepth.Default);
+                try
+                {
+                    display.DisplayDevice.SetColorData(preset.colorData);
+                }
+                catch (Exception ex)
+                {
+                }
 
                 //var master = display.DisplayDevice.HDRColorData.MasteringDisplayData;
                 //var newMaster = new MasteringDisplayColorData(master.FirstColorCoordinate, master.SecondColorCoordinate, master.ThirdColorCoordinate, new ColorDataColorCoordinate(0.25f, 0.25f), 50, 0, 50, 50);

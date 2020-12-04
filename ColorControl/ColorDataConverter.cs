@@ -48,7 +48,7 @@ namespace ColorControl
             {
                 selectionPolicy = (ColorDataSelectionPolicy)Enum.ToObject(typeof(ColorDataSelectionPolicy), value);
             }
-            return new ColorData(format, dynamicRange: dynamicRange, colorimetry: colorimetry, colorDepth: colorDepth, colorSelectionPolicy: selectionPolicy);
+            return new ColorData(format, dynamicRange: dynamicRange, colorimetry: colorimetry, colorDepth: colorDepth, colorSelectionPolicy: selectionPolicy, desktopColorDepth: ColorDataDesktopDepth.Default);
         }
     }
 }

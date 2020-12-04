@@ -240,7 +240,7 @@ namespace ColorControl
                 }
                 else
                 {
-                    value = objValue.ToString();
+                    value = objValue?.ToString();
                 }
             }
 
@@ -272,7 +272,7 @@ namespace ColorControl
                         var ipAddress = GetDeviceProperty(dev2, "System.Devices.IpAddress");
                         var macAddress = GetDeviceProperty(dev2, PKEY_PNPX_PhysicalAddress);
 
-                        if (!devices.Any(x => x.Name.Equals(name) && x.IpAddress.Equals(ipAddress)))
+                        if (!devices.Any(x => x.Name.Equals(name) && x.IpAddress != null && x.IpAddress.Equals(ipAddress)))
                         {
                             var device = new PnpDev(dev, dev2, name, ipAddress, macAddress);
                             devices.Add(device);

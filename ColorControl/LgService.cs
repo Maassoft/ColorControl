@@ -18,8 +18,6 @@ namespace ColorControl
     {
         public static string LgListAppsJson = "listApps.json";
 
-        public static string LgDeviceSearchKey = "[LG]";
-
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public string FriendlyScreenName { get; private set; }
@@ -88,7 +86,7 @@ namespace ColorControl
 
         public async Task RefreshDevices(bool connect = true)
         {
-            var devices = await Utils.GetPnpDevices(LgDeviceSearchKey);
+            var devices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
             SetDevices(devices);
             if (connect && SelectedDevice != null)
             {

@@ -71,8 +71,8 @@
             this.btnDeleteLg = new System.Windows.Forms.Button();
             this.cbxLgApps = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.edtLgTvName = new System.Windows.Forms.TextBox();
+            this.lblDeviceFilter = new System.Windows.Forms.Label();
+            this.edtLgDeviceFilter = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.edtNameLg = new System.Windows.Forms.TextBox();
             this.edtStepsLg = new System.Windows.Forms.TextBox();
@@ -104,6 +104,7 @@
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             this.tabLog = new System.Windows.Forms.TabPage();
+            this.btnClearLog = new System.Windows.Forms.Button();
             this.edtLog = new System.Windows.Forms.TextBox();
             this.tabInfo = new System.Windows.Forms.TabPage();
             this.grpNVIDIAInfo = new System.Windows.Forms.GroupBox();
@@ -113,7 +114,7 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.btnClearLog = new System.Windows.Forms.Button();
+            this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -442,6 +443,7 @@
             // 
             // tabLG
             // 
+            this.tabLG.Controls.Add(this.btnLgDeviceFilterRefresh);
             this.tabLG.Controls.Add(this.clbLgPower);
             this.tabLG.Controls.Add(this.btnLgAddButton);
             this.tabLG.Controls.Add(this.label3);
@@ -451,8 +453,8 @@
             this.tabLG.Controls.Add(this.btnDeleteLg);
             this.tabLG.Controls.Add(this.cbxLgApps);
             this.tabLG.Controls.Add(this.label5);
-            this.tabLG.Controls.Add(this.label4);
-            this.tabLG.Controls.Add(this.edtLgTvName);
+            this.tabLG.Controls.Add(this.lblDeviceFilter);
+            this.tabLG.Controls.Add(this.edtLgDeviceFilter);
             this.tabLG.Controls.Add(this.label1);
             this.tabLG.Controls.Add(this.edtNameLg);
             this.tabLG.Controls.Add(this.edtStepsLg);
@@ -586,22 +588,22 @@
             this.label5.TabIndex = 25;
             this.label5.Text = "App:";
             // 
-            // label4
+            // lblDeviceFilter
             // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(466, 9);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(110, 13);
-            this.label4.TabIndex = 24;
-            this.label4.Text = "Friendly screen name:";
+            this.lblDeviceFilter.AutoSize = true;
+            this.lblDeviceFilter.Location = new System.Drawing.Point(374, 10);
+            this.lblDeviceFilter.Name = "lblDeviceFilter";
+            this.lblDeviceFilter.Size = new System.Drawing.Size(66, 13);
+            this.lblDeviceFilter.TabIndex = 24;
+            this.lblDeviceFilter.Text = "Device filter:";
             // 
-            // edtLgTvName
+            // edtLgDeviceFilter
             // 
-            this.edtLgTvName.Enabled = false;
-            this.edtLgTvName.Location = new System.Drawing.Point(579, 6);
-            this.edtLgTvName.Name = "edtLgTvName";
-            this.edtLgTvName.Size = new System.Drawing.Size(142, 20);
-            this.edtLgTvName.TabIndex = 23;
+            this.edtLgDeviceFilter.Location = new System.Drawing.Point(446, 6);
+            this.edtLgDeviceFilter.Name = "edtLgDeviceFilter";
+            this.edtLgDeviceFilter.Size = new System.Drawing.Size(142, 20);
+            this.edtLgDeviceFilter.TabIndex = 23;
+            this.edtLgDeviceFilter.TextChanged += new System.EventHandler(this.edtLgDeviceFilter_TextChanged);
             // 
             // label1
             // 
@@ -962,6 +964,16 @@
             this.tabLog.Text = "Log";
             this.tabLog.UseVisualStyleBackColor = true;
             // 
+            // btnClearLog
+            // 
+            this.btnClearLog.Location = new System.Drawing.Point(6, 6);
+            this.btnClearLog.Name = "btnClearLog";
+            this.btnClearLog.Size = new System.Drawing.Size(75, 23);
+            this.btnClearLog.TabIndex = 2;
+            this.btnClearLog.Text = "Clear log";
+            this.btnClearLog.UseVisualStyleBackColor = true;
+            this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
+            // 
             // edtLog
             // 
             this.edtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1061,15 +1073,15 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // btnClearLog
+            // btnLgDeviceFilterRefresh
             // 
-            this.btnClearLog.Location = new System.Drawing.Point(6, 6);
-            this.btnClearLog.Name = "btnClearLog";
-            this.btnClearLog.Size = new System.Drawing.Size(75, 23);
-            this.btnClearLog.TabIndex = 2;
-            this.btnClearLog.Text = "Clear log";
-            this.btnClearLog.UseVisualStyleBackColor = true;
-            this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
+            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(594, 5);
+            this.btnLgDeviceFilterRefresh.Name = "btnLgDeviceFilterRefresh";
+            this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(75, 23);
+            this.btnLgDeviceFilterRefresh.TabIndex = 35;
+            this.btnLgDeviceFilterRefresh.Text = "Refresh";
+            this.btnLgDeviceFilterRefresh.UseVisualStyleBackColor = true;
+            this.btnLgDeviceFilterRefresh.Click += new System.EventHandler(this.btnLgDeviceFilterRefresh_Click);
             // 
             // MainForm
             // 
@@ -1153,8 +1165,8 @@
         private System.Windows.Forms.TextBox edtNameLg;
         private System.Windows.Forms.Button btnNvPresetDelete;
         private System.Windows.Forms.Button btnAddModesNv;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox edtLgTvName;
+        private System.Windows.Forms.Label lblDeviceFilter;
+        private System.Windows.Forms.TextBox edtLgDeviceFilter;
         private System.Windows.Forms.ComboBox cbxLgApps;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ToolStripMenuItem miNvApply;
@@ -1203,6 +1215,7 @@
         private System.Windows.Forms.TabPage tabAMD;
         private System.Windows.Forms.Label lblErrorAMD;
         private System.Windows.Forms.Button btnClearLog;
+        private System.Windows.Forms.Button btnLgDeviceFilterRefresh;
     }
 }
 

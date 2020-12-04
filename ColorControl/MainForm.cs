@@ -172,6 +172,7 @@ namespace ColorControl
                 clbLgPower.SetItemChecked(2, _lgService.Config.PowerOffOnShutdown);
                 clbLgPower.SetItemChecked(3, _lgService.Config.PowerOffOnStandby);
                 edtLgPowerOnAfterResumeDelay.Value = _lgService.Config.PowerOnDelayAfterResume;
+                edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
             }
             catch (Exception e)
             {
@@ -1420,7 +1421,7 @@ namespace ColorControl
                     var devices = _lgService.Devices;
                     if (devices == null || !devices.Any())
                     {
-                        _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(new Action(FillLgDevices)));
+                        RefreshLgDevices();
                     }
                     else
                     {
@@ -1440,6 +1441,7 @@ namespace ColorControl
 
         private void FillLgDevices()
         {
+            cbxLgDevices.Items.Clear();
             var devices = _lgService.Devices;
             foreach (var device in devices)
             {
@@ -1458,7 +1460,6 @@ namespace ColorControl
             if (cbxLgApps.Items.Count == 0 && _lgService.SelectedDevice != null)
             {
                 _lgService.RefreshApps().ContinueWith((task) => BeginInvoke(new Action<Task<List<LgApp>>>(FillLgApps), new[] { task }));
-                edtLgTvName.Text = _lgService.FriendlyScreenName;
             }
         }
 
@@ -1889,6 +1890,24 @@ Do you want to continue?";
                 File.Delete(filename);
                 edtLog.Clear();
             }
+        }
+
+        private void edtLgDeviceFilter_TextChanged(object sender, EventArgs e)
+        {
+            if (_lgService != null)
+            {
+                _lgService.Config.DeviceSearchKey = edtLgDeviceFilter.Text;
+            }
+        }
+
+        private void btnLgDeviceFilterRefresh_Click(object sender, EventArgs e)
+        {
+            RefreshLgDevices();
+        }
+
+        private void RefreshLgDevices()
+        {
+            _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(new Action(FillLgDevices)));
         }
     }
 }

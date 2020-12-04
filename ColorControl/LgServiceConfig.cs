@@ -14,9 +14,12 @@
 
         public string PreferredMacAddress { get; set; }
 
+        public string DeviceSearchKey { get; set; }
+
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;
+            DeviceSearchKey = "[LG]";
         }
     }
 }
