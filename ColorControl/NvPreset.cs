@@ -19,6 +19,8 @@ namespace ColorControl
         public uint refreshRate { get; set; }
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
+        public uint ditheringBits { get; set; }
+        public uint ditheringMode { get; set; }
 
         public NvPreset()
         {
@@ -31,6 +33,8 @@ namespace ColorControl
             applyRefreshRate = false;
             refreshRate = 60;
             primaryDisplay = true;
+            ditheringBits = 1;
+            ditheringMode = 4;
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -83,7 +87,16 @@ namespace ColorControl
 
             values.Add(colorSettings);
             values.Add(string.Format("{0}: {1}Hz", applyRefreshRate ? "Included" : "Excluded", refreshRate));
-            values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", ditheringEnabled ? "Enabled" : "Disabled"));
+
+            var dithering = ditheringEnabled ? string.Empty : "Disabled";
+            if (ditheringEnabled)
+            {
+                var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
+                var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
+                dithering = string.Format("{0} {1}", ditherBitsDescription, ditherModeDescription);
+            }
+
+            values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", dithering));
             values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
 
             //values.Add(colorData.ColorDepth.ToString());
@@ -138,7 +151,14 @@ namespace ColorControl
             }
             if (applyDithering)
             {
-                sb.AppendFormat("Dithering: {0}", ditheringEnabled ? "Yes" : "No");
+                var dithering = ditheringEnabled ? string.Empty : "No";
+                sb.AppendFormat("Dithering: {0}", dithering);
+                if (ditheringEnabled)
+                {
+                    var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
+                    var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
+                    sb.AppendFormat("{0} {1}", ditherBitsDescription, ditherModeDescription);
+                }
                 sb.Append(" / ");
             }
             if (applyHDR)

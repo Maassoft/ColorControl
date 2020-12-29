@@ -52,6 +52,16 @@
             this.miNvPresetDithering = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetApplyDithering = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetDitheringEnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuNvDitheringBitDepth = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvDithering6bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvDithering8bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvDithering10bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuNvDitheringMode = new System.Windows.Forms.ToolStripMenuItem();
+            this.spatial1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spatial2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spatialDynamic2x2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spatialStatic2x2ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.temporalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvHDR = new System.Windows.Forms.ToolStripMenuItem();
             this.miHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miToggleHDR = new System.Windows.Forms.ToolStripMenuItem();
@@ -61,6 +71,7 @@
             this.tabAMD = new System.Windows.Forms.TabPage();
             this.lblErrorAMD = new System.Windows.Forms.Label();
             this.tabLG = new System.Windows.Forms.TabPage();
+            this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.btnLgAddButton = new System.Windows.Forms.Button();
             this.mnuLgButtons = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -85,6 +96,13 @@
             this.btnApplyLg = new System.Windows.Forms.Button();
             this.lvLgPresets = new System.Windows.Forms.ListView();
             this.tabOptions = new System.Windows.Forms.TabPage();
+            this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
+            this.lblDitheringMode = new System.Windows.Forms.Label();
+            this.cbxDitheringMode = new System.Windows.Forms.ComboBox();
+            this.lblDitheringBitDepth = new System.Windows.Forms.Label();
+            this.cbxDitheringBitDepth = new System.Windows.Forms.ComboBox();
+            this.chkDitheringEnabled = new System.Windows.Forms.CheckBox();
+            this.pbGradient = new System.Windows.Forms.PictureBox();
             this.grpMiscellaneousOptions = new System.Windows.Forms.GroupBox();
             this.btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
@@ -114,13 +132,14 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
             this.tabAMD.SuspendLayout();
             this.tabLG.SuspendLayout();
             this.tabOptions.SuspendLayout();
+            this.grpNvidiaOptions.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
             this.grpMiscellaneousOptions.SuspendLayout();
             this.grpLGOptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtLgPowerOnAfterResumeDelay)).BeginInit();
@@ -340,7 +359,9 @@
             // 
             this.miNvPresetDithering.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvPresetApplyDithering,
-            this.miNvPresetDitheringEnabled});
+            this.miNvPresetDitheringEnabled,
+            this.mnuNvDitheringBitDepth,
+            this.mnuNvDitheringMode});
             this.miNvPresetDithering.Name = "miNvPresetDithering";
             this.miNvPresetDithering.Size = new System.Drawing.Size(147, 22);
             this.miNvPresetDithering.Text = "Dithering";
@@ -348,16 +369,102 @@
             // miNvPresetApplyDithering
             // 
             this.miNvPresetApplyDithering.Name = "miNvPresetApplyDithering";
-            this.miNvPresetApplyDithering.Size = new System.Drawing.Size(120, 22);
+            this.miNvPresetApplyDithering.Size = new System.Drawing.Size(122, 22);
             this.miNvPresetApplyDithering.Text = "Included";
             this.miNvPresetApplyDithering.Click += new System.EventHandler(this.miNvPresetApplyDithering_Click);
             // 
             // miNvPresetDitheringEnabled
             // 
             this.miNvPresetDitheringEnabled.Name = "miNvPresetDitheringEnabled";
-            this.miNvPresetDitheringEnabled.Size = new System.Drawing.Size(120, 22);
+            this.miNvPresetDitheringEnabled.Size = new System.Drawing.Size(122, 22);
             this.miNvPresetDitheringEnabled.Text = "Enabled";
             this.miNvPresetDitheringEnabled.Click += new System.EventHandler(this.miNvPresetDitheringEnabled_Click);
+            // 
+            // mnuNvDitheringBitDepth
+            // 
+            this.mnuNvDitheringBitDepth.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miNvDithering6bit,
+            this.miNvDithering8bit,
+            this.miNvDithering10bit});
+            this.mnuNvDitheringBitDepth.Name = "mnuNvDitheringBitDepth";
+            this.mnuNvDitheringBitDepth.Size = new System.Drawing.Size(122, 22);
+            this.mnuNvDitheringBitDepth.Text = "Bit depth";
+            // 
+            // miNvDithering6bit
+            // 
+            this.miNvDithering6bit.Name = "miNvDithering6bit";
+            this.miNvDithering6bit.Size = new System.Drawing.Size(105, 22);
+            this.miNvDithering6bit.Tag = "0";
+            this.miNvDithering6bit.Text = "6-bit";
+            this.miNvDithering6bit.Click += new System.EventHandler(this.miNvDithering6bit_Click);
+            // 
+            // miNvDithering8bit
+            // 
+            this.miNvDithering8bit.Name = "miNvDithering8bit";
+            this.miNvDithering8bit.Size = new System.Drawing.Size(105, 22);
+            this.miNvDithering8bit.Tag = "1";
+            this.miNvDithering8bit.Text = "8-bit";
+            this.miNvDithering8bit.Click += new System.EventHandler(this.miNvDithering6bit_Click);
+            // 
+            // miNvDithering10bit
+            // 
+            this.miNvDithering10bit.Name = "miNvDithering10bit";
+            this.miNvDithering10bit.Size = new System.Drawing.Size(105, 22);
+            this.miNvDithering10bit.Tag = "2";
+            this.miNvDithering10bit.Text = "10-bit";
+            this.miNvDithering10bit.Click += new System.EventHandler(this.miNvDithering6bit_Click);
+            // 
+            // mnuNvDitheringMode
+            // 
+            this.mnuNvDitheringMode.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.spatial1ToolStripMenuItem,
+            this.spatial2ToolStripMenuItem,
+            this.spatialDynamic2x2ToolStripMenuItem,
+            this.spatialStatic2x2ToolStripMenuItem,
+            this.temporalToolStripMenuItem});
+            this.mnuNvDitheringMode.Name = "mnuNvDitheringMode";
+            this.mnuNvDitheringMode.Size = new System.Drawing.Size(122, 22);
+            this.mnuNvDitheringMode.Text = "Mode";
+            // 
+            // spatial1ToolStripMenuItem
+            // 
+            this.spatial1ToolStripMenuItem.Name = "spatial1ToolStripMenuItem";
+            this.spatial1ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.spatial1ToolStripMenuItem.Tag = "0";
+            this.spatial1ToolStripMenuItem.Text = "Spatial Dynamic";
+            this.spatial1ToolStripMenuItem.Click += new System.EventHandler(this.spatial1ToolStripMenuItem_Click);
+            // 
+            // spatial2ToolStripMenuItem
+            // 
+            this.spatial2ToolStripMenuItem.Name = "spatial2ToolStripMenuItem";
+            this.spatial2ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.spatial2ToolStripMenuItem.Tag = "1";
+            this.spatial2ToolStripMenuItem.Text = "Spatial Static";
+            this.spatial2ToolStripMenuItem.Click += new System.EventHandler(this.spatial1ToolStripMenuItem_Click);
+            // 
+            // spatialDynamic2x2ToolStripMenuItem
+            // 
+            this.spatialDynamic2x2ToolStripMenuItem.Name = "spatialDynamic2x2ToolStripMenuItem";
+            this.spatialDynamic2x2ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.spatialDynamic2x2ToolStripMenuItem.Tag = "2";
+            this.spatialDynamic2x2ToolStripMenuItem.Text = "Spatial Dynamic 2x2";
+            this.spatialDynamic2x2ToolStripMenuItem.Click += new System.EventHandler(this.spatial1ToolStripMenuItem_Click);
+            // 
+            // spatialStatic2x2ToolStripMenuItem
+            // 
+            this.spatialStatic2x2ToolStripMenuItem.Name = "spatialStatic2x2ToolStripMenuItem";
+            this.spatialStatic2x2ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.spatialStatic2x2ToolStripMenuItem.Tag = "3";
+            this.spatialStatic2x2ToolStripMenuItem.Text = "Spatial Static 2x2";
+            this.spatialStatic2x2ToolStripMenuItem.Click += new System.EventHandler(this.spatial1ToolStripMenuItem_Click);
+            // 
+            // temporalToolStripMenuItem
+            // 
+            this.temporalToolStripMenuItem.Name = "temporalToolStripMenuItem";
+            this.temporalToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.temporalToolStripMenuItem.Tag = "4";
+            this.temporalToolStripMenuItem.Text = "Temporal";
+            this.temporalToolStripMenuItem.Click += new System.EventHandler(this.spatial1ToolStripMenuItem_Click);
             // 
             // miNvHDR
             // 
@@ -473,6 +580,16 @@
             this.tabLG.TabIndex = 1;
             this.tabLG.Text = "LG controller";
             this.tabLG.UseVisualStyleBackColor = true;
+            // 
+            // btnLgDeviceFilterRefresh
+            // 
+            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(594, 5);
+            this.btnLgDeviceFilterRefresh.Name = "btnLgDeviceFilterRefresh";
+            this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(75, 23);
+            this.btnLgDeviceFilterRefresh.TabIndex = 35;
+            this.btnLgDeviceFilterRefresh.Text = "Refresh";
+            this.btnLgDeviceFilterRefresh.UseVisualStyleBackColor = true;
+            this.btnLgDeviceFilterRefresh.Click += new System.EventHandler(this.btnLgDeviceFilterRefresh_Click);
             // 
             // clbLgPower
             // 
@@ -732,6 +849,7 @@
             // 
             // tabOptions
             // 
+            this.tabOptions.Controls.Add(this.grpNvidiaOptions);
             this.tabOptions.Controls.Add(this.grpMiscellaneousOptions);
             this.tabOptions.Controls.Add(this.grpLGOptions);
             this.tabOptions.Controls.Add(this.grpHDROptions);
@@ -743,6 +861,88 @@
             this.tabOptions.TabIndex = 2;
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
+            // 
+            // grpNvidiaOptions
+            // 
+            this.grpNvidiaOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.grpNvidiaOptions.Controls.Add(this.lblDitheringMode);
+            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringMode);
+            this.grpNvidiaOptions.Controls.Add(this.lblDitheringBitDepth);
+            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringBitDepth);
+            this.grpNvidiaOptions.Controls.Add(this.chkDitheringEnabled);
+            this.grpNvidiaOptions.Controls.Add(this.pbGradient);
+            this.grpNvidiaOptions.Location = new System.Drawing.Point(412, 6);
+            this.grpNvidiaOptions.Name = "grpNvidiaOptions";
+            this.grpNvidiaOptions.Size = new System.Drawing.Size(400, 297);
+            this.grpNvidiaOptions.TabIndex = 6;
+            this.grpNvidiaOptions.TabStop = false;
+            this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
+            // 
+            // lblDitheringMode
+            // 
+            this.lblDitheringMode.AutoSize = true;
+            this.lblDitheringMode.Location = new System.Drawing.Point(6, 70);
+            this.lblDitheringMode.Name = "lblDitheringMode";
+            this.lblDitheringMode.Size = new System.Drawing.Size(37, 13);
+            this.lblDitheringMode.TabIndex = 7;
+            this.lblDitheringMode.Text = "Mode:";
+            // 
+            // cbxDitheringMode
+            // 
+            this.cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxDitheringMode.FormattingEnabled = true;
+            this.cbxDitheringMode.Location = new System.Drawing.Point(64, 65);
+            this.cbxDitheringMode.Name = "cbxDitheringMode";
+            this.cbxDitheringMode.Size = new System.Drawing.Size(117, 21);
+            this.cbxDitheringMode.TabIndex = 6;
+            this.cbxDitheringMode.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringMode_SelectedIndexChanged);
+            // 
+            // lblDitheringBitDepth
+            // 
+            this.lblDitheringBitDepth.AutoSize = true;
+            this.lblDitheringBitDepth.Location = new System.Drawing.Point(6, 43);
+            this.lblDitheringBitDepth.Name = "lblDitheringBitDepth";
+            this.lblDitheringBitDepth.Size = new System.Drawing.Size(52, 13);
+            this.lblDitheringBitDepth.TabIndex = 5;
+            this.lblDitheringBitDepth.Text = "Bit-depth:";
+            // 
+            // cbxDitheringBitDepth
+            // 
+            this.cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxDitheringBitDepth.FormattingEnabled = true;
+            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(64, 38);
+            this.cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
+            this.cbxDitheringBitDepth.Size = new System.Drawing.Size(117, 21);
+            this.cbxDitheringBitDepth.TabIndex = 4;
+            this.cbxDitheringBitDepth.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringBitDepth_SelectedIndexChanged);
+            // 
+            // chkDitheringEnabled
+            // 
+            this.chkDitheringEnabled.AutoSize = true;
+            this.chkDitheringEnabled.Checked = true;
+            this.chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkDitheringEnabled.Location = new System.Drawing.Point(6, 19);
+            this.chkDitheringEnabled.Name = "chkDitheringEnabled";
+            this.chkDitheringEnabled.Size = new System.Drawing.Size(109, 17);
+            this.chkDitheringEnabled.TabIndex = 3;
+            this.chkDitheringEnabled.Text = "Dithering enabled";
+            this.chkDitheringEnabled.UseVisualStyleBackColor = true;
+            this.chkDitheringEnabled.CheckedChanged += new System.EventHandler(this.chkDitheringEnabled_CheckedChanged);
+            // 
+            // pbGradient
+            // 
+            this.pbGradient.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pbGradient.Location = new System.Drawing.Point(6, 92);
+            this.pbGradient.Name = "pbGradient";
+            this.pbGradient.Size = new System.Drawing.Size(388, 198);
+            this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pbGradient.TabIndex = 0;
+            this.pbGradient.TabStop = false;
             // 
             // grpMiscellaneousOptions
             // 
@@ -1073,16 +1273,6 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // btnLgDeviceFilterRefresh
-            // 
-            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(594, 5);
-            this.btnLgDeviceFilterRefresh.Name = "btnLgDeviceFilterRefresh";
-            this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(75, 23);
-            this.btnLgDeviceFilterRefresh.TabIndex = 35;
-            this.btnLgDeviceFilterRefresh.Text = "Refresh";
-            this.btnLgDeviceFilterRefresh.UseVisualStyleBackColor = true;
-            this.btnLgDeviceFilterRefresh.Click += new System.EventHandler(this.btnLgDeviceFilterRefresh_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1109,6 +1299,9 @@
             this.tabLG.ResumeLayout(false);
             this.tabLG.PerformLayout();
             this.tabOptions.ResumeLayout(false);
+            this.grpNvidiaOptions.ResumeLayout(false);
+            this.grpNvidiaOptions.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).EndInit();
             this.grpMiscellaneousOptions.ResumeLayout(false);
             this.grpMiscellaneousOptions.PerformLayout();
             this.grpLGOptions.ResumeLayout(false);
@@ -1216,6 +1409,23 @@
         private System.Windows.Forms.Label lblErrorAMD;
         private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.Button btnLgDeviceFilterRefresh;
+        private System.Windows.Forms.GroupBox grpNvidiaOptions;
+        private System.Windows.Forms.PictureBox pbGradient;
+        private System.Windows.Forms.Label lblDitheringMode;
+        private System.Windows.Forms.ComboBox cbxDitheringMode;
+        private System.Windows.Forms.Label lblDitheringBitDepth;
+        private System.Windows.Forms.ComboBox cbxDitheringBitDepth;
+        private System.Windows.Forms.CheckBox chkDitheringEnabled;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvDitheringBitDepth;
+        private System.Windows.Forms.ToolStripMenuItem miNvDithering6bit;
+        private System.Windows.Forms.ToolStripMenuItem miNvDithering8bit;
+        private System.Windows.Forms.ToolStripMenuItem miNvDithering10bit;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvDitheringMode;
+        private System.Windows.Forms.ToolStripMenuItem spatial1ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem spatial2ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem spatialDynamic2x2ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem spatialStatic2x2ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
     }
 }
 

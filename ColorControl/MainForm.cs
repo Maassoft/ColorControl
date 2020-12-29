@@ -1029,6 +1029,21 @@ namespace ColorControl
                 miNvPresetApplyDithering.Checked = preset.applyDithering;
                 miNvPresetDitheringEnabled.Checked = preset.ditheringEnabled;
 
+                foreach (var item in mnuNvDitheringBitDepth.DropDownItems.OfType<ToolStripMenuItem>())
+                {
+                    if (item.Tag != null)
+                    {
+                        item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringBits;
+                    }
+                }
+                foreach (var item in mnuNvDitheringMode.DropDownItems.OfType<ToolStripMenuItem>())
+                {
+                    if (item.Tag != null)
+                    {
+                        item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringMode;
+                    }
+                }
+
                 miHDRIncluded.Checked = preset.applyHDR;
                 miHDREnabled.Checked = preset.HDREnabled;
                 miToggleHDR.Checked = preset.toggleHDR;
@@ -1436,6 +1451,25 @@ namespace ColorControl
             else if (tcMain.SelectedTab == tabInfo)
             {
                 LoadInfo();
+            }
+            else if (tcMain.SelectedTab == tabOptions)
+            {
+                grpNvidiaOptions.Visible = _nvService != null;
+                if (grpNvidiaOptions.Visible)
+                {
+                    if (cbxDitheringBitDepth.Items.Count == 0)
+                    {
+                        cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
+                        cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
+                    }
+
+
+                    var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
+                    chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
+                    cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? 1);
+                    cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? 4);
+                    FillGradient();
+                }
             }
         }
 
@@ -1908,6 +1942,60 @@ Do you want to continue?";
         private void RefreshLgDevices()
         {
             _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(new Action(FillLgDevices)));
+        }
+
+        private void FillGradient()
+        {
+            if (pbGradient.Image == null)
+            {
+                pbGradient.Image = Utils.GenerateGradientBitmap(pbGradient.Width, pbGradient.Height);
+            }
+        }
+
+        private void chkDitheringEnabled_CheckedChanged(object sender, EventArgs e)
+        {
+            ApplyDitheringOptions();
+        }
+
+        private void ApplyDitheringOptions()
+        {
+            var bitDepth = cbxDitheringBitDepth.SelectedIndex;
+            var mode = cbxDitheringMode.SelectedIndex;
+
+            _nvService.SetDithering(chkDitheringEnabled.Checked, (uint)bitDepth, (uint)mode);
+        }
+
+        private void cbxDitheringBitDepth_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyDitheringOptions();
+        }
+
+        private void cbxDitheringMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyDitheringOptions();
+        }
+
+        private void miNvDithering6bit_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripMenuItem;
+
+            var preset = GetSelectedNvPreset();
+
+            preset.ditheringBits = uint.Parse(item.Tag.ToString());
+
+            AddOrUpdateItem();
+        }
+
+        private void spatial1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripMenuItem;
+
+            var preset = GetSelectedNvPreset();
+
+            preset.ditheringBits = uint.Parse(item.Tag.ToString());
+
+            AddOrUpdateItem();
+
         }
     }
 }

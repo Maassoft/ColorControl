@@ -1,8 +1,10 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -14,7 +16,7 @@ using Windows.Devices.Enumeration.Pnp;
 
 namespace ColorControl
 {
-    class Utils
+    static class Utils
     {
         [Flags]
         public enum ModKeys : int
@@ -188,6 +190,21 @@ namespace ColorControl
             return key != null;
         }
 
+        internal static void GetRegistryKeyValue(string keyname, string valueName, bool deepSearch = false)
+        {
+            var key = Registry.LocalMachine.OpenSubKey(keyname);
+            
+            foreach (var subKeyName in key.GetSubKeyNames())
+            {
+                var subKey = key.OpenSubKey(subKeyName);
+                if (subKey.GetValueNames().Contains(valueName))
+                {
+                    Thread.Sleep(0);
+                }
+            }
+
+        }
+
         internal static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
         {
             if (File.Exists(path))
@@ -301,6 +318,61 @@ namespace ColorControl
             t.GetField("text", hidden).SetValue(ni, text);
             if ((bool)t.GetField("added", hidden).GetValue(ni))
                 t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
+        }
+
+        internal static Image GenerateGradientBitmap(int width, int height)
+        {
+            var bitmap = new Bitmap(512, height);
+
+            for (var i = 0; i < 256; i++)
+            {
+                var pixel = Color.FromArgb(i, i, i);
+
+                for (var h = 0; h < height; h++)
+                {
+                    bitmap.SetPixel(i * 2, h, pixel);
+                    bitmap.SetPixel(i * 2 + 1, h, pixel);
+                }
+            }
+
+            return bitmap;
+        }
+
+        public static string GetDescription<T>(this T e) where T : IConvertible
+        {
+            if (e is Enum)
+            {
+                var type = e.GetType();
+                var values = Enum.GetValues(type);
+
+                foreach (int val in values)
+                {
+                    if (val == e.ToInt32(CultureInfo.InvariantCulture))
+                    {
+                        var memInfo = type.GetMember(type.GetEnumName(val));
+                        var descriptionAttribute = memInfo[0]
+                            .GetCustomAttributes(typeof(DescriptionAttribute), false)
+                            .FirstOrDefault() as DescriptionAttribute;
+
+                        if (descriptionAttribute != null)
+                        {
+                            return descriptionAttribute.Description;
+                        }
+                    }
+                }
+            }
+
+            return null; // could also return string.Empty
+        }
+
+        public static List<string> GetDescriptions<T>() where T : IConvertible
+        {
+            var list = new List<string>();
+            foreach (var enumValue in Enum.GetValues(typeof(T)))
+            {
+                list.Add(((T)enumValue).GetDescription());
+            }
+            return list;
         }
     }
 }

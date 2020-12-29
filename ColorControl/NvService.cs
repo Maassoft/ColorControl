@@ -1,14 +1,40 @@
 ﻿using NvAPIWrapper;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
+using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace ColorControl
 {
+    enum NvDitherBits
+    {
+        [Description("6-bit")]
+        Bits6 = 0,
+        [Description("8-bit")]
+        Bits8 = 1,
+        [Description("10-bit")]
+        Bits10 = 2
+    }
+
+    enum NvDitherMode
+    {
+        [Description("Spatial Dynamic")]
+        SpatialDynamic = 0,
+        [Description("Spatial Static")]
+        SpatialStatic = 1,
+        [Description("Spatial Dynamic 2x2")]
+        SpatialDynamic2x2 = 2,
+        [Description("Spatial Static 2x2")]
+        SpatialStatic2x2 = 3,
+        [Description("Temporal")]
+        Temporal = 4
+    }
+
     class NvService : GraphicsService
     {
         [DllImport(@"nvapi64", EntryPoint = @"nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl,
@@ -26,9 +52,9 @@ namespace ColorControl
         public delegate long NvAPI_Disp_GetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
             [In] uint OutputId,
-            [In][Out] IntPtr ditherControl);
+            [In] IntPtr ditherControl);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct NV_GPU_DITHER_CONTROL_V1
         {
             public int version;
@@ -39,6 +65,7 @@ namespace ColorControl
 
         private Display _currentDisplay;
         private bool _initialized = false;
+        private NvPreset _lastAppliedPreset;
 
         public NvService()
         {
@@ -72,12 +99,45 @@ namespace ColorControl
         {
             SetCurrentDisplay(preset);
 
-            if (preset.applyHDR)
+            var hdrEnabled = IsHDREnabled();
+
+            var newHdrEnabled = preset.applyHDR && (preset.HDREnabled || (preset.toggleHDR && !hdrEnabled));
+            var applyHdr = preset.applyHDR && (preset.toggleHDR || preset.HDREnabled != hdrEnabled);
+
+            if (preset.applyColorData && ColorDataDiffers(preset.colorData))
             {
-                if (preset.toggleHDR || preset.HDREnabled != IsHDREnabled())
+                var display = GetCurrentDisplay();
+                if (hdrEnabled)
                 {
-                    ToggleHDR(config.DisplaySettingsDelay);
+                    SetHDRState(display, false);
+
+                    applyHdr = false;
                 }
+
+                try
+                {
+                    display.DisplayDevice.SetColorData(preset.colorData);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"SetColorData threw an exception: {ex.Message}");
+                }
+
+                if (hdrEnabled && newHdrEnabled)
+                {
+                    SetHDRState(display, true);
+
+                    applyHdr = false;
+                }
+            }
+
+            if (applyHdr)
+            {
+                var display = GetCurrentDisplay();
+
+                var colorData = preset.applyColorData ? preset.colorData : display.DisplayDevice.CurrentColorData;
+
+                SetHDRState(display, newHdrEnabled, colorData);
             }
 
             if (preset.applyRefreshRate)
@@ -85,33 +145,42 @@ namespace ColorControl
                 SetRefreshRate(preset.refreshRate);
             }
 
-            if (preset.applyColorData)
-            {
-                var display = GetCurrentDisplay();
-                //var data = new ColorData(ColorDataFormat.YUV444, ColorDataColorimetry.Auto, ColorDataDynamicRange.Auto, ColorDataDepth.BPC10, preset.colorData.SelectionPolicy, ColorDataDesktopDepth.Default);
-                try
-                {
-                    display.DisplayDevice.SetColorData(preset.colorData);
-                }
-                catch (Exception ex)
-                {
-                }
-
-                //var master = display.DisplayDevice.HDRColorData.MasteringDisplayData;
-                //var newMaster = new MasteringDisplayColorData(master.FirstColorCoordinate, master.SecondColorCoordinate, master.ThirdColorCoordinate, new ColorDataColorCoordinate(0.25f, 0.25f), 50, 0, 50, 50);
-                //var hdr = new HDRColorData(ColorDataHDRMode.UHDA, newMaster, ColorDataFormat.YUV444, ColorDataDynamicRange.Auto, ColorDataDepth.BPC8);
-                //display.DisplayDevice.SetHDRColorData(hdr);
-            }
-
             if (preset.applyDithering)
             {
-                SetDithering(preset.ditheringEnabled);
+                SetDithering(preset.ditheringEnabled, preset: preset);
             }
+
+            _lastAppliedPreset = preset;
 
             return true;
         }
 
-        public void SetDithering(bool enabled)
+        private bool ColorDataDiffers(ColorData colorData)
+        {
+            var display = GetCurrentDisplay();
+
+            var currentColorData = display.DisplayDevice.CurrentColorData;
+
+            var settingRange = colorData.DynamicRange == ColorDataDynamicRange.Auto ? colorData.ColorFormat == ColorDataFormat.RGB ? ColorDataDynamicRange.VESA : ColorDataDynamicRange.CEA : colorData.DynamicRange;
+
+            return colorData.ColorFormat != currentColorData.ColorFormat || colorData.ColorDepth != currentColorData.ColorDepth || settingRange != currentColorData.DynamicRange;
+        }
+
+        private void SetHDRState(Display display, bool enabled, ColorData colorData = null)
+        {
+            var newMaster = new MasteringDisplayColorData();
+            var hdr = new HDRColorData(enabled ? ColorDataHDRMode.UHDA : ColorDataHDRMode.Off, newMaster, colorData?.ColorFormat, colorData?.DynamicRange, colorData?.ColorDepth);
+
+            display.DisplayDevice.SetHDRColorData(hdr);
+
+            // HDR will not always be disabled this way, then we can only disable it through the display settings
+            if (!enabled && IsHDREnabled())
+            {
+                ToggleHDR();
+            }
+        }
+
+        public void SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)
         {
             var ptr = NvAPI64_QueryInterface(0xDF0DFCDD);
             if (ptr != IntPtr.Zero)
@@ -123,7 +192,13 @@ namespace ColorControl
                 var gpuHandle = displayDevice.PhysicalGPU.Handle;
                 var displayId = displayDevice.DisplayId;
 
-                var result = delegateValue(gpuHandle, displayId, (uint)(enabled ? 1 : 2), 1, 4);
+                if (preset != null)
+                {
+                    bits = preset.ditheringBits;
+                    mode = preset.ditheringMode;
+                }
+
+                var result = delegateValue(gpuHandle, displayId, (uint)(enabled ? 1 : 2), bits, mode);
                 if (result != 0)
                 {
                     Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {result}");
@@ -133,6 +208,10 @@ namespace ColorControl
 
         public bool GetDithering()
         {
+            // Requires elevation, too bad :(
+            // Utils.GetRegistryKeyValue(@"SYSTEM\CurrentControlSet\Services\nvlddmkm\State\DisplayDatabase", "DitherRegistryKey");
+
+            /*
             var ptr = NvAPI64_QueryInterface(0x932AC8FB);
             if (ptr != IntPtr.Zero)
             {
@@ -145,7 +224,8 @@ namespace ColorControl
 
                 NV_GPU_DITHER_CONTROL_V1 info = new NV_GPU_DITHER_CONTROL_V1();
                 info.version = 1;
-                IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(info.GetType()));
+                var size = Marshal.SizeOf(info.GetType());
+                IntPtr bla = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(info, bla, false);
 
                 // Does not work yet...What is the exact interface of NvAPI_Disp_GetDitherControl?
@@ -158,15 +238,21 @@ namespace ColorControl
 
                 return info.state == 1;
             }
-
+            */
             return false;
         }
 
         public bool SetRefreshRate(uint refreshRate)
         {
             var display = GetCurrentDisplay();
-            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
             var timing = display.DisplayDevice.CurrentTiming;
+
+            if (timing.Extra.RefreshRate == refreshRate)
+            {
+                return true;
+            }
+
+            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
 
             return SetRefreshRateInternal(display.Name, refreshRate, portrait, timing.HorizontalVisible, timing.VerticalVisible);
         }
@@ -195,6 +281,11 @@ namespace ColorControl
         public Display[] GetDisplays()
         {
             return Display.GetDisplays();
+        }
+
+        public NvPreset GetLastAppliedPreset()
+        {
+            return _lastAppliedPreset;
         }
 
         protected override void Initialize()
