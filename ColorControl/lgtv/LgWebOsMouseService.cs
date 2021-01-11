@@ -1,5 +1,4 @@
-﻿using NStandard;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace LgTv
@@ -28,7 +27,13 @@ namespace LgTv
         _8,
         _9,
         _0,
-        POWER
+        POWER,
+        VOLUMEUP,
+        VOLUMEDOWN,
+        MUTE,
+        MENU,
+        CC,
+        DASH
     }
 
     public class LgWebOsMouseService : IDisposable

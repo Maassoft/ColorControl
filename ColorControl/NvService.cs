@@ -178,6 +178,11 @@ namespace ColorControl
             {
                 ToggleHDR();
             }
+            else if (enabled)
+            {
+                // Currectly there seems to be a bug that after enabling HDR via NVAPI, some settings are only applied upon opening the Display Settings...
+                OpenDisplaySettings();
+            }
         }
 
         public void SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)

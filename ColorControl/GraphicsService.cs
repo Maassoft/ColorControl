@@ -48,6 +48,18 @@ namespace ColorControl
             }
         }
 
+        protected void OpenDisplaySettings(int delay = 1000)
+        {
+            Process.Start("ms-settings:display");
+            Thread.Sleep(delay);
+
+            var process = Process.GetProcessesByName("SystemSettings").FirstOrDefault();
+            if (process != null)
+            {
+                System.Windows.Forms.SendKeys.SendWait("%{F4}");
+            }
+        }
+
         protected bool SetRefreshRateInternal(string displayName, uint refreshRate, bool portrait, int horizontal, int vertical)
         {
             uint i = 0;

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Windows.Data.Json;
 
@@ -41,12 +42,16 @@ namespace ColorControl
         private bool _allowPowerOn;
         private bool _justWokeUp;
         private PnpDev _selectedDevice;
+        private string _rcButtonsFilename;
+        private List<LgPreset> _remoteControlButtons;
+        private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
 
         public LgService(string dataDir, bool allowPowerOn)
         {
             _dataDir = dataDir;
             _allowPowerOn = allowPowerOn;
             LoadConfig();
+            LoadRemoteControlButtons();
 
             foreach (var screen in Screen.AllScreens)
             {
@@ -63,6 +68,7 @@ namespace ColorControl
         ~LgService()
         {
             SaveConfig();
+            SaveRemoteControlButtons();
         }
 
         private void LoadConfig()
@@ -78,10 +84,82 @@ namespace ColorControl
             }
         }
 
+        private void LoadRemoteControlButtons()
+        {
+            var defaultButtons = GenerateDefaultRemoteControlButtons();
+
+            _rcButtonsFilename = Path.Combine(_dataDir, "LgRemoteControlButtons.json");
+            if (File.Exists(_rcButtonsFilename))
+            {
+                var json = File.ReadAllText(_rcButtonsFilename);
+
+                _remoteControlButtons = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
+
+                var missingButtons = defaultButtons.Where(b => !_remoteControlButtons.Any(x => x.name.Equals(b.name)));
+                _remoteControlButtons.AddRange(missingButtons);
+            }
+            else
+            {
+                _remoteControlButtons = defaultButtons;
+            }
+        }
+
+        public List<LgPreset> GetRemoteControlButtons()
+        {
+            return _remoteControlButtons;
+        }
+
+        private List<LgPreset> GenerateDefaultRemoteControlButtons()
+        {
+            var list = new List<LgPreset>();
+
+            for (var i = 1; i < 11; i++)
+            {
+                var button = i < 10 ? i : 0;
+                list.Add(GeneratePreset(button.ToString()));
+            }
+
+            list.Add(GeneratePreset("Settings", appId: "com.palm.app.settings"));
+
+            list.Add(GeneratePreset("Vol +", step: "VOLUMEUP"));
+            list.Add(GeneratePreset("Vol -", step: "VOLUMEDOWN"));
+            list.Add(GeneratePreset("Mute", step: "MUTE"));
+
+            list.Add(GeneratePreset("Up", step: "UP"));
+            list.Add(GeneratePreset("Down", step: "DOWN"));
+            list.Add(GeneratePreset("Left", step: "LEFT"));
+            list.Add(GeneratePreset("Right", step: "RIGHT"));
+
+            list.Add(GeneratePreset("Enter", step: "ENTER"));
+            list.Add(GeneratePreset("Exit", step: "EXIT"));
+
+            return list;
+        }
+
+        private LgPreset GeneratePreset(string name, string step = null, string appId = null)
+        {
+            var preset = new LgPreset();
+
+            preset.name = name;
+            preset.appId = appId;
+            if (appId == null)
+            {
+                preset.steps.Add(step == null ? name : step);
+            }
+
+            return preset;
+        }
+
         public void SaveConfig()
         {
             var json = JsonConvert.SerializeObject(Config);
             File.WriteAllText(_configFilename, json);
+        }
+
+        public void SaveRemoteControlButtons()
+        {
+            var json = JsonConvert.SerializeObject(_remoteControlButtons);
+            File.WriteAllText(_rcButtonsFilename, json);
         }
 
         public async Task RefreshDevices(bool connect = true)

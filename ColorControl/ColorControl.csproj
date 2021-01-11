@@ -27,7 +27,7 @@
     <ProductName>ColorControl</ProductName>
     <PublisherName>Maassoft</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.3.6.0</ApplicationVersion>
+    <ApplicationVersion>1.4.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -175,6 +175,12 @@
     <Compile Include="GraphicsService.cs" />
     <Compile Include="AmdService.cs" />
     <Compile Include="AmdPreset.cs" />
+    <Compile Include="RemoteControlForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RemoteControlForm.Designer.cs">
+      <DependentUpon>RemoteControlForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="StartUpParams.cs" />
     <Compile Include="LgServiceConfig.cs" />
     <Compile Include="WOL.cs" />
@@ -223,6 +229,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="RemoteControlForm.resx">
+      <DependentUpon>RemoteControlForm.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="ColorControl_TemporaryKey.pfx" />
     <Content Include="LgPresets.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

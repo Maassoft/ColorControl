@@ -71,6 +71,7 @@
             this.tabAMD = new System.Windows.Forms.TabPage();
             this.lblErrorAMD = new System.Windows.Forms.Label();
             this.tabLG = new System.Windows.Forms.TabPage();
+            this.btnLGRemoteControl = new System.Windows.Forms.Button();
             this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.btnLgAddButton = new System.Windows.Forms.Button();
@@ -550,6 +551,7 @@
             // 
             // tabLG
             // 
+            this.tabLG.Controls.Add(this.btnLGRemoteControl);
             this.tabLG.Controls.Add(this.btnLgDeviceFilterRefresh);
             this.tabLG.Controls.Add(this.clbLgPower);
             this.tabLG.Controls.Add(this.btnLgAddButton);
@@ -580,6 +582,16 @@
             this.tabLG.TabIndex = 1;
             this.tabLG.Text = "LG controller";
             this.tabLG.UseVisualStyleBackColor = true;
+            // 
+            // btnLGRemoteControl
+            // 
+            this.btnLGRemoteControl.Location = new System.Drawing.Point(675, 5);
+            this.btnLGRemoteControl.Name = "btnLGRemoteControl";
+            this.btnLGRemoteControl.Size = new System.Drawing.Size(95, 23);
+            this.btnLGRemoteControl.TabIndex = 36;
+            this.btnLGRemoteControl.Text = "Remote Control";
+            this.btnLGRemoteControl.UseVisualStyleBackColor = true;
+            this.btnLGRemoteControl.Click += new System.EventHandler(this.btnLGRemoteControl_Click);
             // 
             // btnLgDeviceFilterRefresh
             // 
@@ -1426,6 +1438,7 @@
         private System.Windows.Forms.ToolStripMenuItem spatialDynamic2x2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem spatialStatic2x2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
+        private System.Windows.Forms.Button btnLGRemoteControl;
     }
 }
 

@@ -19,7 +19,6 @@ using System.Reflection;
 // 1. Import the InteropServices type
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -1736,6 +1735,7 @@ namespace ColorControl
             {
                 _lgService.SelectedDevice = (PnpDev)cbxLgDevices.SelectedItem;
             }
+            btnLGRemoteControl.Enabled = _lgService.SelectedDevice != null;
         }
 
         private void WarningOk(string text)
@@ -1996,6 +1996,13 @@ Do you want to continue?";
 
             AddOrUpdateItem();
 
+        }
+
+        private void btnLGRemoteControl_Click(object sender, EventArgs e)
+        {
+            var buttons = _lgService.GetRemoteControlButtons();
+            var remoteControlForm = new RemoteControlForm(_lgService, buttons);
+            remoteControlForm.Show();
         }
     }
 }
