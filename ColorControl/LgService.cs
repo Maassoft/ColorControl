@@ -89,16 +89,16 @@ namespace ColorControl
             var defaultButtons = GenerateDefaultRemoteControlButtons();
 
             _rcButtonsFilename = Path.Combine(_dataDir, "LgRemoteControlButtons.json");
-            if (File.Exists(_rcButtonsFilename))
-            {
-                var json = File.ReadAllText(_rcButtonsFilename);
+            //if (File.Exists(_rcButtonsFilename))
+            //{
+            //    var json = File.ReadAllText(_rcButtonsFilename);
 
-                _remoteControlButtons = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
+            //    _remoteControlButtons = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
 
-                var missingButtons = defaultButtons.Where(b => !_remoteControlButtons.Any(x => x.name.Equals(b.name)));
-                _remoteControlButtons.AddRange(missingButtons);
-            }
-            else
+            //    var missingButtons = defaultButtons.Where(b => !_remoteControlButtons.Any(x => x.name.Equals(b.name)));
+            //    _remoteControlButtons.AddRange(missingButtons);
+            //}
+            //else
             {
                 _remoteControlButtons = defaultButtons;
             }
@@ -119,29 +119,34 @@ namespace ColorControl
                 list.Add(GeneratePreset(button.ToString()));
             }
 
-            list.Add(GeneratePreset("Settings", appId: "com.palm.app.settings"));
+            list.Add(GeneratePreset("Settings", appId: "com.palm.app.settings", key: Keys.S));
 
-            list.Add(GeneratePreset("Vol +", step: "VOLUMEUP"));
-            list.Add(GeneratePreset("Vol -", step: "VOLUMEDOWN"));
-            list.Add(GeneratePreset("Mute", step: "MUTE"));
+            list.Add(GeneratePreset("Vol +", step: "VOLUMEUP", key: Keys.VolumeUp));
+            list.Add(GeneratePreset("Vol -", step: "VOLUMEDOWN", key: Keys.VolumeDown));
+            list.Add(GeneratePreset("Mute", step: "MUTE", key: Keys.VolumeMute));
 
-            list.Add(GeneratePreset("Up", step: "UP"));
-            list.Add(GeneratePreset("Down", step: "DOWN"));
-            list.Add(GeneratePreset("Left", step: "LEFT"));
-            list.Add(GeneratePreset("Right", step: "RIGHT"));
+            list.Add(GeneratePreset("Up", step: "UP", key: Keys.Up));
+            list.Add(GeneratePreset("Down", step: "DOWN", key: Keys.Down));
+            list.Add(GeneratePreset("Left", step: "LEFT", key: Keys.Left));
+            list.Add(GeneratePreset("Right", step: "RIGHT", key: Keys.Right));
 
-            list.Add(GeneratePreset("Enter", step: "ENTER"));
-            list.Add(GeneratePreset("Exit", step: "EXIT"));
+            list.Add(GeneratePreset("Enter", step: "ENTER", key: Keys.Enter));
+            list.Add(GeneratePreset("Back", step: "BACK", key: Keys.Back));
+            list.Add(GeneratePreset("Exit", step: "EXIT", key: Keys.Escape));
 
             return list;
         }
 
-        private LgPreset GeneratePreset(string name, string step = null, string appId = null)
+        private LgPreset GeneratePreset(string name, string step = null, string appId = null, Keys key = Keys.None)
         {
             var preset = new LgPreset();
 
+            var cvt = new KeysConverter();
+            var shortcut = key != Keys.None ? (string)cvt.ConvertTo(key, typeof(string)) : null;
+
             preset.name = name;
             preset.appId = appId;
+            preset.shortcut = shortcut;
             if (appId == null)
             {
                 preset.steps.Add(step == null ? name : step);
@@ -323,6 +328,11 @@ namespace ColorControl
             var button = (ButtonType)Enum.Parse(typeof(ButtonType), key);
             mouse.SendButton(button);
             Thread.Sleep(delay);
+        }
+
+        public async Task<LgWebOsMouseService> GetMouseAsync()
+        {
+            return await _lgTvApi.GetMouse();
         }
 
         public async Task<List<LgApp>> RefreshApps(bool force = false)

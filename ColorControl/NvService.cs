@@ -97,6 +97,8 @@ namespace ColorControl
 
         public bool ApplyPreset(NvPreset preset, Config config)
         {
+            var result = true;
+
             SetCurrentDisplay(preset);
 
             var hdrEnabled = IsHDREnabled();
@@ -121,6 +123,7 @@ namespace ColorControl
                 catch (Exception ex)
                 {
                     Logger.Error($"SetColorData threw an exception: {ex.Message}");
+                    result = false;
                 }
 
                 if (hdrEnabled && newHdrEnabled)
@@ -142,17 +145,23 @@ namespace ColorControl
 
             if (preset.applyRefreshRate)
             {
-                SetRefreshRate(preset.refreshRate);
+                if (!SetRefreshRate(preset.refreshRate))
+                {
+                    result = false;
+                }
             }
 
             if (preset.applyDithering)
             {
-                SetDithering(preset.ditheringEnabled, preset: preset);
+                if (!SetDithering(preset.ditheringEnabled, preset: preset))
+                {
+                    result = false;
+                }
             }
 
             _lastAppliedPreset = preset;
 
-            return true;
+            return result;
         }
 
         private bool ColorDataDiffers(ColorData colorData)
@@ -163,7 +172,9 @@ namespace ColorControl
 
             var settingRange = colorData.DynamicRange == ColorDataDynamicRange.Auto ? colorData.ColorFormat == ColorDataFormat.RGB ? ColorDataDynamicRange.VESA : ColorDataDynamicRange.CEA : colorData.DynamicRange;
 
-            return colorData.ColorFormat != currentColorData.ColorFormat || colorData.ColorDepth != currentColorData.ColorDepth || settingRange != currentColorData.DynamicRange;
+            var settingSpace = colorData.Colorimetry;
+
+            return colorData.ColorFormat != currentColorData.ColorFormat || colorData.ColorDepth != currentColorData.ColorDepth || settingRange != currentColorData.DynamicRange || settingSpace != currentColorData.Colorimetry;
         }
 
         private void SetHDRState(Display display, bool enabled, ColorData colorData = null)
@@ -185,8 +196,10 @@ namespace ColorControl
             }
         }
 
-        public void SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)
+        public bool SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)
         {
+            var result = true;
+
             var ptr = NvAPI64_QueryInterface(0xDF0DFCDD);
             if (ptr != IntPtr.Zero)
             {
@@ -203,18 +216,26 @@ namespace ColorControl
                     mode = preset.ditheringMode;
                 }
 
-                var result = delegateValue(gpuHandle, displayId, (uint)(enabled ? 1 : 2), bits, mode);
-                if (result != 0)
+                var resultValue = delegateValue(gpuHandle, displayId, (uint)(enabled ? 1 : 2), bits, mode);
+                if (resultValue != 0)
                 {
-                    Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {result}");
+                    Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
+                    result = false;
                 }
             }
+            else
+            {
+                Logger.Error($"Could not set dithering because the function NvAPI_Disp_SetDitherControl could not be found");
+                result = false;
+            }
+
+            return result;
         }
 
         public bool GetDithering()
         {
             // Requires elevation, too bad :(
-            // Utils.GetRegistryKeyValue(@"SYSTEM\CurrentControlSet\Services\nvlddmkm\State\DisplayDatabase", "DitherRegistryKey");
+            //Utils.GetRegistryKeyValue(@"SYSTEM\CurrentControlSet\Services\nvlddmkm\State\DisplayDatabase", "DitherRegistryKey");
 
             /*
             var ptr = NvAPI64_QueryInterface(0x932AC8FB);

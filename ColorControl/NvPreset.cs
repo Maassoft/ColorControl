@@ -73,10 +73,10 @@ namespace ColorControl
         public static string[] GetColumnNames()
         {
             //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut" };
+            return new[] { "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
         }
 
-        public List<string> GetDisplayValues()
+        public List<string> GetDisplayValues(Config config)
         {
             var values = new List<string>();
 
@@ -88,13 +88,7 @@ namespace ColorControl
             values.Add(colorSettings);
             values.Add(string.Format("{0}: {1}Hz", applyRefreshRate ? "Included" : "Excluded", refreshRate));
 
-            var dithering = ditheringEnabled ? string.Empty : "Disabled";
-            if (ditheringEnabled)
-            {
-                var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
-                var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
-                dithering = string.Format("{0} {1}", ditherBitsDescription, ditherModeDescription);
-            }
+            var dithering = GetDitheringDescription();
 
             values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", dithering));
             values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
@@ -105,7 +99,21 @@ namespace ColorControl
             //values.Add(toggleHDR.ToString());
             values.Add(shortcut);
 
+            values.Add(string.Format("{0}", config.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
+
             return values;
+        }
+
+        public string GetDitheringDescription(string disabledText = "Disabled")
+        {
+            var dithering = ditheringEnabled ? string.Empty : disabledText;
+            if (ditheringEnabled)
+            {
+                var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
+                var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
+                dithering = string.Format("{0} {1}", ditherBitsDescription, ditherModeDescription);
+            }
+            return dithering;
         }
 
         public static List<NvPreset> GetDefaultPresets()
@@ -151,14 +159,8 @@ namespace ColorControl
             }
             if (applyDithering)
             {
-                var dithering = ditheringEnabled ? string.Empty : "No";
+                var dithering = GetDitheringDescription("No");
                 sb.AppendFormat("Dithering: {0}", dithering);
-                if (ditheringEnabled)
-                {
-                    var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
-                    var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
-                    sb.AppendFormat("{0} {1}", ditherBitsDescription, ditherModeDescription);
-                }
                 sb.Append(" / ");
             }
             if (applyHDR)

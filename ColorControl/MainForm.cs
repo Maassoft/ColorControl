@@ -72,6 +72,7 @@ namespace ColorControl
         private List<LgPreset> _lgPresets;
         private string _lgPresetsFilename;
         private List<LgApp> _lgApps;
+        private RemoteControlForm _remoteControlForm;
 
         private MenuItem _nvTrayMenu;
         private MenuItem _lgTrayMenu;
@@ -88,6 +89,8 @@ namespace ColorControl
             _dataDir = Utils.GetDataPath();
 
             InitLogger();
+
+            MessageForms.MainForm = this;
 
             _nvTrayMenu = new MenuItem("NVIDIA presets");
             _lgTrayMenu = new MenuItem("LG presets");
@@ -121,6 +124,9 @@ namespace ColorControl
 
             var converter = new ColorDataConverter();
             _JsonDeserializer.RegisterConverters(new[] { converter });
+
+            _configFilename = Path.Combine(_dataDir, "Settings.json");
+            LoadConfig();
 
             try
             {
@@ -158,9 +164,6 @@ namespace ColorControl
                 }
             }
             FillLgPresets();
-
-            _configFilename = Path.Combine(_dataDir, "Settings.json");
-            LoadConfig();
 
             try
             {
@@ -203,6 +206,8 @@ namespace ColorControl
             //Scale(new SizeF(1.25F, 1.25F));
 
             _initialized = true;
+
+            AfterInitialized();
         }
 
         private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
@@ -412,8 +417,16 @@ namespace ColorControl
 
                 values.Add($"{refreshRate}Hz");
 
-                //values.Add(_nvService.GetDithering() ? "Yes" : "No");
-                values.Add(string.Empty);
+                var lastPreset = _nvService.GetLastAppliedPreset();
+                if (lastPreset != null)
+                {
+                    //values.Add(_nvService.GetDithering() ? "Yes" : "No");
+                    values.Add(lastPreset.GetDitheringDescription());
+                }
+                else
+                {
+                    values.Add(string.Empty);
+                }
 
                 values.Add(_nvService.IsHDREnabled() ? "Yes" : "No");
 
@@ -459,7 +472,7 @@ namespace ColorControl
                 preset = (NvPreset)item.Tag;
             }
 
-            var values = preset.GetDisplayValues();
+            var values = preset.GetDisplayValues(_config);
 
             if (item == null)
             {
@@ -648,7 +661,7 @@ namespace ColorControl
 
             if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
             {
-                WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -720,7 +733,7 @@ namespace ColorControl
             }
             catch (Exception e)
             {
-                ErrorOk("Could not create/delete task: " + e.Message);
+                MessageForms.ErrorOk("Could not create/delete task: " + e.Message);
             }
         }
 
@@ -943,6 +956,7 @@ namespace ColorControl
             var preset = GetSelectedNvPreset();
 
             miNvApply.Enabled = preset != null;
+            miNvPresetApplyOnStartup.Enabled = preset != null;
             mnuNvDisplay.Enabled = preset != null;
             miNvPresetColorSettings.Enabled = preset != null;
             mnuNvPresetsColorSettings.Enabled = preset != null;
@@ -952,6 +966,8 @@ namespace ColorControl
 
             if (preset != null)
             {
+                miNvPresetApplyOnStartup.Checked = _config.NvPresetId_ApplyOnStartup == preset.id;
+
                 if (mnuNvDisplay.DropDownItems.Count == 1)
                 {
                     var displays = _nvService.GetDisplays();
@@ -1327,7 +1343,7 @@ namespace ColorControl
             var shortcut = edtShortcutLg.Text.Trim();
             if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
             {
-                WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -1337,7 +1353,7 @@ namespace ColorControl
 
             if (name.Length == 0 || _lgPresets.Any(x => x.id != preset.id && x.name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
-                WarningOk("The name can not be empty and must be unique.");
+                MessageForms.WarningOk("The name can not be empty and must be unique.");
                 return;
             }
 
@@ -1418,11 +1434,11 @@ namespace ColorControl
 
             if (added)
             {
-                InfoOk("Missing presets added.");
+                MessageForms.InfoOk("Missing presets added.");
             }
             else
             {
-                InfoOk("All presets for every color setting already exist.");
+                MessageForms.InfoOk("All presets for every color setting already exist.");
             }
         }
 
@@ -1487,7 +1503,7 @@ namespace ColorControl
 
             if (!devices.Any())
             {
-                WarningOk("It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.");
+                MessageForms.WarningOk("It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.");
             }
 
             if (cbxLgApps.Items.Count == 0 && _lgService.SelectedDevice != null)
@@ -1501,7 +1517,7 @@ namespace ColorControl
             _lgApps = task.Result;
             if (_lgApps == null || !_lgApps.Any())
             {
-                WarningOk("Could not refresh the apps. Check the log for details.");
+                MessageForms.WarningOk("Could not refresh the apps. Check the log for details.");
                 return;
             }
             InitLgApps();
@@ -1660,7 +1676,7 @@ namespace ColorControl
 
         private void ApplyNvPreset(NvPreset preset)
         {
-            if (preset == null)
+            if (preset == null || _nvService == null)
             {
                 return;
             }
@@ -1669,14 +1685,14 @@ namespace ColorControl
                 var result = _nvService.ApplyPreset(preset, _config);
                 if (!result)
                 {
-                    throw new Exception("Error while applying NVIDIA preset");
+                    throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
                 }
 
                 UpdateDisplayInfoItems();
             }
             catch (Exception e)
             {
-                ErrorOk($"Error applying NVIDIA-preset ({e.TargetSite.Name}): {e.Message}");
+                MessageForms.ErrorOk($"Error applying NVIDIA-preset ({e.TargetSite.Name}): {e.Message}");
             }
         }
 
@@ -1699,7 +1715,7 @@ namespace ColorControl
             var result = task.Result;
             if (!result)
             {
-                WarningOk("Could not apply the preset (entirely). Check the log for details.");
+                MessageForms.WarningOk("Could not apply the preset (entirely). Check the log for details.");
             }
         }
 
@@ -1736,26 +1752,6 @@ namespace ColorControl
                 _lgService.SelectedDevice = (PnpDev)cbxLgDevices.SelectedItem;
             }
             btnLGRemoteControl.Enabled = _lgService.SelectedDevice != null;
-        }
-
-        private void WarningOk(string text)
-        {
-            MessageBox.Show(text, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-
-        private void ErrorOk(string text)
-        {
-            MessageBox.Show(text, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-
-        private void InfoOk(string text)
-        {
-            MessageBox.Show(text, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private DialogResult QuestionYesNo(string text)
-        {
-            return MessageBox.Show(text, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information);
         }
 
         private void lvLgPresets_DoubleClick(object sender, EventArgs e)
@@ -1828,7 +1824,7 @@ namespace ColorControl
 
             if (!(_lgService.Config.PowerOnAfterResume || _lgService.Config.PowerOnAfterStartup))
             {
-                InfoOk(
+                MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
 
 Connection > Mobile TV On > Turn on via Wi-Fi
@@ -1877,11 +1873,11 @@ Connection > Mobile TV On > Turn on via Wi-Fi
 It will also work over a wired connection.
 Do you want to continue?";
 
-            if (QuestionYesNo(text) == DialogResult.Yes)
+            if (MessageForms.QuestionYesNo(text) == DialogResult.Yes)
             {
                 _lgService.PowerOff();
 
-                InfoOk("Press ENTER to wake the TV.");
+                MessageForms.InfoOk("Press ENTER to wake the TV.");
 
                 _lgService.WakeSelectedDevice();
             }
@@ -1893,7 +1889,7 @@ Do you want to continue?";
 
             if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
             {
-                WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -2000,9 +1996,40 @@ Do you want to continue?";
 
         private void btnLGRemoteControl_Click(object sender, EventArgs e)
         {
-            var buttons = _lgService.GetRemoteControlButtons();
-            var remoteControlForm = new RemoteControlForm(_lgService, buttons);
-            remoteControlForm.Show();
+            if (_remoteControlForm == null || _remoteControlForm.IsDisposed)
+            {
+                var buttons = _lgService.GetRemoteControlButtons();
+                _remoteControlForm = new RemoteControlForm(_lgService, buttons);
+                _remoteControlForm.Show();
+            }
+            else
+            {
+                _remoteControlForm.Show();
+            }
+        }
+
+        private void AfterInitialized()
+        {
+            if (_config.NvPresetId_ApplyOnStartup != 0)
+            {
+                var preset = _presets.FirstOrDefault(p => p.id == _config.NvPresetId_ApplyOnStartup);
+                if (preset == null)
+                {
+                    _config.NvPresetId_ApplyOnStartup = 0;
+                }
+                else
+                {
+                    ApplyNvPreset(preset);
+                }
+            }
+        }
+
+        private void miNvPresetApplyOnStartup_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+            _config.NvPresetId_ApplyOnStartup = miNvPresetApplyOnStartup.Checked ? preset.id : 0;
+
+            AddOrUpdateItem();
         }
     }
 }

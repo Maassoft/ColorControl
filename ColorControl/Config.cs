@@ -13,6 +13,8 @@
         public int FormWidth { get; set; }
         public int FormHeight { get; set; }
 
+        public int NvPresetId_ApplyOnStartup { get; set; }
+
         public Config()
         {
             DisplaySettingsDelay = 1000;
