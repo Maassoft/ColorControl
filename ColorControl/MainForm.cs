@@ -225,7 +225,18 @@ namespace ColorControl
 
             if (_lgService.Config.PowerOffOnStandby)
             {
-                _lgService.PowerOff();
+                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
+                try
+                {
+                    Logger.Debug("Powering off tv...");
+                    var task = _lgService.PowerOff();
+                    Utils.WaitForTask(task);
+                    Logger.Debug("Done powering off tv");
+                }
+                finally
+                {
+                    NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
+                }
             }
         }
 
@@ -369,9 +380,18 @@ namespace ColorControl
                 return;
             }
 
-            var text = "ColorControl";
+            Display[] displays;
+            try
+            {
+                displays = _nvService.GetDisplays();
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error while getting displays: " + e.ToLogString());
+                return;
+            }
 
-            var displays = _nvService.GetDisplays();
+            var text = TS_TASKNAME;
             foreach (var display in displays)
             {
                 var id = Math.Abs((int)display.Handle.MemoryAddress.ToInt64());

@@ -106,7 +106,7 @@ namespace ColorControl
             var newHdrEnabled = preset.applyHDR && (preset.HDREnabled || (preset.toggleHDR && !hdrEnabled));
             var applyHdr = preset.applyHDR && (preset.toggleHDR || preset.HDREnabled != hdrEnabled);
 
-            if (preset.applyColorData && ColorDataDiffers(preset.colorData))
+            if (preset.applyColorData && (ColorDataDiffers(preset.colorData) || (!newHdrEnabled && preset.applyColorData && preset.colorData.Colorimetry != ColorDataColorimetry.Auto)))
             {
                 var display = GetCurrentDisplay();
                 if (hdrEnabled)
@@ -192,7 +192,7 @@ namespace ColorControl
             else if (enabled)
             {
                 // Currectly there seems to be a bug that after enabling HDR via NVAPI, some settings are only applied upon opening the Display Settings...
-                OpenDisplaySettings();
+                ////OpenDisplaySettings();
             }
         }
 
