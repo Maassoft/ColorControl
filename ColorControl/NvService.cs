@@ -81,6 +81,18 @@ namespace ColorControl
             return _currentDisplay;
         }
 
+        public bool HasDisplaysAttached()
+        {
+            try
+            {
+                return DisplayDevice.GetGDIPrimaryDisplayDevice() != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private void SetCurrentDisplay(NvPreset preset)
         {
             if (preset.primaryDisplay)
@@ -98,6 +110,11 @@ namespace ColorControl
         public bool ApplyPreset(NvPreset preset, Config config)
         {
             var result = true;
+
+            if (!HasDisplaysAttached())
+            {
+                return false;
+            }
 
             SetCurrentDisplay(preset);
 

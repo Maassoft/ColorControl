@@ -1466,7 +1466,7 @@ namespace ColorControl
         {
             if (tcMain.SelectedTab == tabLG)
             {
-                if (cbxLgDevices.Items.Count == 0)
+                if (cbxLgDevices.Items.Count == 0 && _lgService != null)
                 {
                     var devices = _lgService.Devices;
                     if (devices == null || !devices.Any())
@@ -1694,11 +1694,11 @@ namespace ColorControl
             _config.DisplaySettingsDelay = (int)edtDelayDisplaySettings.Value;
         }
 
-        private void ApplyNvPreset(NvPreset preset)
+        private bool ApplyNvPreset(NvPreset preset)
         {
             if (preset == null || _nvService == null)
             {
-                return;
+                return false;
             }
             try
             {
@@ -1709,10 +1709,12 @@ namespace ColorControl
                 }
 
                 UpdateDisplayInfoItems();
+                return true;
             }
             catch (Exception e)
             {
                 MessageForms.ErrorOk($"Error applying NVIDIA-preset ({e.TargetSite.Name}): {e.Message}");
+                return false;
             }
         }
 
@@ -2030,6 +2032,10 @@ Do you want to continue?";
 
         private void AfterInitialized()
         {
+            ApplyNvPresetOnStartup();
+        }
+
+        private void ApplyNvPresetOnStartup(int attempts = 5) {
             if (_config.NvPresetId_ApplyOnStartup != 0)
             {
                 var preset = _presets.FirstOrDefault(p => p.id == _config.NvPresetId_ApplyOnStartup);
@@ -2037,9 +2043,24 @@ Do you want to continue?";
                 {
                     _config.NvPresetId_ApplyOnStartup = 0;
                 }
-                else
+                else if (_nvService != null)
                 {
-                    ApplyNvPreset(preset);
+                    if (_nvService.HasDisplaysAttached())
+                    {
+                        ApplyNvPreset(preset);
+                    }
+                    else
+                    {
+                        attempts--;
+                        if (attempts > 0)
+                        {
+                            System.Threading.Tasks.Task.Run(async () =>
+                            {
+                                await System.Threading.Tasks.Task.Delay(2000);
+                                BeginInvoke(new Action(() => ApplyNvPresetOnStartup(attempts)));
+                            });
+                        }
+                    }
                 }
             }
         }
