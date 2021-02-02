@@ -178,7 +178,7 @@ namespace ColorControl
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
 
             InitInfo();

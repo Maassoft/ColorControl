@@ -236,10 +236,10 @@ namespace ColorControl
             object objValue;
             string value = null;
 
-            foreach (var key in device.Properties.Keys)
-            {
-                Debug.WriteLine(key);
-            }
+            //foreach (var key in device.Properties.Keys)
+            //{
+            //    Debug.WriteLine(key);
+            //}
 
             if (device.Properties.TryGetValue(propertyName, out objValue))
             {

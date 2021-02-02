@@ -21,7 +21,7 @@ namespace ColorControl
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public string FriendlyScreenName { get; private set; }
+        //public string FriendlyScreenName { get; private set; }
 
         public List<PnpDev> Devices { get; private set; }
         public PnpDev SelectedDevice
@@ -53,16 +53,16 @@ namespace ColorControl
             LoadConfig();
             LoadRemoteControlButtons();
 
-            foreach (var screen in Screen.AllScreens)
-            {
-                var name = screen.DeviceFriendlyName();
-                if (name.Contains("LG"))
-                {
-                    FriendlyScreenName = name;
-                }
-            }
+            //foreach (var screen in Screen.AllScreens)
+            //{
+            //    var name = screen.DeviceFriendlyName();
+            //    if (name.Contains("LG"))
+            //    {
+            //        FriendlyScreenName = name;
+            //    }
+            //}
 
-            RefreshDevices();
+            RefreshDevices(afterStartUp: true);
         }
 
         ~LgService()
@@ -167,10 +167,23 @@ namespace ColorControl
             File.WriteAllText(_rcButtonsFilename, json);
         }
 
-        public async Task RefreshDevices(bool connect = true)
+        public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
         {
             var devices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
             SetDevices(devices);
+
+            if (afterStartUp && SelectedDevice == null && Config.PowerOnAfterStartup && !string.IsNullOrEmpty(Config.PreferredMacAddress))
+            {
+                Logger.Debug("No device has been found, trying to wake it first...");
+
+                WakeSelectedDevice(Config.PreferredMacAddress);
+
+                await Task.Delay(4000);
+                await RefreshDevices();
+
+                return;
+            }
+
             if (connect && SelectedDevice != null)
             {
                 if (Config.PowerOnAfterStartup && _allowPowerOn)
@@ -374,11 +387,12 @@ namespace ColorControl
             return true;
         }
 
-        internal void WakeSelectedDevice()
+        internal void WakeSelectedDevice(string macAddress = null)
         {
-            if (SelectedDevice != null)
+            macAddress = macAddress == null ? SelectedDevice?.MacAddress : macAddress;
+            if (macAddress != null)
             {
-                WOL.WakeFunction(SelectedDevice.MacAddress);
+                WOL.WakeFunction(macAddress);
                 _justWokeUp = true;
             }
             else
