@@ -1,12 +1,10 @@
 ﻿using NLog;
 using System;
-using System.Globalization;
 using PacketDotNet;
 using System.Net.NetworkInformation;
 using SharpPcap;
-using System.Diagnostics;
 using SharpPcap.Npcap;
-using System.Linq;
+using System.Net;
 
 namespace ColorControl
 {
@@ -14,8 +12,12 @@ namespace ColorControl
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        //You need SharpPcap for this to work
+        public static void WakeFunction2(string macAddress)
+        {
+            //PhysicalAddress.Parse(macAddress).SendWol();
+        }
 
+        //You need SharpPcap for this to work
         public static void WakeFunction(string macAddress)
         {
             /* Retrieve the device list */
@@ -40,7 +42,14 @@ namespace ColorControl
                 //    }
                 //}
 
-                Logger.Debug("Opening network device: " + device.Name);
+                if (device is NpcapDevice npcapDevice)
+                {
+                    Logger.Debug($"Opening network device (NpcapDevice): FriendlyName: {npcapDevice.Interface.FriendlyName}, Description: {npcapDevice.Interface.Description}");
+                }
+                else
+                {
+                    Logger.Debug($"Opening network device (NOT A NpcapDevice!): {device.Name}, Description: {device.Description}");
+                }
 
                 //Open the device
                 device.Open();
