@@ -42,6 +42,7 @@
             this.btnChange = new System.Windows.Forms.Button();
             this.mnuNvPresets = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miNvApply = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.mnuNvDisplay = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
@@ -133,7 +134,7 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.miNvPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
+            this.chkLgAlternateWolMechanism = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -298,27 +299,35 @@
             this.miNvPresetDithering,
             this.miNvHDR});
             this.mnuNvPresets.Name = "mnuNvPresets";
-            this.mnuNvPresets.Size = new System.Drawing.Size(181, 186);
+            this.mnuNvPresets.Size = new System.Drawing.Size(163, 164);
             this.mnuNvPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuNvPresets_Opening);
             // 
             // miNvApply
             // 
             this.miNvApply.Name = "miNvApply";
-            this.miNvApply.Size = new System.Drawing.Size(180, 22);
+            this.miNvApply.Size = new System.Drawing.Size(162, 22);
             this.miNvApply.Text = "Apply";
             this.miNvApply.Click += new System.EventHandler(this.miNvApply_Click);
+            // 
+            // miNvPresetApplyOnStartup
+            // 
+            this.miNvPresetApplyOnStartup.CheckOnClick = true;
+            this.miNvPresetApplyOnStartup.Name = "miNvPresetApplyOnStartup";
+            this.miNvPresetApplyOnStartup.Size = new System.Drawing.Size(162, 22);
+            this.miNvPresetApplyOnStartup.Text = "Apply on startup";
+            this.miNvPresetApplyOnStartup.Click += new System.EventHandler(this.miNvPresetApplyOnStartup_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(177, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(159, 6);
             // 
             // mnuNvDisplay
             // 
             this.mnuNvDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvPrimaryDisplay});
             this.mnuNvDisplay.Name = "mnuNvDisplay";
-            this.mnuNvDisplay.Size = new System.Drawing.Size(180, 22);
+            this.mnuNvDisplay.Size = new System.Drawing.Size(162, 22);
             this.mnuNvDisplay.Text = "Display";
             // 
             // miNvPrimaryDisplay
@@ -333,7 +342,7 @@
             this.mnuNvPresetsColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvPresetColorSettings});
             this.mnuNvPresetsColorSettings.Name = "mnuNvPresetsColorSettings";
-            this.mnuNvPresetsColorSettings.Size = new System.Drawing.Size(180, 22);
+            this.mnuNvPresetsColorSettings.Size = new System.Drawing.Size(162, 22);
             this.mnuNvPresetsColorSettings.Text = "Color settings";
             // 
             // miNvPresetColorSettings
@@ -348,7 +357,7 @@
             this.mnuRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miRefreshRateIncluded});
             this.mnuRefreshRate.Name = "mnuRefreshRate";
-            this.mnuRefreshRate.Size = new System.Drawing.Size(180, 22);
+            this.mnuRefreshRate.Size = new System.Drawing.Size(162, 22);
             this.mnuRefreshRate.Text = "Refresh Rate";
             // 
             // miRefreshRateIncluded
@@ -366,7 +375,7 @@
             this.mnuNvDitheringBitDepth,
             this.mnuNvDitheringMode});
             this.miNvPresetDithering.Name = "miNvPresetDithering";
-            this.miNvPresetDithering.Size = new System.Drawing.Size(180, 22);
+            this.miNvPresetDithering.Size = new System.Drawing.Size(162, 22);
             this.miNvPresetDithering.Text = "Dithering";
             // 
             // miNvPresetApplyDithering
@@ -476,7 +485,7 @@
             this.miToggleHDR,
             this.miHDREnabled});
             this.miNvHDR.Name = "miNvHDR";
-            this.miNvHDR.Size = new System.Drawing.Size(180, 22);
+            this.miNvHDR.Size = new System.Drawing.Size(162, 22);
             this.miNvHDR.Text = "HDR";
             // 
             // miHDRIncluded
@@ -1023,6 +1032,7 @@
             // 
             // grpLGOptions
             // 
+            this.grpLGOptions.Controls.Add(this.chkLgAlternateWolMechanism);
             this.grpLGOptions.Controls.Add(this.btnLGTestPower);
             this.grpLGOptions.Controls.Add(this.label9);
             this.grpLGOptions.Controls.Add(this.edtLgPowerOnAfterResumeDelay);
@@ -1062,7 +1072,7 @@
             0});
             this.edtLgPowerOnAfterResumeDelay.Location = new System.Drawing.Point(299, 17);
             this.edtLgPowerOnAfterResumeDelay.Maximum = new decimal(new int[] {
-            5000,
+            10000,
             0,
             0,
             0});
@@ -1287,13 +1297,16 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // miNvPresetApplyOnStartup
+            // chkLgAlternateWolMechanism
             // 
-            this.miNvPresetApplyOnStartup.CheckOnClick = true;
-            this.miNvPresetApplyOnStartup.Name = "miNvPresetApplyOnStartup";
-            this.miNvPresetApplyOnStartup.Size = new System.Drawing.Size(180, 22);
-            this.miNvPresetApplyOnStartup.Text = "Apply on startup";
-            this.miNvPresetApplyOnStartup.Click += new System.EventHandler(this.miNvPresetApplyOnStartup_Click);
+            this.chkLgAlternateWolMechanism.AutoSize = true;
+            this.chkLgAlternateWolMechanism.Location = new System.Drawing.Point(158, 72);
+            this.chkLgAlternateWolMechanism.Name = "chkLgAlternateWolMechanism";
+            this.chkLgAlternateWolMechanism.Size = new System.Drawing.Size(173, 17);
+            this.chkLgAlternateWolMechanism.TabIndex = 7;
+            this.chkLgAlternateWolMechanism.Text = "Use alternate WOL mechanism";
+            this.chkLgAlternateWolMechanism.UseVisualStyleBackColor = true;
+            this.chkLgAlternateWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
             // 
             // MainForm
             // 
@@ -1449,6 +1462,7 @@
         private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
         private System.Windows.Forms.Button btnLGRemoteControl;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetApplyOnStartup;
+        private System.Windows.Forms.CheckBox chkLgAlternateWolMechanism;
     }
 }
 

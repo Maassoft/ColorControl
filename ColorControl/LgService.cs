@@ -1,17 +1,13 @@
 ﻿using LgTv;
 using Newtonsoft.Json;
-using NLog.Config;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
-using Windows.Data.Json;
 
 namespace ColorControl
 {
@@ -392,7 +388,7 @@ namespace ColorControl
             macAddress = macAddress == null ? SelectedDevice?.MacAddress : macAddress;
             if (macAddress != null)
             {
-                WOL.WakeFunction(macAddress);
+                WOL.WakeFunction(macAddress, !Config.UseAlternateWol);
                 _justWokeUp = true;
             }
             else

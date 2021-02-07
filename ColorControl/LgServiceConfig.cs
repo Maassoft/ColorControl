@@ -16,6 +16,8 @@
 
         public string DeviceSearchKey { get; set; }
 
+        public bool UseAlternateWol { get; set; }
+
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;

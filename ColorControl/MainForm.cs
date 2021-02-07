@@ -175,6 +175,7 @@ namespace ColorControl
                 clbLgPower.SetItemChecked(3, _lgService.Config.PowerOffOnStandby);
                 edtLgPowerOnAfterResumeDelay.Value = _lgService.Config.PowerOnDelayAfterResume;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
+                chkLgAlternateWolMechanism.Checked = _lgService.Config.UseAlternateWol;
             }
             catch (Exception e)
             {
@@ -1886,6 +1887,8 @@ See Options to test this functionality."
 
         private void btnLGTestPower_Click(object sender, EventArgs e)
         {
+            //_lgService.WakeSelectedDevice();
+            //return;
             var text =
 @"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
 For waking up to work, you need to activate the following setting on the TV:
@@ -2071,6 +2074,11 @@ Do you want to continue?";
             _config.NvPresetId_ApplyOnStartup = miNvPresetApplyOnStartup.Checked ? preset.id : 0;
 
             AddOrUpdateItem();
+        }
+
+        private void chkLgAlternateWolMechanism_CheckedChanged(object sender, EventArgs e)
+        {
+            _lgService.Config.UseAlternateWol = chkLgAlternateWolMechanism.Checked;
         }
     }
 }
