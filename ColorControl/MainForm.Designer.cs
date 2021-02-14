@@ -112,6 +112,7 @@
             this.label10 = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             this.grpLGOptions = new System.Windows.Forms.GroupBox();
+            this.chkLgAlternateWolMechanism = new System.Windows.Forms.CheckBox();
             this.btnLGTestPower = new System.Windows.Forms.Button();
             this.label9 = new System.Windows.Forms.Label();
             this.edtLgPowerOnAfterResumeDelay = new System.Windows.Forms.NumericUpDown();
@@ -134,12 +135,14 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.chkLgAlternateWolMechanism = new System.Windows.Forms.CheckBox();
+            this.mnuLgRcButtons = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
             this.tabAMD.SuspendLayout();
             this.tabLG.SuspendLayout();
+            this.mnuLgButtons.SuspendLayout();
             this.tabOptions.SuspendLayout();
             this.grpNvidiaOptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
@@ -644,15 +647,18 @@
             this.btnLgAddButton.Name = "btnLgAddButton";
             this.btnLgAddButton.Size = new System.Drawing.Size(75, 23);
             this.btnLgAddButton.TabIndex = 32;
-            this.btnLgAddButton.Text = "Add button";
+            this.btnLgAddButton.Text = "Add step";
             this.btnLgAddButton.UseVisualStyleBackColor = true;
             this.btnLgAddButton.Click += new System.EventHandler(this.btnLgAddButton_Click);
             // 
             // mnuLgButtons
             // 
             this.mnuLgButtons.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuLgButtons.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuLgRcButtons,
+            this.mnuLgActions});
             this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(61, 4);
+            this.mnuLgButtons.Size = new System.Drawing.Size(181, 70);
             // 
             // label3
             // 
@@ -1044,6 +1050,17 @@
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
             // 
+            // chkLgAlternateWolMechanism
+            // 
+            this.chkLgAlternateWolMechanism.AutoSize = true;
+            this.chkLgAlternateWolMechanism.Location = new System.Drawing.Point(158, 72);
+            this.chkLgAlternateWolMechanism.Name = "chkLgAlternateWolMechanism";
+            this.chkLgAlternateWolMechanism.Size = new System.Drawing.Size(173, 17);
+            this.chkLgAlternateWolMechanism.TabIndex = 7;
+            this.chkLgAlternateWolMechanism.Text = "Use alternate WOL mechanism";
+            this.chkLgAlternateWolMechanism.UseVisualStyleBackColor = true;
+            this.chkLgAlternateWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
+            // 
             // btnLGTestPower
             // 
             this.btnLGTestPower.Location = new System.Drawing.Point(9, 68);
@@ -1297,16 +1314,17 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // chkLgAlternateWolMechanism
+            // mnuLgRcButtons
             // 
-            this.chkLgAlternateWolMechanism.AutoSize = true;
-            this.chkLgAlternateWolMechanism.Location = new System.Drawing.Point(158, 72);
-            this.chkLgAlternateWolMechanism.Name = "chkLgAlternateWolMechanism";
-            this.chkLgAlternateWolMechanism.Size = new System.Drawing.Size(173, 17);
-            this.chkLgAlternateWolMechanism.TabIndex = 7;
-            this.chkLgAlternateWolMechanism.Text = "Use alternate WOL mechanism";
-            this.chkLgAlternateWolMechanism.UseVisualStyleBackColor = true;
-            this.chkLgAlternateWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
+            this.mnuLgRcButtons.Name = "mnuLgRcButtons";
+            this.mnuLgRcButtons.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgRcButtons.Text = "Buttons";
+            // 
+            // mnuLgActions
+            // 
+            this.mnuLgActions.Name = "mnuLgActions";
+            this.mnuLgActions.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgActions.Text = "Actions";
             // 
             // MainForm
             // 
@@ -1320,6 +1338,7 @@
             this.Name = "MainForm";
             this.Text = "ColorControl";
             this.Activated += new System.EventHandler(this.MainForm_Activated);
+            this.Deactivate += new System.EventHandler(this.MainForm_Deactivate);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
@@ -1332,6 +1351,7 @@
             this.tabAMD.PerformLayout();
             this.tabLG.ResumeLayout(false);
             this.tabLG.PerformLayout();
+            this.mnuLgButtons.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
             this.grpNvidiaOptions.ResumeLayout(false);
             this.grpNvidiaOptions.PerformLayout();
@@ -1463,6 +1483,8 @@
         private System.Windows.Forms.Button btnLGRemoteControl;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetApplyOnStartup;
         private System.Windows.Forms.CheckBox chkLgAlternateWolMechanism;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgRcButtons;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgActions;
     }
 }
 

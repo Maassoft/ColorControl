@@ -42,10 +42,15 @@ namespace ColorControl
         private List<LgPreset> _remoteControlButtons;
         private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
 
+        private Dictionary<string, Action> _invokableActions = new Dictionary<string, Action>();
+
         public LgService(string dataDir, bool allowPowerOn)
         {
             _dataDir = dataDir;
             _allowPowerOn = allowPowerOn;
+
+            _invokableActions.Add("WOL", new Action(WakeSelectedDevice));
+
             LoadConfig();
             LoadRemoteControlButtons();
 
@@ -62,6 +67,11 @@ namespace ColorControl
         }
 
         ~LgService()
+        {
+            GlobalSave();
+        }
+
+        public void GlobalSave()
         {
             SaveConfig();
             SaveRemoteControlButtons();
@@ -103,6 +113,11 @@ namespace ColorControl
         public List<LgPreset> GetRemoteControlButtons()
         {
             return _remoteControlButtons;
+        }
+
+        public Dictionary<string, Action> GetInvokableActions()
+        {
+            return _invokableActions;
         }
 
         private List<LgPreset> GenerateDefaultRemoteControlButtons()
@@ -151,13 +166,13 @@ namespace ColorControl
             return preset;
         }
 
-        public void SaveConfig()
+        private void SaveConfig()
         {
             var json = JsonConvert.SerializeObject(Config);
             File.WriteAllText(_configFilename, json);
         }
 
-        public void SaveRemoteControlButtons()
+        private void SaveRemoteControlButtons()
         {
             var json = JsonConvert.SerializeObject(_remoteControlButtons);
             File.WriteAllText(_rcButtonsFilename, json);
@@ -244,6 +259,17 @@ namespace ColorControl
         {
             var hasApp = !string.IsNullOrEmpty(preset.appId);
 
+            var hasWOL = preset.steps.Any(s => s.Equals("WOL", StringComparison.OrdinalIgnoreCase));
+
+            if (hasWOL)
+            {
+                var connected = await WakeAndConnectToSelectedDevice(0);
+                if (!connected)
+                {
+                    return false;
+                }
+            }
+
             for (var tries = 0; tries <= 1; tries++)
             {
                 if (!await Connected(reconnect || tries == 1))
@@ -317,13 +343,19 @@ namespace ColorControl
             foreach (var step in preset.steps)
             {
                 var keySpec = step.Split(':');
+                var key = keySpec[0].ToUpper();
+                if (_invokableActions.ContainsKey(key))
+                {
+                    continue;
+                }
+
                 if (keySpec.Length == 2)
                 {
-                    SendKey(mouse, keySpec[0], int.Parse(keySpec[1]));
+                    SendKey(mouse, key, int.Parse(keySpec[1]));
                 }
                 else
                 {
-                    SendKey(mouse, keySpec[0]);
+                    SendKey(mouse, key);
                 }
             }
         }
@@ -383,9 +415,14 @@ namespace ColorControl
             return true;
         }
 
-        internal void WakeSelectedDevice(string macAddress = null)
+        internal void WakeSelectedDevice()
         {
-            macAddress = macAddress == null ? SelectedDevice?.MacAddress : macAddress;
+            WakeSelectedDevice(SelectedDevice?.MacAddress ?? Config.PreferredMacAddress);
+        }
+
+        internal void WakeSelectedDevice(string macAddress)
+        {
+            macAddress = string.IsNullOrEmpty(macAddress) ? SelectedDevice?.MacAddress : macAddress;
             if (macAddress != null)
             {
                 WOL.WakeFunction(macAddress, !Config.UseAlternateWol);
@@ -393,7 +430,7 @@ namespace ColorControl
             }
             else
             {
-                Logger.Debug("Cannot wake device: no device has been selected");
+                Logger.Debug("Cannot wake device: no device has been selected or there is no preferred MAC-address stored in the configuration");
             }
         }
 
@@ -405,31 +442,29 @@ namespace ColorControl
             }
         }
 
-        private void WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 1000)
+        private async Task<bool> WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 1000)
         {
-            Task.Run(async () =>
+            try
             {
-                try
-                {
-                    //if (wakeDelay == 0)
-                    //{
-                    //    if (await ConnectToSelectedDevice())
-                    //    {
-                    //        Logger.Debug("Already connected, no wake needed?");
-                    //        return;
-                    //    };
-                    //}
+                //if (wakeDelay == 0)
+                //{
+                //    if (await ConnectToSelectedDevice())
+                //    {
+                //        Logger.Debug("Already connected, no wake needed?");
+                //        return;
+                //    };
+                //}
 
-                    await Task.Delay(wakeDelay);
-                    WakeSelectedDevice();
-                    await Task.Delay(connectDelay);
-                    await ConnectToSelectedDevice();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error("WakeAndConnectToSelectedDevice: " + e.ToLogString());
-                }
-            });
+                await Task.Delay(wakeDelay);
+                WakeSelectedDevice();
+                await Task.Delay(connectDelay);
+                return await ConnectToSelectedDevice();
+            }
+            catch (Exception e)
+            {
+                Logger.Error("WakeAndConnectToSelectedDevice: " + e.ToLogString());
+                return false;
+            }
         }
     }
 }

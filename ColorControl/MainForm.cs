@@ -176,6 +176,32 @@ namespace ColorControl
                 edtLgPowerOnAfterResumeDelay.Value = _lgService.Config.PowerOnDelayAfterResume;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgAlternateWolMechanism.Checked = _lgService.Config.UseAlternateWol;
+
+                var values = Enum.GetValues(typeof(ButtonType));
+                foreach (var button in values)
+                {
+                    var text = button.ToString();
+                    if (text[0] == '_')
+                    {
+                        text = text.Substring(1);
+                    }
+
+                    var item = mnuLgRcButtons.DropDownItems.Add(text);
+                    item.Click += miLgAddButton_Click;
+                }
+
+                var actions = _lgService.GetInvokableActions();
+                foreach (var keyValuePair in actions)
+                {
+                    var text = keyValuePair.Key;
+
+                    var item = mnuLgActions.DropDownItems.Add(text);
+                    item.Click += miLgAddAction_Click;
+                }
+
+
+                SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
+                //SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
             }
             catch (Exception e)
             {
@@ -183,24 +209,6 @@ namespace ColorControl
             }
 
             InitInfo();
-
-            var values = Enum.GetValues(typeof(ButtonType));
-            foreach (var button in values)
-            {
-                var text = button.ToString();
-                if (text[0] == '_')
-                {
-                    text = text.Substring(1);
-                }
-                var item = mnuLgButtons.Items.Add(text);
-                item.Click += miLgAddButton_Click;
-            }
-
-            if (_lgService != null)
-            {
-                //SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
-                SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
-            }
 
             _restartDetector = new RestartDetector();
 
@@ -531,11 +539,8 @@ namespace ColorControl
                 UserExit = false;
                 return;
             }
-            
-            SaveNvPresets();
-            SaveLgPresets();
 
-            SaveConfig();
+            GlobalSave();
 
             if (SystemShutdown && _lgService.Config.PowerOffOnShutdown)
             {
@@ -560,16 +565,40 @@ namespace ColorControl
             }
         }
 
+        private void GlobalSave()
+        {
+            SaveNvPresets();
+            SaveLgPresets();
+
+            _lgService?.GlobalSave();
+
+            SaveConfig();
+        }
+
         private void SaveNvPresets()
         {
-            var json = _JsonSerializer.Serialize(_presets);
-            File.WriteAllText(_nvPresetsFilename, json);
+            try
+            {
+                var json = _JsonSerializer.Serialize(_presets);
+                File.WriteAllText(_nvPresetsFilename, json);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
         }
 
         private void SaveLgPresets()
         {
-            var json = _JsonSerializer.Serialize(_lgPresets);
-            File.WriteAllText(_lgPresetsFilename, json);
+            try
+            {
+                var json = _JsonSerializer.Serialize(_lgPresets);
+                File.WriteAllText(_lgPresetsFilename, json);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
         }
 
         private void lvNvPresets_SelectedIndexChanged(object sender, EventArgs e)
@@ -1812,12 +1841,22 @@ namespace ColorControl
         {
             var item = sender as ToolStripItem;
 
-            var button = item.Text;
+            AddToLgSteps(item.Text);
+        }
 
+        private void miLgAddAction_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+
+            AddToLgSteps(item.Text);
+        }
+
+        private void AddToLgSteps(string step)
+        {
             var text = edtStepsLg.Text;
             if (string.IsNullOrWhiteSpace(text))
             {
-                text = button;
+                text = step;
             }
             else
             {
@@ -1828,11 +1867,11 @@ namespace ColorControl
                 }
                 if (pos == text.Length)
                 {
-                    text += ", " + button;
+                    text += ", " + step;
                 }
                 else
                 {
-                    text = text.Substring(0, pos + 1) + " " + button + ", " + text.Substring(pos + 1).Trim();
+                    text = text.Substring(0, pos + 1) + " " + step + ", " + text.Substring(pos + 1).Trim();
                 }
             }
             edtStepsLg.Text = text.Trim();
@@ -2079,6 +2118,11 @@ Do you want to continue?";
         private void chkLgAlternateWolMechanism_CheckedChanged(object sender, EventArgs e)
         {
             _lgService.Config.UseAlternateWol = chkLgAlternateWolMechanism.Checked;
+        }
+
+        private void MainForm_Deactivate(object sender, EventArgs e)
+        {
+            GlobalSave();
         }
     }
 }
