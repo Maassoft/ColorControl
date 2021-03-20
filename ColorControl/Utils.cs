@@ -1,13 +1,19 @@
 ﻿using Microsoft.Win32;
+using Microsoft.Win32.TaskScheduler;
+using NStandard;
+using NvAPIWrapper.Display;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Deployment.Application;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -27,15 +33,20 @@ namespace ColorControl
             Win = 8
         }
 
-        public static string PKEY_PNPX_IpAddress        = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
-        public static string PKEY_PNPX_PhysicalAddress  = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
+        public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
+        public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
+
+        [DllImport("user32.dll")]
+        public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
+        [DllImport("user32.dll")]
+        public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
+        private static bool WinKeyDown = false;
 
         public static Bitmap SubPixelShift(Bitmap bitmap)
         {
-            Bitmap bitmap2 = (Bitmap) bitmap.Clone();
+            Bitmap bitmap2 = (Bitmap)bitmap.Clone();
 
             int shift = -1;
             bool shiftRed = true;
@@ -193,7 +204,7 @@ namespace ColorControl
         internal static void GetRegistryKeyValue(string keyname, string valueName, bool deepSearch = false)
         {
             var key = Registry.LocalMachine.OpenSubKey(keyname);
-            
+
             foreach (var subKeyName in key.GetSubKeyNames())
             {
                 var subKey = key.OpenSubKey(subKeyName);
@@ -270,9 +281,11 @@ namespace ColorControl
 
             var list = await DeviceInformation.FindAllAsync("", new List<string>());
 
-            var reqs = new List<string>();
-            reqs.Add(PKEY_PNPX_IpAddress);
-            reqs.Add(PKEY_PNPX_PhysicalAddress);
+            var reqs = new List<string>
+            {
+                PKEY_PNPX_IpAddress,
+                PKEY_PNPX_PhysicalAddress
+            };
 
             foreach (var dev in list)
             {
@@ -301,7 +314,7 @@ namespace ColorControl
             return devices;
         }
 
-        public static void WaitForTask(Task task)
+        public static void WaitForTask(System.Threading.Tasks.Task task)
         {
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
@@ -374,5 +387,222 @@ namespace ColorControl
             }
             return list;
         }
+
+        public static void RegisterTask(string taskName, bool enabled)
+        {
+            var file = Assembly.GetExecutingAssembly().Location;
+            var directory = Path.GetDirectoryName(file);
+
+            try
+            {
+                using (TaskService ts = new TaskService())
+                {
+                    if (enabled)
+                    {
+                        TaskDefinition td = ts.NewTask();
+                        td.RegistrationInfo.Description = "Start ColorControl";
+
+                        td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
+
+                        td.Actions.Add(new ExecAction(file, StartUpParams.RunningFromScheduledTaskParam, directory));
+
+                        ts.RootFolder.RegisterTaskDefinition(taskName, td);
+                    }
+                    else
+                    {
+                        ts.RootFolder.DeleteTask(taskName, false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                MessageForms.ErrorOk("Could not create/delete task: " + e.Message);
+            }
+        }
+
+        public static bool TaskExists(string taskName, bool update)
+        {
+            var file = Assembly.GetExecutingAssembly().Location;
+            using (TaskService ts = new TaskService())
+            {
+                var task = ts.RootFolder.Tasks.FirstOrDefault(x => x.Name.Equals(taskName));
+
+                if (task != null)
+                {
+                    if (update && ApplicationDeployment.IsNetworkDeployed)
+                    {
+                        var action = task.Definition.Actions.FirstOrDefault(x => x.ActionType == TaskActionType.Execute);
+                        if (action != null)
+                        {
+                            var execAction = action as ExecAction;
+                            if (!execAction.Path.Equals(file))
+                            {
+                                RegisterTask(taskName, false);
+                                RegisterTask(taskName, true);
+                            }
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public static void RegisterShortcut(IntPtr handle, int id, string shortcut, bool clear = false)
+        {
+            if (clear)
+            {
+                UnregisterHotKey(handle, id);
+            }
+
+            if (!string.IsNullOrEmpty(shortcut))
+            {
+                var (mods, key) = ParseShortcut(shortcut);
+                RegisterHotKey(handle, id, mods, key);
+            }
+        }
+
+        public static void BuildDropDownMenu(ToolStripMenuItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent)
+        {
+            PropertyInfo property;
+            var subMenuItems = mnuParent.DropDownItems.Find("miColorSettings_" + name, false);
+            ToolStripMenuItem subMenuItem;
+            if (subMenuItems.Length == 0)
+            {
+                subMenuItem = (ToolStripMenuItem)mnuParent.DropDownItems.Add(name);
+                subMenuItem.Name = "miColorSettings_" + name;
+
+                property = colorData.GetType().GetDeclaredProperty(propertyName);
+                subMenuItem.Tag = property;
+
+                foreach (var enumValue in Enum.GetValues(enumType))
+                {
+                    var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
+                    item.Tag = enumValue;
+                    item.Click += clickEvent;
+                }
+            }
+            else
+            {
+                subMenuItem = (ToolStripMenuItem)subMenuItems[0];
+                property = (PropertyInfo)subMenuItem.Tag;
+            }
+
+            var value = property.GetValue(colorData);
+
+            foreach (var item in subMenuItem.DropDownItems)
+            {
+                if (item is ToolStripMenuItem)
+                {
+                    var menuItem = (ToolStripMenuItem)item;
+                    if (menuItem.Tag != null)
+                    {
+                        menuItem.Checked = menuItem.Tag.Equals(value);
+                    }
+                }
+            }
+        }
+
+        public static string FormatKeyboardShortcut(KeyEventArgs keyEvent)
+        {
+            var pressedModifiers = keyEvent.Modifiers;
+
+            //Debug.WriteLine("KD: " + e.Modifiers + ", " + e.KeyCode);
+
+            var shortcutString = (pressedModifiers > 0 ? pressedModifiers.ToString() : "");
+            if (keyEvent.KeyCode == Keys.LWin || WinKeyDown)
+            {
+                WinKeyDown = true;
+                if (!string.IsNullOrEmpty(shortcutString))
+                {
+                    shortcutString += ", ";
+                }
+                shortcutString += "Win";
+            }
+
+            if (!string.IsNullOrEmpty(shortcutString) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
+            {
+                shortcutString += " + " + keyEvent.KeyCode.ToString();
+            }
+
+            if (pressedModifiers == 0 && !WinKeyDown)
+            {
+                keyEvent.SuppressKeyPress = true;
+            }
+
+            return shortcutString;
+        }
+
+        public static void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)
+        {
+            if (keyEvent.KeyCode == Keys.LWin)
+            {
+                WinKeyDown = false;
+            }
+        }
+
+        public static void InitListView(ListView listView, IEnumerable<string> columns)
+        {
+            foreach (var name in columns)
+            {
+                var columnName = name;
+                var parts = name.Split('|');
+
+                var width = 120;
+                if (parts.Length > 1)
+                {
+                    width = int.Parse(parts[1]);
+                    columnName = parts[0];
+                }
+
+                var header = listView.Columns.Add(columnName);
+                header.Width = width == 120 ? -2 : width;
+            }
+        }
+
+        public static void AddOrUpdateListItem<T>(ListView listView, List<T> presets, Config config, T preset = null, ListViewItem specItem = null) where T : PresetBase
+        {
+            ListViewItem item = null;
+            if (preset == null)
+            {
+                item = listView.SelectedItems[0];
+                preset = (T)item.Tag;
+            }
+            else
+            {
+                item = specItem;
+            }
+
+            if (preset.id == 0)
+            {
+                preset.id = preset.GetHashCode();
+            }
+
+            var values = preset.GetDisplayValues(config);
+
+            if (item == null)
+            {
+                item = listView.Items.Add(values[0]);
+                item.Tag = preset;
+                for (var i = 1; i < values.Count; i++)
+                {
+                    item.SubItems.Add(values[i]);
+                }
+                if (!presets.Any(x => x.id == preset.id))
+                {
+                    presets.Add(preset);
+                }
+            }
+            else
+            {
+                item.Text = values[0];
+                for (var i = 1; i < values.Count; i++)
+                {
+                    item.SubItems[i].Text = values[i];
+                }
+            }
+        }
+
+
     }
 }

@@ -27,7 +27,7 @@
     <ProductName>ColorControl</ProductName>
     <PublisherName>Maassoft</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.6.0.0</ApplicationVersion>
+    <ApplicationVersion>2.0.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -172,6 +172,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ADL.cs" />
+    <Compile Include="ADLWrapper.cs" />
+    <Compile Include="AmdDisplayInfo.cs" />
+    <Compile Include="ServiceBase.cs" />
+    <Compile Include="NvDisplayInfo.cs" />
     <Compile Include="MessageForms.cs" />
     <Compile Include="GraphicsService.cs" />
     <Compile Include="AmdService.cs" />

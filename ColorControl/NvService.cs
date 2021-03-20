@@ -6,8 +6,11 @@ using NvAPIWrapper.Native.GPU.Structures;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Windows.Graphics.Display;
 
 namespace ColorControl
 {
@@ -63,12 +66,17 @@ namespace ColorControl
             public uint mode;
         };
 
+        private List<NvPreset> _presets;
+
         private Display _currentDisplay;
-        private bool _initialized = false;
         private NvPreset _lastAppliedPreset;
 
-        public NvService()
+        public NvService(string dataPath) : base(dataPath)
         {
+            var converter = new ColorDataConverter();
+            _JsonDeserializer.RegisterConverters(new[] { converter });
+
+            LoadPresets();
         }
 
         public Display GetCurrentDisplay()
@@ -93,6 +101,45 @@ namespace ColorControl
             }
         }
 
+        public void GlobalSave()
+        {
+            SavePresets();
+        }
+
+        public List<NvPreset> GetPresets()
+        {
+            return _presets;
+        }
+
+        private void LoadPresets()
+        {
+            _presetsFilename = Path.Combine(_dataPath, "NvPresets.json");
+
+            if (File.Exists(_presetsFilename))
+            {
+                var json = File.ReadAllText(_presetsFilename);
+
+                _presets = _JsonDeserializer.Deserialize<List<NvPreset>>(json);
+            }
+            else
+            {
+                _presets = NvPreset.GetDefaultPresets();
+            }
+        }
+
+        private void SavePresets()
+        {
+            try
+            {
+                var json = _JsonSerializer.Serialize(_presets);
+                File.WriteAllText(_presetsFilename, json);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
+        }
+
         private void SetCurrentDisplay(NvPreset preset)
         {
             if (preset.primaryDisplay)
@@ -105,7 +152,6 @@ namespace ColorControl
                 _currentDisplay = Display.GetDisplays().FirstOrDefault(x => x.Name.Equals(preset.displayName));
             }
         }
-
 
         public bool ApplyPreset(NvPreset preset, Config config)
         {
@@ -324,6 +370,67 @@ namespace ColorControl
         public Display[] GetDisplays()
         {
             return Display.GetDisplays();
+        }
+
+        public List<NvDisplayInfo> GetDisplayInfos()
+        {
+            Display[] displays;
+            try
+            {
+                displays = GetDisplays();
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error while getting displays: " + e.ToLogString());
+                return null;
+            }
+
+            var list = new List<NvDisplayInfo>();
+
+            foreach (var display in displays)
+            {
+                var values = new List<string>();
+
+                var name = display.Name;
+
+                var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
+                if (screen != null)
+                {
+                    name += " (" + screen.DeviceFriendlyName() + ")";
+                }
+
+                values.Add(name);
+
+                var colorData = display.DisplayDevice.CurrentColorData;
+                var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
+
+                values.Add(colorSettings);
+
+                var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
+
+                values.Add($"{refreshRate}Hz");
+
+                var lastPreset = GetLastAppliedPreset();
+                if (lastPreset != null)
+                {
+                    values.Add(lastPreset.GetDitheringDescription());
+                }
+                else
+                {
+                    values.Add(string.Empty);
+                }
+
+                var hdrEnabled = IsHDREnabled();
+                values.Add(hdrEnabled ? "Yes" : "No");
+
+                var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
+
+                var displayInfo = new NvDisplayInfo(display, values, infoLine);
+
+                list.Add(displayInfo);
+            }
+
+            return list;
         }
 
         public NvPreset GetLastAppliedPreset()

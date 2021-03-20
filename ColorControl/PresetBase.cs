@@ -45,5 +45,6 @@ namespace ColorControl
             return id;
         }
 
+        public abstract List<string> GetDisplayValues(Config config = null);
     }
 }

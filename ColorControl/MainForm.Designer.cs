@@ -70,13 +70,40 @@
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
             this.tabAMD = new System.Windows.Forms.TabPage();
+            this.btnAddAmd = new System.Windows.Forms.Button();
             this.lblErrorAMD = new System.Windows.Forms.Label();
+            this.btnDeleteAmd = new System.Windows.Forms.Button();
+            this.btnCloneAmd = new System.Windows.Forms.Button();
+            this.btnSetAmdShortcut = new System.Windows.Forms.Button();
+            this.lblAmdShortcut = new System.Windows.Forms.Label();
+            this.edtAmdShortcut = new System.Windows.Forms.TextBox();
+            this.btnChangeAmd = new System.Windows.Forms.Button();
+            this.mnuAmdPresets = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miAmdApply = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.mnuAmdDisplay = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuAmdColorSettings = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdColorSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuAmdRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuAmdDithering = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdDitheringIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuAmdHDR = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdHDRToggle = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.btnApplyAmd = new System.Windows.Forms.Button();
+            this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.btnLGRemoteControl = new System.Windows.Forms.Button();
             this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.btnLgAddButton = new System.Windows.Forms.Button();
             this.mnuLgButtons = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.mnuLgRcButtons = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
             this.label3 = new System.Windows.Forms.Label();
             this.cbxLgDevices = new System.Windows.Forms.ComboBox();
             this.btnLgRefreshApps = new System.Windows.Forms.Button();
@@ -109,14 +136,14 @@
             this.btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.edtBlankScreenSaverShortcut = new System.Windows.Forms.TextBox();
-            this.label10 = new System.Windows.Forms.Label();
+            this.lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             this.grpLGOptions = new System.Windows.Forms.GroupBox();
-            this.chkLgAlternateWolMechanism = new System.Windows.Forms.CheckBox();
+            this.chkLgOldWolMechanism = new System.Windows.Forms.CheckBox();
             this.btnLGTestPower = new System.Windows.Forms.Button();
-            this.label9 = new System.Windows.Forms.Label();
-            this.edtLgPowerOnAfterResumeDelay = new System.Windows.Forms.NumericUpDown();
-            this.label8 = new System.Windows.Forms.Label();
+            this.lblLgMaxPowerOnRetriesDescription = new System.Windows.Forms.Label();
+            this.edtLgMaxPowerOnRetries = new System.Windows.Forms.NumericUpDown();
+            this.lblLgMaxPowerOnRetries = new System.Windows.Forms.Label();
             this.grpHDROptions = new System.Windows.Forms.GroupBox();
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
@@ -135,12 +162,11 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.mnuLgRcButtons = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
             this.tabAMD.SuspendLayout();
+            this.mnuAmdPresets.SuspendLayout();
             this.tabLG.SuspendLayout();
             this.mnuLgButtons.SuspendLayout();
             this.tabOptions.SuspendLayout();
@@ -148,7 +174,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
             this.grpMiscellaneousOptions.SuspendLayout();
             this.grpLGOptions.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgPowerOnAfterResumeDelay)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).BeginInit();
             this.grpHDROptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtDelayDisplaySettings)).BeginInit();
             this.grpGeneralOptions.SuspendLayout();
@@ -310,7 +336,7 @@
             this.miNvApply.Name = "miNvApply";
             this.miNvApply.Size = new System.Drawing.Size(162, 22);
             this.miNvApply.Text = "Apply";
-            this.miNvApply.Click += new System.EventHandler(this.miNvApply_Click);
+            this.miNvApply.Click += new System.EventHandler(this.btnApply_Click);
             // 
             // miNvPresetApplyOnStartup
             // 
@@ -540,11 +566,20 @@
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
             this.lvNvPresets.SelectedIndexChanged += new System.EventHandler(this.lvNvPresets_SelectedIndexChanged);
-            this.lvNvPresets.DoubleClick += new System.EventHandler(this.lvNvPresets_DoubleClick);
+            this.lvNvPresets.DoubleClick += new System.EventHandler(this.btnApply_Click);
             // 
             // tabAMD
             // 
+            this.tabAMD.Controls.Add(this.btnAddAmd);
             this.tabAMD.Controls.Add(this.lblErrorAMD);
+            this.tabAMD.Controls.Add(this.btnDeleteAmd);
+            this.tabAMD.Controls.Add(this.btnCloneAmd);
+            this.tabAMD.Controls.Add(this.btnSetAmdShortcut);
+            this.tabAMD.Controls.Add(this.lblAmdShortcut);
+            this.tabAMD.Controls.Add(this.edtAmdShortcut);
+            this.tabAMD.Controls.Add(this.btnChangeAmd);
+            this.tabAMD.Controls.Add(this.btnApplyAmd);
+            this.tabAMD.Controls.Add(this.lvAmdPresets);
             this.tabAMD.Location = new System.Drawing.Point(4, 22);
             this.tabAMD.Name = "tabAMD";
             this.tabAMD.Padding = new System.Windows.Forms.Padding(3);
@@ -553,15 +588,255 @@
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
             // 
+            // btnAddAmd
+            // 
+            this.btnAddAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnAddAmd.Location = new System.Drawing.Point(574, 417);
+            this.btnAddAmd.Name = "btnAddAmd";
+            this.btnAddAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnAddAmd.TabIndex = 18;
+            this.btnAddAmd.Text = "Add";
+            this.btnAddAmd.UseVisualStyleBackColor = true;
+            this.btnAddAmd.Click += new System.EventHandler(this.btnAddAmd_Click);
+            // 
             // lblErrorAMD
             // 
             this.lblErrorAMD.AutoSize = true;
-            this.lblErrorAMD.Location = new System.Drawing.Point(6, 3);
+            this.lblErrorAMD.Location = new System.Drawing.Point(6, 6);
             this.lblErrorAMD.Name = "lblErrorAMD";
             this.lblErrorAMD.Size = new System.Drawing.Size(50, 13);
             this.lblErrorAMD.TabIndex = 8;
             this.lblErrorAMD.Text = "ErrorText";
             this.lblErrorAMD.Visible = false;
+            // 
+            // btnDeleteAmd
+            // 
+            this.btnDeleteAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnDeleteAmd.Enabled = false;
+            this.btnDeleteAmd.Location = new System.Drawing.Point(493, 417);
+            this.btnDeleteAmd.Name = "btnDeleteAmd";
+            this.btnDeleteAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnDeleteAmd.TabIndex = 17;
+            this.btnDeleteAmd.Text = "Delete";
+            this.btnDeleteAmd.UseVisualStyleBackColor = true;
+            this.btnDeleteAmd.Click += new System.EventHandler(this.btnDeleteAmd_Click);
+            // 
+            // btnCloneAmd
+            // 
+            this.btnCloneAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnCloneAmd.Enabled = false;
+            this.btnCloneAmd.Location = new System.Drawing.Point(412, 417);
+            this.btnCloneAmd.Name = "btnCloneAmd";
+            this.btnCloneAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnCloneAmd.TabIndex = 16;
+            this.btnCloneAmd.Text = "Clone";
+            this.btnCloneAmd.UseVisualStyleBackColor = true;
+            this.btnCloneAmd.Click += new System.EventHandler(this.btnCloneAmd_Click);
+            // 
+            // btnSetAmdShortcut
+            // 
+            this.btnSetAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnSetAmdShortcut.Enabled = false;
+            this.btnSetAmdShortcut.Location = new System.Drawing.Point(372, 417);
+            this.btnSetAmdShortcut.Name = "btnSetAmdShortcut";
+            this.btnSetAmdShortcut.Size = new System.Drawing.Size(34, 23);
+            this.btnSetAmdShortcut.TabIndex = 15;
+            this.btnSetAmdShortcut.Text = "Set";
+            this.btnSetAmdShortcut.UseVisualStyleBackColor = true;
+            this.btnSetAmdShortcut.Click += new System.EventHandler(this.btnSetAmdShortcut_Click);
+            // 
+            // lblAmdShortcut
+            // 
+            this.lblAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblAmdShortcut.AutoSize = true;
+            this.lblAmdShortcut.Location = new System.Drawing.Point(168, 422);
+            this.lblAmdShortcut.Name = "lblAmdShortcut";
+            this.lblAmdShortcut.Size = new System.Drawing.Size(50, 13);
+            this.lblAmdShortcut.TabIndex = 14;
+            this.lblAmdShortcut.Text = "Shortcut:";
+            // 
+            // edtAmdShortcut
+            // 
+            this.edtAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtAmdShortcut.Enabled = false;
+            this.edtAmdShortcut.Location = new System.Drawing.Point(224, 419);
+            this.edtAmdShortcut.Name = "edtAmdShortcut";
+            this.edtAmdShortcut.ReadOnly = true;
+            this.edtAmdShortcut.Size = new System.Drawing.Size(142, 20);
+            this.edtAmdShortcut.TabIndex = 13;
+            this.edtAmdShortcut.TextChanged += new System.EventHandler(this.edtAmdShortcut_TextChanged);
+            this.edtAmdShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
+            this.edtAmdShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
+            // 
+            // btnChangeAmd
+            // 
+            this.btnChangeAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnChangeAmd.ContextMenuStrip = this.mnuAmdPresets;
+            this.btnChangeAmd.Enabled = false;
+            this.btnChangeAmd.Location = new System.Drawing.Point(87, 417);
+            this.btnChangeAmd.Name = "btnChangeAmd";
+            this.btnChangeAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnChangeAmd.TabIndex = 12;
+            this.btnChangeAmd.Text = "Change...";
+            this.btnChangeAmd.UseVisualStyleBackColor = true;
+            this.btnChangeAmd.Click += new System.EventHandler(this.btnChangeAmd_Click);
+            // 
+            // mnuAmdPresets
+            // 
+            this.mnuAmdPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuAmdPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdApply,
+            this.miAmdPresetApplyOnStartup,
+            this.toolStripSeparator2,
+            this.mnuAmdDisplay,
+            this.mnuAmdColorSettings,
+            this.mnuAmdRefreshRate,
+            this.mnuAmdDithering,
+            this.mnuAmdHDR});
+            this.mnuAmdPresets.Name = "mnuNvPresets";
+            this.mnuAmdPresets.Size = new System.Drawing.Size(163, 164);
+            this.mnuAmdPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuAmdPresets_Opening);
+            // 
+            // miAmdApply
+            // 
+            this.miAmdApply.Name = "miAmdApply";
+            this.miAmdApply.Size = new System.Drawing.Size(162, 22);
+            this.miAmdApply.Text = "Apply";
+            this.miAmdApply.Click += new System.EventHandler(this.btnApplyAmd_Click);
+            // 
+            // miAmdPresetApplyOnStartup
+            // 
+            this.miAmdPresetApplyOnStartup.CheckOnClick = true;
+            this.miAmdPresetApplyOnStartup.Name = "miAmdPresetApplyOnStartup";
+            this.miAmdPresetApplyOnStartup.Size = new System.Drawing.Size(162, 22);
+            this.miAmdPresetApplyOnStartup.Text = "Apply on startup";
+            this.miAmdPresetApplyOnStartup.Click += new System.EventHandler(this.miAmdPresetApplyOnStartup_Click);
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(159, 6);
+            // 
+            // mnuAmdDisplay
+            // 
+            this.mnuAmdDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdPrimaryDisplay});
+            this.mnuAmdDisplay.Name = "mnuAmdDisplay";
+            this.mnuAmdDisplay.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdDisplay.Text = "Display";
+            // 
+            // miAmdPrimaryDisplay
+            // 
+            this.miAmdPrimaryDisplay.Name = "miAmdPrimaryDisplay";
+            this.miAmdPrimaryDisplay.Size = new System.Drawing.Size(155, 22);
+            this.miAmdPrimaryDisplay.Text = "Primary display";
+            this.miAmdPrimaryDisplay.Click += new System.EventHandler(this.displayMenuItemAmd_Click);
+            // 
+            // mnuAmdColorSettings
+            // 
+            this.mnuAmdColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdColorSettingsIncluded});
+            this.mnuAmdColorSettings.Name = "mnuAmdColorSettings";
+            this.mnuAmdColorSettings.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdColorSettings.Text = "Color settings";
+            // 
+            // miAmdColorSettingsIncluded
+            // 
+            this.miAmdColorSettingsIncluded.Name = "miAmdColorSettingsIncluded";
+            this.miAmdColorSettingsIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miAmdColorSettingsIncluded.Text = "Included";
+            this.miAmdColorSettingsIncluded.Click += new System.EventHandler(this.miAmdColorSettingsIncluded_Click);
+            // 
+            // mnuAmdRefreshRate
+            // 
+            this.mnuAmdRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdRefreshRateIncluded});
+            this.mnuAmdRefreshRate.Name = "mnuAmdRefreshRate";
+            this.mnuAmdRefreshRate.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdRefreshRate.Text = "Refresh Rate";
+            // 
+            // miAmdRefreshRateIncluded
+            // 
+            this.miAmdRefreshRateIncluded.Name = "miAmdRefreshRateIncluded";
+            this.miAmdRefreshRateIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miAmdRefreshRateIncluded.Text = "Included";
+            this.miAmdRefreshRateIncluded.Click += new System.EventHandler(this.miAmdRefreshRateIncluded_Click);
+            // 
+            // mnuAmdDithering
+            // 
+            this.mnuAmdDithering.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdDitheringIncluded});
+            this.mnuAmdDithering.Name = "mnuAmdDithering";
+            this.mnuAmdDithering.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdDithering.Text = "Dithering";
+            // 
+            // miAmdDitheringIncluded
+            // 
+            this.miAmdDitheringIncluded.Name = "miAmdDitheringIncluded";
+            this.miAmdDitheringIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miAmdDitheringIncluded.Text = "Included";
+            this.miAmdDitheringIncluded.Click += new System.EventHandler(this.miAmdDitheringIncluded_Click);
+            // 
+            // mnuAmdHDR
+            // 
+            this.mnuAmdHDR.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miAmdHDRIncluded,
+            this.miAmdHDRToggle,
+            this.miAmdHDREnabled});
+            this.mnuAmdHDR.Name = "mnuAmdHDR";
+            this.mnuAmdHDR.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdHDR.Text = "HDR";
+            // 
+            // miAmdHDRIncluded
+            // 
+            this.miAmdHDRIncluded.Name = "miAmdHDRIncluded";
+            this.miAmdHDRIncluded.Size = new System.Drawing.Size(136, 22);
+            this.miAmdHDRIncluded.Text = "Included";
+            this.miAmdHDRIncluded.Click += new System.EventHandler(this.miAmdHDRIncluded_Click);
+            // 
+            // miAmdHDRToggle
+            // 
+            this.miAmdHDRToggle.Name = "miAmdHDRToggle";
+            this.miAmdHDRToggle.Size = new System.Drawing.Size(136, 22);
+            this.miAmdHDRToggle.Text = "Toggle HDR";
+            this.miAmdHDRToggle.Click += new System.EventHandler(this.miAmdHDRToggle_Click);
+            // 
+            // miAmdHDREnabled
+            // 
+            this.miAmdHDREnabled.Name = "miAmdHDREnabled";
+            this.miAmdHDREnabled.Size = new System.Drawing.Size(136, 22);
+            this.miAmdHDREnabled.Text = "Enabled";
+            this.miAmdHDREnabled.Click += new System.EventHandler(this.miAmdHDREnabled_Click);
+            // 
+            // btnApplyAmd
+            // 
+            this.btnApplyAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnApplyAmd.Enabled = false;
+            this.btnApplyAmd.Location = new System.Drawing.Point(6, 417);
+            this.btnApplyAmd.Name = "btnApplyAmd";
+            this.btnApplyAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnApplyAmd.TabIndex = 11;
+            this.btnApplyAmd.Text = "Apply";
+            this.btnApplyAmd.UseVisualStyleBackColor = true;
+            this.btnApplyAmd.Click += new System.EventHandler(this.btnApplyAmd_Click);
+            // 
+            // lvAmdPresets
+            // 
+            this.lvAmdPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvAmdPresets.ContextMenuStrip = this.mnuAmdPresets;
+            this.lvAmdPresets.FullRowSelect = true;
+            this.lvAmdPresets.HideSelection = false;
+            this.lvAmdPresets.Location = new System.Drawing.Point(6, 6);
+            this.lvAmdPresets.MultiSelect = false;
+            this.lvAmdPresets.Name = "lvAmdPresets";
+            this.lvAmdPresets.Size = new System.Drawing.Size(829, 405);
+            this.lvAmdPresets.TabIndex = 10;
+            this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
+            this.lvAmdPresets.View = System.Windows.Forms.View.Details;
+            this.lvAmdPresets.SelectedIndexChanged += new System.EventHandler(this.lvAmdPresets_SelectedIndexChanged);
+            this.lvAmdPresets.DoubleClick += new System.EventHandler(this.btnApplyAmd_Click);
             // 
             // tabLG
             // 
@@ -658,7 +933,19 @@
             this.mnuLgRcButtons,
             this.mnuLgActions});
             this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(181, 70);
+            this.mnuLgButtons.Size = new System.Drawing.Size(116, 48);
+            // 
+            // mnuLgRcButtons
+            // 
+            this.mnuLgRcButtons.Name = "mnuLgRcButtons";
+            this.mnuLgRcButtons.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgRcButtons.Text = "Buttons";
+            // 
+            // mnuLgActions
+            // 
+            this.mnuLgActions.Name = "mnuLgActions";
+            this.mnuLgActions.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgActions.Text = "Actions";
             // 
             // label3
             // 
@@ -844,8 +1131,9 @@
             this.edtShortcutLg.ReadOnly = true;
             this.edtShortcutLg.Size = new System.Drawing.Size(200, 20);
             this.edtShortcutLg.TabIndex = 11;
+            this.edtShortcutLg.TextChanged += new System.EventHandler(this.edtShortcutLg_TextChanged);
             this.edtShortcutLg.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
-            this.edtShortcutLg.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.edtShortcut_KeyPress);
+            this.edtShortcutLg.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
             // 
             // btnApplyLg
             // 
@@ -978,7 +1266,7 @@
             this.grpMiscellaneousOptions.Controls.Add(this.btnSetShortcutScreenSaver);
             this.grpMiscellaneousOptions.Controls.Add(this.label11);
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
-            this.grpMiscellaneousOptions.Controls.Add(this.label10);
+            this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
             this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 309);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
@@ -1016,14 +1304,14 @@
             this.edtBlankScreenSaverShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
             this.edtBlankScreenSaverShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
             // 
-            // label10
+            // lblFixChromeFontsDescription
             // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(3, 39);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(373, 13);
-            this.label10.TabIndex = 6;
-            this.label10.Text = "This will add the parameter --disable-lcd-text to Chrome and requires elevation.";
+            this.lblFixChromeFontsDescription.AutoSize = true;
+            this.lblFixChromeFontsDescription.Location = new System.Drawing.Point(3, 39);
+            this.lblFixChromeFontsDescription.Name = "lblFixChromeFontsDescription";
+            this.lblFixChromeFontsDescription.Size = new System.Drawing.Size(373, 13);
+            this.lblFixChromeFontsDescription.TabIndex = 6;
+            this.lblFixChromeFontsDescription.Text = "This will add the parameter --disable-lcd-text to Chrome and requires elevation.";
             // 
             // chkFixChromeFonts
             // 
@@ -1038,11 +1326,11 @@
             // 
             // grpLGOptions
             // 
-            this.grpLGOptions.Controls.Add(this.chkLgAlternateWolMechanism);
+            this.grpLGOptions.Controls.Add(this.chkLgOldWolMechanism);
             this.grpLGOptions.Controls.Add(this.btnLGTestPower);
-            this.grpLGOptions.Controls.Add(this.label9);
-            this.grpLGOptions.Controls.Add(this.edtLgPowerOnAfterResumeDelay);
-            this.grpLGOptions.Controls.Add(this.label8);
+            this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
+            this.grpLGOptions.Controls.Add(this.edtLgMaxPowerOnRetries);
+            this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetries);
             this.grpLGOptions.Location = new System.Drawing.Point(6, 196);
             this.grpLGOptions.Name = "grpLGOptions";
             this.grpLGOptions.Size = new System.Drawing.Size(403, 107);
@@ -1050,16 +1338,16 @@
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
             // 
-            // chkLgAlternateWolMechanism
+            // chkLgOldWolMechanism
             // 
-            this.chkLgAlternateWolMechanism.AutoSize = true;
-            this.chkLgAlternateWolMechanism.Location = new System.Drawing.Point(158, 72);
-            this.chkLgAlternateWolMechanism.Name = "chkLgAlternateWolMechanism";
-            this.chkLgAlternateWolMechanism.Size = new System.Drawing.Size(173, 17);
-            this.chkLgAlternateWolMechanism.TabIndex = 7;
-            this.chkLgAlternateWolMechanism.Text = "Use alternate WOL mechanism";
-            this.chkLgAlternateWolMechanism.UseVisualStyleBackColor = true;
-            this.chkLgAlternateWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
+            this.chkLgOldWolMechanism.AutoSize = true;
+            this.chkLgOldWolMechanism.Location = new System.Drawing.Point(158, 72);
+            this.chkLgOldWolMechanism.Name = "chkLgOldWolMechanism";
+            this.chkLgOldWolMechanism.Size = new System.Drawing.Size(187, 17);
+            this.chkLgOldWolMechanism.TabIndex = 7;
+            this.chkLgOldWolMechanism.Text = "Use old WOL mechanism (Npcap)";
+            this.chkLgOldWolMechanism.UseVisualStyleBackColor = true;
+            this.chkLgOldWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
             // 
             // btnLGTestPower
             // 
@@ -1071,43 +1359,39 @@
             this.btnLGTestPower.UseVisualStyleBackColor = true;
             this.btnLGTestPower.Click += new System.EventHandler(this.btnLGTestPower_Click);
             // 
-            // label9
+            // lblLgMaxPowerOnRetriesDescription
             // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(6, 40);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(332, 13);
-            this.label9.TabIndex = 5;
-            this.label9.Text = "This delay is necessary to wait for the network link to be established. ";
+            this.lblLgMaxPowerOnRetriesDescription.AutoSize = true;
+            this.lblLgMaxPowerOnRetriesDescription.Location = new System.Drawing.Point(6, 40);
+            this.lblLgMaxPowerOnRetriesDescription.Name = "lblLgMaxPowerOnRetriesDescription";
+            this.lblLgMaxPowerOnRetriesDescription.Size = new System.Drawing.Size(375, 13);
+            this.lblLgMaxPowerOnRetriesDescription.TabIndex = 5;
+            this.lblLgMaxPowerOnRetriesDescription.Text = "Retries are necessary to wait for the network link of your pc to be established. " +
+    "";
             // 
-            // edtLgPowerOnAfterResumeDelay
+            // edtLgMaxPowerOnRetries
             // 
-            this.edtLgPowerOnAfterResumeDelay.Increment = new decimal(new int[] {
-            100,
+            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(299, 17);
+            this.edtLgMaxPowerOnRetries.Maximum = new decimal(new int[] {
+            25,
             0,
             0,
             0});
-            this.edtLgPowerOnAfterResumeDelay.Location = new System.Drawing.Point(299, 17);
-            this.edtLgPowerOnAfterResumeDelay.Maximum = new decimal(new int[] {
-            10000,
-            0,
-            0,
-            0});
-            this.edtLgPowerOnAfterResumeDelay.Name = "edtLgPowerOnAfterResumeDelay";
-            this.edtLgPowerOnAfterResumeDelay.ReadOnly = true;
-            this.edtLgPowerOnAfterResumeDelay.Size = new System.Drawing.Size(74, 20);
-            this.edtLgPowerOnAfterResumeDelay.TabIndex = 1;
-            this.edtLgPowerOnAfterResumeDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.edtLgPowerOnAfterResumeDelay.ValueChanged += new System.EventHandler(this.edtLgPowerOnAfterResumeDelay_ValueChanged);
+            this.edtLgMaxPowerOnRetries.Name = "edtLgMaxPowerOnRetries";
+            this.edtLgMaxPowerOnRetries.ReadOnly = true;
+            this.edtLgMaxPowerOnRetries.Size = new System.Drawing.Size(74, 20);
+            this.edtLgMaxPowerOnRetries.TabIndex = 1;
+            this.edtLgMaxPowerOnRetries.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.edtLgMaxPowerOnRetries.ValueChanged += new System.EventHandler(this.edtLgPowerOnAfterResumeDelay_ValueChanged);
             // 
-            // label8
+            // lblLgMaxPowerOnRetries
             // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 19);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(214, 13);
-            this.label8.TabIndex = 0;
-            this.label8.Text = "Delay before powering on after resume (ms):";
+            this.lblLgMaxPowerOnRetries.AutoSize = true;
+            this.lblLgMaxPowerOnRetries.Location = new System.Drawing.Point(6, 19);
+            this.lblLgMaxPowerOnRetries.Name = "lblLgMaxPowerOnRetries";
+            this.lblLgMaxPowerOnRetries.Size = new System.Drawing.Size(294, 13);
+            this.lblLgMaxPowerOnRetries.TabIndex = 0;
+            this.lblLgMaxPowerOnRetries.Text = "Maximum number of retries powering on after startup/resume:";
             // 
             // grpHDROptions
             // 
@@ -1314,18 +1598,6 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // mnuLgRcButtons
-            // 
-            this.mnuLgRcButtons.Name = "mnuLgRcButtons";
-            this.mnuLgRcButtons.Size = new System.Drawing.Size(180, 22);
-            this.mnuLgRcButtons.Text = "Buttons";
-            // 
-            // mnuLgActions
-            // 
-            this.mnuLgActions.Name = "mnuLgActions";
-            this.mnuLgActions.Size = new System.Drawing.Size(180, 22);
-            this.mnuLgActions.Text = "Actions";
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1349,6 +1621,7 @@
             this.mnuNvPresets.ResumeLayout(false);
             this.tabAMD.ResumeLayout(false);
             this.tabAMD.PerformLayout();
+            this.mnuAmdPresets.ResumeLayout(false);
             this.tabLG.ResumeLayout(false);
             this.tabLG.PerformLayout();
             this.mnuLgButtons.ResumeLayout(false);
@@ -1360,7 +1633,7 @@
             this.grpMiscellaneousOptions.PerformLayout();
             this.grpLGOptions.ResumeLayout(false);
             this.grpLGOptions.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgPowerOnAfterResumeDelay)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).EndInit();
             this.grpHDROptions.ResumeLayout(false);
             this.grpHDROptions.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtDelayDisplaySettings)).EndInit();
@@ -1447,13 +1720,13 @@
         private System.Windows.Forms.ToolStripMenuItem miNvPresetColorSettings;
         private System.Windows.Forms.CheckedListBox clbLgPower;
         private System.Windows.Forms.GroupBox grpLGOptions;
-        private System.Windows.Forms.NumericUpDown edtLgPowerOnAfterResumeDelay;
-        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.NumericUpDown edtLgMaxPowerOnRetries;
+        private System.Windows.Forms.Label lblLgMaxPowerOnRetries;
         private System.Windows.Forms.Button btnLGTestPower;
-        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.Label lblLgMaxPowerOnRetriesDescription;
         private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
         private System.Windows.Forms.CheckBox chkFixChromeFonts;
-        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label lblFixChromeFontsDescription;
         private System.Windows.Forms.Button btnSetShortcutScreenSaver;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox edtBlankScreenSaverShortcut;
@@ -1482,9 +1755,34 @@
         private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
         private System.Windows.Forms.Button btnLGRemoteControl;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetApplyOnStartup;
-        private System.Windows.Forms.CheckBox chkLgAlternateWolMechanism;
+        private System.Windows.Forms.CheckBox chkLgOldWolMechanism;
         private System.Windows.Forms.ToolStripMenuItem mnuLgRcButtons;
         private System.Windows.Forms.ToolStripMenuItem mnuLgActions;
+        private System.Windows.Forms.Button btnDeleteAmd;
+        private System.Windows.Forms.Button btnCloneAmd;
+        private System.Windows.Forms.Button btnSetAmdShortcut;
+        private System.Windows.Forms.Label lblAmdShortcut;
+        private System.Windows.Forms.TextBox edtAmdShortcut;
+        private System.Windows.Forms.Button btnChangeAmd;
+        private System.Windows.Forms.ContextMenuStrip mnuAmdPresets;
+        private System.Windows.Forms.ToolStripMenuItem miAmdApply;
+        private System.Windows.Forms.ToolStripMenuItem miAmdPresetApplyOnStartup;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdDisplay;
+        private System.Windows.Forms.ToolStripMenuItem miAmdPrimaryDisplay;
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdColorSettings;
+        private System.Windows.Forms.ToolStripMenuItem miAmdColorSettingsIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdRefreshRate;
+        private System.Windows.Forms.ToolStripMenuItem miAmdRefreshRateIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdDithering;
+        private System.Windows.Forms.ToolStripMenuItem miAmdDitheringIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdHDR;
+        private System.Windows.Forms.ToolStripMenuItem miAmdHDRIncluded;
+        private System.Windows.Forms.ToolStripMenuItem miAmdHDRToggle;
+        private System.Windows.Forms.ToolStripMenuItem miAmdHDREnabled;
+        private System.Windows.Forms.Button btnApplyAmd;
+        private System.Windows.Forms.ListView lvAmdPresets;
+        private System.Windows.Forms.Button btnAddAmd;
     }
 }
 

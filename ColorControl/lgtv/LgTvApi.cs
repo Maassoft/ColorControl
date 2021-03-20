@@ -297,6 +297,15 @@ namespace LgTv
             return _appList.OrderBy(e => e.Title);
         }
 
+        public async Task<IEnumerable<string>> GetServiceList()
+        {
+            var list = new List<string>();
+            var requestMessage = new RequestMessage("channels", "ssap://api/getServiceList");
+            var command = _connection.SendCommandAsync(requestMessage);
+            var res = await command;
+            return list;
+        }
+
         public async Task<IEnumerable<LgApp>> GetApps(bool force = false)
         {
             var appList = new List<LgApp>();

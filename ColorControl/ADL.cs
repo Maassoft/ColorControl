@@ -23,12 +23,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Threading;
 using FARPROC = System.IntPtr;
 using HMODULE = System.IntPtr;
+using ADL_CONTEXT_HANDLE = System.IntPtr;
 
 #endregion Using
 
@@ -36,52 +34,6 @@ using HMODULE = System.IntPtr;
 
 namespace ATI.ADL
 {
-    #region Export Delegates
-    /// <summary> ADL Memory allocation function allows ADL to callback for memory allocation</summary>
-    /// <param name="size">input size</param>
-    /// <returns> retrun ADL Error Code</returns>
-    internal delegate IntPtr ADL_Main_Memory_Alloc (int size);
-
-    // ///// <summary> ADL Create Function to create ADL Data</summary>
-    /// <param name="callback">Call back functin pointer which is ised to allocate memeory </param>
-    /// <param name="enumConnectedAdapters">If it is 1, then ADL will only retuen the physical exist adapters </param>
-    ///// <returns> retrun ADL Error Code</returns>
-    internal delegate int ADL_Main_Control_Create(ADL_Main_Memory_Alloc callback, int enumConnectedAdapters);
-
-    /// <summary> ADL Destroy Function to free up ADL Data</summary>
-    /// <returns> retrun ADL Error Code</returns>
-    internal delegate int ADL_Main_Control_Destroy ();
-
-    /// <summary> ADL Function to get the number of adapters</summary>
-    /// <param name="numAdapters">return number of adapters</param>
-    /// <returns> retrun ADL Error Code</returns>
-    internal delegate int ADL_Adapter_NumberOfAdapters_Get (ref int numAdapters);
-
-    /// <summary> ADL Function to get the GPU adapter information</summary>
-    /// <param name="info">return GPU adapter information</param>
-    /// <param name="inputSize">the size of the GPU adapter struct</param>
-    /// <returns> retrun ADL Error Code</returns>
-    internal delegate int ADL_Adapter_AdapterInfo_Get (IntPtr info, int inputSize);
-
-    /// <summary> Function to determine if the adapter is active or not.</summary>
-    /// <remarks>The function is used to check if the adapter associated with iAdapterIndex is active</remarks>  
-    /// <param name="adapterIndex"> Adapter Index.</param>
-    /// <param name="status"> Status of the adapter. True: Active; False: Dsiabled</param>
-    /// <returns>Non zero is successfull</returns> 
-    internal delegate int ADL_Adapter_Active_Get(int adapterIndex, ref int status);
-
-    /// <summary>Get display information based on adapter index</summary>
-    /// <param name="adapterIndex">Adapter Index</param>
-    /// <param name="numDisplays">return the total number of supported displays</param>
-    /// <param name="displayInfoArray">return ADLDisplayInfo Array for supported displays' information</param>
-    /// <param name="forceDetect">force detect or not</param>
-    /// <returns>return ADL Error Code</returns>
-    internal delegate int ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
-
-    internal delegate int ADL_Display_Size_Get(int adapterIndex, int displayIndex, ref int lpWidth, ref int lpHeight, ref int lpDefaultWidth, ref int lpDefaultHeight, ref int lpMinWidth, ref int lpMinHeight, ref int lpMaxWidth, ref int lpMaxHeight, ref int lpStepWidth, ref int lpStepHeight);
-
-    #endregion Export Delegates
-
     #region Export Struct
 
     #region ADLAdapterInfo
@@ -207,9 +159,73 @@ namespace ATI.ADL
         /// <summary> Maximum number of GL-Sync ports on the GL-Sync module </summary>
         internal const int ADL_MAX_GLSYNC_PORT_LEDS = 8;
         /// <summary> Maximum number of ADLMOdes for the adapter </summary>
-        internal const int ADL_MAX_NUM_DISPLAYMODES = 1024; 
+        internal const int ADL_MAX_NUM_DISPLAYMODES = 1024;
+
+        internal static Dictionary<Type, object> ADLDelegates = new Dictionary<Type, object>();
 
         #endregion Internal Constant
+
+        #region Export Delegates
+        /// <summary> ADL Memory allocation function allows ADL to callback for memory allocation</summary>
+        /// <param name="size">input size</param>
+        /// <returns> retrun ADL Error Code</returns>
+        internal delegate IntPtr ADL_Main_Memory_Alloc(int size);
+
+        // ///// <summary> ADL Create Function to create ADL Data</summary>
+        /// <param name="callback">Call back functin pointer which is ised to allocate memeory </param>
+        /// <param name="enumConnectedAdapters">If it is 1, then ADL will only retuen the physical exist adapters </param>
+        ///// <returns> retrun ADL Error Code</returns>
+        internal delegate int ADL_Main_Control_Create(ADL_Main_Memory_Alloc callback, int enumConnectedAdapters);
+
+        internal delegate int ADL2_Main_Control_Create(ADL_Main_Memory_Alloc callback, int enumConnectedAdapters, ref ADL_CONTEXT_HANDLE context);
+
+        /// <summary> ADL Destroy Function to free up ADL Data</summary>
+        /// <returns> retrun ADL Error Code</returns>
+        internal delegate int ADL_Main_Control_Destroy();
+
+        internal delegate int ADL2_Main_Control_Destroy(ADL_CONTEXT_HANDLE context);
+
+        /// <summary> ADL Function to get the number of adapters</summary>
+        /// <param name="numAdapters">return number of adapters</param>
+        /// <returns> retrun ADL Error Code</returns>
+        internal delegate int ADL_Adapter_NumberOfAdapters_Get(ref int numAdapters);
+
+        /// <summary> ADL Function to get the GPU adapter information</summary>
+        /// <param name="info">return GPU adapter information</param>
+        /// <param name="inputSize">the size of the GPU adapter struct</param>
+        /// <returns> retrun ADL Error Code</returns>
+        internal delegate int ADL_Adapter_AdapterInfo_Get(IntPtr info, int inputSize);
+
+        /// <summary> Function to determine if the adapter is active or not.</summary>
+        /// <remarks>The function is used to check if the adapter associated with iAdapterIndex is active</remarks>  
+        /// <param name="adapterIndex"> Adapter Index.</param>
+        /// <param name="status"> Status of the adapter. True: Active; False: Dsiabled</param>
+        /// <returns>Non zero is successfull</returns> 
+        internal delegate int ADL_Adapter_Active_Get(int adapterIndex, ref int status);
+
+        /// <summary>Get display information based on adapter index</summary>
+        /// <param name="adapterIndex">Adapter Index</param>
+        /// <param name="numDisplays">return the total number of supported displays</param>
+        /// <param name="displayInfoArray">return ADLDisplayInfo Array for supported displays' information</param>
+        /// <param name="forceDetect">force detect or not</param>
+        /// <returns>return ADL Error Code</returns>
+        internal delegate int ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
+
+        internal delegate int ADL_Display_Size_Get(int adapterIndex, int displayIndex, ref int lpWidth, ref int lpHeight, ref int lpDefaultWidth, ref int lpDefaultHeight, ref int lpMinWidth, ref int lpMinHeight, ref int lpMaxWidth, ref int lpMaxHeight, ref int lpStepWidth, ref int lpStepHeight);
+
+        internal delegate int ADL_Display_PixelFormat_Get(int adapterIndex, int displayIndex, ref int pixelFormat);
+        internal delegate int ADL_Display_PixelFormat_Set(int adapterIndex, int displayIndex, int pixelFormat);
+
+        internal delegate int ADL_Display_ColorDepth_Get(int adapterIndex, int displayIndex, ref int colorDepth);
+        internal delegate int ADL_Display_ColorDepth_Set(int adapterIndex, int displayIndex, int colorDepth);
+
+        internal delegate int ADL_Display_DitherState_Get(int adapterIndex, int displayIndex, ref int ditherState);
+        internal delegate int ADL_Display_DitherState_Set(int adapterIndex, int displayIndex, int ditherState);
+
+        internal delegate int ADL2_Display_HDRState_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, ADLDisplayID displayID, ref int support, ref int enable);
+        internal delegate int ADL2_Display_HDRState_Set(ADL_CONTEXT_HANDLE context, int adapterIndex, ADLDisplayID displayID, int enable);
+
+        #endregion Export Delegates
 
         #region Class ADLImport
         /// <summary> ADLImport class</summary>
@@ -227,31 +243,10 @@ namespace ATI.ADL
             internal static extern HMODULE GetModuleHandle (string moduleName);
 
             [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Main_Control_Create (ADL_Main_Memory_Alloc callback, int enumConnectedAdapters);
+            internal static extern int ADL_Main_Control_IsFunctionValid(HMODULE module, string procName);
 
             [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Main_Control_Destroy ();
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Main_Control_IsFunctionValid (HMODULE module, string procName);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern FARPROC ADL_Main_Control_GetProcAddress (HMODULE module, string procName);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Adapter_NumberOfAdapters_Get (ref int numAdapters);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Adapter_AdapterInfo_Get (IntPtr info, int inputSize);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Adapter_Active_Get(int adapterIndex, ref int status);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
-
-            [DllImport(Atiadlxx_FileName)]
-            internal static extern int ADL_Display_Size_Get(int iAdapterIndex, int iDisplayIndex, ref int lpWidth, ref int lpHeight, ref int lpDefaultWidth, ref int lpDefaultHeight, ref int lpMinWidth, ref int lpMinHeight, ref int lpMaxWidth, ref int lpMaxHeight, ref int lpStepWidth, ref int lpStepHeight);
+            internal static extern FARPROC ADL_Main_Control_GetProcAddress(HMODULE module, string procName);
 
             #endregion DLLImport
         }
@@ -291,9 +286,13 @@ namespace ATI.ADL
             /// <summary> Destructor to force calling ADL Destroy function before free up the ADL library</summary>
             ~ADLCheckLibrary ()
             {
-                if (System.IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
+                if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
                 {
-                    ADLImport.ADL_Main_Control_Destroy();
+                    var del = ADL.GetDelegate<ADL.ADL_Main_Control_Destroy>();
+                    if (del != null)
+                    {
+                        del();
+                    }
                 }
             }
             #endregion Destructor
@@ -304,8 +303,8 @@ namespace ATI.ADL
             /// <returns>return true, if function exists</returns>
             internal static bool IsFunctionValid (string functionName)
             {
-                bool result = false;
-                if (System.IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
+                var result = false;
+                if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
                 {
                     if (1 == ADLImport.ADL_Main_Control_IsFunctionValid(ADLCheckLibrary_.ADLLibrary, functionName))
                     {
@@ -322,8 +321,8 @@ namespace ATI.ADL
             /// <returns>return function pointer, if function exists</returns>
             internal static FARPROC GetProcAddress (string functionName)
             {
-                FARPROC result = System.IntPtr.Zero;
-                if (System.IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
+                var result = IntPtr.Zero;
+                if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
                 {
                     result = ADLImport.ADL_Main_Control_GetProcAddress(ADLCheckLibrary_.ADLLibrary, functionName);
                 }
@@ -337,7 +336,7 @@ namespace ATI.ADL
 
         #region ADL_Main_Memory_Alloc
         /// <summary> Build in memory allocation function</summary>
-        internal static ADL_Main_Memory_Alloc ADL_Main_Memory_Alloc = ADL_Main_Memory_Alloc_;
+        internal static ADL_Main_Memory_Alloc ADL_Main_Memory_Alloc_Func = ADL_Main_Memory_Alloc_;
         /// <summary> Build in memory allocation function</summary>
         /// <param name="size">input size</param>
         /// <returns>return the memory buffer</returns>
@@ -360,166 +359,29 @@ namespace ATI.ADL
         }
         #endregion ADL_Main_Memory_Free
 
-        #region ADL_Main_Control_Create
-        /// <summary> ADL_Main_Control_Create Delegates</summary>
-        internal static ADL_Main_Control_Create ADL_Main_Control_Create
+        public static T GetDelegate<T>() where T : class
         {
-            get
-            {
-                if (!ADL_Main_Control_Create_Check && null == ADL_Main_Control_Create_)
-                {
-                    ADL_Main_Control_Create_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Main_Control_Create"))
-                    {
-                        ADL_Main_Control_Create_ = ADLImport.ADL_Main_Control_Create;
-                    }
-                }
-                return ADL_Main_Control_Create_;
-            }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Main_Control_Create ADL_Main_Control_Create_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Main_Control_Create_Check = false;
-        #endregion ADL_Main_Control_Create
+            var type = typeof(T);
 
-        #region ADL_Main_Control_Destroy
-        /// <summary> ADL_Main_Control_Destroy Delegates</summary>
-        internal static ADL_Main_Control_Destroy ADL_Main_Control_Destroy
-        {
-            get
+            lock (ADLDelegates)
             {
-                if (!ADL_Main_Control_Destroy_Check && null == ADL_Main_Control_Destroy_)
+                if (ADLDelegates.ContainsKey(type))
                 {
-                    ADL_Main_Control_Destroy_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Main_Control_Destroy"))
-                    {
-                        ADL_Main_Control_Destroy_ = ADLImport.ADL_Main_Control_Destroy;
-                    }
+                    return ADLDelegates[type] as T;
                 }
-                return ADL_Main_Control_Destroy_;
-            }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Main_Control_Destroy ADL_Main_Control_Destroy_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Main_Control_Destroy_Check = false;
-        #endregion ADL_Main_Control_Destroy
 
-        #region ADL_Adapter_NumberOfAdapters_Get
-        /// <summary> ADL_Adapter_NumberOfAdapters_Get Delegates</summary>
-        internal static ADL_Adapter_NumberOfAdapters_Get ADL_Adapter_NumberOfAdapters_Get
-        {
-            get
-            {
-                if (!ADL_Adapter_NumberOfAdapters_Get_Check && null == ADL_Adapter_NumberOfAdapters_Get_)
+                var ptr = ADLCheckLibrary.GetProcAddress(type.Name);
+                if (ptr != FARPROC.Zero)
                 {
-                    ADL_Adapter_NumberOfAdapters_Get_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Adapter_NumberOfAdapters_Get"))
-                    {
-                        ADL_Adapter_NumberOfAdapters_Get_ = ADLImport.ADL_Adapter_NumberOfAdapters_Get;
-                    }
-                }
-                return ADL_Adapter_NumberOfAdapters_Get_;
-            }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Adapter_NumberOfAdapters_Get ADL_Adapter_NumberOfAdapters_Get_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Adapter_NumberOfAdapters_Get_Check = false;
-        #endregion ADL_Adapter_NumberOfAdapters_Get
+                    var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, type);
+                    ADLDelegates.Add(type, delegateValue);
 
-        #region ADL_Adapter_AdapterInfo_Get
-        /// <summary> ADL_Adapter_AdapterInfo_Get Delegates</summary>
-        internal static ADL_Adapter_AdapterInfo_Get ADL_Adapter_AdapterInfo_Get
-        {
-            get
-            {
-                if (!ADL_Adapter_AdapterInfo_Get_Check && null == ADL_Adapter_AdapterInfo_Get_)
-                {
-                    ADL_Adapter_AdapterInfo_Get_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Adapter_AdapterInfo_Get"))
-                    {
-                        ADL_Adapter_AdapterInfo_Get_ = ADLImport.ADL_Adapter_AdapterInfo_Get;
-                    }
+                    return delegateValue as T;
                 }
-                return ADL_Adapter_AdapterInfo_Get_;
             }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Adapter_AdapterInfo_Get ADL_Adapter_AdapterInfo_Get_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Adapter_AdapterInfo_Get_Check = false;
-        #endregion ADL_Adapter_AdapterInfo_Get
 
-        #region ADL_Adapter_Active_Get
-        /// <summary> ADL_Adapter_Active_Get Delegates</summary>
-        internal static ADL_Adapter_Active_Get ADL_Adapter_Active_Get
-        {
-            get
-            {
-                if (!ADL_Adapter_Active_Get_Check && null == ADL_Adapter_Active_Get_)
-                {
-                    ADL_Adapter_Active_Get_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Adapter_Active_Get"))
-                    {
-                        ADL_Adapter_Active_Get_ = ADLImport.ADL_Adapter_Active_Get;
-                    }
-                }
-                return ADL_Adapter_Active_Get_;
-            }
+            throw new InvalidProgramException("ADL-function not supported");
         }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Adapter_Active_Get ADL_Adapter_Active_Get_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Adapter_Active_Get_Check = false;
-        #endregion ADL_Adapter_Active_Get
-
-        #region ADL_Display_DisplayInfo_Get
-        /// <summary> ADL_Display_DisplayInfo_Get Delegates</summary>
-        internal static ADL_Display_DisplayInfo_Get ADL_Display_DisplayInfo_Get
-        {
-            get
-            {
-                if (!ADL_Display_DisplayInfo_Get_Check && null == ADL_Display_DisplayInfo_Get_)
-                {
-                    ADL_Display_DisplayInfo_Get_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Display_DisplayInfo_Get"))
-                    {
-                        ADL_Display_DisplayInfo_Get_ = ADLImport.ADL_Display_DisplayInfo_Get;
-                    }
-                }
-                return ADL_Display_DisplayInfo_Get_;
-            }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Display_DisplayInfo_Get ADL_Display_DisplayInfo_Get_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Display_DisplayInfo_Get_Check = false;
-        #endregion ADL_Display_DisplayInfo_Get
-
-        #region ADL_Display_Size_Get
-        /// <summary> ADL_Display_Size_Get Delegates</summary>
-        internal static ADL_Display_Size_Get ADL_Display_Size_Get
-        {
-            get
-            {
-                if (!ADL_Display_Size_Get_Check && null == ADL_Display_Size_Get)
-                {
-                    ADL_Display_Size_Get_Check = true;
-                    if (ADLCheckLibrary.IsFunctionValid("ADL_Display_Size_Get"))
-                    {
-                        ADL_Display_Size_Get_ = ADLImport.ADL_Display_Size_Get;
-                    }
-                }
-                return ADL_Display_Size_Get_;
-            }
-        }
-        /// <summary> Private Delegate</summary>
-        private static ADL_Display_Size_Get ADL_Display_Size_Get_ = null;
-        /// <summary> check flag to indicate the delegate has been checked</summary>
-        private static bool ADL_Display_Size_Get_Check = false;
-        #endregion ADL_Display_Size_Get
 
         #endregion Export Functions
     }

@@ -77,7 +77,7 @@ namespace LgTv
                 _messageWriter.WriteString(message);
                 await _messageWriter.StoreAsync();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 ConnectionClosed = true;
                 _messageWriter?.Dispose();

@@ -17,48 +17,56 @@ namespace ColorControl
         private const string ArgumentExceptionInvalidPasswordLength = "Invalid password length.";
         private const int DefaultWolPort = 9;
 
-        public static void WakeFunction(string macAddress, bool usePcap = false)
+        public static bool WakeFunction(string macAddress, bool usePcap = false)
         {
             if (usePcap)
             {
-                WakeFunctionPcap(macAddress);
+                return WakeFunctionPcap(macAddress);
             }
-            else
-            {
-                WakeFunctionToAllNics(macAddress);
-            }
+
+            return WakeFunctionToAllNics(macAddress);
         }
 
-        public static void WakeFunctionToAllNics(string macAddress)
+        public static bool WakeFunctionToAllNics(string macAddress)
         {
+            var result = false;
+
             try
             {
                 var address = PhysicalAddress.Parse(macAddress);
                 var addressBytes = address.GetAddressBytes();
                 var data = GetWolPacket(addressBytes);
 
-                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+                foreach (var ni in interfaces)
                 {
-                    Logger.Debug($"Found network: {ni.Name} ({ni.Description})");
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback || ni.Name.Contains("VirtualBox"))
+                    {
+                        continue;
+                    }
+                    Logger.Debug($"Found network: {ni.Name} ({ni.Description}), type: {ni.NetworkInterfaceType}");
                     try
                     {
                         if (/*ni.OperationalStatus == OperationalStatus.Up &&*/ ni.SupportsMulticast && ni.GetIPProperties().GetIPv4Properties() != null)
                         {
-                            var id = ni.GetIPProperties().GetIPv4Properties().Index;
-                            if (NetworkInterface.LoopbackInterfaceIndex != id)
+                            foreach (var uip in ni.GetIPProperties().UnicastAddresses)
                             {
-                                foreach (var uip in ni.GetIPProperties().UnicastAddresses)
+                                if (uip.Address.ToString().StartsWith("169.254"))
                                 {
-                                    if (uip.Address.AddressFamily == AddressFamily.InterNetwork)
-                                    {
-                                        Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}");
-                                        var local = new IPEndPoint(uip.Address, 0);
-                                        var udpc = new UdpClient(local);
-                                        udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-                                        udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
-                                        var target = new IPEndPoint(IPAddress.Broadcast, DefaultWolPort);
-                                        udpc.Send(data, data.Length, target);
-                                    }
+                                    continue;
+                                }
+                                if (uip.Address.AddressFamily == AddressFamily.InterNetwork)
+                                {
+                                    Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}");
+                                    var local = new IPEndPoint(uip.Address, 0);
+                                    var udpc = new UdpClient(local);
+                                    udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
+                                    udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
+                                    var target = new IPEndPoint(IPAddress.Broadcast, DefaultWolPort);
+                                    udpc.Send(data, data.Length, target);
+
+                                    result = true;
                                 }
                             }
                         }
@@ -73,6 +81,8 @@ namespace ColorControl
             {
                 Logger.Error($"WakeFunctionToAllNics: {ex.ToLogString()}");
             }
+
+            return result;
         }
 
         /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
@@ -110,7 +120,7 @@ namespace ColorControl
 
 
         //You need SharpPcap for this to work
-        private static void WakeFunctionPcap(string macAddress)
+        private static bool WakeFunctionPcap(string macAddress)
         {
             /* Retrieve the device list */
             var devices = CaptureDeviceList.Instance;
@@ -121,7 +131,7 @@ namespace ColorControl
             if (devices.Count < 1)
             {
                 Logger.Debug("No network device found on this machine");
-                return;
+                return false;
             }
 
             foreach (var device in devices)
@@ -169,6 +179,8 @@ namespace ColorControl
 
                 device.Close();
             }
+
+            return true;
         }
     }
 }

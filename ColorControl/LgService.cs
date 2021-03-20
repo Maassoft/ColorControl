@@ -32,6 +32,9 @@ namespace ColorControl
 
         public LgServiceConfig Config { get; private set; }
 
+        private List<LgPreset> _lgPresets;
+        private string _lgPresetsFilename;
+
         private LgTvApi _lgTvApi;
         private string _dataDir;
         private string _configFilename;
@@ -40,18 +43,24 @@ namespace ColorControl
         private PnpDev _selectedDevice;
         private string _rcButtonsFilename;
         private List<LgPreset> _remoteControlButtons;
+        private List<LgApp> _lgApps = new List<LgApp>();
+
+        private JavaScriptSerializer _JsonSerializer = new JavaScriptSerializer();
         private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
 
-        private Dictionary<string, Action> _invokableActions = new Dictionary<string, Action>();
+        private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
 
         public LgService(string dataDir, bool allowPowerOn)
         {
             _dataDir = dataDir;
             _allowPowerOn = allowPowerOn;
 
-            _invokableActions.Add("WOL", new Action(WakeSelectedDevice));
+            _invokableActions.Add("WOL", new Func<bool>(WakeSelectedDevice));
+
+            LgPreset.LgApps = _lgApps;
 
             LoadConfig();
+            LoadPresets();
             LoadRemoteControlButtons();
 
             //foreach (var screen in Screen.AllScreens)
@@ -63,7 +72,7 @@ namespace ColorControl
             //    }
             //}
 
-            RefreshDevices(afterStartUp: true);
+            var _ = RefreshDevices(afterStartUp: true);
         }
 
         ~LgService()
@@ -74,7 +83,58 @@ namespace ColorControl
         public void GlobalSave()
         {
             SaveConfig();
+            SavePresets();
             SaveRemoteControlButtons();
+        }
+
+        public List<LgPreset> GetPresets()
+        {
+            return _lgPresets;
+        }
+
+        public LgPreset CreateNewPreset()
+        {
+            var preset = new LgPreset();
+            var name = "New preset";
+            string fullname;
+            var number = 1;
+            do
+            {
+                fullname = $"{name} ({number})";
+                number++;
+            } while (_lgPresets.Any(x => x.name.Equals(fullname)));
+
+            preset.name = fullname;
+
+            return preset;
+        }
+
+        private void LoadPresets()
+        {
+            _lgPresetsFilename = Path.Combine(_dataDir, "LgPresets.json");
+            var toCopy = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
+            if (!File.Exists(_lgPresetsFilename) && File.Exists(toCopy))
+            {
+                try
+                {
+                    File.Copy(toCopy, _lgPresetsFilename);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error($"Error while copying {toCopy} to {_lgPresetsFilename}: {e.Message}");
+                }
+            }
+
+            if (File.Exists(_lgPresetsFilename))
+            {
+                var json = File.ReadAllText(_lgPresetsFilename);
+
+                _lgPresets = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
+            }
+            else
+            {
+                _lgPresets = new List<LgPreset>();
+            }
         }
 
         private void LoadConfig()
@@ -115,7 +175,7 @@ namespace ColorControl
             return _remoteControlButtons;
         }
 
-        public Dictionary<string, Action> GetInvokableActions()
+        public Dictionary<string, Func<bool>> GetInvokableActions()
         {
             return _invokableActions;
         }
@@ -166,6 +226,19 @@ namespace ColorControl
             return preset;
         }
 
+        private void SavePresets()
+        {
+            try
+            {
+                var json = _JsonSerializer.Serialize(_lgPresets);
+                File.WriteAllText(_lgPresetsFilename, json);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
+        }
+
         private void SaveConfig()
         {
             var json = JsonConvert.SerializeObject(Config);
@@ -199,11 +272,11 @@ namespace ColorControl
             {
                 if (Config.PowerOnAfterStartup && _allowPowerOn)
                 {
-                    WakeAndConnectToSelectedDevice(0);
+                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
                 }
                 else
                 {
-                    ConnectToSelectedDevice();
+                    var _ = ConnectToSelectedDevice();
                 }
             }
         }
@@ -225,6 +298,8 @@ namespace ColorControl
             {
                 DisposeConnection();
                 _lgTvApi = await LgTvApi.CreateLgTvApi(SelectedDevice.IpAddress, retries);
+
+                //_lgTvApi.GetServiceList();
                 return _lgTvApi != null;
             }
             catch (Exception ex)
@@ -376,23 +451,25 @@ namespace ColorControl
             return await _lgTvApi.GetMouse();
         }
 
-        public async Task<List<LgApp>> RefreshApps(bool force = false)
+        public async Task RefreshApps(bool force = false)
         {
             if (SelectedDevice == null)
             {
                 Logger.Debug("Cannot refresh apps: no device has been selected");
-                return null;
             }
 
             if (!await Connected(force))
             {
                 Logger.Debug("Cannot refresh apps: no connection could be made");
-                return null;
             }
 
-            var list = await _lgTvApi.GetApps(force);
+            _lgApps.Clear();
+            _lgApps.AddRange(await _lgTvApi.GetApps(force));
+        }
 
-            return list.ToList();
+        public List<LgApp> GetApps()
+        {
+            return _lgApps;
         }
 
         internal void DisposeConnection()
@@ -415,34 +492,64 @@ namespace ColorControl
             return true;
         }
 
-        internal void WakeSelectedDevice()
+        internal bool WakeSelectedDevice()
         {
-            WakeSelectedDevice(SelectedDevice?.MacAddress ?? Config.PreferredMacAddress);
+            return WakeSelectedDevice(SelectedDevice?.MacAddress ?? Config.PreferredMacAddress);
         }
 
-        internal void WakeSelectedDevice(string macAddress)
+        internal bool WakeSelectedDevice(string macAddress)
         {
+            var result = false;
+
             macAddress = string.IsNullOrEmpty(macAddress) ? SelectedDevice?.MacAddress : macAddress;
             if (macAddress != null)
             {
-                WOL.WakeFunction(macAddress, !Config.UseAlternateWol);
+                result = WOL.WakeFunction(macAddress, Config.UseOldNpcapWol);
                 _justWokeUp = true;
             }
             else
             {
                 Logger.Debug("Cannot wake device: no device has been selected or there is no preferred MAC-address stored in the configuration");
             }
+
+            return result;
         }
 
         internal void WakeAfterResume()
         {
             if (Config.PowerOnAfterResume)
             {
-                WakeAndConnectToSelectedDevice(Config.PowerOnDelayAfterResume);
+                var _ = WakeAndConnectToSelectedDeviceWithRetries();
             }
         }
 
-        private async Task<bool> WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 1000)
+        private async Task<bool> WakeAndConnectToSelectedDeviceWithRetries()
+        {
+            var wakeDelay = 0;
+            var maxRetries = Config.PowerOnRetries <= 1 ? 5 : Config.PowerOnRetries;
+
+            var result = false;
+            for (var retry = 0; retry < maxRetries && !result; retry++)
+            {
+                Logger.Debug($"WakeAndConnectToSelectedDeviceWithRetries: attempt {retry + 1} of {maxRetries}...");
+
+                var ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                result = await WakeAndConnectToSelectedDevice(retry == 0 ? wakeDelay : 0);
+                ms = DateTimeOffset.Now.ToUnixTimeMilliseconds() - ms;
+                if (!result)
+                {
+                    var delay = 2000 - ms;
+                    if (delay > 0)
+                    {
+                        await Task.Delay((int)delay);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<bool> WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 500)
         {
             try
             {
@@ -456,9 +563,17 @@ namespace ColorControl
                 //}
 
                 await Task.Delay(wakeDelay);
-                WakeSelectedDevice();
+                var result = WakeSelectedDevice();
+                if (!result)
+                {
+                    Logger.Debug("WOL failed");
+                    return false;
+                }
+                Logger.Debug("WOL succeeded");
                 await Task.Delay(connectDelay);
-                return await ConnectToSelectedDevice();
+                result = await ConnectToSelectedDevice();
+                Logger.Debug("Connect succeeded: " + result);
+                return result;
             }
             catch (Exception e)
             {

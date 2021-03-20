@@ -12,16 +12,19 @@
 
         public int PowerOnDelayAfterResume { get; set; }
 
+        public int PowerOnRetries { get; set; }
+
         public string PreferredMacAddress { get; set; }
 
         public string DeviceSearchKey { get; set; }
 
-        public bool UseAlternateWol { get; set; }
+        public bool UseOldNpcapWol { get; set; }
 
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;
             DeviceSearchKey = "[LG]";
+            PowerOnRetries = 10;
         }
     }
 }

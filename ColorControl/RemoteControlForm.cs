@@ -2,11 +2,8 @@
 using NWin32;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -53,7 +50,7 @@ namespace ColorControl
             {
                 var preset = (LgPreset)(sender as Button).Tag;
 
-                _lgService.ApplyPreset(preset);
+                var _ = _lgService.ApplyPreset(preset);
             }
         }
 
@@ -95,7 +92,7 @@ namespace ColorControl
             var preset = _buttons.FirstOrDefault(p => p.shortcut != null && p.shortcut.Equals(shortcut));
             if (preset != null)
             {
-                _lgService.ApplyPreset(preset);
+                var _ = _lgService.ApplyPreset(preset);
             }
         }
 

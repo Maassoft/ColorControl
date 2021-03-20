@@ -76,7 +76,7 @@ namespace ColorControl
             return new[] { "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
         }
 
-        public List<string> GetDisplayValues(Config config)
+        public override List<string> GetDisplayValues(Config config = null)
         {
             var values = new List<string>();
 
@@ -99,7 +99,7 @@ namespace ColorControl
             //values.Add(toggleHDR.ToString());
             values.Add(shortcut);
 
-            values.Add(string.Format("{0}", config.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
+            values.Add(string.Format("{0}", config?.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
 
             return values;
         }

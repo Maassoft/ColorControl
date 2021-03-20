@@ -41,7 +41,7 @@ namespace ColorControl
             return new List<string>() { "Name", "App|200", "Steps|400", "Shortcut" };
         }
 
-        public List<string> GetDisplayValues()
+        public override List<string> GetDisplayValues(Config config = null)
         {
             var values = new List<string>();
 

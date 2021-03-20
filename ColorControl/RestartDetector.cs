@@ -32,7 +32,7 @@ namespace ColorControl
                 // Activate the subscription
                 watcher.Enabled = true;
             }
-            catch (EventLogReadingException e)
+            catch (EventLogReadingException)
             {
             }
         }
@@ -81,7 +81,7 @@ namespace ColorControl
                 //    }
                 //}
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
         }

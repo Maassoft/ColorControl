@@ -15,6 +15,8 @@
 
         public int NvPresetId_ApplyOnStartup { get; set; }
 
+        public int AmdPresetId_ApplyOnStartup { get; set; }
+
         public Config()
         {
             DisplaySettingsDelay = 1000;
