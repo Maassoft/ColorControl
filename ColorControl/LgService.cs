@@ -1,7 +1,10 @@
 ﻿using LgTv;
+using Microsoft.Win32;
 using Newtonsoft.Json;
+using NWin32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -49,6 +52,11 @@ namespace ColorControl
         private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
 
         private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
+
+        private bool _poweredOffByScreenSaver;
+        private int _poweredOffByScreenSaverProcessId;
+        private Task _monitorTask;
+        private int _monitorTaskCounter;
 
         public LgService(string dataDir, bool allowPowerOn)
         {
@@ -318,7 +326,7 @@ namespace ColorControl
                 return false;
             }
 
-            if (reconnect || _lgTvApi == null || _lgTvApi.ConnectionClosed || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
+            if (reconnect || !IsConnected() || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
             {
                 if (!await ConnectToSelectedDevice())
                 {
@@ -328,7 +336,11 @@ namespace ColorControl
             }
             return true;
         }
-
+        
+        private bool IsConnected()
+        {
+            return !_lgTvApi?.ConnectionClosed ?? false;
+        }
 
         public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
         {
@@ -523,8 +535,14 @@ namespace ColorControl
             }
         }
 
-        private async Task<bool> WakeAndConnectToSelectedDeviceWithRetries()
+        private async Task<bool> WakeAndConnectToSelectedDeviceWithRetries(bool checkUserSession = true)
         {
+            if (checkUserSession && !UserSessionInfo.UserLocalSession)
+            {
+                Logger.Debug($"WakeAndConnectToSelectedDeviceWithRetries: not waking because session info indicates no local session");
+                return false;
+            }
+
             var wakeDelay = 0;
             var maxRetries = Config.PowerOnRetries <= 1 ? 5 : Config.PowerOnRetries;
 
@@ -579,6 +597,173 @@ namespace ColorControl
             {
                 Logger.Error("WakeAndConnectToSelectedDevice: " + e.ToLogString());
                 return false;
+            }
+        }
+
+        public void InstallEventHandlers()
+        {
+            SystemEvents.PowerModeChanged -= PowerModeChanged;
+            SystemEvents.PowerModeChanged += PowerModeChanged;
+            //SystemEvents.SessionEnded -= SessionEnded;
+            //SystemEvents.SessionEnded += SessionEnded;
+
+            UserSessionInfo.UserSessionSwitch -= SessionSwitched;
+            UserSessionInfo.UserSessionSwitch += SessionSwitched;
+
+            MonitorProcesses();
+        }
+
+        private void SessionSwitched(bool toLocal)
+        {
+            if (toLocal)
+            {
+                if (_poweredOffByScreenSaver)
+                {
+                    Logger.Debug("User switched to local and screen was powered off due to screensaver: waking up");
+                    _poweredOffByScreenSaver = false;
+                    _poweredOffByScreenSaverProcessId = 0;
+                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
+                }
+                else
+                {
+                    Logger.Debug("User switched to local but screen was not powered off by screensaver: NOT waking up");
+                }
+            }
+        }
+
+        private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            var powerOn = e.Mode == PowerModes.Resume;
+
+            Logger.Debug($"PowerModeChanged: {e.Mode}");
+
+            if (powerOn)
+            {
+                DisposeConnection();
+                WakeAfterResume();
+                return;
+            }
+
+            if (Config.PowerOffOnStandby)
+            {
+                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
+                try
+                {
+                    Logger.Debug("Powering off tv...");
+                    var task = PowerOff();
+                    Utils.WaitForTask(task);
+                    Logger.Debug("Done powering off tv");
+                }
+                finally
+                {
+                    NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
+                }
+            }
+        }
+
+        private void SessionEnded(object sender, SessionEndedEventArgs e)
+        {
+            //if (e.Reason == SessionEndReasons.SystemShutdown)
+            //{
+            //    Logger.Debug($"SessionEnded: {e.Reason}");
+
+            //    if (Config.PowerOffOnShutdown)
+            //    {
+            //        PowerOff();
+            //    }
+            //}
+        }
+
+        private void MonitorProcesses()
+        {
+            if (Config.PowerSwitchOnScreenSaver && _monitorTask == null)
+            {
+                _monitorTask = CheckProcesses();
+            }
+            else if (!Config.PowerSwitchOnScreenSaver && _monitorTask != null)
+            {
+                _monitorTask = null;
+            }
+        }
+
+        public async Task CheckProcesses()
+        {
+            var wasConnected = IsConnected();
+            _monitorTaskCounter++;
+            var validCounter = _monitorTaskCounter;
+            while (Config.PowerSwitchOnScreenSaver && validCounter == _monitorTaskCounter)
+            {
+                await Task.Delay(500);
+
+                if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)
+                {
+                    continue;
+                }
+
+                var processes = Process.GetProcesses();
+
+                if (_poweredOffByScreenSaver)
+                {
+                    if (processes.Any(p => p.Id == _poweredOffByScreenSaverProcessId))
+                    {
+                        continue;
+                    }
+
+                    Logger.Debug("Screensaver stopped, waking");
+                    _poweredOffByScreenSaver = false;
+                    _poweredOffByScreenSaverProcessId = 0;
+                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
+
+                    continue;
+                }
+
+                if (!IsConnected())
+                {
+                    if (wasConnected)
+                    {
+                        Logger.Debug("TV was connected, but not any longer");
+                        wasConnected = false;
+                    }
+                    continue;
+                }
+
+                if (!wasConnected)
+                {
+                    Logger.Debug("TV was not connected, but connection has now been established");
+                    wasConnected = true;
+                }
+
+                foreach (var process in processes)
+                {
+                    var name = process.ProcessName.ToLowerInvariant();
+                    if (name.EndsWith(".scr"))
+                    {
+                        var parent = process.Parent();
+                        if (parent?.ProcessName.Contains("winlogon") ?? false)
+                        {
+                            Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
+                            try
+                            {
+                                Logger.Debug("Powering off tv because of screensaver");
+                                _poweredOffByScreenSaver = await PowerOff();
+                                _poweredOffByScreenSaverProcessId = process.Id;
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Error("CheckProcesses: can't power off: " + e.ToLogString());
+                            }
+                            if (!IsConnected())
+                            {
+                                _poweredOffByScreenSaver = false;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
+                        }
+                    }
+                }
             }
         }
     }

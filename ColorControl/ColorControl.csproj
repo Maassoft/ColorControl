@@ -101,33 +101,33 @@
     <ApplicationIcon>pngbarn.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.8.20.0, Culture=neutral, PublicKeyToken=c416bc1b32d97233, processorArchitecture=MSIL">
-      <HintPath>..\packages\TaskScheduler.2.8.20\lib\net452\Microsoft.Win32.TaskScheduler.dll</HintPath>
+    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.9.1.0, Culture=neutral, PublicKeyToken=e25603a88b3aa7da, processorArchitecture=MSIL">
+      <HintPath>..\packages\TaskScheduler.2.9.1\lib\net452\Microsoft.Win32.TaskScheduler.dll</HintPath>
     </Reference>
     <Reference Include="Native, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Native.0.1.0\lib\net35\Native.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.4.7.2\lib\net45\NLog.dll</HintPath>
+      <HintPath>..\packages\NLog.4.7.9\lib\net45\NLog.dll</HintPath>
     </Reference>
-    <Reference Include="NStandard, Version=0.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NStandard.0.4.3\lib\net46\NStandard.dll</HintPath>
+    <Reference Include="NStandard, Version=0.6.12.5, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NStandard.0.6.12.5\lib\net46\NStandard.dll</HintPath>
     </Reference>
-    <Reference Include="NvAPIWrapper, Version=0.8.0.98, Culture=neutral, PublicKeyToken=310fd07b25df79b3, processorArchitecture=MSIL">
-      <HintPath>..\packages\NvAPIWrapper.Net.0.8.0.98\lib\net45\NvAPIWrapper.dll</HintPath>
+    <Reference Include="NvAPIWrapper, Version=0.8.1.100, Culture=neutral, PublicKeyToken=310fd07b25df79b3, processorArchitecture=MSIL">
+      <HintPath>..\packages\NvAPIWrapper.Net.0.8.1.101\lib\net45\NvAPIWrapper.dll</HintPath>
     </Reference>
-    <Reference Include="NWin32, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NWin32.1.0.6\lib\net46\NWin32.dll</HintPath>
+    <Reference Include="NWin32, Version=1.0.7.6, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NWin32.1.0.7.6\lib\net46\NWin32.dll</HintPath>
     </Reference>
-    <Reference Include="PacketDotNet, Version=1.0.5.0, Culture=neutral, PublicKeyToken=451414c7667b2a58, processorArchitecture=MSIL">
-      <HintPath>..\packages\PacketDotNet.1.0.5\lib\net45\PacketDotNet.dll</HintPath>
+    <Reference Include="PacketDotNet, Version=1.2.0.0, Culture=neutral, PublicKeyToken=451414c7667b2a58, processorArchitecture=MSIL">
+      <HintPath>..\packages\PacketDotNet.1.2.0\lib\net45\PacketDotNet.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
-    <Reference Include="SharpPcap, Version=5.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SharpPcap.5.2.0\lib\netstandard2.0\SharpPcap.dll</HintPath>
+    <Reference Include="SharpPcap, Version=5.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpPcap.5.4.0\lib\netstandard2.0\SharpPcap.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -137,6 +137,7 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -144,8 +145,8 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.7.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Runtime.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
@@ -175,6 +176,7 @@
     <Compile Include="ADL.cs" />
     <Compile Include="ADLWrapper.cs" />
     <Compile Include="AmdDisplayInfo.cs" />
+    <Compile Include="UserSessionInfo.cs" />
     <Compile Include="ServiceBase.cs" />
     <Compile Include="NvDisplayInfo.cs" />
     <Compile Include="MessageForms.cs" />

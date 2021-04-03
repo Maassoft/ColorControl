@@ -227,11 +227,24 @@ namespace ColorControl
             return result;
         }
 
+        private ColorData GetCurrentColorData(Display display)
+        {
+            try
+            {
+                return display.DisplayDevice.CurrentColorData;
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error while reading current color data: " + e.Message);
+                return new ColorData();
+            }
+        }
+
         private bool ColorDataDiffers(ColorData colorData)
         {
             var display = GetCurrentDisplay();
 
-            var currentColorData = display.DisplayDevice.CurrentColorData;
+            var currentColorData = GetCurrentColorData(display);
 
             var settingRange = colorData.DynamicRange == ColorDataDynamicRange.Auto ? colorData.ColorFormat == ColorDataFormat.RGB ? ColorDataDynamicRange.VESA : ColorDataDynamicRange.CEA : colorData.DynamicRange;
 
@@ -401,7 +414,8 @@ namespace ColorControl
 
                 values.Add(name);
 
-                var colorData = display.DisplayDevice.CurrentColorData;
+                var colorData = GetCurrentColorData(display);
+                
                 var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
 
                 values.Add(colorSettings);

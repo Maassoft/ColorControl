@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using NStandard;
-using NvAPIWrapper.Display;
+using NWin32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -33,13 +33,29 @@ namespace ColorControl
             Win = 8
         }
 
+        public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
+
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
+
+        public delegate void PCREATE_PROCESS_NOTIFY_ROUTINE(IntPtr ParentId, IntPtr ProcessId, bool Create);
 
         [DllImport("user32.dll")]
         public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
         [DllImport("user32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        [DllImport("user32.dll")]
+        public extern static bool ShutdownBlockReasonCreate(IntPtr hWnd, [MarshalAs(UnmanagedType.LPWStr)] string pwszReason);
+
+        [DllImport("user32.dll")]
+        public extern static bool ShutdownBlockReasonDestroy(IntPtr hWnd);
+
+        //[DllImport("Wtsapi32.dll")]
+        //public extern static bool WTSRegisterSessionNotification(IntPtr hWnd, uint dwFlags);
+
+        //[DllImport("Wtsapi32.dll")]
+        //public extern static bool WTSUnRegisterSessionNotification(IntPtr hWnd);
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static bool WinKeyDown = false;
@@ -602,7 +618,38 @@ namespace ColorControl
                 }
             }
         }
+    }
 
+    public static class ProcessExtensions
+    {
+        private static string FindIndexedProcessName(int pid)
+        {
+            var processName = Process.GetProcessById(pid).ProcessName;
+            var processesByName = Process.GetProcessesByName(processName);
+            string processIndexdName = null;
 
+            for (var index = 0; index < processesByName.Length; index++)
+            {
+                processIndexdName = index == 0 ? processName : processName + "#" + index;
+                var processId = new PerformanceCounter("Process", "ID Process", processIndexdName);
+                if ((int)processId.NextValue() == pid)
+                {
+                    return processIndexdName;
+                }
+            }
+
+            return processIndexdName;
+        }
+
+        private static Process FindPidFromIndexedProcessName(string indexedProcessName)
+        {
+            var parentId = new PerformanceCounter("Process", "Creating Process ID", indexedProcessName);
+            return Process.GetProcessById((int)parentId.NextValue());
+        }
+
+        public static Process Parent(this Process process)
+        {
+            return FindPidFromIndexedProcessName(FindIndexedProcessName(process.Id));
+        }
     }
 }

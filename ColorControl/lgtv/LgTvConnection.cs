@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -9,7 +8,6 @@ using Windows.Storage.Streams;
 using Windows.Web;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
-using Windows.Foundation;
 
 namespace LgTv
 {
@@ -32,8 +30,7 @@ namespace LgTv
         public event IsConnectedDelegate IsConnected;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<dynamic>> _tokens = new ConcurrentDictionary<string, TaskCompletionSource<dynamic>>();
 
-        private static void Log(RawRequestMessage message) { }
-
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public async Task<bool> Connect(Uri uri, bool ignoreReceiver = false)
         {
@@ -67,7 +64,6 @@ namespace LgTv
                 }
                 return false;
             }
-
         }
 
         public async void SendMessageAsync(string message)
@@ -77,8 +73,9 @@ namespace LgTv
                 _messageWriter.WriteString(message);
                 await _messageWriter.StoreAsync();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Logger.Error("SendMessageAsync: " + e.Message);
                 ConnectionClosed = true;
                 _messageWriter?.Dispose();
             }
@@ -167,7 +164,10 @@ namespace LgTv
             }
             catch (Exception ex)
             {
-                WebErrorStatus status = WebSocketError.GetStatus(ex.GetBaseException().HResult);
+                var status = WebSocketError.GetStatus(ex.GetBaseException().HResult);
+                Logger.Error($"Connection_MessageReceived: status: {status}, exception: {ex.Message}");
+                ConnectionClosed = true;
+                _messageWriter?.Dispose();
             }
         }
         public void Close()

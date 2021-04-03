@@ -10,6 +10,8 @@
 
         public bool PowerOffOnStandby { get; set; }
 
+        public bool PowerSwitchOnScreenSaver { get; set; }
+
         public int PowerOnDelayAfterResume { get; set; }
 
         public int PowerOnRetries { get; set; }

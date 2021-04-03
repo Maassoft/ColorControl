@@ -1,13 +1,10 @@
 ﻿using ColorControl;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Storage;
 
 namespace LgTv
 {

@@ -148,6 +148,7 @@
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            this.chkMinimizeToSystemTray = new System.Windows.Forms.CheckBox();
             this.chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.chkStartAfterLogin = new System.Windows.Forms.CheckBox();
@@ -906,10 +907,11 @@
             "Automatically power off on shutdown. Because this app cannot detect a restart, re" +
                 "starting could also trigger this. Hold down Ctrl on restart to prevent power off" +
                 ".",
-            "Automatically power off on standby"});
+            "Automatically power off on standby",
+            "Automatically power off on screensaver and power on when screensaver deactivates"});
             this.clbLgPower.Location = new System.Drawing.Point(6, 33);
             this.clbLgPower.Name = "clbLgPower";
-            this.clbLgPower.Size = new System.Drawing.Size(829, 64);
+            this.clbLgPower.Size = new System.Drawing.Size(829, 79);
             this.clbLgPower.TabIndex = 34;
             this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
             // 
@@ -1154,10 +1156,10 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvLgPresets.FullRowSelect = true;
             this.lvLgPresets.HideSelection = false;
-            this.lvLgPresets.Location = new System.Drawing.Point(6, 103);
+            this.lvLgPresets.Location = new System.Drawing.Point(6, 116);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(829, 185);
+            this.lvLgPresets.Size = new System.Drawing.Size(829, 172);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -1435,6 +1437,7 @@
             // 
             // grpGeneralOptions
             // 
+            this.grpGeneralOptions.Controls.Add(this.chkMinimizeToSystemTray);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeOnClose);
             this.grpGeneralOptions.Controls.Add(this.chkStartMinimized);
             this.grpGeneralOptions.Controls.Add(this.chkStartAfterLogin);
@@ -1444,6 +1447,17 @@
             this.grpGeneralOptions.TabIndex = 2;
             this.grpGeneralOptions.TabStop = false;
             this.grpGeneralOptions.Text = "General";
+            // 
+            // chkMinimizeToSystemTray
+            // 
+            this.chkMinimizeToSystemTray.AutoSize = true;
+            this.chkMinimizeToSystemTray.Location = new System.Drawing.Point(204, 19);
+            this.chkMinimizeToSystemTray.Name = "chkMinimizeToSystemTray";
+            this.chkMinimizeToSystemTray.Size = new System.Drawing.Size(133, 17);
+            this.chkMinimizeToSystemTray.TabIndex = 5;
+            this.chkMinimizeToSystemTray.Text = "Minimize to system tray";
+            this.chkMinimizeToSystemTray.UseVisualStyleBackColor = true;
+            this.chkMinimizeToSystemTray.CheckedChanged += new System.EventHandler(this.chkMinimizeToSystemTray_CheckedChanged);
             // 
             // chkMinimizeOnClose
             // 
@@ -1783,6 +1797,7 @@
         private System.Windows.Forms.Button btnApplyAmd;
         private System.Windows.Forms.ListView lvAmdPresets;
         private System.Windows.Forms.Button btnAddAmd;
+        private System.Windows.Forms.CheckBox chkMinimizeToSystemTray;
     }
 }
 

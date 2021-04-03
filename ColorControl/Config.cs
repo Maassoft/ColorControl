@@ -6,6 +6,8 @@
 
         public bool MinimizeOnClose { get; set; }
 
+        public bool MinimizeToTray { get; set; }
+
         public int DisplaySettingsDelay { get; set; }
 
         public string ScreenSaverShortcut { get; set; }
@@ -23,6 +25,7 @@
             ScreenSaverShortcut = string.Empty;
             FormWidth = 900;
             FormHeight = 600;
+            MinimizeToTray = true;
         }
     }
 }

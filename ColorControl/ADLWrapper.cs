@@ -66,7 +66,7 @@ namespace ColorControl
         {
             int ADLRet = -1;
 
-            Logger.Debug("Initialize");
+            //Logger.Debug("Initialize");
 
             var del = ADL.GetDelegate<ADL.ADL_Main_Control_Create>();
 
@@ -77,15 +77,12 @@ namespace ColorControl
                 CheckError(ADLRet, nameof(ADL.ADL_Main_Control_Create));
             }
 
-            Logger.Debug("ADLRet1: " + ADLRet);
-
             var del2 = ADL.GetDelegate<ADL.ADL2_Main_Control_Create>();
 
             if (del2 != null)
             {
                 // Second parameter is 1: Get only the present adapters
                 ADLRet = del2(ADL.ADL_Main_Memory_Alloc_Func, 1, ref context);
-                Logger.Debug("ADLRet2: " + ADLRet);
                 CheckError(ADLRet, nameof(ADL.ADL2_Main_Control_Create));
             }
 

@@ -1,4 +1,7 @@
-﻿using System;
+﻿using NWin32;
+using System;
+using System.Diagnostics;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -33,6 +36,22 @@ namespace ColorControl
             {
                 if (!mutexCreated)
                 {
+                    var currentProcessId = Process.GetCurrentProcess().Id;
+                    foreach (var process in Process.GetProcesses())
+                    {
+                        if (process.ProcessName.Equals("ColorControl") && process.Id != currentProcessId)
+                        {
+                            if (process.Threads.Count > 0)
+                            {
+                                var thread = process.Threads[0];
+
+                                NativeMethods.EnumThreadWindows((uint)thread.Id, EnumThreadWindows, IntPtr.Zero);
+                            }
+
+                            return;
+                        }
+                    }
+
                     MessageBox.Show("Only one instance of this program can be active.", "ColorControl");
                 }
                 else
@@ -56,6 +75,13 @@ namespace ColorControl
                     mutex.Dispose();
                 }
             }
+        }
+
+        public static int EnumThreadWindows(IntPtr handle, IntPtr param)
+        {
+            NativeMethods.SendMessageW(handle, Utils.WM_BRINGTOFRONT, UIntPtr.Zero, IntPtr.Zero);
+
+            return 1;
         }
 
         private static void GlobalUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)

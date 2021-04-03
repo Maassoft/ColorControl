@@ -1,6 +1,5 @@
 ﻿using ATI.ADL;
 using LgTv;
-using Microsoft.Win32;
 using NLog;
 using NStandard;
 using NvAPIWrapper.Display;
@@ -16,8 +15,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-// 1. Import the InteropServices type
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -26,13 +23,6 @@ namespace ColorControl
 {
     public partial class MainForm : Form
     {
-        [DllImport("user32.dll")]
-        public extern static bool ShutdownBlockReasonCreate(IntPtr hWnd, [MarshalAs(UnmanagedType.LPWStr)] string pwszReason);
-
-        [DllImport("user32.dll")]
-        public extern static bool ShutdownBlockReasonDestroy(IntPtr hWnd);
-
-        private static int WM_HOTKEY = 0x0312;
         private static string TS_TASKNAME = "ColorControl";
         private static bool SystemShutdown = false;
         private static bool EndSession = false;
@@ -48,7 +38,7 @@ namespace ColorControl
         private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
         private string _lastDisplayRefreshRates = string.Empty;
 
-        private NotifyIcon trayIcon;
+        private NotifyIcon _trayIcon;
         private bool _initialized = false;
         private string _configFilename;
         private Config _config;
@@ -74,26 +64,29 @@ namespace ColorControl
 
             InitLogger();
 
+            _configFilename = Path.Combine(_dataDir, "Settings.json");
+            LoadConfig();
+
             MessageForms.MainForm = this;
 
             _nvTrayMenu = new MenuItem("NVIDIA presets");
             _lgTrayMenu = new MenuItem("LG presets");
-            trayIcon = new NotifyIcon()
+            _trayIcon = new NotifyIcon()
             {
                 Icon = Icon,
                 ContextMenu = new ContextMenu(new MenuItem[] {
                     _nvTrayMenu,
                     _lgTrayMenu,
-                    new MenuItem("-", OpenForm),
+                    new MenuItem("-"),
                     new MenuItem("Open", OpenForm),
                     new MenuItem("-"),
                     new MenuItem("Exit", Exit)
                 }),
-                Visible = true,
+                Visible = _config.MinimizeToTray,
                 Text = Text
             };
-            trayIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
-            trayIcon.ContextMenu.Popup += trayIconContextMenu_Popup;
+            _trayIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
+            _trayIcon.ContextMenu.Popup += trayIconContextMenu_Popup;
 
             chkStartAfterLogin.Checked = Utils.TaskExists(TS_TASKNAME, true);
 
@@ -103,14 +96,13 @@ namespace ColorControl
                 chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
             }
 
-            _configFilename = Path.Combine(_dataDir, "Settings.json");
-            LoadConfig();
-
             InitNvService();
             InitAmdService();
             InitLgService();
 
             InitInfo();
+
+            UserSessionInfo.Install();
 
             _restartDetector = new RestartDetector();
 
@@ -130,7 +122,8 @@ namespace ColorControl
             }
             catch (Exception e)
             {
-                Logger.Error("Error initializing NvService: " + e.ToLogString());
+                //Logger.Error("Error initializing NvService: " + e.ToLogString());
+                Logger.Debug("No NVIDIA device detected");
                 tcMain.TabPages.Remove(tabNVIDIA);
             }
         }
@@ -140,12 +133,12 @@ namespace ColorControl
             try
             {
                 _amdService = new AmdService(_dataDir);
-                //lblErrorAMD.Text = "If you see this message, it means you have AMD graphics drivers installed. Unfortunately, this feature is not completed yet. If I get an AMD card I might finish it.";
                 FillAmdPresets();
             }
             catch (Exception e)
             {
-                Logger.Error("Error initializing AmdService: " + e.ToLogString());
+                //Logger.Error("Error initializing AmdService: " + e.ToLogString());
+                Logger.Debug("No AMD device detected");
                 tcMain.TabPages.Remove(tabAMD);
             }
         }
@@ -162,6 +155,7 @@ namespace ColorControl
                 clbLgPower.SetItemChecked(1, _lgService.Config.PowerOnAfterResume);
                 clbLgPower.SetItemChecked(2, _lgService.Config.PowerOffOnShutdown);
                 clbLgPower.SetItemChecked(3, _lgService.Config.PowerOffOnStandby);
+                clbLgPower.SetItemChecked(4, _lgService.Config.PowerSwitchOnScreenSaver);
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgOldWolMechanism.Checked = _lgService.Config.UseOldNpcapWol;
@@ -188,57 +182,12 @@ namespace ColorControl
                     item.Click += miLgAddAction_Click;
                 }
 
-
-                SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(PowerModeChanged);
-                //SystemEvents.SessionEnded += new SessionEndedEventHandler(SessionEnded);
+                _lgService.InstallEventHandlers();
             }
             catch (Exception e)
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
-        }
-
-        private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
-        {
-            var powerOn = e.Mode == PowerModes.Resume;
-
-            Logger.Debug($"PowerModeChanged: {e.Mode}");
-
-            if (powerOn)
-            {
-                _lgService.DisposeConnection();
-                _lgService.WakeAfterResume();
-                return;
-            }
-
-            if (_lgService.Config.PowerOffOnStandby)
-            {
-                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
-                try
-                {
-                    Logger.Debug("Powering off tv...");
-                    var task = _lgService.PowerOff();
-                    Utils.WaitForTask(task);
-                    Logger.Debug("Done powering off tv");
-                }
-                finally
-                {
-                    NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
-                }
-            }
-        }
-
-        private void SessionEnded(object sender, SessionEndedEventArgs e)
-        {
-            //if (e.Reason == SessionEndReasons.SystemShutdown)
-            //{
-            //    Logger.Debug($"SessionEnded: {e.Reason}");
-
-            //    if (_lgService.Config.PowerOffOnShutdown)
-            //    {
-            //        _lgService.PowerOff();
-            //    }
-            //}
         }
 
         private void InitLogger()
@@ -284,6 +233,7 @@ namespace ColorControl
         {
             Show();
             WindowState = FormWindowState.Normal;
+            Activate();
         }
 
         void Exit(object sender, EventArgs e)
@@ -377,7 +327,7 @@ namespace ColorControl
                 text += "\n" + displayInfo.InfoLine;
             }
 
-            Utils.SetNotifyIconText(trayIcon, text);
+            Utils.SetNotifyIconText(_trayIcon, text);
         }
 
         private void UpdateDisplayInfoItemsAmd()
@@ -433,7 +383,7 @@ namespace ColorControl
                 text += "\n" + displayInfo.InfoLine;
             }
 
-            Utils.SetNotifyIconText(trayIcon, text);
+            Utils.SetNotifyIconText(_trayIcon, text);
         }
 
         private void AddOrUpdateItem(NvPreset preset = null)
@@ -520,7 +470,7 @@ namespace ColorControl
         protected override void WndProc(ref Message m)
         {
             // 5. Catch when a HotKey is pressed !
-            if (m.Msg == WM_HOTKEY && !edtShortcut.Focused && !edtShortcutLg.Focused && !edtAmdShortcut.Focused && !edtBlankScreenSaverShortcut.Focused)
+            if (m.Msg == NativeConstants.WM_HOTKEY && !edtShortcut.Focused && !edtShortcutLg.Focused && !edtAmdShortcut.Focused && !edtBlankScreenSaverShortcut.Focused)
             {
                 int id = m.WParam.ToInt32();
 
@@ -559,6 +509,11 @@ namespace ColorControl
             {
                 EndSession = true;
             }
+            else if (m.Msg == Utils.WM_BRINGTOFRONT)
+            {
+                Logger.Debug("WM_BRINGTOFRONT message received, opening form");
+                OpenForm(this, EventArgs.Empty);
+            }
 
             base.WndProc(ref m);
         }
@@ -592,14 +547,17 @@ namespace ColorControl
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
-            trayIcon.Visible = false;
+            _trayIcon.Visible = false;
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
             if (WindowState == FormWindowState.Minimized)
             {
-                Hide();
+                if (_config.MinimizeToTray)
+                {
+                    Hide();
+                }
             }
             else if (WindowState == FormWindowState.Normal && _config != null)
             {
@@ -632,6 +590,7 @@ namespace ColorControl
 
             chkStartMinimized.Checked = _config.StartMinimized;
             chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
+            chkMinimizeToSystemTray.Checked = _config.MinimizeToTray;
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
 
@@ -707,7 +666,14 @@ namespace ColorControl
             if (!_setVisibleCalled && _config.StartMinimized)
             {
                 _setVisibleCalled = true;
-                value = false;
+                if (_config.MinimizeToTray)
+                {
+                    value = false;
+                }
+                else
+                {
+                    WindowState = FormWindowState.Minimized;
+                }
             }
             if (!IsDisposed) {
                 base.SetVisibleCore(value);
@@ -1256,18 +1222,22 @@ namespace ColorControl
                 grpNvidiaOptions.Visible = _nvService != null;
                 if (grpNvidiaOptions.Visible)
                 {
-                    if (cbxDitheringBitDepth.Items.Count == 0)
+                    var firstTime = cbxDitheringBitDepth.Items.Count == 0;
+
+                    if (firstTime)
                     {
                         cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
                         cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
                     }
 
-
                     var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
-                    chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
-                    cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? (int)NvDitherBits.Bits8);
-                    cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? (int)NvDitherMode.Temporal);
-                    FillGradient();
+                    if (firstTime || preset != null)
+                    {
+                        chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
+                        cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? (int)NvDitherBits.Bits8);
+                        cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? (int)NvDitherMode.Temporal);
+                        FillGradient();
+                    }
                 }
             }
         }
@@ -1630,12 +1600,12 @@ namespace ColorControl
                 return;
             }
 
-            if (!(_lgService.Config.PowerOnAfterResume || _lgService.Config.PowerOnAfterStartup))
+            if (!(_lgService.Config.PowerOnAfterResume || _lgService.Config.PowerOnAfterStartup || _lgService.Config.PowerSwitchOnScreenSaver))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
 
-Connection > Mobile TV On > Turn on via Wi-Fi
+Connection > Mobile TV On > Turn on via Wi-Fi (Networked Standby Mode)
 
 See Options to test this functionality."
                 );
@@ -1647,6 +1617,9 @@ See Options to test this functionality."
                 _lgService.Config.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
                 _lgService.Config.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
                 _lgService.Config.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
+                _lgService.Config.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
+
+                _lgService.InstallEventHandlers();
             }));
         }
 
@@ -2216,6 +2189,15 @@ Do you want to continue?";
             else
             {
                 MessageForms.InfoOk("All presets for every color setting already exist.");
+            }
+        }
+
+        private void chkMinimizeToSystemTray_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_initialized)
+            {
+                _config.MinimizeToTray = chkMinimizeToSystemTray.Checked;
+                _trayIcon.Visible = _config.MinimizeToTray;
             }
         }
     }
