@@ -18,7 +18,7 @@ namespace LgTv
     }
     public class LgTvApi:IDisposable
     {
-        public bool ConnectionClosed { get => _connection == null || _connection.ConnectionClosed; }
+        public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
 
         private readonly LgTvApiCore _connection;
         private LgWebOsMouseService _mouseConnection;

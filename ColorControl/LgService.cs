@@ -9,16 +9,17 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace ColorControl
 {
-    class LgService
+    class LgService : ServiceBase<LgPreset>
     {
+        protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         public static string LgListAppsJson = "listApps.json";
 
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        //private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         //public string FriendlyScreenName { get; private set; }
 
@@ -35,11 +36,7 @@ namespace ColorControl
 
         public LgServiceConfig Config { get; private set; }
 
-        private List<LgPreset> _lgPresets;
-        private string _lgPresetsFilename;
-
         private LgTvApi _lgTvApi;
-        private string _dataDir;
         private string _configFilename;
         private bool _allowPowerOn;
         private bool _justWokeUp;
@@ -48,9 +45,6 @@ namespace ColorControl
         private List<LgPreset> _remoteControlButtons;
         private List<LgApp> _lgApps = new List<LgApp>();
 
-        private JavaScriptSerializer _JsonSerializer = new JavaScriptSerializer();
-        private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
-
         private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
 
         private bool _poweredOffByScreenSaver;
@@ -58,9 +52,8 @@ namespace ColorControl
         private Task _monitorTask;
         private int _monitorTaskCounter;
 
-        public LgService(string dataDir, bool allowPowerOn)
+        public LgService(string dataPath, bool allowPowerOn) : base(dataPath)
         {
-            _dataDir = dataDir;
             _allowPowerOn = allowPowerOn;
 
             _invokableActions.Add("WOL", new Func<bool>(WakeSelectedDevice));
@@ -79,8 +72,6 @@ namespace ColorControl
             //        FriendlyScreenName = name;
             //    }
             //}
-
-            var _ = RefreshDevices(afterStartUp: true);
         }
 
         ~LgService()
@@ -88,16 +79,34 @@ namespace ColorControl
             GlobalSave();
         }
 
+        public static async Task<bool> ExecutePresetAsync(string presetName)
+        {
+            try
+            {
+                var lgService = new LgService(Program.DataDir, true);
+                await lgService.RefreshDevices(afterStartUp: true);
+
+                var result = await lgService.ApplyPreset(presetName);
+
+                if (!result)
+                {
+                    Console.WriteLine("Preset not found or error while executing.");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error executing preset: " + ex.ToLogString());
+                return false;
+            }
+        }
+
         public void GlobalSave()
         {
             SaveConfig();
             SavePresets();
             SaveRemoteControlButtons();
-        }
-
-        public List<LgPreset> GetPresets()
-        {
-            return _lgPresets;
         }
 
         public LgPreset CreateNewPreset()
@@ -110,7 +119,7 @@ namespace ColorControl
             {
                 fullname = $"{name} ({number})";
                 number++;
-            } while (_lgPresets.Any(x => x.name.Equals(fullname)));
+            } while (_presets.Any(x => x.name.Equals(fullname)));
 
             preset.name = fullname;
 
@@ -119,35 +128,35 @@ namespace ColorControl
 
         private void LoadPresets()
         {
-            _lgPresetsFilename = Path.Combine(_dataDir, "LgPresets.json");
+            _presetsFilename = Path.Combine(_dataPath, "LgPresets.json");
             var toCopy = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
-            if (!File.Exists(_lgPresetsFilename) && File.Exists(toCopy))
+            if (!File.Exists(_presetsFilename) && File.Exists(toCopy))
             {
                 try
                 {
-                    File.Copy(toCopy, _lgPresetsFilename);
+                    File.Copy(toCopy, _presetsFilename);
                 }
                 catch (Exception e)
                 {
-                    Logger.Error($"Error while copying {toCopy} to {_lgPresetsFilename}: {e.Message}");
+                    Logger.Error($"Error while copying {toCopy} to {_presetsFilename}: {e.Message}");
                 }
             }
 
-            if (File.Exists(_lgPresetsFilename))
+            if (File.Exists(_presetsFilename))
             {
-                var json = File.ReadAllText(_lgPresetsFilename);
+                var json = File.ReadAllText(_presetsFilename);
 
-                _lgPresets = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
+                _presets = _JsonSerializer.Deserialize<List<LgPreset>>(json);
             }
             else
             {
-                _lgPresets = new List<LgPreset>();
+                _presets = new List<LgPreset>();
             }
         }
 
         private void LoadConfig()
         {
-            _configFilename = Path.Combine(_dataDir, "LgConfig.json");
+            _configFilename = Path.Combine(_dataPath, "LgConfig.json");
             if (File.Exists(_configFilename))
             {
                 Config = JsonConvert.DeserializeObject<LgServiceConfig>(File.ReadAllText(_configFilename));
@@ -162,7 +171,7 @@ namespace ColorControl
         {
             var defaultButtons = GenerateDefaultRemoteControlButtons();
 
-            _rcButtonsFilename = Path.Combine(_dataDir, "LgRemoteControlButtons.json");
+            _rcButtonsFilename = Path.Combine(_dataPath, "LgRemoteControlButtons.json");
             //if (File.Exists(_rcButtonsFilename))
             //{
             //    var json = File.ReadAllText(_rcButtonsFilename);
@@ -238,8 +247,8 @@ namespace ColorControl
         {
             try
             {
-                var json = _JsonSerializer.Serialize(_lgPresets);
-                File.WriteAllText(_lgPresetsFilename, json);
+                var json = _JsonSerializer.Serialize(_presets);
+                File.WriteAllText(_presetsFilename, json);
             }
             catch (Exception e)
             {
@@ -340,6 +349,19 @@ namespace ColorControl
         private bool IsConnected()
         {
             return !_lgTvApi?.ConnectionClosed ?? false;
+        }
+
+        public async Task<bool> ApplyPreset(string presetName)
+        {
+            var preset = _presets.FirstOrDefault(p => p.name.Equals(presetName, StringComparison.OrdinalIgnoreCase));
+            if (preset != null)
+            {
+                return await ApplyPreset(preset);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
@@ -502,6 +524,25 @@ namespace ColorControl
 
             await _lgTvApi.TurnOff();
             return true;
+        }
+
+        internal async Task<bool> TestConnection()
+        {
+            if (!await Connected(true))
+            {
+                return false;
+            }
+
+            try
+            {
+                await _lgTvApi.IsMuted();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("TestConnection: " + ex.ToLogString());
+                return false;
+            }
         }
 
         internal bool WakeSelectedDevice()
@@ -691,78 +732,97 @@ namespace ColorControl
             var wasConnected = IsConnected();
             _monitorTaskCounter++;
             var validCounter = _monitorTaskCounter;
+            var lastProcessId = 0;
+
             while (Config.PowerSwitchOnScreenSaver && validCounter == _monitorTaskCounter)
             {
                 await Task.Delay(500);
 
-                if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)
+                try
                 {
-                    continue;
-                }
-
-                var processes = Process.GetProcesses();
-
-                if (_poweredOffByScreenSaver)
-                {
-                    if (processes.Any(p => p.Id == _poweredOffByScreenSaverProcessId))
+                    if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)
                     {
                         continue;
                     }
 
-                    Logger.Debug("Screensaver stopped, waking");
-                    _poweredOffByScreenSaver = false;
-                    _poweredOffByScreenSaverProcessId = 0;
-                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
+                    var processes = Process.GetProcesses();
 
-                    continue;
-                }
-
-                if (!IsConnected())
-                {
-                    if (wasConnected)
+                    if (_poweredOffByScreenSaver)
                     {
-                        Logger.Debug("TV was connected, but not any longer");
-                        wasConnected = false;
+                        if (processes.Any(p => p.Id == _poweredOffByScreenSaverProcessId))
+                        {
+                            continue;
+                        }
+
+                        Logger.Debug("Screensaver stopped, waking");
+                        _poweredOffByScreenSaver = false;
+                        _poweredOffByScreenSaverProcessId = 0;
+                        lastProcessId = 0;
+                        var _ = WakeAndConnectToSelectedDeviceWithRetries();
+
+                        continue;
                     }
-                    continue;
-                }
 
-                if (!wasConnected)
-                {
-                    Logger.Debug("TV was not connected, but connection has now been established");
-                    wasConnected = true;
-                }
-
-                foreach (var process in processes)
-                {
-                    var name = process.ProcessName.ToLowerInvariant();
-                    if (name.EndsWith(".scr"))
+                    if (!IsConnected())
                     {
-                        var parent = process.Parent();
-                        if (parent?.ProcessName.Contains("winlogon") ?? false)
+                        if (wasConnected)
                         {
-                            Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
-                            try
-                            {
-                                Logger.Debug("Powering off tv because of screensaver");
-                                _poweredOffByScreenSaver = await PowerOff();
-                                _poweredOffByScreenSaverProcessId = process.Id;
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Error("CheckProcesses: can't power off: " + e.ToLogString());
-                            }
-                            if (!IsConnected())
-                            {
-                                _poweredOffByScreenSaver = false;
-                            }
-                            break;
+                            Logger.Debug("TV was connected, but not any longer");
+                            wasConnected = false;
                         }
-                        else
+                        continue;
+                    }
+
+                    if (!wasConnected)
+                    {
+                        Logger.Debug("TV was not connected, but connection has now been established");
+                        wasConnected = true;
+                    }
+
+                    foreach (var process in processes)
+                    {
+                        var name = process.ProcessName.ToLowerInvariant();
+                        if (name.EndsWith(".scr"))
                         {
-                            Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
+                            var parent = process.Parent();
+                            if (parent?.ProcessName.Contains("winlogon") ?? false)
+                            {
+                                Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
+                                try
+                                {
+                                    Logger.Debug("Test connection...");
+                                    var test = await TestConnection();
+                                    Logger.Debug("Test connection result: " + test);
+
+                                    Logger.Debug("Powering off tv because of screensaver");
+                                    _poweredOffByScreenSaver = await PowerOff();
+                                    _poweredOffByScreenSaverProcessId = process.Id;
+                                    lastProcessId = 0;
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Error("CheckProcesses: can't power off: " + e.ToLogString());
+                                }
+                                if (!IsConnected())
+                                {
+                                    _poweredOffByScreenSaver = false;
+                                }
+                                break;
+                            }
+                            else
+                            {
+                                if (process.Id != lastProcessId)
+                                {
+                                    Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
+                                    lastProcessId = process.Id;
+                                }
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("CheckProcesses: " + ex.ToLogString());
                 }
             }
         }

@@ -6,7 +6,6 @@ namespace ColorControl
 {
     class LgPreset : PresetBase
     {
-        public string name { get; set; }
         public string appId { get; set; }
         public List<string> steps { get; set; }
 

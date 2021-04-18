@@ -9,13 +9,9 @@ using System.Threading;
 
 namespace ColorControl
 {
-    class GraphicsService : ServiceBase
+    abstract class GraphicsService<T> : ServiceBase<T> where T : PresetBase
     {
-        [DllImport("user32.dll")]
-        public static extern bool EnumDisplaySettingsA(string deviceName, int modeNum, out DEVMODEA devMode);
-
-        const int ENUM_CURRENT_SETTINGS = -1;
-        const int ENUM_REGISTRY_SETTINGS = -2;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public GraphicsService(string dataPath) : base(dataPath)
         {
@@ -26,6 +22,8 @@ namespace ColorControl
         {
             Uninitialize();
         }
+
+        public abstract bool HasDisplaysAttached();
 
         protected void ToggleHDR(int delay = 1000)
         {
@@ -103,7 +101,7 @@ namespace ColorControl
         {
             DEVMODEA devMode;
             // NativeMethods defines modeNum as an 'uint' but we need to pass '-1'
-            if (EnumDisplaySettingsA(displayName, ENUM_CURRENT_SETTINGS, out devMode))
+            if (Utils.EnumDisplaySettingsA(displayName, Utils.ENUM_CURRENT_SETTINGS, out devMode))
             {
                 return devMode.dmDisplayFrequency;
             }

@@ -7,11 +7,11 @@ using System.Windows.Forms;
 
 namespace ColorControl
 {
-    class AmdService : GraphicsService
+    class AmdService : GraphicsService<AmdPreset>
     {
-        private ADLDisplayInfo _currentDisplay;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private List<AmdPreset> _presets;
+        private ADLDisplayInfo _currentDisplay;
 
         private AmdPreset _lastAppliedPreset;
 
@@ -20,14 +20,31 @@ namespace ColorControl
             LoadPresets();
         }
 
-        public List<AmdPreset> GetPresets()
-        {
-            return _presets;
-        }
-
         public AmdPreset GetLastAppliedPreset()
         {
             return _lastAppliedPreset;
+        }
+
+        public static bool ExecutePresetAsync(string idOrName)
+        {
+            try
+            {
+                var service = new AmdService(Program.DataDir);
+
+                var result = service.ApplyPreset(idOrName);
+
+                if (!result)
+                {
+                    Console.WriteLine("Preset not found or error while executing.");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error executing preset: " + ex.ToLogString());
+                return false;
+            }
         }
 
         private void LoadPresets()
@@ -64,7 +81,7 @@ namespace ColorControl
             SavePresets();
         }
 
-        public bool HasDisplaysAttached()
+        public override bool HasDisplaysAttached()
         {
             try
             {
@@ -99,7 +116,20 @@ namespace ColorControl
             return _currentDisplay;
         }
 
-        public bool ApplyPreset(AmdPreset preset, Config config)
+        public bool ApplyPreset(string idOrName)
+        {
+            var preset = GetPresetByIdOrName(idOrName);
+            if (preset != null)
+            {
+                return ApplyPreset(preset, Program.AppContext);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool ApplyPreset(AmdPreset preset, AppContext appContext)
         {
             SetCurrentDisplay(preset);
 
@@ -294,6 +324,8 @@ namespace ColorControl
             foreach (var display in displays)
             {
                 var values = new List<string>();
+
+                values.Add("Current settings");
 
                 var screen = GetScreenForDisplay(display);
 

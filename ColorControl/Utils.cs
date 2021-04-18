@@ -2,6 +2,7 @@
 using Microsoft.Win32.TaskScheduler;
 using NStandard;
 using NWin32;
+using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
@@ -35,10 +37,17 @@ namespace ColorControl
 
         public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
 
+        public const int ENUM_CURRENT_SETTINGS = -1;
+        public const int ENUM_REGISTRY_SETTINGS = -2;
+
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
 
         public delegate void PCREATE_PROCESS_NOTIFY_ROUTINE(IntPtr ParentId, IntPtr ProcessId, bool Create);
+
+        public static JavaScriptSerializer JsonSerializer = new JavaScriptSerializer();
+
+        public static bool ConsoleOpened { get; private set; }
 
         [DllImport("user32.dll")]
         public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
@@ -50,6 +59,20 @@ namespace ColorControl
 
         [DllImport("user32.dll")]
         public extern static bool ShutdownBlockReasonDestroy(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern bool EnumDisplaySettingsA(string deviceName, int modeNum, out DEVMODEA devMode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        private static extern bool AttachConsole(int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool FreeConsole();
 
         //[DllImport("Wtsapi32.dll")]
         //public extern static bool WTSRegisterSessionNotification(IntPtr hWnd, uint dwFlags);
@@ -330,13 +353,14 @@ namespace ColorControl
             return devices;
         }
 
-        public static void WaitForTask(System.Threading.Tasks.Task task)
+        public static T WaitForTask<T>(System.Threading.Tasks.Task<T> task)
         {
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
                 Thread.Sleep(100);
                 Application.DoEvents();
             }
+            return task.Result;
         }
 
         public static void SetNotifyIconText(NotifyIcon ni, string text)
@@ -617,6 +641,50 @@ namespace ColorControl
                     item.SubItems[i].Text = values[i];
                 }
             }
+        }
+
+        public static bool OpenConsole()
+        {
+            if (ConsoleOpened)
+            {
+                return true;
+            }
+
+            if (!AttachConsole(-1))
+            {
+                AllocConsole();
+                return true;
+            }
+            ConsoleOpened = true;
+
+            return false;
+        }
+
+        public static bool CloseConsole()
+        {
+            if (!ConsoleOpened)
+            {
+                return false;
+            }
+
+            SendKeys.SendWait("{ENTER}");
+            var result = FreeConsole();
+
+            return result;
+        }
+
+        public static Process GetProcessByName(string name, bool skipCurrent = true)
+        {
+            var currentProcessId = Process.GetCurrentProcess().Id;
+            foreach (var process in Process.GetProcesses())
+            {
+                if (process.ProcessName.Equals(name) && (!skipCurrent || process.Id != currentProcessId))
+                {
+                    return process;
+                }
+            }
+
+            return null;
         }
     }
 

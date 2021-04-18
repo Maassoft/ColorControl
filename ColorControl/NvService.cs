@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Windows.Graphics.Display;
 
 namespace ColorControl
 {
@@ -38,8 +37,10 @@ namespace ColorControl
         Temporal = 4
     }
 
-    class NvService : GraphicsService
+    class NvService : GraphicsService<NvPreset>
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         [DllImport(@"nvapi64", EntryPoint = @"nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl,
                     PreserveSig = true)]
         private static extern IntPtr NvAPI64_QueryInterface(uint interfaceId);
@@ -66,8 +67,6 @@ namespace ColorControl
             public uint mode;
         };
 
-        private List<NvPreset> _presets;
-
         private Display _currentDisplay;
         private NvPreset _lastAppliedPreset;
 
@@ -77,6 +76,28 @@ namespace ColorControl
             _JsonDeserializer.RegisterConverters(new[] { converter });
 
             LoadPresets();
+        }
+
+        public static bool ExecutePresetAsync(string idOrName)
+        {
+            try
+            {
+                var nvService = new NvService(Program.DataDir);
+
+                var result = nvService.ApplyPreset(idOrName);
+
+                if (!result)
+                {
+                    Console.WriteLine("Preset not found or error while executing.");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error executing preset: " + ex.ToLogString());
+                return false;
+            }
         }
 
         public Display GetCurrentDisplay()
@@ -89,7 +110,7 @@ namespace ColorControl
             return _currentDisplay;
         }
 
-        public bool HasDisplaysAttached()
+        public override bool HasDisplaysAttached()
         {
             try
             {
@@ -104,11 +125,6 @@ namespace ColorControl
         public void GlobalSave()
         {
             SavePresets();
-        }
-
-        public List<NvPreset> GetPresets()
-        {
-            return _presets;
         }
 
         private void LoadPresets()
@@ -153,7 +169,21 @@ namespace ColorControl
             }
         }
 
-        public bool ApplyPreset(NvPreset preset, Config config)
+
+        public bool ApplyPreset(string idOrName)
+        {
+            var preset = GetPresetByIdOrName(idOrName);
+            if (preset != null)
+            {
+                return ApplyPreset(preset, Program.AppContext);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool ApplyPreset(NvPreset preset, AppContext appContext)
         {
             var result = true;
 
@@ -191,7 +221,7 @@ namespace ColorControl
 
                 if (hdrEnabled && newHdrEnabled)
                 {
-                    SetHDRState(display, true);
+                    SetHDRState(display, true, useSwitch: appContext.StartUpParams.NoGui);
 
                     applyHdr = false;
                 }
@@ -203,7 +233,7 @@ namespace ColorControl
 
                 var colorData = preset.applyColorData ? preset.colorData : display.DisplayDevice.CurrentColorData;
 
-                SetHDRState(display, newHdrEnabled, colorData);
+                SetHDRState(display, newHdrEnabled, colorData, appContext.StartUpParams.NoGui);
             }
 
             if (preset.applyRefreshRate)
@@ -253,8 +283,17 @@ namespace ColorControl
             return colorData.ColorFormat != currentColorData.ColorFormat || colorData.ColorDepth != currentColorData.ColorDepth || settingRange != currentColorData.DynamicRange || settingSpace != currentColorData.Colorimetry;
         }
 
-        private void SetHDRState(Display display, bool enabled, ColorData colorData = null)
+        private void SetHDRState(Display display, bool enabled, ColorData colorData = null, bool useSwitch = false)
         {
+            if (useSwitch)
+            {
+                if (enabled != IsHDREnabled())
+                {
+                    ToggleHDR();
+                }
+                return;
+            }
+
             var newMaster = new MasteringDisplayColorData();
             var hdr = new HDRColorData(enabled ? ColorDataHDRMode.UHDA : ColorDataHDRMode.Off, newMaster, colorData?.ColorFormat, colorData?.DynamicRange, colorData?.ColorDepth);
 
@@ -403,6 +442,8 @@ namespace ColorControl
             foreach (var display in displays)
             {
                 var values = new List<string>();
+
+                values.Add("Current settings");
 
                 var name = display.Name;
 

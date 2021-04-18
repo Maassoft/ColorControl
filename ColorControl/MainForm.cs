@@ -16,7 +16,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace ColorControl
@@ -34,13 +33,10 @@ namespace ColorControl
         private string _dataDir;
 
         private NvService _nvService;
-        private JavaScriptSerializer _JsonSerializer = new JavaScriptSerializer();
-        private JavaScriptSerializer _JsonDeserializer = new JavaScriptSerializer();
         private string _lastDisplayRefreshRates = string.Empty;
 
         private NotifyIcon _trayIcon;
         private bool _initialized = false;
-        private string _configFilename;
         private Config _config;
         private bool _setVisibleCalled = false;
         private RestartDetector _restartDetector;
@@ -49,33 +45,34 @@ namespace ColorControl
         private RemoteControlForm _remoteControlForm;
 
         private MenuItem _nvTrayMenu;
+        private MenuItem _amdTrayMenu;
         private MenuItem _lgTrayMenu;
 
         private StartUpParams StartUpParams { get; }
 
         private AmdService _amdService;
 
-        public MainForm(StartUpParams startUpParams)
+        public MainForm(AppContext appContext)
         {
             InitializeComponent();
-            StartUpParams = startUpParams;
+            StartUpParams = appContext.StartUpParams;
 
-            _dataDir = Utils.GetDataPath();
+            _dataDir = Program.DataDir;
+            _config = Program.Config;
 
-            InitLogger();
-
-            _configFilename = Path.Combine(_dataDir, "Settings.json");
             LoadConfig();
 
             MessageForms.MainForm = this;
 
             _nvTrayMenu = new MenuItem("NVIDIA presets");
+            _amdTrayMenu = new MenuItem("NVIDIA presets");
             _lgTrayMenu = new MenuItem("LG presets");
             _trayIcon = new NotifyIcon()
             {
                 Icon = Icon,
                 ContextMenu = new ContextMenu(new MenuItem[] {
                     _nvTrayMenu,
+                    _amdTrayMenu,
                     _lgTrayMenu,
                     new MenuItem("-"),
                     new MenuItem("Open", OpenForm),
@@ -120,7 +117,7 @@ namespace ColorControl
                 _nvService = new NvService(_dataDir);
                 FillNvPresets();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Logger.Error("Error initializing NvService: " + e.ToLogString());
                 Logger.Debug("No NVIDIA device detected");
@@ -135,7 +132,7 @@ namespace ColorControl
                 _amdService = new AmdService(_dataDir);
                 FillAmdPresets();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //Logger.Error("Error initializing AmdService: " + e.ToLogString());
                 Logger.Debug("No AMD device detected");
@@ -148,6 +145,7 @@ namespace ColorControl
             try
             {
                 _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
+                _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(new Action(AfterLgServiceRefreshDevices)));
 
                 FillLgPresets();
 
@@ -190,20 +188,12 @@ namespace ColorControl
             }
         }
 
-        private void InitLogger()
+        private void AfterLgServiceRefreshDevices()
         {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = Path.Combine(_dataDir, "LogFile.txt") };
-            //var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
-
-            // Rules for mapping loggers to targets            
-            //config.AddRule(LogLevel.Info, LogLevel.Fatal, logconsole);
-            config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
+            if (StartUpParams.ExecuteLgPreset)
+            {
+                var _ = _lgService.ApplyPreset(StartUpParams.LgPresetName);
+            }
         }
 
         private void InitInfo()
@@ -452,17 +442,20 @@ namespace ColorControl
 
             btnApply.Enabled = enabled;
             btnChange.Enabled = enabled;
+            edtNvPresetName.Enabled = enabled;
             edtShortcut.Enabled = enabled;
-            btnSetShortcut.Enabled = enabled;
+            btnNvPresetSave.Enabled = enabled;
             btnClone.Enabled = enabled;
             btnNvPresetDelete.Enabled = enabled;
 
             if (preset != null)
             {
+                edtNvPresetName.Text = preset.name;
                 edtShortcut.Text = preset.shortcut;
             }
             else
             {
+                edtNvPresetName.Text = string.Empty;
                 edtShortcut.Text = string.Empty;
             }
         }
@@ -535,9 +528,18 @@ namespace ColorControl
 
             var preset = GetSelectedNvPreset();
 
+            var name = edtNvPresetName.Text.Trim();
+
+            if (!string.IsNullOrEmpty(name) && _nvService.GetPresets().Any(x => x.id != preset.id && x.name != null && x.name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageForms.WarningOk("The name must be unique.");
+                return;
+            }
+
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.shortcut = shortcut;
+            preset.name = name;
 
             AddOrUpdateItem();
 
@@ -578,16 +580,6 @@ namespace ColorControl
 
         private void LoadConfig()
         {
-            if (File.Exists(_configFilename))
-            {
-                var data = File.ReadAllText(_configFilename);
-                _config = _JsonDeserializer.Deserialize<Config>(data);
-            }
-            else
-            {
-                _config = new Config();
-            }
-
             chkStartMinimized.Checked = _config.StartMinimized;
             chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
             chkMinimizeToSystemTray.Checked = _config.MinimizeToTray;
@@ -614,8 +606,8 @@ namespace ColorControl
 
             try
             {
-                var data = _JsonSerializer.Serialize(_config);
-                File.WriteAllText(_configFilename, data);
+                var data = Utils.JsonSerializer.Serialize(_config);
+                File.WriteAllText(Program.ConfigFilename, data);
             }
             catch (Exception e)
             {
@@ -1320,6 +1312,27 @@ namespace ColorControl
             }
         }
 
+        private void UpdateTrayMenuAmd()
+        {
+            var presets = _amdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
+
+            _amdTrayMenu.MenuItems.Clear();
+
+            foreach (var preset in presets)
+            {
+                var name = preset.GetTextForMenuItem();
+                if (!string.IsNullOrEmpty(preset.shortcut))
+                {
+                    name += "\t" + preset.shortcut;
+                }
+
+                var item = new MenuItem(name);
+                item.Tag = preset;
+                item.Click += TrayMenuItemAmd_Click;
+                _amdTrayMenu.MenuItems.Add(item);
+            }
+        }
+
         private void TrayMenuItemNv_Click(object sender, EventArgs e)
         {
             var item = sender as MenuItem;
@@ -1328,17 +1341,29 @@ namespace ColorControl
             ApplyNvPreset(preset);
         }
 
+        private void TrayMenuItemAmd_Click(object sender, EventArgs e)
+        {
+            var item = sender as MenuItem;
+            var preset = (AmdPreset)item.Tag;
+
+            ApplyAmdPreset(preset);
+        }
+
         private void trayIconContextMenu_Popup(object sender, EventArgs e)
         {
             _nvTrayMenu.Visible = _nvService != null;
-
             if (_nvTrayMenu.Visible)
             {
                 UpdateTrayMenuNv();
             }
 
-            _lgTrayMenu.Visible = _lgService != null;
+            _amdTrayMenu.Visible = _amdService != null;
+            if (_amdTrayMenu.Visible)
+            {
+                UpdateTrayMenuAmd();
+            }
 
+            _lgTrayMenu.Visible = _lgService != null;
             if (_lgTrayMenu.Visible)
             {
                 UpdateTrayMenuLg();
@@ -1424,7 +1449,7 @@ namespace ColorControl
             }
             try
             {
-                var result = _nvService.ApplyPreset(preset, _config);
+                var result = _nvService.ApplyPreset(preset, Program.AppContext);
                 if (!result)
                 {
                     throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
@@ -1448,7 +1473,7 @@ namespace ColorControl
             }
             try
             {
-                var result = _amdService.ApplyPreset(preset, _config);
+                var result = _amdService.ApplyPreset(preset, Program.AppContext);
                 if (!result)
                 {
                     throw new Exception("Error while applying AMD preset. At least one setting could not be applied. Check the log for details.");
@@ -1694,6 +1719,11 @@ Do you want to continue?";
         {
             UpdateDisplayInfoItems();
             UpdateDisplayInfoItemsAmd();
+
+            if (tcMain.SelectedTab == tabLog)
+            {
+                LoadLog();
+            }
         }
 
         private void btnClearLog_Click(object sender, EventArgs e)
@@ -1799,12 +1829,18 @@ Do you want to continue?";
         }
 
         private void ApplyNvPresetOnStartup(int attempts = 5) {
-            if (_config.NvPresetId_ApplyOnStartup != 0)
+
+            var presetIdOrName = !string.IsNullOrEmpty(StartUpParams.NvidiaPresetIdOrName) ? StartUpParams.NvidiaPresetIdOrName : _config.NvPresetId_ApplyOnStartup.ToString();
+
+            if (!string.IsNullOrEmpty(presetIdOrName))
             {
-                var preset = _nvService?.GetPresets().FirstOrDefault(p => p.id == _config.NvPresetId_ApplyOnStartup);
+                var preset = _nvService?.GetPresetByIdOrName(presetIdOrName);
                 if (preset == null)
                 {
-                    _config.NvPresetId_ApplyOnStartup = 0;
+                    if (string.IsNullOrEmpty(StartUpParams.NvidiaPresetIdOrName))
+                    {
+                        _config.NvPresetId_ApplyOnStartup = 0;
+                    }
                 }
                 else if (_nvService != null)
                 {
@@ -1830,12 +1866,17 @@ Do you want to continue?";
 
         private void ApplyAmdPresetOnStartup(int attempts = 5)
         {
-            if (_config.AmdPresetId_ApplyOnStartup != 0)
+            var presetIdOrName = !string.IsNullOrEmpty(StartUpParams.AmdPresetIdOrName) ? StartUpParams.AmdPresetIdOrName : _config.AmdPresetId_ApplyOnStartup.ToString();
+
+            if (!string.IsNullOrEmpty(presetIdOrName))
             {
-                var preset = _amdService?.GetPresets().FirstOrDefault(p => p.id == _config.AmdPresetId_ApplyOnStartup);
+                var preset = _amdService?.GetPresetByIdOrName(presetIdOrName);
                 if (preset == null)
                 {
-                    _config.AmdPresetId_ApplyOnStartup = 0;
+                    if (string.IsNullOrEmpty(StartUpParams.AmdPresetIdOrName))
+                    {
+                        _config.AmdPresetId_ApplyOnStartup = 0;
+                    }
                 }
                 else if (_amdService != null)
                 {
@@ -1939,9 +1980,18 @@ Do you want to continue?";
 
             var preset = GetSelectedAmdPreset();
 
+            var name = edtAmdPresetName.Text.Trim();
+
+            if (!string.IsNullOrEmpty(name) && _amdService.GetPresets().Any(x => x.id != preset.id && x.name != null && x.name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageForms.WarningOk("The name must be unique.");
+                return;
+            }
+
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.shortcut = shortcut;
+            preset.name = name;
 
             AddOrUpdateItemAmd();
 
@@ -2083,17 +2133,20 @@ Do you want to continue?";
 
             btnApplyAmd.Enabled = enabled;
             btnChangeAmd.Enabled = enabled;
+            edtAmdPresetName.Enabled = enabled;
             edtAmdShortcut.Enabled = enabled;
-            btnSetAmdShortcut.Enabled = enabled;
+            btnAmdPresetSave.Enabled = enabled;
             btnCloneAmd.Enabled = enabled;
             btnDeleteAmd.Enabled = enabled;
 
             if (preset != null)
             {
+                edtAmdPresetName.Text = preset.name;
                 edtAmdShortcut.Text = preset.shortcut;
             }
             else
             {
+                edtAmdPresetName.Text = string.Empty;
                 edtAmdShortcut.Text = string.Empty;
             }
         }
@@ -2198,6 +2251,26 @@ Do you want to continue?";
             {
                 _config.MinimizeToTray = chkMinimizeToSystemTray.Checked;
                 _trayIcon.Visible = _config.MinimizeToTray;
+            }
+        }
+
+        private void miNvCopyId_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            if (preset != null)
+            {
+                Clipboard.SetText(preset.id.ToString());
+            }
+        }
+
+        private void miAmdCopyId_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedAmdPreset();
+
+            if (preset != null)
+            {
+                Clipboard.SetText(preset.id.ToString());
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿namespace ColorControl
 {
-    class Config
+    public class Config
     {
         public bool StartMinimized { get; set; }
 

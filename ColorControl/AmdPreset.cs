@@ -62,12 +62,14 @@ namespace ColorControl
         public static string[] GetColumnNames()
         {
             //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "Display|140", "Color settings (BPC, format)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
         {
             var values = new List<string>();
+
+            values.Add(name);
 
             var display = string.Format("{0}", primaryDisplay ? "Primary" : displayName);
             values.Add(display);
@@ -100,30 +102,38 @@ namespace ColorControl
         public string GetTextForMenuItem()
         {
             var sb = new StringBuilder();
-            if (displayName != null)
+            if (!string.IsNullOrEmpty(name))
             {
-                sb.AppendFormat("Display: {0} / ", displayName);
-            }
-            if (applyColorData)
-            {
-                var colorSettings = string.Format("Format: {0}, {1}", colorDepth, pixelFormat);
-                sb.Append(colorSettings);
+                sb.Append(name);
                 sb.Append(" / ");
             }
-            if (applyRefreshRate)
+            else
             {
-                sb.AppendFormat("{0}Hz", refreshRate);
-                sb.Append(" / ");
-            }
-            if (applyDithering)
-            {
-                sb.AppendFormat("Dithering: {0}", ditherState);
-                sb.Append(" / ");
-            }
-            if (applyHDR)
-            {
-                sb.AppendFormat("HDR: {0}", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled");
-                sb.Append(" / ");
+                if (displayName != null)
+                {
+                    sb.AppendFormat("Display: {0} / ", displayName);
+                }
+                if (applyColorData)
+                {
+                    var colorSettings = string.Format("Format: {0}, {1}", colorDepth, pixelFormat);
+                    sb.Append(colorSettings);
+                    sb.Append(" / ");
+                }
+                if (applyRefreshRate)
+                {
+                    sb.AppendFormat("{0}Hz", refreshRate);
+                    sb.Append(" / ");
+                }
+                if (applyDithering)
+                {
+                    sb.AppendFormat("Dithering: {0}", ditherState);
+                    sb.Append(" / ");
+                }
+                if (applyHDR)
+                {
+                    sb.AppendFormat("HDR: {0}", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled");
+                    sb.Append(" / ");
+                }
             }
 
             return sb.ToString(0, Math.Max(0, sb.Length - 3));

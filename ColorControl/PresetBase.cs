@@ -5,6 +5,7 @@ namespace ColorControl
 {
     internal abstract class PresetBase
     {
+        public string name { get; set; }
         public string shortcut { get; set; }
 
         private int _id;

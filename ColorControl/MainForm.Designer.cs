@@ -32,11 +32,13 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tcMain = new System.Windows.Forms.TabControl();
             this.tabNVIDIA = new System.Windows.Forms.TabPage();
+            this.lblNvPresetName = new System.Windows.Forms.Label();
+            this.edtNvPresetName = new System.Windows.Forms.TextBox();
             this.btnAddModesNv = new System.Windows.Forms.Button();
             this.btnNvPresetDelete = new System.Windows.Forms.Button();
             this.lblError = new System.Windows.Forms.Label();
             this.btnClone = new System.Windows.Forms.Button();
-            this.btnSetShortcut = new System.Windows.Forms.Button();
+            this.btnNvPresetSave = new System.Windows.Forms.Button();
             this.lblShortcut = new System.Windows.Forms.Label();
             this.edtShortcut = new System.Windows.Forms.TextBox();
             this.btnChange = new System.Windows.Forms.Button();
@@ -67,14 +69,17 @@
             this.miHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miToggleHDR = new System.Windows.Forms.ToolStripMenuItem();
             this.miHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvCopyId = new System.Windows.Forms.ToolStripMenuItem();
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
             this.tabAMD = new System.Windows.Forms.TabPage();
+            this.lblAmdPresetName = new System.Windows.Forms.Label();
+            this.edtAmdPresetName = new System.Windows.Forms.TextBox();
             this.btnAddAmd = new System.Windows.Forms.Button();
             this.lblErrorAMD = new System.Windows.Forms.Label();
             this.btnDeleteAmd = new System.Windows.Forms.Button();
             this.btnCloneAmd = new System.Windows.Forms.Button();
-            this.btnSetAmdShortcut = new System.Windows.Forms.Button();
+            this.btnAmdPresetSave = new System.Windows.Forms.Button();
             this.lblAmdShortcut = new System.Windows.Forms.Label();
             this.edtAmdShortcut = new System.Windows.Forms.TextBox();
             this.btnChangeAmd = new System.Windows.Forms.Button();
@@ -163,6 +168,7 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
+            this.miAmdCopyId = new System.Windows.Forms.ToolStripMenuItem();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -205,11 +211,13 @@
             // 
             // tabNVIDIA
             // 
+            this.tabNVIDIA.Controls.Add(this.lblNvPresetName);
+            this.tabNVIDIA.Controls.Add(this.edtNvPresetName);
             this.tabNVIDIA.Controls.Add(this.btnAddModesNv);
             this.tabNVIDIA.Controls.Add(this.btnNvPresetDelete);
             this.tabNVIDIA.Controls.Add(this.lblError);
             this.tabNVIDIA.Controls.Add(this.btnClone);
-            this.tabNVIDIA.Controls.Add(this.btnSetShortcut);
+            this.tabNVIDIA.Controls.Add(this.btnNvPresetSave);
             this.tabNVIDIA.Controls.Add(this.lblShortcut);
             this.tabNVIDIA.Controls.Add(this.edtShortcut);
             this.tabNVIDIA.Controls.Add(this.btnChange);
@@ -223,10 +231,29 @@
             this.tabNVIDIA.Text = "NVIDIA controller";
             this.tabNVIDIA.UseVisualStyleBackColor = true;
             // 
+            // lblNvPresetName
+            // 
+            this.lblNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblNvPresetName.AutoSize = true;
+            this.lblNvPresetName.Location = new System.Drawing.Point(6, 397);
+            this.lblNvPresetName.Name = "lblNvPresetName";
+            this.lblNvPresetName.Size = new System.Drawing.Size(38, 13);
+            this.lblNvPresetName.TabIndex = 22;
+            this.lblNvPresetName.Text = "Name:";
+            // 
+            // edtNvPresetName
+            // 
+            this.edtNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNvPresetName.Enabled = false;
+            this.edtNvPresetName.Location = new System.Drawing.Point(87, 394);
+            this.edtNvPresetName.Name = "edtNvPresetName";
+            this.edtNvPresetName.Size = new System.Drawing.Size(200, 20);
+            this.edtNvPresetName.TabIndex = 21;
+            // 
             // btnAddModesNv
             // 
             this.btnAddModesNv.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddModesNv.Location = new System.Drawing.Point(574, 417);
+            this.btnAddModesNv.Location = new System.Drawing.Point(330, 365);
             this.btnAddModesNv.Name = "btnAddModesNv";
             this.btnAddModesNv.Size = new System.Drawing.Size(75, 23);
             this.btnAddModesNv.TabIndex = 9;
@@ -238,7 +265,7 @@
             // 
             this.btnNvPresetDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnNvPresetDelete.Enabled = false;
-            this.btnNvPresetDelete.Location = new System.Drawing.Point(493, 417);
+            this.btnNvPresetDelete.Location = new System.Drawing.Point(249, 365);
             this.btnNvPresetDelete.Name = "btnNvPresetDelete";
             this.btnNvPresetDelete.Size = new System.Drawing.Size(75, 23);
             this.btnNvPresetDelete.TabIndex = 8;
@@ -260,7 +287,7 @@
             // 
             this.btnClone.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClone.Enabled = false;
-            this.btnClone.Location = new System.Drawing.Point(412, 417);
+            this.btnClone.Location = new System.Drawing.Point(168, 365);
             this.btnClone.Name = "btnClone";
             this.btnClone.Size = new System.Drawing.Size(75, 23);
             this.btnClone.TabIndex = 6;
@@ -268,23 +295,23 @@
             this.btnClone.UseVisualStyleBackColor = true;
             this.btnClone.Click += new System.EventHandler(this.btnClone_Click);
             // 
-            // btnSetShortcut
+            // btnNvPresetSave
             // 
-            this.btnSetShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnSetShortcut.Enabled = false;
-            this.btnSetShortcut.Location = new System.Drawing.Point(372, 417);
-            this.btnSetShortcut.Name = "btnSetShortcut";
-            this.btnSetShortcut.Size = new System.Drawing.Size(34, 23);
-            this.btnSetShortcut.TabIndex = 5;
-            this.btnSetShortcut.Text = "Set";
-            this.btnSetShortcut.UseVisualStyleBackColor = true;
-            this.btnSetShortcut.Click += new System.EventHandler(this.btnSetShortcut_Click);
+            this.btnNvPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnNvPresetSave.Enabled = false;
+            this.btnNvPresetSave.Location = new System.Drawing.Point(411, 365);
+            this.btnNvPresetSave.Name = "btnNvPresetSave";
+            this.btnNvPresetSave.Size = new System.Drawing.Size(75, 23);
+            this.btnNvPresetSave.TabIndex = 5;
+            this.btnNvPresetSave.Text = "Save";
+            this.btnNvPresetSave.UseVisualStyleBackColor = true;
+            this.btnNvPresetSave.Click += new System.EventHandler(this.btnSetShortcut_Click);
             // 
             // lblShortcut
             // 
             this.lblShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblShortcut.AutoSize = true;
-            this.lblShortcut.Location = new System.Drawing.Point(168, 422);
+            this.lblShortcut.Location = new System.Drawing.Point(6, 423);
             this.lblShortcut.Name = "lblShortcut";
             this.lblShortcut.Size = new System.Drawing.Size(50, 13);
             this.lblShortcut.TabIndex = 4;
@@ -294,10 +321,10 @@
             // 
             this.edtShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtShortcut.Enabled = false;
-            this.edtShortcut.Location = new System.Drawing.Point(224, 419);
+            this.edtShortcut.Location = new System.Drawing.Point(87, 420);
             this.edtShortcut.Name = "edtShortcut";
             this.edtShortcut.ReadOnly = true;
-            this.edtShortcut.Size = new System.Drawing.Size(142, 20);
+            this.edtShortcut.Size = new System.Drawing.Size(200, 20);
             this.edtShortcut.TabIndex = 3;
             this.edtShortcut.TextChanged += new System.EventHandler(this.edtShortcut_TextChanged);
             this.edtShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
@@ -308,7 +335,7 @@
             this.btnChange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChange.ContextMenuStrip = this.mnuNvPresets;
             this.btnChange.Enabled = false;
-            this.btnChange.Location = new System.Drawing.Point(87, 417);
+            this.btnChange.Location = new System.Drawing.Point(87, 365);
             this.btnChange.Name = "btnChange";
             this.btnChange.Size = new System.Drawing.Size(75, 23);
             this.btnChange.TabIndex = 2;
@@ -327,15 +354,16 @@
             this.mnuNvPresetsColorSettings,
             this.mnuRefreshRate,
             this.miNvPresetDithering,
-            this.miNvHDR});
+            this.miNvHDR,
+            this.miNvCopyId});
             this.mnuNvPresets.Name = "mnuNvPresets";
-            this.mnuNvPresets.Size = new System.Drawing.Size(163, 164);
+            this.mnuNvPresets.Size = new System.Drawing.Size(185, 186);
             this.mnuNvPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuNvPresets_Opening);
             // 
             // miNvApply
             // 
             this.miNvApply.Name = "miNvApply";
-            this.miNvApply.Size = new System.Drawing.Size(162, 22);
+            this.miNvApply.Size = new System.Drawing.Size(184, 22);
             this.miNvApply.Text = "Apply";
             this.miNvApply.Click += new System.EventHandler(this.btnApply_Click);
             // 
@@ -343,21 +371,21 @@
             // 
             this.miNvPresetApplyOnStartup.CheckOnClick = true;
             this.miNvPresetApplyOnStartup.Name = "miNvPresetApplyOnStartup";
-            this.miNvPresetApplyOnStartup.Size = new System.Drawing.Size(162, 22);
+            this.miNvPresetApplyOnStartup.Size = new System.Drawing.Size(184, 22);
             this.miNvPresetApplyOnStartup.Text = "Apply on startup";
             this.miNvPresetApplyOnStartup.Click += new System.EventHandler(this.miNvPresetApplyOnStartup_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(159, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(181, 6);
             // 
             // mnuNvDisplay
             // 
             this.mnuNvDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvPrimaryDisplay});
             this.mnuNvDisplay.Name = "mnuNvDisplay";
-            this.mnuNvDisplay.Size = new System.Drawing.Size(162, 22);
+            this.mnuNvDisplay.Size = new System.Drawing.Size(184, 22);
             this.mnuNvDisplay.Text = "Display";
             // 
             // miNvPrimaryDisplay
@@ -372,7 +400,7 @@
             this.mnuNvPresetsColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvPresetColorSettings});
             this.mnuNvPresetsColorSettings.Name = "mnuNvPresetsColorSettings";
-            this.mnuNvPresetsColorSettings.Size = new System.Drawing.Size(162, 22);
+            this.mnuNvPresetsColorSettings.Size = new System.Drawing.Size(184, 22);
             this.mnuNvPresetsColorSettings.Text = "Color settings";
             // 
             // miNvPresetColorSettings
@@ -387,7 +415,7 @@
             this.mnuRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miRefreshRateIncluded});
             this.mnuRefreshRate.Name = "mnuRefreshRate";
-            this.mnuRefreshRate.Size = new System.Drawing.Size(162, 22);
+            this.mnuRefreshRate.Size = new System.Drawing.Size(184, 22);
             this.mnuRefreshRate.Text = "Refresh Rate";
             // 
             // miRefreshRateIncluded
@@ -405,7 +433,7 @@
             this.mnuNvDitheringBitDepth,
             this.mnuNvDitheringMode});
             this.miNvPresetDithering.Name = "miNvPresetDithering";
-            this.miNvPresetDithering.Size = new System.Drawing.Size(162, 22);
+            this.miNvPresetDithering.Size = new System.Drawing.Size(184, 22);
             this.miNvPresetDithering.Text = "Dithering";
             // 
             // miNvPresetApplyDithering
@@ -515,7 +543,7 @@
             this.miToggleHDR,
             this.miHDREnabled});
             this.miNvHDR.Name = "miNvHDR";
-            this.miNvHDR.Size = new System.Drawing.Size(162, 22);
+            this.miNvHDR.Size = new System.Drawing.Size(184, 22);
             this.miNvHDR.Text = "HDR";
             // 
             // miHDRIncluded
@@ -539,11 +567,18 @@
             this.miHDREnabled.Text = "Enabled";
             this.miHDREnabled.Click += new System.EventHandler(this.miHDREnabled_Click);
             // 
+            // miNvCopyId
+            // 
+            this.miNvCopyId.Name = "miNvCopyId";
+            this.miNvCopyId.Size = new System.Drawing.Size(184, 22);
+            this.miNvCopyId.Text = "Copy Id to Clipboard";
+            this.miNvCopyId.Click += new System.EventHandler(this.miNvCopyId_Click);
+            // 
             // btnApply
             // 
             this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApply.Enabled = false;
-            this.btnApply.Location = new System.Drawing.Point(6, 417);
+            this.btnApply.Location = new System.Drawing.Point(6, 365);
             this.btnApply.Name = "btnApply";
             this.btnApply.Size = new System.Drawing.Size(75, 23);
             this.btnApply.TabIndex = 1;
@@ -562,7 +597,7 @@
             this.lvNvPresets.Location = new System.Drawing.Point(6, 6);
             this.lvNvPresets.MultiSelect = false;
             this.lvNvPresets.Name = "lvNvPresets";
-            this.lvNvPresets.Size = new System.Drawing.Size(829, 405);
+            this.lvNvPresets.Size = new System.Drawing.Size(829, 353);
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
@@ -571,11 +606,13 @@
             // 
             // tabAMD
             // 
+            this.tabAMD.Controls.Add(this.lblAmdPresetName);
+            this.tabAMD.Controls.Add(this.edtAmdPresetName);
             this.tabAMD.Controls.Add(this.btnAddAmd);
             this.tabAMD.Controls.Add(this.lblErrorAMD);
             this.tabAMD.Controls.Add(this.btnDeleteAmd);
             this.tabAMD.Controls.Add(this.btnCloneAmd);
-            this.tabAMD.Controls.Add(this.btnSetAmdShortcut);
+            this.tabAMD.Controls.Add(this.btnAmdPresetSave);
             this.tabAMD.Controls.Add(this.lblAmdShortcut);
             this.tabAMD.Controls.Add(this.edtAmdShortcut);
             this.tabAMD.Controls.Add(this.btnChangeAmd);
@@ -589,10 +626,29 @@
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
             // 
+            // lblAmdPresetName
+            // 
+            this.lblAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblAmdPresetName.AutoSize = true;
+            this.lblAmdPresetName.Location = new System.Drawing.Point(6, 397);
+            this.lblAmdPresetName.Name = "lblAmdPresetName";
+            this.lblAmdPresetName.Size = new System.Drawing.Size(38, 13);
+            this.lblAmdPresetName.TabIndex = 24;
+            this.lblAmdPresetName.Text = "Name:";
+            // 
+            // edtAmdPresetName
+            // 
+            this.edtAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtAmdPresetName.Enabled = false;
+            this.edtAmdPresetName.Location = new System.Drawing.Point(87, 394);
+            this.edtAmdPresetName.Name = "edtAmdPresetName";
+            this.edtAmdPresetName.Size = new System.Drawing.Size(200, 20);
+            this.edtAmdPresetName.TabIndex = 23;
+            // 
             // btnAddAmd
             // 
             this.btnAddAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddAmd.Location = new System.Drawing.Point(574, 417);
+            this.btnAddAmd.Location = new System.Drawing.Point(330, 365);
             this.btnAddAmd.Name = "btnAddAmd";
             this.btnAddAmd.Size = new System.Drawing.Size(75, 23);
             this.btnAddAmd.TabIndex = 18;
@@ -614,7 +670,7 @@
             // 
             this.btnDeleteAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDeleteAmd.Enabled = false;
-            this.btnDeleteAmd.Location = new System.Drawing.Point(493, 417);
+            this.btnDeleteAmd.Location = new System.Drawing.Point(249, 365);
             this.btnDeleteAmd.Name = "btnDeleteAmd";
             this.btnDeleteAmd.Size = new System.Drawing.Size(75, 23);
             this.btnDeleteAmd.TabIndex = 17;
@@ -626,7 +682,7 @@
             // 
             this.btnCloneAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloneAmd.Enabled = false;
-            this.btnCloneAmd.Location = new System.Drawing.Point(412, 417);
+            this.btnCloneAmd.Location = new System.Drawing.Point(168, 365);
             this.btnCloneAmd.Name = "btnCloneAmd";
             this.btnCloneAmd.Size = new System.Drawing.Size(75, 23);
             this.btnCloneAmd.TabIndex = 16;
@@ -634,23 +690,23 @@
             this.btnCloneAmd.UseVisualStyleBackColor = true;
             this.btnCloneAmd.Click += new System.EventHandler(this.btnCloneAmd_Click);
             // 
-            // btnSetAmdShortcut
+            // btnAmdPresetSave
             // 
-            this.btnSetAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnSetAmdShortcut.Enabled = false;
-            this.btnSetAmdShortcut.Location = new System.Drawing.Point(372, 417);
-            this.btnSetAmdShortcut.Name = "btnSetAmdShortcut";
-            this.btnSetAmdShortcut.Size = new System.Drawing.Size(34, 23);
-            this.btnSetAmdShortcut.TabIndex = 15;
-            this.btnSetAmdShortcut.Text = "Set";
-            this.btnSetAmdShortcut.UseVisualStyleBackColor = true;
-            this.btnSetAmdShortcut.Click += new System.EventHandler(this.btnSetAmdShortcut_Click);
+            this.btnAmdPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnAmdPresetSave.Enabled = false;
+            this.btnAmdPresetSave.Location = new System.Drawing.Point(411, 365);
+            this.btnAmdPresetSave.Name = "btnAmdPresetSave";
+            this.btnAmdPresetSave.Size = new System.Drawing.Size(75, 23);
+            this.btnAmdPresetSave.TabIndex = 15;
+            this.btnAmdPresetSave.Text = "Save";
+            this.btnAmdPresetSave.UseVisualStyleBackColor = true;
+            this.btnAmdPresetSave.Click += new System.EventHandler(this.btnSetAmdShortcut_Click);
             // 
             // lblAmdShortcut
             // 
             this.lblAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblAmdShortcut.AutoSize = true;
-            this.lblAmdShortcut.Location = new System.Drawing.Point(168, 422);
+            this.lblAmdShortcut.Location = new System.Drawing.Point(6, 423);
             this.lblAmdShortcut.Name = "lblAmdShortcut";
             this.lblAmdShortcut.Size = new System.Drawing.Size(50, 13);
             this.lblAmdShortcut.TabIndex = 14;
@@ -660,10 +716,10 @@
             // 
             this.edtAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtAmdShortcut.Enabled = false;
-            this.edtAmdShortcut.Location = new System.Drawing.Point(224, 419);
+            this.edtAmdShortcut.Location = new System.Drawing.Point(87, 420);
             this.edtAmdShortcut.Name = "edtAmdShortcut";
             this.edtAmdShortcut.ReadOnly = true;
-            this.edtAmdShortcut.Size = new System.Drawing.Size(142, 20);
+            this.edtAmdShortcut.Size = new System.Drawing.Size(200, 20);
             this.edtAmdShortcut.TabIndex = 13;
             this.edtAmdShortcut.TextChanged += new System.EventHandler(this.edtAmdShortcut_TextChanged);
             this.edtAmdShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
@@ -674,7 +730,7 @@
             this.btnChangeAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChangeAmd.ContextMenuStrip = this.mnuAmdPresets;
             this.btnChangeAmd.Enabled = false;
-            this.btnChangeAmd.Location = new System.Drawing.Point(87, 417);
+            this.btnChangeAmd.Location = new System.Drawing.Point(87, 365);
             this.btnChangeAmd.Name = "btnChangeAmd";
             this.btnChangeAmd.Size = new System.Drawing.Size(75, 23);
             this.btnChangeAmd.TabIndex = 12;
@@ -693,15 +749,16 @@
             this.mnuAmdColorSettings,
             this.mnuAmdRefreshRate,
             this.mnuAmdDithering,
-            this.mnuAmdHDR});
+            this.mnuAmdHDR,
+            this.miAmdCopyId});
             this.mnuAmdPresets.Name = "mnuNvPresets";
-            this.mnuAmdPresets.Size = new System.Drawing.Size(163, 164);
+            this.mnuAmdPresets.Size = new System.Drawing.Size(185, 208);
             this.mnuAmdPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuAmdPresets_Opening);
             // 
             // miAmdApply
             // 
             this.miAmdApply.Name = "miAmdApply";
-            this.miAmdApply.Size = new System.Drawing.Size(162, 22);
+            this.miAmdApply.Size = new System.Drawing.Size(184, 22);
             this.miAmdApply.Text = "Apply";
             this.miAmdApply.Click += new System.EventHandler(this.btnApplyAmd_Click);
             // 
@@ -709,21 +766,21 @@
             // 
             this.miAmdPresetApplyOnStartup.CheckOnClick = true;
             this.miAmdPresetApplyOnStartup.Name = "miAmdPresetApplyOnStartup";
-            this.miAmdPresetApplyOnStartup.Size = new System.Drawing.Size(162, 22);
+            this.miAmdPresetApplyOnStartup.Size = new System.Drawing.Size(184, 22);
             this.miAmdPresetApplyOnStartup.Text = "Apply on startup";
             this.miAmdPresetApplyOnStartup.Click += new System.EventHandler(this.miAmdPresetApplyOnStartup_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(159, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(181, 6);
             // 
             // mnuAmdDisplay
             // 
             this.mnuAmdDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miAmdPrimaryDisplay});
             this.mnuAmdDisplay.Name = "mnuAmdDisplay";
-            this.mnuAmdDisplay.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdDisplay.Size = new System.Drawing.Size(184, 22);
             this.mnuAmdDisplay.Text = "Display";
             // 
             // miAmdPrimaryDisplay
@@ -738,7 +795,7 @@
             this.mnuAmdColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miAmdColorSettingsIncluded});
             this.mnuAmdColorSettings.Name = "mnuAmdColorSettings";
-            this.mnuAmdColorSettings.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdColorSettings.Size = new System.Drawing.Size(184, 22);
             this.mnuAmdColorSettings.Text = "Color settings";
             // 
             // miAmdColorSettingsIncluded
@@ -753,7 +810,7 @@
             this.mnuAmdRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miAmdRefreshRateIncluded});
             this.mnuAmdRefreshRate.Name = "mnuAmdRefreshRate";
-            this.mnuAmdRefreshRate.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdRefreshRate.Size = new System.Drawing.Size(184, 22);
             this.mnuAmdRefreshRate.Text = "Refresh Rate";
             // 
             // miAmdRefreshRateIncluded
@@ -768,7 +825,7 @@
             this.mnuAmdDithering.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miAmdDitheringIncluded});
             this.mnuAmdDithering.Name = "mnuAmdDithering";
-            this.mnuAmdDithering.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdDithering.Size = new System.Drawing.Size(184, 22);
             this.mnuAmdDithering.Text = "Dithering";
             // 
             // miAmdDitheringIncluded
@@ -785,7 +842,7 @@
             this.miAmdHDRToggle,
             this.miAmdHDREnabled});
             this.mnuAmdHDR.Name = "mnuAmdHDR";
-            this.mnuAmdHDR.Size = new System.Drawing.Size(162, 22);
+            this.mnuAmdHDR.Size = new System.Drawing.Size(184, 22);
             this.mnuAmdHDR.Text = "HDR";
             // 
             // miAmdHDRIncluded
@@ -813,7 +870,7 @@
             // 
             this.btnApplyAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApplyAmd.Enabled = false;
-            this.btnApplyAmd.Location = new System.Drawing.Point(6, 417);
+            this.btnApplyAmd.Location = new System.Drawing.Point(6, 365);
             this.btnApplyAmd.Name = "btnApplyAmd";
             this.btnApplyAmd.Size = new System.Drawing.Size(75, 23);
             this.btnApplyAmd.TabIndex = 11;
@@ -832,7 +889,7 @@
             this.lvAmdPresets.Location = new System.Drawing.Point(6, 6);
             this.lvAmdPresets.MultiSelect = false;
             this.lvAmdPresets.Name = "lvAmdPresets";
-            this.lvAmdPresets.Size = new System.Drawing.Size(829, 405);
+            this.lvAmdPresets.Size = new System.Drawing.Size(829, 353);
             this.lvAmdPresets.TabIndex = 10;
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
             this.lvAmdPresets.View = System.Windows.Forms.View.Details;
@@ -1612,6 +1669,13 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
+            // miAmdCopyId
+            // 
+            this.miAmdCopyId.Name = "miAmdCopyId";
+            this.miAmdCopyId.Size = new System.Drawing.Size(184, 22);
+            this.miAmdCopyId.Text = "Copy Id to Clipboard";
+            this.miAmdCopyId.Click += new System.EventHandler(this.miAmdCopyId_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1670,7 +1734,7 @@
         private System.Windows.Forms.ListView lvNvPresets;
         private System.Windows.Forms.Button btnApply;
         private System.Windows.Forms.Button btnChange;
-        private System.Windows.Forms.Button btnSetShortcut;
+        private System.Windows.Forms.Button btnNvPresetSave;
         private System.Windows.Forms.Label lblShortcut;
         private System.Windows.Forms.TextBox edtShortcut;
         private System.Windows.Forms.TabPage tabOptions;
@@ -1774,7 +1838,7 @@
         private System.Windows.Forms.ToolStripMenuItem mnuLgActions;
         private System.Windows.Forms.Button btnDeleteAmd;
         private System.Windows.Forms.Button btnCloneAmd;
-        private System.Windows.Forms.Button btnSetAmdShortcut;
+        private System.Windows.Forms.Button btnAmdPresetSave;
         private System.Windows.Forms.Label lblAmdShortcut;
         private System.Windows.Forms.TextBox edtAmdShortcut;
         private System.Windows.Forms.Button btnChangeAmd;
@@ -1798,6 +1862,12 @@
         private System.Windows.Forms.ListView lvAmdPresets;
         private System.Windows.Forms.Button btnAddAmd;
         private System.Windows.Forms.CheckBox chkMinimizeToSystemTray;
+        private System.Windows.Forms.ToolStripMenuItem miNvCopyId;
+        private System.Windows.Forms.Label lblNvPresetName;
+        private System.Windows.Forms.TextBox edtNvPresetName;
+        private System.Windows.Forms.Label lblAmdPresetName;
+        private System.Windows.Forms.TextBox edtAmdPresetName;
+        private System.Windows.Forms.ToolStripMenuItem miAmdCopyId;
     }
 }
 

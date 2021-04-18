@@ -1,7 +1,8 @@
-﻿using NWin32;
+﻿using NLog;
+using NWin32;
 using System;
 using System.Diagnostics;
-using System.Text;
+using System.IO;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -9,6 +10,11 @@ namespace ColorControl
 {
     static class Program
     {
+        public static string DataDir { get; private set; }
+        public static string ConfigFilename { get; private set; }
+        public static Config Config { get; private set; }
+        public static AppContext AppContext { get; private set; }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -21,35 +27,41 @@ namespace ColorControl
             // Handler for exceptions in threads behind forms.
             Application.ThreadException += GlobalThreadExceptionHandler;
 
+            DataDir = Utils.GetDataPath();
+            InitLogger();
+
+            LoadConfig();
+
             var startUpParams = StartUpParams.Parse(args);
 
-            if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
+            AppContext = new AppContext(Config, startUpParams);
+
+            var existingProcess = Utils.GetProcessByName("ColorControl");
+
+            try
             {
-                Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix);
-                return;
+                if (HandleStartupParams(startUpParams, existingProcess))
+                {
+                    return;
+                }
+            }
+            finally
+            {
+                Utils.CloseConsole();
             }
 
             string mutexId = $"Global\\{typeof(MainForm).GUID}";
-            bool mutexCreated;
-            var mutex = new Mutex(true, mutexId, out mutexCreated);
+            var mutex = new Mutex(true, mutexId, out var mutexCreated);
             try
             {
                 if (!mutexCreated)
                 {
-                    var currentProcessId = Process.GetCurrentProcess().Id;
-                    foreach (var process in Process.GetProcesses())
+                    if (existingProcess != null && existingProcess.Threads.Count > 0)
                     {
-                        if (process.ProcessName.Equals("ColorControl") && process.Id != currentProcessId)
-                        {
-                            if (process.Threads.Count > 0)
-                            {
-                                var thread = process.Threads[0];
+                        var thread = existingProcess.Threads[0];
+                        NativeMethods.EnumThreadWindows((uint)thread.Id, EnumThreadWindows, IntPtr.Zero);
 
-                                NativeMethods.EnumThreadWindows((uint)thread.Id, EnumThreadWindows, IntPtr.Zero);
-                            }
-
-                            return;
-                        }
+                        return;
                     }
 
                     MessageBox.Show("Only one instance of this program can be active.", "ColorControl");
@@ -60,7 +72,7 @@ namespace ColorControl
                     {
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
-                        Application.Run(new MainForm(startUpParams));
+                        Application.Run(new MainForm(AppContext));
                     }
                     catch (Exception ex)
                     {
@@ -75,6 +87,123 @@ namespace ColorControl
                     mutex.Dispose();
                 }
             }
+        }
+
+        private static void InitLogger()
+        {
+            var config = new NLog.Config.LoggingConfiguration();
+
+            // Targets where to log to: File and Console
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = Path.Combine(DataDir, "LogFile.txt") };
+            //var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
+
+            // Rules for mapping loggers to targets            
+            //config.AddRule(LogLevel.Info, LogLevel.Fatal, logconsole);
+            config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
+
+            // Apply config           
+            LogManager.Configuration = config;
+        }
+
+        private static void LoadConfig()
+        {
+            ConfigFilename = Path.Combine(DataDir, "Settings.json");
+
+            if (File.Exists(ConfigFilename))
+            {
+                var data = File.ReadAllText(ConfigFilename);
+                Config = Utils.JsonSerializer.Deserialize<Config>(data);
+            }
+            else
+            {
+                Config = new Config();
+            }
+        }
+
+        private static bool HandleStartupParams(StartUpParams startUpParams, Process existingProcess)
+        {
+            if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
+            {
+                Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix);
+                return true;
+            }
+
+            var useConsole = startUpParams.NoGui || existingProcess != null;
+
+            if (!useConsole)
+            {
+                return false;
+            }
+
+            startUpParams.NoGui = true;
+
+            var result = false;
+
+            if (startUpParams.ExecuteHelp)
+            {
+                Utils.OpenConsole();
+
+                Console.WriteLine("\nColorControl CLI");
+                Console.WriteLine("Syntax  : ColorControl command options");
+                Console.WriteLine("Commands:");
+                Console.WriteLine("--nvpreset  <preset name or id>: execute NVIDIA-preset");
+                Console.WriteLine("--amdpreset <preset name or id>: execute AMD-preset");
+                Console.WriteLine("--lgpreset  <preset name>      : execute LG-preset");
+                Console.WriteLine("--help                         : displays this help info");
+                Console.WriteLine("Options :");
+                Console.WriteLine("--nogui: starts command from the command line and will not open GUI (is forced when GUI is already running)");
+
+                result = true;
+            }
+
+            if (startUpParams.ExecuteLgPreset)
+            {
+                Utils.OpenConsole();
+
+                Console.WriteLine($"Executing LG-preset '{startUpParams.LgPresetName}'...");
+                var task = LgService.ExecutePresetAsync(startUpParams.LgPresetName);
+
+                var taskResult = Utils.WaitForTask(task);
+
+                if (taskResult)
+                {
+                    Console.WriteLine("Done.");
+                }
+
+                result = true;
+            }
+
+            if (startUpParams.ExecuteNvidiaPreset)
+            {
+                Utils.OpenConsole();
+
+                Console.WriteLine($"Executing NVIDIA-preset '{startUpParams.NvidiaPresetIdOrName}'...");
+                var taskResult = NvService.ExecutePresetAsync(startUpParams.NvidiaPresetIdOrName);
+
+                if (taskResult)
+                {
+                    Console.WriteLine("Done.");
+                }
+
+                result = true;
+            }
+
+            if (startUpParams.ExecuteAmdPreset)
+            {
+                Utils.OpenConsole();
+
+                Console.WriteLine($"Executing AMD-preset '{startUpParams.AmdPresetIdOrName}'...");
+                var taskResult = AmdService.ExecutePresetAsync(startUpParams.AmdPresetIdOrName);
+
+                if (taskResult)
+                {
+                    Console.WriteLine("Done.");
+                }
+
+                result = true;
+            }
+
+            return result;
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)
