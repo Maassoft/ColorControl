@@ -33,7 +33,15 @@ namespace LgTv
         MUTE,
         MENU,
         CC,
-        DASH
+        DASH,
+        CHANNELUP,
+        CHANNELDOWN,
+        LIST,
+        AD,
+        SAP,
+        PROGRAM,
+        PLAY,
+        PAUSE
     }
 
     public class LgWebOsMouseService : IDisposable

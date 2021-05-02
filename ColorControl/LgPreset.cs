@@ -1,4 +1,5 @@
 ﻿using LgTv;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,10 +7,18 @@ namespace ColorControl
 {
     class LgPreset : PresetBase
     {
+        public static List<LgApp> LgApps { get; set; }
+        public static List<LgDevice> LgDevices { get; set; }
+
+
         public string appId { get; set; }
         public List<string> steps { get; set; }
+        public string DeviceMacAddress { get; set; }
 
-        public static List<LgApp> LgApps { get; set; }
+        [JsonIgnore]
+        public int X { get; set; }
+        [JsonIgnore]
+        public int Y { get; set; }
 
         public LgPreset()
         {
@@ -37,7 +46,7 @@ namespace ColorControl
 
         public static List<string> GetColumnNames()
         {
-            return new List<string>() { "Name", "App|200", "Steps|400", "Shortcut" };
+            return new List<string>() { "Name", "Device|120", "App|200", "Steps|400", "Shortcut" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -45,6 +54,29 @@ namespace ColorControl
             var values = new List<string>();
 
             values.Add(name);
+
+            var deviceString = "Global";
+            if (!string.IsNullOrEmpty(DeviceMacAddress))
+            {
+                if (LgDevices != null)
+                {
+                    var device = LgDevices.FirstOrDefault(d => !string.IsNullOrEmpty(d.MacAddress) && d.MacAddress.Equals(DeviceMacAddress));
+                    if (device != null)
+                    {
+                        deviceString = device.Name;
+                    }
+                    else
+                    {
+                        deviceString = "Unknown: device not found";
+                    }
+                }
+                else
+                {
+                    deviceString = DeviceMacAddress;
+                }
+            }
+            values.Add(deviceString);
+
             var app = appId;
             if (LgApps != null)
             {

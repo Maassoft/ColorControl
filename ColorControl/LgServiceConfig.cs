@@ -1,16 +1,10 @@
-﻿namespace ColorControl
+﻿using System.Collections.Generic;
+
+namespace ColorControl
 {
     class LgServiceConfig
     {
         public bool PowerOnAfterStartup { get; set; }
-
-        public bool PowerOnAfterResume { get; set; }
-
-        public bool PowerOffOnShutdown { get; set; }
-
-        public bool PowerOffOnStandby { get; set; }
-
-        public bool PowerSwitchOnScreenSaver { get; set; }
 
         public int PowerOnDelayAfterResume { get; set; }
 
@@ -22,11 +16,16 @@
 
         public bool UseOldNpcapWol { get; set; }
 
+        public List<LgDevice> Devices { get; set; }
+
+        public bool ShowRemoteControl { get; set; }
+
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;
             DeviceSearchKey = "[LG]";
             PowerOnRetries = 10;
+            Devices = new List<LgDevice>();
         }
     }
 }

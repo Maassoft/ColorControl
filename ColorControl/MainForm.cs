@@ -37,12 +37,12 @@ namespace ColorControl
 
         private NotifyIcon _trayIcon;
         private bool _initialized = false;
+        private bool _disableEvents = false;
         private Config _config;
         private bool _setVisibleCalled = false;
         private RestartDetector _restartDetector;
 
         private LgService _lgService;
-        private RemoteControlForm _remoteControlForm;
 
         private MenuItem _nvTrayMenu;
         private MenuItem _amdTrayMenu;
@@ -149,11 +149,6 @@ namespace ColorControl
 
                 FillLgPresets();
 
-                clbLgPower.SetItemChecked(0, _lgService.Config.PowerOnAfterStartup);
-                clbLgPower.SetItemChecked(1, _lgService.Config.PowerOnAfterResume);
-                clbLgPower.SetItemChecked(2, _lgService.Config.PowerOffOnShutdown);
-                clbLgPower.SetItemChecked(3, _lgService.Config.PowerOffOnStandby);
-                clbLgPower.SetItemChecked(4, _lgService.Config.PowerSwitchOnScreenSaver);
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgOldWolMechanism.Checked = _lgService.Config.UseOldNpcapWol;
@@ -169,15 +164,6 @@ namespace ColorControl
 
                     var item = mnuLgRcButtons.DropDownItems.Add(text);
                     item.Click += miLgAddButton_Click;
-                }
-
-                var actions = _lgService.GetInvokableActions();
-                foreach (var keyValuePair in actions)
-                {
-                    var text = keyValuePair.Key;
-
-                    var item = mnuLgActions.DropDownItems.Add(text);
-                    item.Click += miLgAddAction_Click;
                 }
 
                 _lgService.InstallEventHandlers();
@@ -403,7 +389,7 @@ namespace ColorControl
 
             GlobalSave();
 
-            if (SystemShutdown && _lgService.Config.PowerOffOnShutdown)
+            if (SystemShutdown && _lgService.Devices.Any(d => d.PowerOffOnShutdown))
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
 
@@ -418,7 +404,7 @@ namespace ColorControl
                 else
                 {
                     Logger.Debug("Powering off tv...");
-                    var task = _lgService.PowerOff();
+                    var task = _lgService.PowerOffOnShutdownOrResume();
                     Utils.WaitForTask(task);
                     Logger.Debug("Done powering off tv");
                     //ExecPowerOffPreset(true);
@@ -1049,6 +1035,7 @@ namespace ColorControl
             btnApplyLg.Enabled = enabled;
             btnCloneLg.Enabled = enabled;
             edtNameLg.Enabled = enabled;
+            cbxLgPresetDevice.Enabled = enabled;
             edtShortcutLg.Enabled = enabled;
             btnSetShortcutLg.Enabled = enabled;
             edtStepsLg.Enabled = enabled;
@@ -1065,6 +1052,20 @@ namespace ColorControl
                 cbxLgApps.SelectedIndex = lgApps == null ? -1 : lgApps.FindIndex(x => x.appId.Equals(preset.appId));
                 edtShortcutLg.Text = preset.shortcut;
                 edtStepsLg.Text = preset.steps.Aggregate("", (a, b) => (string.IsNullOrEmpty(a) ? "" : a + ", ") + b);
+
+                var index = -1;
+
+                for (var i = 0; i < cbxLgPresetDevice.Items.Count; i++)
+                {
+                    var pnpDev = (LgDevice)cbxLgPresetDevice.Items[i];
+                    if ((string.IsNullOrEmpty(preset.DeviceMacAddress) && string.IsNullOrEmpty(pnpDev.MacAddress)) || pnpDev.MacAddress.Equals(preset.DeviceMacAddress, StringComparison.OrdinalIgnoreCase))
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                cbxLgPresetDevice.SelectedIndex = index;
             }
             else
             {
@@ -1072,6 +1073,7 @@ namespace ColorControl
                 cbxLgApps.SelectedIndex = -1;
                 edtShortcutLg.Text = string.Empty;
                 edtStepsLg.Text = string.Empty;
+                cbxLgPresetDevice.SelectedIndex = -1;
             }
         }
 
@@ -1104,6 +1106,16 @@ namespace ColorControl
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.name = name;
+
+            if (cbxLgPresetDevice.SelectedIndex == -1)
+            {
+                preset.DeviceMacAddress = string.Empty;
+            }
+            else
+            {
+                var device = (LgDevice)cbxLgPresetDevice.SelectedItem;
+                preset.DeviceMacAddress = device.MacAddress;
+            }
 
             if (cbxLgApps.SelectedIndex == -1)
             {
@@ -1199,6 +1211,15 @@ namespace ColorControl
                     {
                         FillLgDevices();
                     }
+
+                    if (scLgController.Panel2.Controls.Count == 0)
+                    {
+                        var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
+                        rcPanel.Parent = scLgController.Panel2;
+                        rcPanel.Dock = DockStyle.Fill;
+                    }
+                    chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
+                    scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
                 }
             }
             else if (tcMain.SelectedTab == tabLog)
@@ -1236,15 +1257,21 @@ namespace ColorControl
 
         private void FillLgDevices()
         {
-            cbxLgDevices.Items.Clear();
             var devices = _lgService.Devices;
-            foreach (var device in devices)
+
+            cbxLgDevices.Items.Clear();
+            cbxLgDevices.Items.AddRange(devices.ToArray());
+
+            cbxLgPresetDevice.Items.Clear();
+            cbxLgPresetDevice.Items.AddRange(devices.ToArray());
+            var globalDevice = new LgDevice("Globally selected device", string.Empty, string.Empty, true, true);
+            cbxLgPresetDevice.Items.Insert(0, globalDevice);
+
+            var device = _lgService.SelectedDevice;
+
+            if (device != null)
             {
-                cbxLgDevices.Items.Add(device);
-            }
-            if (_lgService.SelectedDevice != null)
-            {
-                cbxLgDevices.SelectedIndex = cbxLgDevices.Items.IndexOf(_lgService.SelectedDevice);
+                cbxLgDevices.SelectedIndex = cbxLgDevices.Items.IndexOf(device);
             }
 
             if (!devices.Any())
@@ -1252,9 +1279,31 @@ namespace ColorControl
                 MessageForms.WarningOk("It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.");
             }
 
-            if (cbxLgApps.Items.Count == 0 && _lgService.SelectedDevice != null)
+            if (cbxLgApps.Items.Count == 0 && device != null)
             {
                 _lgService.RefreshApps().ContinueWith((task) => BeginInvoke(new Action(FillLgApps)));
+            }
+
+            SetLgDevicePowerOptions();
+        }
+
+        private void SetLgDevicePowerOptions()
+        {
+            var device = _lgService.SelectedDevice;
+            clbLgPower.Enabled = device != null;
+
+            _disableEvents = true;
+            try
+            {
+                clbLgPower.SetItemChecked(0, device?.PowerOnAfterStartup ?? false);
+                clbLgPower.SetItemChecked(1, device?.PowerOnAfterResume ?? false);
+                clbLgPower.SetItemChecked(2, device?.PowerOffOnShutdown ?? false);
+                clbLgPower.SetItemChecked(3, device?.PowerOffOnStandby ?? false);
+                clbLgPower.SetItemChecked(4, device?.PowerSwitchOnScreenSaver ?? false);
+            }
+            finally
+            {
+                _disableEvents = false;
             }
         }
 
@@ -1542,9 +1591,13 @@ namespace ColorControl
             }
             else
             {
-                _lgService.SelectedDevice = (PnpDev)cbxLgDevices.SelectedItem;
+                _lgService.SelectedDevice = (LgDevice)cbxLgDevices.SelectedItem;
             }
-            btnLGRemoteControl.Enabled = _lgService.SelectedDevice != null;
+            chkLgRemoteControlShow.Enabled = _lgService.SelectedDevice != null;
+            btnLgRemoveDevice.Enabled = _lgService.SelectedDevice != null && _lgService.SelectedDevice.IsCustom;
+            btnLgDeviceConvertToCustom.Enabled = _lgService.SelectedDevice != null && !_lgService.SelectedDevice.IsCustom;
+
+            SetLgDevicePowerOptions();
         }
 
         private void lvLgPresets_DoubleClick(object sender, EventArgs e)
@@ -1620,12 +1673,18 @@ namespace ColorControl
 
         private void clbLgPower_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            if (!_initialized)
+            if (!_initialized || _disableEvents)
             {
                 return;
             }
 
-            if (!(_lgService.Config.PowerOnAfterResume || _lgService.Config.PowerOnAfterStartup || _lgService.Config.PowerSwitchOnScreenSaver))
+            var device = _lgService?.SelectedDevice;
+            if (device == null)
+            {
+                return;
+            }
+
+            if (!(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerSwitchOnScreenSaver))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
@@ -1638,11 +1697,11 @@ See Options to test this functionality."
 
             BeginInvoke(new Action(() =>
             {
-                _lgService.Config.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
-                _lgService.Config.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
-                _lgService.Config.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
-                _lgService.Config.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
-                _lgService.Config.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
+                device.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
+                device.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
+                device.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
+                device.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
+                device.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
 
                 _lgService.InstallEventHandlers();
             }));
@@ -1810,16 +1869,6 @@ Do you want to continue?";
 
         private void btnLGRemoteControl_Click(object sender, EventArgs e)
         {
-            if (_remoteControlForm == null || _remoteControlForm.IsDisposed)
-            {
-                var buttons = _lgService.GetRemoteControlButtons();
-                _remoteControlForm = new RemoteControlForm(_lgService, buttons);
-                _remoteControlForm.Show();
-            }
-            else
-            {
-                _remoteControlForm.Show();
-            }
         }
 
         private void AfterInitialized()
@@ -2272,6 +2321,117 @@ Do you want to continue?";
             {
                 Clipboard.SetText(preset.id.ToString());
             }
+        }
+
+        private void btnLgAddDevice_Click(object sender, EventArgs e)
+        {
+            var values = MessageForms.ShowDialog("Add tv", new[] { "Name", "Ip-address", "MAC-address" }, ValidateAddDevice);
+            if (values.Any())
+            {
+                var device = new LgDevice(values[0], values[1], values[2]);
+
+                var form = MessageForms.ShowProgress("Connecting to device...");
+
+                var result = false;
+                Enabled = false;
+                try
+                {
+                    var task = device.TestConnection();
+
+                    result = Utils.WaitForTask(task);
+                }
+                finally
+                {
+                    form.Close();
+                    Enabled = true;
+                }
+
+                if (!result && MessageForms.QuestionYesNo("Unable to connect to the device. Are you sure you want to add it?") != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                _lgService.AddCustomDevice(device);
+
+                FillLgDevices();
+            }
+        }
+
+        private string ValidateAddDevice(List<string> values)
+        {
+            if (values.Any(v => string.IsNullOrEmpty(v)))
+            {
+                return "Please fill in all the fields";
+            }
+
+            return null;
+        }
+
+        private void btnLgRemoveDevice_Click(object sender, EventArgs e)
+        {
+            if (MessageForms.QuestionYesNo("Are you sure you want to remove this device?") != DialogResult.Yes)
+            {
+                return;
+            }
+            
+            var device = _lgService.SelectedDevice;
+
+            if (device != null)
+            {
+                _lgService.RemoveCustomDevice(device);
+
+                FillLgDevices();
+            }
+        }
+
+        private void mnuLgButtons_Opening(object sender, CancelEventArgs e)
+        {
+            mnuLgActions.DropDownItems.Clear();
+
+            var preset = GetSelectedLgPreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            var device = _lgService.GetPresetDevice(preset);
+
+            var actions = device?.GetInvokableActions();
+            foreach (var keyValuePair in actions)
+            {
+                var text = keyValuePair.Key;
+
+                var item = mnuLgActions.DropDownItems.Add(text);
+                item.Click += miLgAddAction_Click;
+            }
+
+        }
+
+        private void btnLgDeviceConvertToCustom_Click(object sender, EventArgs e)
+        {
+            if (MessageForms.QuestionYesNo(
+@"This will convert the automatically detected device to a custom variant.
+This means that the device will remain here even if it is not detected anymore.
+Do you want to continue?"
+               ) != DialogResult.Yes)
+            {
+                return;
+            }
+
+            _lgService.SelectedDevice.ConvertToCustom();
+
+            FillLgDevices();
+        }
+
+        private void btnLgRemoteControlShow_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void chkLgRemoteControlShow_CheckedChanged(object sender, EventArgs e)
+        {
+            scLgController.Panel2Collapsed = !chkLgRemoteControlShow.Checked;
+            _lgService.Config.ShowRemoteControl = chkLgRemoteControlShow.Checked;
         }
     }
 }

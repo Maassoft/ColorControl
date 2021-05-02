@@ -150,7 +150,7 @@ namespace ColorControl
                 Console.WriteLine("--amdpreset <preset name or id>: execute AMD-preset");
                 Console.WriteLine("--lgpreset  <preset name>      : execute LG-preset");
                 Console.WriteLine("--help                         : displays this help info");
-                Console.WriteLine("Options :");
+                Console.WriteLine("Options:");
                 Console.WriteLine("--nogui: starts command from the command line and will not open GUI (is forced when GUI is already running)");
 
                 result = true;

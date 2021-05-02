@@ -117,4 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="label1.Text" xml:space="preserve">
+    <value>This form allows you to control the TV directly via your keyboard and mouse.
+Note that your mouse will be captured in a box and that due to pointer acceleration the control will not be perfect.
+
+Press F1 to stop Direct Mode.</value>
+  </data>
 </root>

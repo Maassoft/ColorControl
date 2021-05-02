@@ -15,16 +15,21 @@ namespace ColorControl
 {
     class LgService : ServiceBase<LgPreset>
     {
+        internal enum PowerOnOffState
+        {
+            StartUp = 1,
+            Resume = 2,
+            ScreenSaver = 3,
+            ShutDown = 4,
+            StandBy = 5
+        }
+    
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static string LgListAppsJson = "listApps.json";
 
-        //private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-        //public string FriendlyScreenName { get; private set; }
-
-        public List<PnpDev> Devices { get; private set; }
-        public PnpDev SelectedDevice
+        public List<LgDevice> Devices { get; private set; }
+        public LgDevice SelectedDevice
         {
             get { return _selectedDevice; }
             set
@@ -36,16 +41,12 @@ namespace ColorControl
 
         public LgServiceConfig Config { get; private set; }
 
-        private LgTvApi _lgTvApi;
         private string _configFilename;
         private bool _allowPowerOn;
-        private bool _justWokeUp;
-        private PnpDev _selectedDevice;
+        private LgDevice _selectedDevice;
         private string _rcButtonsFilename;
         private List<LgPreset> _remoteControlButtons;
         private List<LgApp> _lgApps = new List<LgApp>();
-
-        private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
 
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
@@ -56,22 +57,11 @@ namespace ColorControl
         {
             _allowPowerOn = allowPowerOn;
 
-            _invokableActions.Add("WOL", new Func<bool>(WakeSelectedDevice));
-
             LgPreset.LgApps = _lgApps;
 
             LoadConfig();
             LoadPresets();
             LoadRemoteControlButtons();
-
-            //foreach (var screen in Screen.AllScreens)
-            //{
-            //    var name = screen.DeviceFriendlyName();
-            //    if (name.Contains("LG"))
-            //    {
-            //        FriendlyScreenName = name;
-            //    }
-            //}
         }
 
         ~LgService()
@@ -165,6 +155,8 @@ namespace ColorControl
             {
                 Config = new LgServiceConfig();
             }
+
+            LgPreset.LgDevices = Config.Devices;
         }
 
         private void LoadRemoteControlButtons()
@@ -192,11 +184,6 @@ namespace ColorControl
             return _remoteControlButtons;
         }
 
-        public Dictionary<string, Func<bool>> GetInvokableActions()
-        {
-            return _invokableActions;
-        }
-
         private List<LgPreset> GenerateDefaultRemoteControlButtons()
         {
             var list = new List<LgPreset>();
@@ -207,11 +194,18 @@ namespace ColorControl
                 list.Add(GeneratePreset(button.ToString()));
             }
 
+            list.Add(GeneratePreset("Power", step: "POWER"));
+            list.Add(GeneratePreset("Home", appId: "com.webos.app.home", key: Keys.H));
             list.Add(GeneratePreset("Settings", appId: "com.palm.app.settings", key: Keys.S));
+            list.Add(GeneratePreset("TV Guide", appId: "com.webos.app.livemenu"));
+            list.Add(GeneratePreset("List", step: "LIST"));
+            list.Add(GeneratePreset("SAP", step: "SAP"));
 
             list.Add(GeneratePreset("Vol +", step: "VOLUMEUP", key: Keys.VolumeUp));
             list.Add(GeneratePreset("Vol -", step: "VOLUMEDOWN", key: Keys.VolumeDown));
             list.Add(GeneratePreset("Mute", step: "MUTE", key: Keys.VolumeMute));
+            list.Add(GeneratePreset("Channel +", step: "CHANNELUP", key: Keys.MediaNextTrack));
+            list.Add(GeneratePreset("Channel -", step: "CHANNELDOWN", key: Keys.MediaPreviousTrack));
 
             list.Add(GeneratePreset("Up", step: "UP", key: Keys.Up));
             list.Add(GeneratePreset("Down", step: "DOWN", key: Keys.Down));
@@ -221,6 +215,19 @@ namespace ColorControl
             list.Add(GeneratePreset("Enter", step: "ENTER", key: Keys.Enter));
             list.Add(GeneratePreset("Back", step: "BACK", key: Keys.Back));
             list.Add(GeneratePreset("Exit", step: "EXIT", key: Keys.Escape));
+
+            list.Add(GeneratePreset("Netflix", appId: "netflix"));
+            list.Add(GeneratePreset("Inputs", appId: "com.webos.app.homeconnect"));
+            list.Add(GeneratePreset("Amazon Prime", appId: "amazon"));
+
+            list.Add(GeneratePreset("Red", step: "RED"));
+            list.Add(GeneratePreset("Green", step: "GREEN"));
+            list.Add(GeneratePreset("Yellow", step: "YELLOW"));
+            list.Add(GeneratePreset("Blue", step: "BLUE"));
+
+            list.Add(GeneratePreset("Rakuten TV", appId: "ui30"));
+            list.Add(GeneratePreset("Play", step: "PLAY"));
+            list.Add(GeneratePreset("Pause", step: "PAUSE"));
 
             return list;
         }
@@ -258,6 +265,8 @@ namespace ColorControl
 
         private void SaveConfig()
         {
+            Config.PowerOnAfterStartup = Devices.Any(d => d.PowerOnAfterStartup);
+
             var json = JsonConvert.SerializeObject(Config);
             File.WriteAllText(_configFilename, json);
         }
@@ -270,14 +279,36 @@ namespace ColorControl
 
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
         {
-            var devices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
-            SetDevices(devices);
+            Devices = Config.Devices;
+            var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
+
+            var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
+
+            var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new LgDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
+            var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
+
+            Devices.RemoveAll(d => !d.IsCustom && !autoIpAddresses.Contains(d.IpAddress));
+
+            var newAutoDevices = autoDevices.Where(ad => !Devices.Any(d => d.IpAddress.Equals(ad.IpAddress)));
+            Devices.AddRange(newAutoDevices);
+
+            if (Devices.Any())
+            {
+                var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress != null && x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
+
+                SelectedDevice = preferredDevice;
+            }
+            else
+            {
+                SelectedDevice = null;
+            }
 
             if (afterStartUp && SelectedDevice == null && Config.PowerOnAfterStartup && !string.IsNullOrEmpty(Config.PreferredMacAddress))
             {
                 Logger.Debug("No device has been found, trying to wake it first...");
 
-                WakeSelectedDevice(Config.PreferredMacAddress);
+                var tempDevice = new LgDevice("Test", string.Empty, Config.PreferredMacAddress);
+                tempDevice.Wake();
 
                 await Task.Delay(4000);
                 await RefreshDevices();
@@ -287,68 +318,15 @@ namespace ColorControl
 
             if (connect && SelectedDevice != null)
             {
-                if (Config.PowerOnAfterStartup && _allowPowerOn)
+                if (_allowPowerOn)
                 {
-                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
+                    WakeAfterStartupOrResume();
                 }
                 else
                 {
-                    var _ = ConnectToSelectedDevice();
+                    var _ = SelectedDevice.Connect();
                 }
             }
-        }
-
-        private void SetDevices(List<PnpDev> devices)
-        {
-            Devices = devices;
-            if (Devices?.Count > 0)
-            {
-                var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress != null && x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
-
-                SelectedDevice = preferredDevice;
-            }
-        }
-
-        public async Task<bool> ConnectToSelectedDevice(int retries = 3)
-        {
-            try
-            {
-                DisposeConnection();
-                _lgTvApi = await LgTvApi.CreateLgTvApi(SelectedDevice.IpAddress, retries);
-
-                //_lgTvApi.GetServiceList();
-                return _lgTvApi != null;
-            }
-            catch (Exception ex)
-            {
-                string logMessage = ex.ToLogString(Environment.StackTrace);
-                Logger.Error($"Error while connecting to {SelectedDevice.IpAddress}: {logMessage}");
-                return false;
-            }
-        }
-
-        private async Task<bool> Connected(bool reconnect = false)
-        {
-            if (SelectedDevice == null)
-            {
-                Logger.Debug("Cannot apply LG-preset: no device has been selected");
-                return false;
-            }
-
-            if (reconnect || !IsConnected() || !string.Equals(_lgTvApi.GetIpAddress(), SelectedDevice.IpAddress))
-            {
-                if (!await ConnectToSelectedDevice())
-                {
-                    Logger.Debug("Cannot apply LG-preset: no connection could be made");
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        private bool IsConnected()
-        {
-            return !_lgTvApi?.ConnectionClosed ?? false;
         }
 
         public async Task<bool> ApplyPreset(string presetName)
@@ -366,123 +344,28 @@ namespace ColorControl
 
         public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
         {
-            var hasApp = !string.IsNullOrEmpty(preset.appId);
+            var device = GetPresetDevice(preset);
 
-            var hasWOL = preset.steps.Any(s => s.Equals("WOL", StringComparison.OrdinalIgnoreCase));
-
-            if (hasWOL)
+            if (device == null)
             {
-                var connected = await WakeAndConnectToSelectedDevice(0);
-                if (!connected)
-                {
-                    return false;
-                }
+                Logger.Debug("Cannot apply preset: no device has been selected");
+                return false;
             }
 
-            for (var tries = 0; tries <= 1; tries++)
-            {
-                if (!await Connected(reconnect || tries == 1))
-                {
-                    return false;
-                }
-
-                if (hasApp)
-                {
-                    try
-                    {
-                        await _lgTvApi.LaunchApp(preset.appId);
-                    }
-                    catch (Exception ex)
-                    {
-                        string logMessage = ex.ToLogString(Environment.StackTrace);
-                        Logger.Error("Error while launching app: " + logMessage);
-
-                        if (tries == 0)
-                        {
-                            continue;
-                        }
-                        return false;
-                    }
-
-                    if (_justWokeUp)
-                    {
-                        _justWokeUp = false;
-                        await Task.Delay(1000);
-                    }
-                }
-
-                if (preset.steps.Any())
-                {
-                    if (hasApp)
-                    {
-                        await Task.Delay(1500);
-                    }
-                    try
-                    {
-                        await ExecuteSteps(_lgTvApi, preset);
-                    }
-                    catch (Exception ex)
-                    {
-                        string logMessage = ex.ToLogString(Environment.StackTrace);
-                        Logger.Error("Error while executing steps: " + logMessage);
-
-                        if (tries == 0)
-                        {
-                            continue;
-                        }
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            return true;
+            return await device.ExecutePreset(preset, reconnect);
         }
 
-        public async Task PowerOn()
+        public LgDevice GetPresetDevice(LgPreset preset)
         {
-            var mouse = await _lgTvApi.GetMouse();
-            mouse.SendButton(ButtonType.POWER);
-        }
-
-        private async Task ExecuteSteps(LgTvApi api, LgPreset preset)
-        {
-            var mouse = await api.GetMouse();
-            foreach (var step in preset.steps)
-            {
-                var keySpec = step.Split(':');
-                var key = keySpec[0].ToUpper();
-                if (_invokableActions.ContainsKey(key))
-                {
-                    continue;
-                }
-
-                if (keySpec.Length == 2)
-                {
-                    SendKey(mouse, key, int.Parse(keySpec[1]));
-                }
-                else
-                {
-                    SendKey(mouse, key);
-                }
-            }
-        }
-
-        private void SendKey(LgWebOsMouseService mouse, string key, int delay = 180)
-        {
-            if (key.Length == 1 && int.TryParse(key, out _))
-            {
-                key = "_" + key;
-            }
-            var button = (ButtonType)Enum.Parse(typeof(ButtonType), key);
-            mouse.SendButton(button);
-            Thread.Sleep(delay);
+            var device = string.IsNullOrEmpty(preset.DeviceMacAddress)
+                ? SelectedDevice
+                : Devices.FirstOrDefault(d => d.MacAddress?.Equals(preset.DeviceMacAddress, StringComparison.OrdinalIgnoreCase) ?? false);
+            return device;
         }
 
         public async Task<LgWebOsMouseService> GetMouseAsync()
         {
-            return await _lgTvApi.GetMouse();
+            return await SelectedDevice?.GetMouseAsync();
         }
 
         public async Task RefreshApps(bool force = false)
@@ -490,15 +373,16 @@ namespace ColorControl
             if (SelectedDevice == null)
             {
                 Logger.Debug("Cannot refresh apps: no device has been selected");
+                return;
             }
 
-            if (!await Connected(force))
+            var apps = await SelectedDevice.GetApps();
+
+            if (apps.Any())
             {
-                Logger.Debug("Cannot refresh apps: no connection could be made");
+                _lgApps.Clear();
+                _lgApps.AddRange(apps);
             }
-
-            _lgApps.Clear();
-            _lgApps.AddRange(await _lgTvApi.GetApps(force));
         }
 
         public List<LgApp> GetApps()
@@ -506,138 +390,47 @@ namespace ColorControl
             return _lgApps;
         }
 
-        internal void DisposeConnection()
-        {
-            if (_lgTvApi != null)
-            {
-                _lgTvApi.Dispose();
-                _lgTvApi = null;
-            }
-        }
-
         internal async Task<bool> PowerOff()
         {
-            if (!await Connected(true))
-            {
-                return false;
-            }
-
-            await _lgTvApi.TurnOff();
-            return true;
+            return await SelectedDevice?.PowerOff();
         }
 
-        internal async Task<bool> TestConnection()
+        internal Task PowerOffOnShutdownOrResume(PowerOnOffState state = PowerOnOffState.ShutDown)
         {
-            if (!await Connected(true))
+            var devices = Devices.Where(d => state == PowerOnOffState.ShutDown && d.PowerOffOnShutdown ||
+                                             state == PowerOnOffState.StandBy && d.PowerOffOnStandby);
+
+            var tasks = new List<Task>();
+            foreach (var device in devices)
             {
-                return false;
+                var task = device.PowerOff();
+
+                tasks.Add(task);
             }
 
-            try
-            {
-                await _lgTvApi.IsMuted();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("TestConnection: " + ex.ToLogString());
-                return false;
-            }
+            return Task.WhenAll(tasks.ToArray());
         }
 
         internal bool WakeSelectedDevice()
         {
-            return WakeSelectedDevice(SelectedDevice?.MacAddress ?? Config.PreferredMacAddress);
+            return SelectedDevice?.Wake() ?? false;
         }
 
-        internal bool WakeSelectedDevice(string macAddress)
-        {
-            var result = false;
-
-            macAddress = string.IsNullOrEmpty(macAddress) ? SelectedDevice?.MacAddress : macAddress;
-            if (macAddress != null)
-            {
-                result = WOL.WakeFunction(macAddress, Config.UseOldNpcapWol);
-                _justWokeUp = true;
-            }
-            else
-            {
-                Logger.Debug("Cannot wake device: no device has been selected or there is no preferred MAC-address stored in the configuration");
-            }
-
-            return result;
-        }
-
-        internal void WakeAfterResume()
-        {
-            if (Config.PowerOnAfterResume)
-            {
-                var _ = WakeAndConnectToSelectedDeviceWithRetries();
-            }
-        }
-
-        private async Task<bool> WakeAndConnectToSelectedDeviceWithRetries(bool checkUserSession = true)
+        internal void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             if (checkUserSession && !UserSessionInfo.UserLocalSession)
             {
-                Logger.Debug($"WakeAndConnectToSelectedDeviceWithRetries: not waking because session info indicates no local session");
-                return false;
+                Logger.Debug($"WakeAfterStartupOrResume: not waking because session info indicates no local session");
+                return;
             }
 
-            var wakeDelay = 0;
-            var maxRetries = Config.PowerOnRetries <= 1 ? 5 : Config.PowerOnRetries;
-
-            var result = false;
-            for (var retry = 0; retry < maxRetries && !result; retry++)
+            var wakeDevices = Devices.Where(d => state == PowerOnOffState.StartUp     && d.PowerOnAfterStartup ||
+                                                 state == PowerOnOffState.Resume      && d.PowerOnAfterResume ||
+                                                 state == PowerOnOffState.ScreenSaver && d.PowerSwitchOnScreenSaver);
+            foreach (var device in wakeDevices)
             {
-                Logger.Debug($"WakeAndConnectToSelectedDeviceWithRetries: attempt {retry + 1} of {maxRetries}...");
-
-                var ms = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                result = await WakeAndConnectToSelectedDevice(retry == 0 ? wakeDelay : 0);
-                ms = DateTimeOffset.Now.ToUnixTimeMilliseconds() - ms;
-                if (!result)
-                {
-                    var delay = 2000 - ms;
-                    if (delay > 0)
-                    {
-                        await Task.Delay((int)delay);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private async Task<bool> WakeAndConnectToSelectedDevice(int wakeDelay = 5000, int connectDelay = 500)
-        {
-            try
-            {
-                //if (wakeDelay == 0)
-                //{
-                //    if (await ConnectToSelectedDevice())
-                //    {
-                //        Logger.Debug("Already connected, no wake needed?");
-                //        return;
-                //    };
-                //}
-
-                await Task.Delay(wakeDelay);
-                var result = WakeSelectedDevice();
-                if (!result)
-                {
-                    Logger.Debug("WOL failed");
-                    return false;
-                }
-                Logger.Debug("WOL succeeded");
-                await Task.Delay(connectDelay);
-                result = await ConnectToSelectedDevice();
-                Logger.Debug("Connect succeeded: " + result);
-                return result;
-            }
-            catch (Exception e)
-            {
-                Logger.Error("WakeAndConnectToSelectedDevice: " + e.ToLogString());
-                return false;
+                device.DisposeConnection();
+                var _ = device.WakeAndConnectWithRetries(Config.PowerOnRetries);
             }
         }
 
@@ -663,7 +456,7 @@ namespace ColorControl
                     Logger.Debug("User switched to local and screen was powered off due to screensaver: waking up");
                     _poweredOffByScreenSaver = false;
                     _poweredOffByScreenSaverProcessId = 0;
-                    var _ = WakeAndConnectToSelectedDeviceWithRetries();
+                    WakeAfterStartupOrResume();
                 }
                 else
                 {
@@ -680,18 +473,17 @@ namespace ColorControl
 
             if (powerOn)
             {
-                DisposeConnection();
-                WakeAfterResume();
+                WakeAfterStartupOrResume(PowerOnOffState.Resume);
                 return;
             }
 
-            if (Config.PowerOffOnStandby)
+            if (Devices.Any(d => d.PowerOffOnStandby))
             {
                 NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
                 try
                 {
                     Logger.Debug("Powering off tv...");
-                    var task = PowerOff();
+                    var task = PowerOffOnShutdownOrResume(PowerOnOffState.StandBy);
                     Utils.WaitForTask(task);
                     Logger.Debug("Done powering off tv");
                 }
@@ -717,11 +509,12 @@ namespace ColorControl
 
         private void MonitorProcesses()
         {
-            if (Config.PowerSwitchOnScreenSaver && _monitorTask == null)
+            var enableMonitoring = Devices.Any(d => d.PowerSwitchOnScreenSaver);
+            if (enableMonitoring && _monitorTask == null)
             {
                 _monitorTask = CheckProcesses();
             }
-            else if (!Config.PowerSwitchOnScreenSaver && _monitorTask != null)
+            else if (!enableMonitoring && _monitorTask != null)
             {
                 _monitorTask = null;
             }
@@ -729,12 +522,12 @@ namespace ColorControl
 
         public async Task CheckProcesses()
         {
-            var wasConnected = IsConnected();
+            var wasConnected = Devices.Any(d => d.PowerSwitchOnScreenSaver && d.IsConnected());
             _monitorTaskCounter++;
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
 
-            while (Config.PowerSwitchOnScreenSaver && validCounter == _monitorTaskCounter)
+            while (Devices.Any(d => d.PowerSwitchOnScreenSaver) && validCounter == _monitorTaskCounter)
             {
                 await Task.Delay(500);
 
@@ -758,16 +551,18 @@ namespace ColorControl
                         _poweredOffByScreenSaver = false;
                         _poweredOffByScreenSaverProcessId = 0;
                         lastProcessId = 0;
-                        var _ = WakeAndConnectToSelectedDeviceWithRetries();
+                        WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
 
                         continue;
                     }
 
-                    if (!IsConnected())
+                    var devices = Devices.Where(d => d.PowerSwitchOnScreenSaver && d.IsConnected()).ToList();
+
+                    if (!devices.Any())
                     {
                         if (wasConnected)
                         {
-                            Logger.Debug("TV was connected, but not any longer");
+                            Logger.Debug("Screensaver check: TV(s) where connected, but not any longer");
                             wasConnected = false;
                         }
                         continue;
@@ -775,55 +570,80 @@ namespace ColorControl
 
                     if (!wasConnected)
                     {
-                        Logger.Debug("TV was not connected, but connection has now been established");
+                        Logger.Debug("Screensaver check: TV(s) where not connected, but connection has now been established");
                         wasConnected = true;
                     }
 
-                    foreach (var process in processes)
-                    {
-                        var name = process.ProcessName.ToLowerInvariant();
-                        if (name.EndsWith(".scr"))
-                        {
-                            var parent = process.Parent();
-                            if (parent?.ProcessName.Contains("winlogon") ?? false)
-                            {
-                                Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
-                                try
-                                {
-                                    Logger.Debug("Test connection...");
-                                    var test = await TestConnection();
-                                    Logger.Debug("Test connection result: " + test);
+                    var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
 
-                                    Logger.Debug("Powering off tv because of screensaver");
-                                    _poweredOffByScreenSaver = await PowerOff();
-                                    _poweredOffByScreenSaverProcessId = process.Id;
-                                    lastProcessId = 0;
-                                }
-                                catch (Exception e)
-                                {
-                                    Logger.Error("CheckProcesses: can't power off: " + e.ToLogString());
-                                }
-                                if (!IsConnected())
-                                {
-                                    _poweredOffByScreenSaver = false;
-                                }
-                                break;
-                            }
-                            else
+                    if (process == null)
+                    {
+                        continue;
+                    }
+
+                    var parent = process.Parent();
+
+                    if (parent?.ProcessName.Contains("winlogon") ?? false)
+                    {
+                        Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
+                        try
+                        {
+                            foreach (var device in devices)
                             {
-                                if (process.Id != lastProcessId)
+                                Logger.Debug($"Screensaver check: test connection with {device.Name}...");
+                                var test = await device.TestConnection();
+                                Logger.Debug("Screensaver check: test connection result: " + test);
+                                if (!test)
                                 {
-                                    Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
-                                    lastProcessId = process.Id;
+                                    continue;
                                 }
+
+                                Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
+                                _poweredOffByScreenSaver = await device.PowerOff();
                             }
+
+                            _poweredOffByScreenSaverProcessId = process.Id;
+                            lastProcessId = 0;
                         }
+                        catch (Exception e)
+                        {
+                            Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
+                        }
+                    }
+                    else if (process.Id != lastProcessId)
+                    {
+                        Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
+                        lastProcessId = process.Id;
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Error("CheckProcesses: " + ex.ToLogString());
                 }
+            }
+        }
+
+        internal void AddCustomDevice(LgDevice device)
+        {
+            Devices.Add(device);
+        }
+
+        internal void RemoveCustomDevice(LgDevice device)
+        {
+            Devices.Remove(device);
+
+            if (!string.IsNullOrEmpty(device.MacAddress))
+            {
+                var presets = _presets.Where(p => !string.IsNullOrEmpty(p.DeviceMacAddress) && p.DeviceMacAddress.Equals(device.MacAddress)).ToList();
+                presets.ForEach(preset =>
+                {
+                    preset.DeviceMacAddress = null;
+                });
+            }
+
+            if (SelectedDevice == device)
+            {
+                SelectedDevice = Devices.Any() ? Devices.First() : null;
             }
         }
     }

@@ -44,12 +44,30 @@ namespace LgTv
                     _connection.MessageReceived += Connection_MessageReceived;
 
                 _connection.Closed += Connection_Closed;
-                await _connection.ConnectAsync(uri);
+                var cancellationTokenSource = new CancellationTokenSource();
+                var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
 
-                IsConnected?.Invoke(true);
+                cancellationTokenSource.CancelAfter(5000);
 
-                _messageWriter = new DataWriter(_connection.OutputStream);
-                return true;
+                var result = await connectTask.ContinueWith((antecedent) =>
+                {
+                    if (antecedent.Status == TaskStatus.RanToCompletion)
+                    {
+                        // connectTask ran to completion, so we know that the MessageWebSocket is connected.
+                        // Add additional code here to use the MessageWebSocket.
+                        IsConnected?.Invoke(true);
+
+                        _messageWriter = new DataWriter(_connection.OutputStream);
+                        return true;
+                    }
+                    else
+                    {
+                        // connectTask timed out, or faulted.
+                        return false;
+                    }
+                });
+
+                return result;
             }
             catch (Exception e)
             {

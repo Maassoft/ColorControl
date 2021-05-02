@@ -353,14 +353,23 @@ namespace ColorControl
             return devices;
         }
 
-        public static T WaitForTask<T>(System.Threading.Tasks.Task<T> task)
+        public static T WaitForTask<T>(Task<T> task)
         {
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
-                Thread.Sleep(100);
+                Thread.Sleep(10);
                 Application.DoEvents();
             }
             return task.Result;
+        }
+
+        public static void WaitForTask(System.Threading.Tasks.Task task)
+        {
+            while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
+            {
+                Thread.Sleep(10);
+                Application.DoEvents();
+            }
         }
 
         public static void SetNotifyIconText(NotifyIcon ni, string text)
@@ -685,6 +694,26 @@ namespace ColorControl
             }
 
             return null;
+        }
+
+        public static void StartProcess(string fileName, string arguments)
+        {
+            var process = Process.Start(fileName, arguments);
+        }
+
+        public static string GetResourceFile(string resourceName)
+        {
+            resourceName = "ColorControl.Resources." + resourceName;
+
+            var assembly = Assembly.GetExecutingAssembly();
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                var result = reader.ReadToEnd();
+
+                return result;
+            }
         }
     }
 

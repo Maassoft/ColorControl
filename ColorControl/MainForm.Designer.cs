@@ -99,36 +99,43 @@
             this.miAmdHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miAmdHDRToggle = new System.Windows.Forms.ToolStripMenuItem();
             this.miAmdHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.miAmdCopyId = new System.Windows.Forms.ToolStripMenuItem();
             this.btnApplyAmd = new System.Windows.Forms.Button();
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
-            this.btnLGRemoteControl = new System.Windows.Forms.Button();
-            this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
-            this.clbLgPower = new System.Windows.Forms.CheckedListBox();
+            this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.chkLgRemoteControlShow = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cbxLgDevices = new System.Windows.Forms.ComboBox();
+            this.btnLgDeviceConvertToCustom = new System.Windows.Forms.Button();
+            this.cbxLgApps = new System.Windows.Forms.ComboBox();
+            this.lvLgPresets = new System.Windows.Forms.ListView();
+            this.label5 = new System.Windows.Forms.Label();
+            this.cbxLgPresetDevice = new System.Windows.Forms.ComboBox();
+            this.btnDeleteLg = new System.Windows.Forms.Button();
+            this.btnApplyLg = new System.Windows.Forms.Button();
+            this.lblDeviceFilter = new System.Windows.Forms.Label();
+            this.lblLgPresetDevice = new System.Windows.Forms.Label();
+            this.btnAddLg = new System.Windows.Forms.Button();
+            this.edtShortcutLg = new System.Windows.Forms.TextBox();
+            this.edtLgDeviceFilter = new System.Windows.Forms.TextBox();
+            this.btnLgRemoveDevice = new System.Windows.Forms.Button();
+            this.btnLgRefreshApps = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
+            this.btnLgAddDevice = new System.Windows.Forms.Button();
+            this.edtNameLg = new System.Windows.Forms.TextBox();
+            this.btnSetShortcutLg = new System.Windows.Forms.Button();
+            this.edtStepsLg = new System.Windows.Forms.TextBox();
             this.btnLgAddButton = new System.Windows.Forms.Button();
             this.mnuLgButtons = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.mnuLgRcButtons = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
-            this.label3 = new System.Windows.Forms.Label();
-            this.cbxLgDevices = new System.Windows.Forms.ComboBox();
-            this.btnLgRefreshApps = new System.Windows.Forms.Button();
-            this.btnAddLg = new System.Windows.Forms.Button();
-            this.btnDeleteLg = new System.Windows.Forms.Button();
-            this.cbxLgApps = new System.Windows.Forms.ComboBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.lblDeviceFilter = new System.Windows.Forms.Label();
-            this.edtLgDeviceFilter = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.edtNameLg = new System.Windows.Forms.TextBox();
-            this.edtStepsLg = new System.Windows.Forms.TextBox();
-            this.lblStepsLg = new System.Windows.Forms.Label();
-            this.lblLgError = new System.Windows.Forms.Label();
             this.btnCloneLg = new System.Windows.Forms.Button();
-            this.btnSetShortcutLg = new System.Windows.Forms.Button();
-            this.label2 = new System.Windows.Forms.Label();
-            this.edtShortcutLg = new System.Windows.Forms.TextBox();
-            this.btnApplyLg = new System.Windows.Forms.Button();
-            this.lvLgPresets = new System.Windows.Forms.ListView();
+            this.lblStepsLg = new System.Windows.Forms.Label();
+            this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
+            this.clbLgPower = new System.Windows.Forms.CheckedListBox();
+            this.lblLgError = new System.Windows.Forms.Label();
             this.tabOptions = new System.Windows.Forms.TabPage();
             this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
             this.lblDitheringMode = new System.Windows.Forms.Label();
@@ -168,13 +175,16 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.miAmdCopyId = new System.Windows.Forms.ToolStripMenuItem();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
             this.tabAMD.SuspendLayout();
             this.mnuAmdPresets.SuspendLayout();
             this.tabLG.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.scLgController)).BeginInit();
+            this.scLgController.Panel1.SuspendLayout();
+            this.scLgController.SuspendLayout();
             this.mnuLgButtons.SuspendLayout();
             this.tabOptions.SuspendLayout();
             this.grpNvidiaOptions.SuspendLayout();
@@ -205,7 +215,7 @@
             this.tcMain.Location = new System.Drawing.Point(12, 12);
             this.tcMain.Name = "tcMain";
             this.tcMain.SelectedIndex = 0;
-            this.tcMain.Size = new System.Drawing.Size(849, 472);
+            this.tcMain.Size = new System.Drawing.Size(962, 479);
             this.tcMain.TabIndex = 1;
             this.tcMain.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             // 
@@ -226,7 +236,7 @@
             this.tabNVIDIA.Location = new System.Drawing.Point(4, 22);
             this.tabNVIDIA.Name = "tabNVIDIA";
             this.tabNVIDIA.Padding = new System.Windows.Forms.Padding(3);
-            this.tabNVIDIA.Size = new System.Drawing.Size(841, 446);
+            this.tabNVIDIA.Size = new System.Drawing.Size(954, 453);
             this.tabNVIDIA.TabIndex = 0;
             this.tabNVIDIA.Text = "NVIDIA controller";
             this.tabNVIDIA.UseVisualStyleBackColor = true;
@@ -235,7 +245,7 @@
             // 
             this.lblNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblNvPresetName.AutoSize = true;
-            this.lblNvPresetName.Location = new System.Drawing.Point(6, 397);
+            this.lblNvPresetName.Location = new System.Drawing.Point(6, 404);
             this.lblNvPresetName.Name = "lblNvPresetName";
             this.lblNvPresetName.Size = new System.Drawing.Size(38, 13);
             this.lblNvPresetName.TabIndex = 22;
@@ -245,7 +255,7 @@
             // 
             this.edtNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtNvPresetName.Enabled = false;
-            this.edtNvPresetName.Location = new System.Drawing.Point(87, 394);
+            this.edtNvPresetName.Location = new System.Drawing.Point(87, 401);
             this.edtNvPresetName.Name = "edtNvPresetName";
             this.edtNvPresetName.Size = new System.Drawing.Size(200, 20);
             this.edtNvPresetName.TabIndex = 21;
@@ -253,7 +263,7 @@
             // btnAddModesNv
             // 
             this.btnAddModesNv.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddModesNv.Location = new System.Drawing.Point(330, 365);
+            this.btnAddModesNv.Location = new System.Drawing.Point(330, 372);
             this.btnAddModesNv.Name = "btnAddModesNv";
             this.btnAddModesNv.Size = new System.Drawing.Size(75, 23);
             this.btnAddModesNv.TabIndex = 9;
@@ -265,7 +275,7 @@
             // 
             this.btnNvPresetDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnNvPresetDelete.Enabled = false;
-            this.btnNvPresetDelete.Location = new System.Drawing.Point(249, 365);
+            this.btnNvPresetDelete.Location = new System.Drawing.Point(249, 372);
             this.btnNvPresetDelete.Name = "btnNvPresetDelete";
             this.btnNvPresetDelete.Size = new System.Drawing.Size(75, 23);
             this.btnNvPresetDelete.TabIndex = 8;
@@ -287,7 +297,7 @@
             // 
             this.btnClone.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClone.Enabled = false;
-            this.btnClone.Location = new System.Drawing.Point(168, 365);
+            this.btnClone.Location = new System.Drawing.Point(168, 372);
             this.btnClone.Name = "btnClone";
             this.btnClone.Size = new System.Drawing.Size(75, 23);
             this.btnClone.TabIndex = 6;
@@ -299,7 +309,7 @@
             // 
             this.btnNvPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnNvPresetSave.Enabled = false;
-            this.btnNvPresetSave.Location = new System.Drawing.Point(411, 365);
+            this.btnNvPresetSave.Location = new System.Drawing.Point(411, 372);
             this.btnNvPresetSave.Name = "btnNvPresetSave";
             this.btnNvPresetSave.Size = new System.Drawing.Size(75, 23);
             this.btnNvPresetSave.TabIndex = 5;
@@ -311,7 +321,7 @@
             // 
             this.lblShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblShortcut.AutoSize = true;
-            this.lblShortcut.Location = new System.Drawing.Point(6, 423);
+            this.lblShortcut.Location = new System.Drawing.Point(6, 430);
             this.lblShortcut.Name = "lblShortcut";
             this.lblShortcut.Size = new System.Drawing.Size(50, 13);
             this.lblShortcut.TabIndex = 4;
@@ -321,7 +331,7 @@
             // 
             this.edtShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtShortcut.Enabled = false;
-            this.edtShortcut.Location = new System.Drawing.Point(87, 420);
+            this.edtShortcut.Location = new System.Drawing.Point(87, 427);
             this.edtShortcut.Name = "edtShortcut";
             this.edtShortcut.ReadOnly = true;
             this.edtShortcut.Size = new System.Drawing.Size(200, 20);
@@ -335,7 +345,7 @@
             this.btnChange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChange.ContextMenuStrip = this.mnuNvPresets;
             this.btnChange.Enabled = false;
-            this.btnChange.Location = new System.Drawing.Point(87, 365);
+            this.btnChange.Location = new System.Drawing.Point(87, 372);
             this.btnChange.Name = "btnChange";
             this.btnChange.Size = new System.Drawing.Size(75, 23);
             this.btnChange.TabIndex = 2;
@@ -578,7 +588,7 @@
             // 
             this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApply.Enabled = false;
-            this.btnApply.Location = new System.Drawing.Point(6, 365);
+            this.btnApply.Location = new System.Drawing.Point(6, 372);
             this.btnApply.Name = "btnApply";
             this.btnApply.Size = new System.Drawing.Size(75, 23);
             this.btnApply.TabIndex = 1;
@@ -597,7 +607,7 @@
             this.lvNvPresets.Location = new System.Drawing.Point(6, 6);
             this.lvNvPresets.MultiSelect = false;
             this.lvNvPresets.Name = "lvNvPresets";
-            this.lvNvPresets.Size = new System.Drawing.Size(829, 353);
+            this.lvNvPresets.Size = new System.Drawing.Size(942, 360);
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
@@ -621,7 +631,7 @@
             this.tabAMD.Location = new System.Drawing.Point(4, 22);
             this.tabAMD.Name = "tabAMD";
             this.tabAMD.Padding = new System.Windows.Forms.Padding(3);
-            this.tabAMD.Size = new System.Drawing.Size(841, 446);
+            this.tabAMD.Size = new System.Drawing.Size(954, 453);
             this.tabAMD.TabIndex = 5;
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
@@ -630,7 +640,7 @@
             // 
             this.lblAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblAmdPresetName.AutoSize = true;
-            this.lblAmdPresetName.Location = new System.Drawing.Point(6, 397);
+            this.lblAmdPresetName.Location = new System.Drawing.Point(6, 404);
             this.lblAmdPresetName.Name = "lblAmdPresetName";
             this.lblAmdPresetName.Size = new System.Drawing.Size(38, 13);
             this.lblAmdPresetName.TabIndex = 24;
@@ -640,7 +650,7 @@
             // 
             this.edtAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtAmdPresetName.Enabled = false;
-            this.edtAmdPresetName.Location = new System.Drawing.Point(87, 394);
+            this.edtAmdPresetName.Location = new System.Drawing.Point(87, 401);
             this.edtAmdPresetName.Name = "edtAmdPresetName";
             this.edtAmdPresetName.Size = new System.Drawing.Size(200, 20);
             this.edtAmdPresetName.TabIndex = 23;
@@ -648,7 +658,7 @@
             // btnAddAmd
             // 
             this.btnAddAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddAmd.Location = new System.Drawing.Point(330, 365);
+            this.btnAddAmd.Location = new System.Drawing.Point(330, 372);
             this.btnAddAmd.Name = "btnAddAmd";
             this.btnAddAmd.Size = new System.Drawing.Size(75, 23);
             this.btnAddAmd.TabIndex = 18;
@@ -670,7 +680,7 @@
             // 
             this.btnDeleteAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDeleteAmd.Enabled = false;
-            this.btnDeleteAmd.Location = new System.Drawing.Point(249, 365);
+            this.btnDeleteAmd.Location = new System.Drawing.Point(249, 372);
             this.btnDeleteAmd.Name = "btnDeleteAmd";
             this.btnDeleteAmd.Size = new System.Drawing.Size(75, 23);
             this.btnDeleteAmd.TabIndex = 17;
@@ -682,7 +692,7 @@
             // 
             this.btnCloneAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloneAmd.Enabled = false;
-            this.btnCloneAmd.Location = new System.Drawing.Point(168, 365);
+            this.btnCloneAmd.Location = new System.Drawing.Point(168, 372);
             this.btnCloneAmd.Name = "btnCloneAmd";
             this.btnCloneAmd.Size = new System.Drawing.Size(75, 23);
             this.btnCloneAmd.TabIndex = 16;
@@ -694,7 +704,7 @@
             // 
             this.btnAmdPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnAmdPresetSave.Enabled = false;
-            this.btnAmdPresetSave.Location = new System.Drawing.Point(411, 365);
+            this.btnAmdPresetSave.Location = new System.Drawing.Point(411, 372);
             this.btnAmdPresetSave.Name = "btnAmdPresetSave";
             this.btnAmdPresetSave.Size = new System.Drawing.Size(75, 23);
             this.btnAmdPresetSave.TabIndex = 15;
@@ -706,7 +716,7 @@
             // 
             this.lblAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblAmdShortcut.AutoSize = true;
-            this.lblAmdShortcut.Location = new System.Drawing.Point(6, 423);
+            this.lblAmdShortcut.Location = new System.Drawing.Point(6, 430);
             this.lblAmdShortcut.Name = "lblAmdShortcut";
             this.lblAmdShortcut.Size = new System.Drawing.Size(50, 13);
             this.lblAmdShortcut.TabIndex = 14;
@@ -716,7 +726,7 @@
             // 
             this.edtAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtAmdShortcut.Enabled = false;
-            this.edtAmdShortcut.Location = new System.Drawing.Point(87, 420);
+            this.edtAmdShortcut.Location = new System.Drawing.Point(87, 427);
             this.edtAmdShortcut.Name = "edtAmdShortcut";
             this.edtAmdShortcut.ReadOnly = true;
             this.edtAmdShortcut.Size = new System.Drawing.Size(200, 20);
@@ -730,7 +740,7 @@
             this.btnChangeAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChangeAmd.ContextMenuStrip = this.mnuAmdPresets;
             this.btnChangeAmd.Enabled = false;
-            this.btnChangeAmd.Location = new System.Drawing.Point(87, 365);
+            this.btnChangeAmd.Location = new System.Drawing.Point(87, 372);
             this.btnChangeAmd.Name = "btnChangeAmd";
             this.btnChangeAmd.Size = new System.Drawing.Size(75, 23);
             this.btnChangeAmd.TabIndex = 12;
@@ -752,7 +762,7 @@
             this.mnuAmdHDR,
             this.miAmdCopyId});
             this.mnuAmdPresets.Name = "mnuNvPresets";
-            this.mnuAmdPresets.Size = new System.Drawing.Size(185, 208);
+            this.mnuAmdPresets.Size = new System.Drawing.Size(185, 186);
             this.mnuAmdPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuAmdPresets_Opening);
             // 
             // miAmdApply
@@ -866,11 +876,18 @@
             this.miAmdHDREnabled.Text = "Enabled";
             this.miAmdHDREnabled.Click += new System.EventHandler(this.miAmdHDREnabled_Click);
             // 
+            // miAmdCopyId
+            // 
+            this.miAmdCopyId.Name = "miAmdCopyId";
+            this.miAmdCopyId.Size = new System.Drawing.Size(184, 22);
+            this.miAmdCopyId.Text = "Copy Id to Clipboard";
+            this.miAmdCopyId.Click += new System.EventHandler(this.miAmdCopyId_Click);
+            // 
             // btnApplyAmd
             // 
             this.btnApplyAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApplyAmd.Enabled = false;
-            this.btnApplyAmd.Location = new System.Drawing.Point(6, 365);
+            this.btnApplyAmd.Location = new System.Drawing.Point(6, 372);
             this.btnApplyAmd.Name = "btnApplyAmd";
             this.btnApplyAmd.Size = new System.Drawing.Size(75, 23);
             this.btnApplyAmd.TabIndex = 11;
@@ -889,7 +906,7 @@
             this.lvAmdPresets.Location = new System.Drawing.Point(6, 6);
             this.lvAmdPresets.MultiSelect = false;
             this.lvAmdPresets.Name = "lvAmdPresets";
-            this.lvAmdPresets.Size = new System.Drawing.Size(829, 353);
+            this.lvAmdPresets.Size = new System.Drawing.Size(942, 360);
             this.lvAmdPresets.TabIndex = 10;
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
             this.lvAmdPresets.View = System.Windows.Forms.View.Details;
@@ -898,51 +915,367 @@
             // 
             // tabLG
             // 
-            this.tabLG.Controls.Add(this.btnLGRemoteControl);
-            this.tabLG.Controls.Add(this.btnLgDeviceFilterRefresh);
-            this.tabLG.Controls.Add(this.clbLgPower);
-            this.tabLG.Controls.Add(this.btnLgAddButton);
-            this.tabLG.Controls.Add(this.label3);
-            this.tabLG.Controls.Add(this.cbxLgDevices);
-            this.tabLG.Controls.Add(this.btnLgRefreshApps);
-            this.tabLG.Controls.Add(this.btnAddLg);
-            this.tabLG.Controls.Add(this.btnDeleteLg);
-            this.tabLG.Controls.Add(this.cbxLgApps);
-            this.tabLG.Controls.Add(this.label5);
-            this.tabLG.Controls.Add(this.lblDeviceFilter);
-            this.tabLG.Controls.Add(this.edtLgDeviceFilter);
-            this.tabLG.Controls.Add(this.label1);
-            this.tabLG.Controls.Add(this.edtNameLg);
-            this.tabLG.Controls.Add(this.edtStepsLg);
-            this.tabLG.Controls.Add(this.lblStepsLg);
-            this.tabLG.Controls.Add(this.lblLgError);
-            this.tabLG.Controls.Add(this.btnCloneLg);
-            this.tabLG.Controls.Add(this.btnSetShortcutLg);
-            this.tabLG.Controls.Add(this.label2);
-            this.tabLG.Controls.Add(this.edtShortcutLg);
-            this.tabLG.Controls.Add(this.btnApplyLg);
-            this.tabLG.Controls.Add(this.lvLgPresets);
+            this.tabLG.Controls.Add(this.scLgController);
             this.tabLG.Location = new System.Drawing.Point(4, 22);
             this.tabLG.Name = "tabLG";
             this.tabLG.Padding = new System.Windows.Forms.Padding(3);
-            this.tabLG.Size = new System.Drawing.Size(841, 446);
+            this.tabLG.Size = new System.Drawing.Size(954, 453);
             this.tabLG.TabIndex = 1;
             this.tabLG.Text = "LG controller";
             this.tabLG.UseVisualStyleBackColor = true;
             // 
-            // btnLGRemoteControl
+            // scLgController
             // 
-            this.btnLGRemoteControl.Location = new System.Drawing.Point(675, 5);
-            this.btnLGRemoteControl.Name = "btnLGRemoteControl";
-            this.btnLGRemoteControl.Size = new System.Drawing.Size(95, 23);
-            this.btnLGRemoteControl.TabIndex = 36;
-            this.btnLGRemoteControl.Text = "Remote Control";
-            this.btnLGRemoteControl.UseVisualStyleBackColor = true;
-            this.btnLGRemoteControl.Click += new System.EventHandler(this.btnLGRemoteControl_Click);
+            this.scLgController.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.scLgController.Location = new System.Drawing.Point(3, 3);
+            this.scLgController.Name = "scLgController";
+            // 
+            // scLgController.Panel1
+            // 
+            this.scLgController.Panel1.Controls.Add(this.chkLgRemoteControlShow);
+            this.scLgController.Panel1.Controls.Add(this.label3);
+            this.scLgController.Panel1.Controls.Add(this.cbxLgDevices);
+            this.scLgController.Panel1.Controls.Add(this.btnLgDeviceConvertToCustom);
+            this.scLgController.Panel1.Controls.Add(this.cbxLgApps);
+            this.scLgController.Panel1.Controls.Add(this.lvLgPresets);
+            this.scLgController.Panel1.Controls.Add(this.label5);
+            this.scLgController.Panel1.Controls.Add(this.cbxLgPresetDevice);
+            this.scLgController.Panel1.Controls.Add(this.btnDeleteLg);
+            this.scLgController.Panel1.Controls.Add(this.btnApplyLg);
+            this.scLgController.Panel1.Controls.Add(this.lblDeviceFilter);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetDevice);
+            this.scLgController.Panel1.Controls.Add(this.btnAddLg);
+            this.scLgController.Panel1.Controls.Add(this.edtShortcutLg);
+            this.scLgController.Panel1.Controls.Add(this.edtLgDeviceFilter);
+            this.scLgController.Panel1.Controls.Add(this.btnLgRemoveDevice);
+            this.scLgController.Panel1.Controls.Add(this.btnLgRefreshApps);
+            this.scLgController.Panel1.Controls.Add(this.label2);
+            this.scLgController.Panel1.Controls.Add(this.label1);
+            this.scLgController.Panel1.Controls.Add(this.btnLgAddDevice);
+            this.scLgController.Panel1.Controls.Add(this.edtNameLg);
+            this.scLgController.Panel1.Controls.Add(this.btnSetShortcutLg);
+            this.scLgController.Panel1.Controls.Add(this.edtStepsLg);
+            this.scLgController.Panel1.Controls.Add(this.btnLgAddButton);
+            this.scLgController.Panel1.Controls.Add(this.btnCloneLg);
+            this.scLgController.Panel1.Controls.Add(this.lblStepsLg);
+            this.scLgController.Panel1.Controls.Add(this.btnLgDeviceFilterRefresh);
+            this.scLgController.Panel1.Controls.Add(this.clbLgPower);
+            this.scLgController.Panel1.Controls.Add(this.lblLgError);
+            this.scLgController.Panel1MinSize = 750;
+            this.scLgController.Panel2MinSize = 150;
+            this.scLgController.Size = new System.Drawing.Size(948, 447);
+            this.scLgController.SplitterDistance = 767;
+            this.scLgController.TabIndex = 43;
+            // 
+            // chkLgRemoteControlShow
+            // 
+            this.chkLgRemoteControlShow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkLgRemoteControlShow.Appearance = System.Windows.Forms.Appearance.Button;
+            this.chkLgRemoteControlShow.AutoSize = true;
+            this.chkLgRemoteControlShow.Location = new System.Drawing.Point(673, 7);
+            this.chkLgRemoteControlShow.Name = "chkLgRemoteControlShow";
+            this.chkLgRemoteControlShow.Size = new System.Drawing.Size(90, 23);
+            this.chkLgRemoteControlShow.TabIndex = 43;
+            this.chkLgRemoteControlShow.Text = "Remote Control";
+            this.chkLgRemoteControlShow.UseVisualStyleBackColor = true;
+            this.chkLgRemoteControlShow.CheckedChanged += new System.EventHandler(this.chkLgRemoteControlShow_CheckedChanged);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(5, 12);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(44, 13);
+            this.label3.TabIndex = 31;
+            this.label3.Text = "Device:";
+            // 
+            // cbxLgDevices
+            // 
+            this.cbxLgDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgDevices.FormattingEnabled = true;
+            this.cbxLgDevices.Location = new System.Drawing.Point(86, 8);
+            this.cbxLgDevices.Name = "cbxLgDevices";
+            this.cbxLgDevices.Size = new System.Drawing.Size(318, 21);
+            this.cbxLgDevices.TabIndex = 30;
+            this.cbxLgDevices.SelectedIndexChanged += new System.EventHandler(this.cbxLgDevices_SelectedIndexChanged);
+            // 
+            // btnLgDeviceConvertToCustom
+            // 
+            this.btnLgDeviceConvertToCustom.Location = new System.Drawing.Point(572, 7);
+            this.btnLgDeviceConvertToCustom.Name = "btnLgDeviceConvertToCustom";
+            this.btnLgDeviceConvertToCustom.Size = new System.Drawing.Size(75, 23);
+            this.btnLgDeviceConvertToCustom.TabIndex = 41;
+            this.btnLgDeviceConvertToCustom.Text = "To custom...";
+            this.btnLgDeviceConvertToCustom.UseVisualStyleBackColor = true;
+            this.btnLgDeviceConvertToCustom.Click += new System.EventHandler(this.btnLgDeviceConvertToCustom_Click);
+            // 
+            // cbxLgApps
+            // 
+            this.cbxLgApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbxLgApps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgApps.Enabled = false;
+            this.cbxLgApps.FormattingEnabled = true;
+            this.cbxLgApps.Location = new System.Drawing.Point(86, 346);
+            this.cbxLgApps.Name = "cbxLgApps";
+            this.cbxLgApps.Size = new System.Drawing.Size(200, 21);
+            this.cbxLgApps.TabIndex = 26;
+            // 
+            // lvLgPresets
+            // 
+            this.lvLgPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvLgPresets.FullRowSelect = true;
+            this.lvLgPresets.HideSelection = false;
+            this.lvLgPresets.Location = new System.Drawing.Point(5, 146);
+            this.lvLgPresets.MultiSelect = false;
+            this.lvLgPresets.Name = "lvLgPresets";
+            this.lvLgPresets.Size = new System.Drawing.Size(758, 111);
+            this.lvLgPresets.TabIndex = 8;
+            this.lvLgPresets.UseCompatibleStateImageBehavior = false;
+            this.lvLgPresets.View = System.Windows.Forms.View.Details;
+            this.lvLgPresets.SelectedIndexChanged += new System.EventHandler(this.lvLgPresets_SelectedIndexChanged);
+            this.lvLgPresets.DoubleClick += new System.EventHandler(this.lvLgPresets_DoubleClick);
+            // 
+            // label5
+            // 
+            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(5, 349);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(29, 13);
+            this.label5.TabIndex = 25;
+            this.label5.Text = "App:";
+            // 
+            // cbxLgPresetDevice
+            // 
+            this.cbxLgPresetDevice.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbxLgPresetDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgPresetDevice.Enabled = false;
+            this.cbxLgPresetDevice.FormattingEnabled = true;
+            this.cbxLgPresetDevice.Location = new System.Drawing.Point(86, 318);
+            this.cbxLgPresetDevice.Name = "cbxLgPresetDevice";
+            this.cbxLgPresetDevice.Size = new System.Drawing.Size(318, 21);
+            this.cbxLgPresetDevice.TabIndex = 40;
+            // 
+            // btnDeleteLg
+            // 
+            this.btnDeleteLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnDeleteLg.Enabled = false;
+            this.btnDeleteLg.Location = new System.Drawing.Point(248, 263);
+            this.btnDeleteLg.Name = "btnDeleteLg";
+            this.btnDeleteLg.Size = new System.Drawing.Size(75, 23);
+            this.btnDeleteLg.TabIndex = 27;
+            this.btnDeleteLg.Text = "Delete";
+            this.btnDeleteLg.UseVisualStyleBackColor = true;
+            this.btnDeleteLg.Click += new System.EventHandler(this.btnDeleteLg_Click);
+            // 
+            // btnApplyLg
+            // 
+            this.btnApplyLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnApplyLg.Enabled = false;
+            this.btnApplyLg.Location = new System.Drawing.Point(5, 263);
+            this.btnApplyLg.Name = "btnApplyLg";
+            this.btnApplyLg.Size = new System.Drawing.Size(75, 23);
+            this.btnApplyLg.TabIndex = 9;
+            this.btnApplyLg.Text = "Apply";
+            this.btnApplyLg.UseVisualStyleBackColor = true;
+            this.btnApplyLg.Click += new System.EventHandler(this.btnApplyLg_Click);
+            // 
+            // lblDeviceFilter
+            // 
+            this.lblDeviceFilter.AutoSize = true;
+            this.lblDeviceFilter.Location = new System.Drawing.Point(5, 39);
+            this.lblDeviceFilter.Name = "lblDeviceFilter";
+            this.lblDeviceFilter.Size = new System.Drawing.Size(66, 13);
+            this.lblDeviceFilter.TabIndex = 24;
+            this.lblDeviceFilter.Text = "Device filter:";
+            // 
+            // lblLgPresetDevice
+            // 
+            this.lblLgPresetDevice.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetDevice.AutoSize = true;
+            this.lblLgPresetDevice.Location = new System.Drawing.Point(5, 321);
+            this.lblLgPresetDevice.Name = "lblLgPresetDevice";
+            this.lblLgPresetDevice.Size = new System.Drawing.Size(44, 13);
+            this.lblLgPresetDevice.TabIndex = 39;
+            this.lblLgPresetDevice.Text = "Device:";
+            // 
+            // btnAddLg
+            // 
+            this.btnAddLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnAddLg.Location = new System.Drawing.Point(167, 263);
+            this.btnAddLg.Name = "btnAddLg";
+            this.btnAddLg.Size = new System.Drawing.Size(75, 23);
+            this.btnAddLg.TabIndex = 28;
+            this.btnAddLg.Text = "Add";
+            this.btnAddLg.UseVisualStyleBackColor = true;
+            this.btnAddLg.Click += new System.EventHandler(this.btnAddLg_Click);
+            // 
+            // edtShortcutLg
+            // 
+            this.edtShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtShortcutLg.Enabled = false;
+            this.edtShortcutLg.Location = new System.Drawing.Point(86, 373);
+            this.edtShortcutLg.Name = "edtShortcutLg";
+            this.edtShortcutLg.ReadOnly = true;
+            this.edtShortcutLg.Size = new System.Drawing.Size(200, 20);
+            this.edtShortcutLg.TabIndex = 11;
+            this.edtShortcutLg.TextChanged += new System.EventHandler(this.edtShortcutLg_TextChanged);
+            this.edtShortcutLg.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
+            this.edtShortcutLg.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
+            // 
+            // edtLgDeviceFilter
+            // 
+            this.edtLgDeviceFilter.Location = new System.Drawing.Point(86, 35);
+            this.edtLgDeviceFilter.Name = "edtLgDeviceFilter";
+            this.edtLgDeviceFilter.Size = new System.Drawing.Size(142, 20);
+            this.edtLgDeviceFilter.TabIndex = 23;
+            this.edtLgDeviceFilter.TextChanged += new System.EventHandler(this.edtLgDeviceFilter_TextChanged);
+            // 
+            // btnLgRemoveDevice
+            // 
+            this.btnLgRemoveDevice.Location = new System.Drawing.Point(491, 7);
+            this.btnLgRemoveDevice.Name = "btnLgRemoveDevice";
+            this.btnLgRemoveDevice.Size = new System.Drawing.Size(75, 23);
+            this.btnLgRemoveDevice.TabIndex = 38;
+            this.btnLgRemoveDevice.Text = "Remove";
+            this.btnLgRemoveDevice.UseVisualStyleBackColor = true;
+            this.btnLgRemoveDevice.Click += new System.EventHandler(this.btnLgRemoveDevice_Click);
+            // 
+            // btnLgRefreshApps
+            // 
+            this.btnLgRefreshApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLgRefreshApps.Location = new System.Drawing.Point(292, 344);
+            this.btnLgRefreshApps.Name = "btnLgRefreshApps";
+            this.btnLgRefreshApps.Size = new System.Drawing.Size(75, 23);
+            this.btnLgRefreshApps.TabIndex = 29;
+            this.btnLgRefreshApps.Text = "Refresh";
+            this.btnLgRefreshApps.UseVisualStyleBackColor = true;
+            this.btnLgRefreshApps.Click += new System.EventHandler(this.btnLgRefreshApps_Click);
+            // 
+            // label2
+            // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(5, 376);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(50, 13);
+            this.label2.TabIndex = 12;
+            this.label2.Text = "Shortcut:";
+            // 
+            // label1
+            // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(5, 295);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(38, 13);
+            this.label1.TabIndex = 20;
+            this.label1.Text = "Name:";
+            // 
+            // btnLgAddDevice
+            // 
+            this.btnLgAddDevice.Location = new System.Drawing.Point(410, 7);
+            this.btnLgAddDevice.Name = "btnLgAddDevice";
+            this.btnLgAddDevice.Size = new System.Drawing.Size(75, 23);
+            this.btnLgAddDevice.TabIndex = 37;
+            this.btnLgAddDevice.Text = "Add";
+            this.btnLgAddDevice.UseVisualStyleBackColor = true;
+            this.btnLgAddDevice.Click += new System.EventHandler(this.btnLgAddDevice_Click);
+            // 
+            // edtNameLg
+            // 
+            this.edtNameLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNameLg.Enabled = false;
+            this.edtNameLg.Location = new System.Drawing.Point(86, 292);
+            this.edtNameLg.Name = "edtNameLg";
+            this.edtNameLg.Size = new System.Drawing.Size(200, 20);
+            this.edtNameLg.TabIndex = 19;
+            // 
+            // btnSetShortcutLg
+            // 
+            this.btnSetShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnSetShortcutLg.Enabled = false;
+            this.btnSetShortcutLg.Location = new System.Drawing.Point(329, 263);
+            this.btnSetShortcutLg.Name = "btnSetShortcutLg";
+            this.btnSetShortcutLg.Size = new System.Drawing.Size(75, 23);
+            this.btnSetShortcutLg.TabIndex = 13;
+            this.btnSetShortcutLg.Text = "Save";
+            this.btnSetShortcutLg.UseVisualStyleBackColor = true;
+            this.btnSetShortcutLg.Click += new System.EventHandler(this.btnSetShortcutLg_Click);
+            // 
+            // edtStepsLg
+            // 
+            this.edtStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.edtStepsLg.Enabled = false;
+            this.edtStepsLg.Location = new System.Drawing.Point(86, 398);
+            this.edtStepsLg.Multiline = true;
+            this.edtStepsLg.Name = "edtStepsLg";
+            this.edtStepsLg.Size = new System.Drawing.Size(596, 38);
+            this.edtStepsLg.TabIndex = 17;
+            // 
+            // btnLgAddButton
+            // 
+            this.btnLgAddButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnLgAddButton.ContextMenuStrip = this.mnuLgButtons;
+            this.btnLgAddButton.Enabled = false;
+            this.btnLgAddButton.Location = new System.Drawing.Point(688, 397);
+            this.btnLgAddButton.Name = "btnLgAddButton";
+            this.btnLgAddButton.Size = new System.Drawing.Size(75, 23);
+            this.btnLgAddButton.TabIndex = 32;
+            this.btnLgAddButton.Text = "Add step";
+            this.btnLgAddButton.UseVisualStyleBackColor = true;
+            this.btnLgAddButton.Click += new System.EventHandler(this.btnLgAddButton_Click);
+            // 
+            // mnuLgButtons
+            // 
+            this.mnuLgButtons.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuLgButtons.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuLgRcButtons,
+            this.mnuLgActions});
+            this.mnuLgButtons.Name = "mnuLgButtons";
+            this.mnuLgButtons.Size = new System.Drawing.Size(116, 48);
+            this.mnuLgButtons.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgButtons_Opening);
+            // 
+            // mnuLgRcButtons
+            // 
+            this.mnuLgRcButtons.Name = "mnuLgRcButtons";
+            this.mnuLgRcButtons.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgRcButtons.Text = "Buttons";
+            // 
+            // mnuLgActions
+            // 
+            this.mnuLgActions.Name = "mnuLgActions";
+            this.mnuLgActions.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgActions.Text = "Actions";
+            // 
+            // btnCloneLg
+            // 
+            this.btnCloneLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnCloneLg.Enabled = false;
+            this.btnCloneLg.Location = new System.Drawing.Point(86, 263);
+            this.btnCloneLg.Name = "btnCloneLg";
+            this.btnCloneLg.Size = new System.Drawing.Size(75, 23);
+            this.btnCloneLg.TabIndex = 14;
+            this.btnCloneLg.Text = "Clone";
+            this.btnCloneLg.UseVisualStyleBackColor = true;
+            this.btnCloneLg.Click += new System.EventHandler(this.btnCloneLg_Click);
+            // 
+            // lblStepsLg
+            // 
+            this.lblStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblStepsLg.AutoSize = true;
+            this.lblStepsLg.Location = new System.Drawing.Point(5, 402);
+            this.lblStepsLg.Name = "lblStepsLg";
+            this.lblStepsLg.Size = new System.Drawing.Size(37, 13);
+            this.lblStepsLg.TabIndex = 16;
+            this.lblStepsLg.Text = "Steps:";
             // 
             // btnLgDeviceFilterRefresh
             // 
-            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(594, 5);
+            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(234, 34);
             this.btnLgDeviceFilterRefresh.Name = "btnLgDeviceFilterRefresh";
             this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(75, 23);
             this.btnLgDeviceFilterRefresh.TabIndex = 35;
@@ -959,269 +1292,28 @@
             this.clbLgPower.Items.AddRange(new object[] {
             "Automatically power on after startup. Requires \"Automatically start after login\" " +
                 "- see Options.",
-            "Automatically power on after resume from standby. Needs a system dependent delay " +
-                "before waking TV, see Options.",
+            "Automatically power on after resume from standby. May need some retries for wakin" +
+                "g TV, see Options.",
             "Automatically power off on shutdown. Because this app cannot detect a restart, re" +
                 "starting could also trigger this. Hold down Ctrl on restart to prevent power off" +
                 ".",
             "Automatically power off on standby",
             "Automatically power off on screensaver and power on when screensaver deactivates"});
-            this.clbLgPower.Location = new System.Drawing.Point(6, 33);
+            this.clbLgPower.Location = new System.Drawing.Point(5, 61);
             this.clbLgPower.Name = "clbLgPower";
-            this.clbLgPower.Size = new System.Drawing.Size(829, 79);
+            this.clbLgPower.Size = new System.Drawing.Size(758, 79);
             this.clbLgPower.TabIndex = 34;
             this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
-            // 
-            // btnLgAddButton
-            // 
-            this.btnLgAddButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnLgAddButton.ContextMenuStrip = this.mnuLgButtons;
-            this.btnLgAddButton.Enabled = false;
-            this.btnLgAddButton.Location = new System.Drawing.Point(760, 400);
-            this.btnLgAddButton.Name = "btnLgAddButton";
-            this.btnLgAddButton.Size = new System.Drawing.Size(75, 23);
-            this.btnLgAddButton.TabIndex = 32;
-            this.btnLgAddButton.Text = "Add step";
-            this.btnLgAddButton.UseVisualStyleBackColor = true;
-            this.btnLgAddButton.Click += new System.EventHandler(this.btnLgAddButton_Click);
-            // 
-            // mnuLgButtons
-            // 
-            this.mnuLgButtons.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.mnuLgButtons.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.mnuLgRcButtons,
-            this.mnuLgActions});
-            this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(116, 48);
-            // 
-            // mnuLgRcButtons
-            // 
-            this.mnuLgRcButtons.Name = "mnuLgRcButtons";
-            this.mnuLgRcButtons.Size = new System.Drawing.Size(115, 22);
-            this.mnuLgRcButtons.Text = "Buttons";
-            // 
-            // mnuLgActions
-            // 
-            this.mnuLgActions.Name = "mnuLgActions";
-            this.mnuLgActions.Size = new System.Drawing.Size(115, 22);
-            this.mnuLgActions.Text = "Actions";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(6, 10);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(44, 13);
-            this.label3.TabIndex = 31;
-            this.label3.Text = "Device:";
-            // 
-            // cbxLgDevices
-            // 
-            this.cbxLgDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxLgDevices.FormattingEnabled = true;
-            this.cbxLgDevices.Location = new System.Drawing.Point(87, 6);
-            this.cbxLgDevices.Name = "cbxLgDevices";
-            this.cbxLgDevices.Size = new System.Drawing.Size(281, 21);
-            this.cbxLgDevices.TabIndex = 30;
-            this.cbxLgDevices.SelectedIndexChanged += new System.EventHandler(this.cbxLgDevices_SelectedIndexChanged);
-            // 
-            // btnLgRefreshApps
-            // 
-            this.btnLgRefreshApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgRefreshApps.Location = new System.Drawing.Point(293, 347);
-            this.btnLgRefreshApps.Name = "btnLgRefreshApps";
-            this.btnLgRefreshApps.Size = new System.Drawing.Size(75, 23);
-            this.btnLgRefreshApps.TabIndex = 29;
-            this.btnLgRefreshApps.Text = "Refresh";
-            this.btnLgRefreshApps.UseVisualStyleBackColor = true;
-            this.btnLgRefreshApps.Click += new System.EventHandler(this.btnLgRefreshApps_Click);
-            // 
-            // btnAddLg
-            // 
-            this.btnAddLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddLg.Location = new System.Drawing.Point(168, 294);
-            this.btnAddLg.Name = "btnAddLg";
-            this.btnAddLg.Size = new System.Drawing.Size(75, 23);
-            this.btnAddLg.TabIndex = 28;
-            this.btnAddLg.Text = "Add";
-            this.btnAddLg.UseVisualStyleBackColor = true;
-            this.btnAddLg.Click += new System.EventHandler(this.btnAddLg_Click);
-            // 
-            // btnDeleteLg
-            // 
-            this.btnDeleteLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnDeleteLg.Enabled = false;
-            this.btnDeleteLg.Location = new System.Drawing.Point(249, 294);
-            this.btnDeleteLg.Name = "btnDeleteLg";
-            this.btnDeleteLg.Size = new System.Drawing.Size(75, 23);
-            this.btnDeleteLg.TabIndex = 27;
-            this.btnDeleteLg.Text = "Delete";
-            this.btnDeleteLg.UseVisualStyleBackColor = true;
-            this.btnDeleteLg.Click += new System.EventHandler(this.btnDeleteLg_Click);
-            // 
-            // cbxLgApps
-            // 
-            this.cbxLgApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.cbxLgApps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxLgApps.Enabled = false;
-            this.cbxLgApps.FormattingEnabled = true;
-            this.cbxLgApps.Location = new System.Drawing.Point(87, 349);
-            this.cbxLgApps.Name = "cbxLgApps";
-            this.cbxLgApps.Size = new System.Drawing.Size(200, 21);
-            this.cbxLgApps.TabIndex = 26;
-            // 
-            // label5
-            // 
-            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(6, 352);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(29, 13);
-            this.label5.TabIndex = 25;
-            this.label5.Text = "App:";
-            // 
-            // lblDeviceFilter
-            // 
-            this.lblDeviceFilter.AutoSize = true;
-            this.lblDeviceFilter.Location = new System.Drawing.Point(374, 10);
-            this.lblDeviceFilter.Name = "lblDeviceFilter";
-            this.lblDeviceFilter.Size = new System.Drawing.Size(66, 13);
-            this.lblDeviceFilter.TabIndex = 24;
-            this.lblDeviceFilter.Text = "Device filter:";
-            // 
-            // edtLgDeviceFilter
-            // 
-            this.edtLgDeviceFilter.Location = new System.Drawing.Point(446, 6);
-            this.edtLgDeviceFilter.Name = "edtLgDeviceFilter";
-            this.edtLgDeviceFilter.Size = new System.Drawing.Size(142, 20);
-            this.edtLgDeviceFilter.TabIndex = 23;
-            this.edtLgDeviceFilter.TextChanged += new System.EventHandler(this.edtLgDeviceFilter_TextChanged);
-            // 
-            // label1
-            // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 326);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(38, 13);
-            this.label1.TabIndex = 20;
-            this.label1.Text = "Name:";
-            // 
-            // edtNameLg
-            // 
-            this.edtNameLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.edtNameLg.Enabled = false;
-            this.edtNameLg.Location = new System.Drawing.Point(87, 323);
-            this.edtNameLg.Name = "edtNameLg";
-            this.edtNameLg.Size = new System.Drawing.Size(200, 20);
-            this.edtNameLg.TabIndex = 19;
-            // 
-            // edtStepsLg
-            // 
-            this.edtStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.edtStepsLg.Enabled = false;
-            this.edtStepsLg.Location = new System.Drawing.Point(87, 402);
-            this.edtStepsLg.Multiline = true;
-            this.edtStepsLg.Name = "edtStepsLg";
-            this.edtStepsLg.Size = new System.Drawing.Size(667, 37);
-            this.edtStepsLg.TabIndex = 17;
-            // 
-            // lblStepsLg
-            // 
-            this.lblStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblStepsLg.AutoSize = true;
-            this.lblStepsLg.Location = new System.Drawing.Point(6, 405);
-            this.lblStepsLg.Name = "lblStepsLg";
-            this.lblStepsLg.Size = new System.Drawing.Size(37, 13);
-            this.lblStepsLg.TabIndex = 16;
-            this.lblStepsLg.Text = "Steps:";
             // 
             // lblLgError
             // 
             this.lblLgError.AutoSize = true;
-            this.lblLgError.Location = new System.Drawing.Point(6, 6);
+            this.lblLgError.Location = new System.Drawing.Point(5, 8);
             this.lblLgError.Name = "lblLgError";
             this.lblLgError.Size = new System.Drawing.Size(50, 13);
             this.lblLgError.TabIndex = 15;
             this.lblLgError.Text = "ErrorText";
             this.lblLgError.Visible = false;
-            // 
-            // btnCloneLg
-            // 
-            this.btnCloneLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnCloneLg.Enabled = false;
-            this.btnCloneLg.Location = new System.Drawing.Point(87, 294);
-            this.btnCloneLg.Name = "btnCloneLg";
-            this.btnCloneLg.Size = new System.Drawing.Size(75, 23);
-            this.btnCloneLg.TabIndex = 14;
-            this.btnCloneLg.Text = "Clone";
-            this.btnCloneLg.UseVisualStyleBackColor = true;
-            this.btnCloneLg.Click += new System.EventHandler(this.btnCloneLg_Click);
-            // 
-            // btnSetShortcutLg
-            // 
-            this.btnSetShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnSetShortcutLg.Enabled = false;
-            this.btnSetShortcutLg.Location = new System.Drawing.Point(330, 294);
-            this.btnSetShortcutLg.Name = "btnSetShortcutLg";
-            this.btnSetShortcutLg.Size = new System.Drawing.Size(75, 23);
-            this.btnSetShortcutLg.TabIndex = 13;
-            this.btnSetShortcutLg.Text = "Save";
-            this.btnSetShortcutLg.UseVisualStyleBackColor = true;
-            this.btnSetShortcutLg.Click += new System.EventHandler(this.btnSetShortcutLg_Click);
-            // 
-            // label2
-            // 
-            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 379);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(50, 13);
-            this.label2.TabIndex = 12;
-            this.label2.Text = "Shortcut:";
-            // 
-            // edtShortcutLg
-            // 
-            this.edtShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.edtShortcutLg.Enabled = false;
-            this.edtShortcutLg.Location = new System.Drawing.Point(87, 376);
-            this.edtShortcutLg.Name = "edtShortcutLg";
-            this.edtShortcutLg.ReadOnly = true;
-            this.edtShortcutLg.Size = new System.Drawing.Size(200, 20);
-            this.edtShortcutLg.TabIndex = 11;
-            this.edtShortcutLg.TextChanged += new System.EventHandler(this.edtShortcutLg_TextChanged);
-            this.edtShortcutLg.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
-            this.edtShortcutLg.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
-            // 
-            // btnApplyLg
-            // 
-            this.btnApplyLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnApplyLg.Enabled = false;
-            this.btnApplyLg.Location = new System.Drawing.Point(6, 294);
-            this.btnApplyLg.Name = "btnApplyLg";
-            this.btnApplyLg.Size = new System.Drawing.Size(75, 23);
-            this.btnApplyLg.TabIndex = 9;
-            this.btnApplyLg.Text = "Apply";
-            this.btnApplyLg.UseVisualStyleBackColor = true;
-            this.btnApplyLg.Click += new System.EventHandler(this.btnApplyLg_Click);
-            // 
-            // lvLgPresets
-            // 
-            this.lvLgPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lvLgPresets.FullRowSelect = true;
-            this.lvLgPresets.HideSelection = false;
-            this.lvLgPresets.Location = new System.Drawing.Point(6, 116);
-            this.lvLgPresets.MultiSelect = false;
-            this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(829, 172);
-            this.lvLgPresets.TabIndex = 8;
-            this.lvLgPresets.UseCompatibleStateImageBehavior = false;
-            this.lvLgPresets.View = System.Windows.Forms.View.Details;
-            this.lvLgPresets.SelectedIndexChanged += new System.EventHandler(this.lvLgPresets_SelectedIndexChanged);
-            this.lvLgPresets.DoubleClick += new System.EventHandler(this.lvLgPresets_DoubleClick);
             // 
             // tabOptions
             // 
@@ -1233,7 +1325,7 @@
             this.tabOptions.Location = new System.Drawing.Point(4, 22);
             this.tabOptions.Name = "tabOptions";
             this.tabOptions.Padding = new System.Windows.Forms.Padding(3);
-            this.tabOptions.Size = new System.Drawing.Size(841, 446);
+            this.tabOptions.Size = new System.Drawing.Size(954, 453);
             this.tabOptions.TabIndex = 2;
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
@@ -1251,7 +1343,7 @@
             this.grpNvidiaOptions.Controls.Add(this.pbGradient);
             this.grpNvidiaOptions.Location = new System.Drawing.Point(412, 6);
             this.grpNvidiaOptions.Name = "grpNvidiaOptions";
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(400, 297);
+            this.grpNvidiaOptions.Size = new System.Drawing.Size(514, 304);
             this.grpNvidiaOptions.TabIndex = 6;
             this.grpNvidiaOptions.TabStop = false;
             this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
@@ -1315,7 +1407,7 @@
             this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pbGradient.Location = new System.Drawing.Point(6, 92);
             this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(388, 198);
+            this.pbGradient.Size = new System.Drawing.Size(502, 205);
             this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbGradient.TabIndex = 0;
             this.pbGradient.TabStop = false;
@@ -1555,7 +1647,7 @@
             this.tabLog.Location = new System.Drawing.Point(4, 22);
             this.tabLog.Name = "tabLog";
             this.tabLog.Padding = new System.Windows.Forms.Padding(3);
-            this.tabLog.Size = new System.Drawing.Size(841, 446);
+            this.tabLog.Size = new System.Drawing.Size(954, 453);
             this.tabLog.TabIndex = 3;
             this.tabLog.Text = "Log";
             this.tabLog.UseVisualStyleBackColor = true;
@@ -1580,7 +1672,7 @@
             this.edtLog.Name = "edtLog";
             this.edtLog.ReadOnly = true;
             this.edtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.edtLog.Size = new System.Drawing.Size(832, 408);
+            this.edtLog.Size = new System.Drawing.Size(920, 415);
             this.edtLog.TabIndex = 0;
             // 
             // tabInfo
@@ -1590,7 +1682,7 @@
             this.tabInfo.Location = new System.Drawing.Point(4, 22);
             this.tabInfo.Name = "tabInfo";
             this.tabInfo.Padding = new System.Windows.Forms.Padding(3);
-            this.tabInfo.Size = new System.Drawing.Size(841, 446);
+            this.tabInfo.Size = new System.Drawing.Size(954, 453);
             this.tabInfo.TabIndex = 4;
             this.tabInfo.Text = "Info";
             this.tabInfo.UseVisualStyleBackColor = true;
@@ -1604,7 +1696,7 @@
             this.grpNVIDIAInfo.Controls.Add(this.tvNVIDIAInfo);
             this.grpNVIDIAInfo.Location = new System.Drawing.Point(397, 6);
             this.grpNVIDIAInfo.Name = "grpNVIDIAInfo";
-            this.grpNVIDIAInfo.Size = new System.Drawing.Size(440, 436);
+            this.grpNVIDIAInfo.Size = new System.Drawing.Size(477, 443);
             this.grpNVIDIAInfo.TabIndex = 4;
             this.grpNVIDIAInfo.TabStop = false;
             this.grpNVIDIAInfo.Text = "NVIDIA info";
@@ -1612,7 +1704,7 @@
             // btnRefreshNVIDIAInfo
             // 
             this.btnRefreshNVIDIAInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnRefreshNVIDIAInfo.Location = new System.Drawing.Point(6, 407);
+            this.btnRefreshNVIDIAInfo.Location = new System.Drawing.Point(6, 414);
             this.btnRefreshNVIDIAInfo.Name = "btnRefreshNVIDIAInfo";
             this.btnRefreshNVIDIAInfo.Size = new System.Drawing.Size(75, 23);
             this.btnRefreshNVIDIAInfo.TabIndex = 1;
@@ -1627,7 +1719,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tvNVIDIAInfo.Location = new System.Drawing.Point(6, 19);
             this.tvNVIDIAInfo.Name = "tvNVIDIAInfo";
-            this.tvNVIDIAInfo.Size = new System.Drawing.Size(428, 382);
+            this.tvNVIDIAInfo.Size = new System.Drawing.Size(465, 389);
             this.tvNVIDIAInfo.TabIndex = 0;
             // 
             // groupBox3
@@ -1669,19 +1761,12 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // miAmdCopyId
-            // 
-            this.miAmdCopyId.Name = "miAmdCopyId";
-            this.miAmdCopyId.Size = new System.Drawing.Size(184, 22);
-            this.miAmdCopyId.Text = "Copy Id to Clipboard";
-            this.miAmdCopyId.Click += new System.EventHandler(this.miAmdCopyId_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(873, 496);
+            this.ClientSize = new System.Drawing.Size(986, 503);
             this.Controls.Add(this.tcMain);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(800, 535);
@@ -1701,7 +1786,10 @@
             this.tabAMD.PerformLayout();
             this.mnuAmdPresets.ResumeLayout(false);
             this.tabLG.ResumeLayout(false);
-            this.tabLG.PerformLayout();
+            this.scLgController.Panel1.ResumeLayout(false);
+            this.scLgController.Panel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.scLgController)).EndInit();
+            this.scLgController.ResumeLayout(false);
             this.mnuLgButtons.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
             this.grpNvidiaOptions.ResumeLayout(false);
@@ -1750,27 +1838,10 @@
         private System.Windows.Forms.ToolStripMenuItem miToggleHDR;
         private System.Windows.Forms.ToolStripMenuItem miHDREnabled;
         private System.Windows.Forms.Label lblError;
-        private System.Windows.Forms.Label lblLgError;
-        private System.Windows.Forms.Button btnCloneLg;
-        private System.Windows.Forms.Button btnSetShortcutLg;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox edtShortcutLg;
-        private System.Windows.Forms.Button btnApplyLg;
-        private System.Windows.Forms.ListView lvLgPresets;
-        private System.Windows.Forms.TextBox edtStepsLg;
-        private System.Windows.Forms.Label lblStepsLg;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox edtNameLg;
         private System.Windows.Forms.Button btnNvPresetDelete;
         private System.Windows.Forms.Button btnAddModesNv;
-        private System.Windows.Forms.Label lblDeviceFilter;
-        private System.Windows.Forms.TextBox edtLgDeviceFilter;
-        private System.Windows.Forms.ComboBox cbxLgApps;
-        private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ToolStripMenuItem miNvApply;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        private System.Windows.Forms.Button btnDeleteLg;
-        private System.Windows.Forms.Button btnAddLg;
         private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
@@ -1788,15 +1859,10 @@
         private System.Windows.Forms.Label lblInfo;
         private System.Windows.Forms.GroupBox grpNVIDIAInfo;
         private System.Windows.Forms.TreeView tvNVIDIAInfo;
-        private System.Windows.Forms.Button btnLgRefreshApps;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.ComboBox cbxLgDevices;
         private System.Windows.Forms.Button btnRefreshNVIDIAInfo;
-        private System.Windows.Forms.Button btnLgAddButton;
         private System.Windows.Forms.ContextMenuStrip mnuLgButtons;
         private System.Windows.Forms.ToolStripMenuItem mnuNvPresetsColorSettings;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetColorSettings;
-        private System.Windows.Forms.CheckedListBox clbLgPower;
         private System.Windows.Forms.GroupBox grpLGOptions;
         private System.Windows.Forms.NumericUpDown edtLgMaxPowerOnRetries;
         private System.Windows.Forms.Label lblLgMaxPowerOnRetries;
@@ -1813,7 +1879,6 @@
         private System.Windows.Forms.TabPage tabAMD;
         private System.Windows.Forms.Label lblErrorAMD;
         private System.Windows.Forms.Button btnClearLog;
-        private System.Windows.Forms.Button btnLgDeviceFilterRefresh;
         private System.Windows.Forms.GroupBox grpNvidiaOptions;
         private System.Windows.Forms.PictureBox pbGradient;
         private System.Windows.Forms.Label lblDitheringMode;
@@ -1831,7 +1896,6 @@
         private System.Windows.Forms.ToolStripMenuItem spatialDynamic2x2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem spatialStatic2x2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
-        private System.Windows.Forms.Button btnLGRemoteControl;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetApplyOnStartup;
         private System.Windows.Forms.CheckBox chkLgOldWolMechanism;
         private System.Windows.Forms.ToolStripMenuItem mnuLgRcButtons;
@@ -1868,6 +1932,37 @@
         private System.Windows.Forms.Label lblAmdPresetName;
         private System.Windows.Forms.TextBox edtAmdPresetName;
         private System.Windows.Forms.ToolStripMenuItem miAmdCopyId;
+        private System.Windows.Forms.SplitContainer scLgController;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ComboBox cbxLgDevices;
+        private System.Windows.Forms.Button btnLgDeviceConvertToCustom;
+        private System.Windows.Forms.ComboBox cbxLgApps;
+        private System.Windows.Forms.ListView lvLgPresets;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ComboBox cbxLgPresetDevice;
+        private System.Windows.Forms.Button btnDeleteLg;
+        private System.Windows.Forms.Button btnApplyLg;
+        private System.Windows.Forms.Label lblDeviceFilter;
+        private System.Windows.Forms.Label lblLgPresetDevice;
+        private System.Windows.Forms.Button btnAddLg;
+        private System.Windows.Forms.TextBox edtShortcutLg;
+        private System.Windows.Forms.TextBox edtLgDeviceFilter;
+        private System.Windows.Forms.Button btnLgRemoveDevice;
+        private System.Windows.Forms.Button btnLgRefreshApps;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button btnLgAddDevice;
+        private System.Windows.Forms.TextBox edtNameLg;
+        private System.Windows.Forms.Button btnSetShortcutLg;
+        private System.Windows.Forms.TextBox edtStepsLg;
+        private System.Windows.Forms.Button btnLgAddButton;
+        private System.Windows.Forms.Button btnCloneLg;
+        private System.Windows.Forms.Label lblStepsLg;
+        private System.Windows.Forms.Button btnLgDeviceFilterRefresh;
+        private System.Windows.Forms.CheckedListBox clbLgPower;
+        private System.Windows.Forms.Label lblLgError;
+        private System.Windows.Forms.CheckBox chkLgRemoteControlShow;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
 

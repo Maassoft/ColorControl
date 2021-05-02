@@ -91,7 +91,7 @@ namespace LgTv
 
         public async Task<bool> Connect()
         {
-            var ctx =  _connection.Connect(new Uri(webSocketUri));
+            var ctx = _connection.Connect(new Uri(webSocketUri));
             return await ctx;
         }
 
@@ -365,6 +365,12 @@ namespace LgTv
             return (string)response.sessionId;
         }
 
+        public async Task Test()
+        {
+            var msg = JObject.Parse(@"{ ""configs"": { ""tv.model.motionProMode"": ""OLED Motion Pro"" } }");
+            var requestMessage = new RequestMessage("luna://com.webos.service.config/setConfigs", msg);
+            var response = await _connection.SendCommandAsync(requestMessage);
+        }
 
         public void Close()
         {

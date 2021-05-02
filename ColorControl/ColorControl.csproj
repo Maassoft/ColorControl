@@ -27,7 +27,7 @@
     <ProductName>ColorControl</ProductName>
     <PublisherName>Maassoft</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>2.2.0.0</ApplicationVersion>
+    <ApplicationVersion>3.0.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -177,6 +177,18 @@
     <Compile Include="ADLWrapper.cs" />
     <Compile Include="AmdDisplayInfo.cs" />
     <Compile Include="AppContext.cs" />
+    <Compile Include="LgDevice.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="RemoteControlPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RemoteControlPanel.Designer.cs">
+      <DependentUpon>RemoteControlPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserSessionInfo.cs" />
     <Compile Include="ServiceBase.cs" />
     <Compile Include="NvDisplayInfo.cs" />
@@ -226,20 +238,21 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Resources\RC_coords.txt" />
+    <None Include="Resources\LG_remote.jpg" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
     <EmbeddedResource Include="RemoteControlForm.resx">
       <DependentUpon>RemoteControlForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RemoteControlPanel.resx">
+      <DependentUpon>RemoteControlPanel.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="ColorControl_TemporaryKey.pfx" />
     <Content Include="LgPresets.json">
