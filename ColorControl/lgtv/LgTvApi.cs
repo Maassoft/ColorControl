@@ -417,6 +417,19 @@ namespace LgTv
             }
         }
 
+        public async Task<dynamic> GetSystemInfo(params string[] keys)
+        {
+            var payload = new
+            {
+                keys = keys
+            };
+
+            var requestMessage = new RequestMessage("ssap://system/getSystemInfo", payload);
+            var command = _connection.SendCommandAsync(requestMessage);
+            var res = await command;
+            return res;
+        }
+
         public void Close()
         {
             _connection.Close();

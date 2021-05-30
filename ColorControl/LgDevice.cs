@@ -34,6 +34,9 @@ namespace ColorControl
         [JsonIgnore]
         private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
 
+        [JsonIgnore]
+        public string ModelName { get; private set; }
+
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
@@ -60,7 +63,14 @@ namespace ColorControl
 
                 //Test();
                 //_lgTvApi.Test3();
-                //_lgTvApi.SetSystemSettings();
+                if (_lgTvApi != null)
+                {
+                    var info = await _lgTvApi.GetSystemInfo("modelName");
+                    if (info != null)
+                    {
+                        ModelName = info.modelName;
+                    }
+                }
                 return _lgTvApi != null;
             }
             catch (Exception ex)

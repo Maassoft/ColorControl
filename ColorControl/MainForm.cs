@@ -2440,7 +2440,8 @@ Do you want to continue?"
 
         private void mnuLgExpert_Opening(object sender, CancelEventArgs e)
         {
-            mnuLgOLEDMotionPro.Visible = _lgService.SelectedDevice?.Name.Contains("C9") ?? _lgService.SelectedDevice?.Name.Contains("B9") ?? false;
+            var device = _lgService.SelectedDevice;
+            mnuLgOLEDMotionPro.Visible = device?.ModelName != null ? (device.ModelName.Contains("C9") || device.ModelName.Contains("B9")) : false;
 
             if (mnuLgExpertBacklight.DropDownItems.Count == 0)
             {
