@@ -39,7 +39,7 @@ namespace LgTv
             return null;
         }
 
-        private string _currentPariKey;
+        private string _currentPairKey;
         private string webSocketUri;
 
         public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1)
@@ -75,10 +75,10 @@ namespace LgTv
 
         public async Task MakeHandShake()
         {
-            _currentPariKey = _keyStore.GetClientKey();
-            if (_currentPariKey != null)
+            _currentPairKey = _keyStore.GetClientKey();
+            if (_currentPairKey != null && !_currentPairKey.All(k => k == '\0'))
             {
-                var key = AFTER_PAIR_HAND_SHAKE.Replace("CLIENTKEYGOESHERE", _currentPariKey);
+                var key = AFTER_PAIR_HAND_SHAKE.Replace("CLIENTKEYGOESHERE", _currentPairKey);
                 var conn = await _connection.SendCommandAsync(key);
                 _keyStore.SaveClientKey((string)conn.clientKey);
                 return;
@@ -365,11 +365,56 @@ namespace LgTv
             return (string)response.sessionId;
         }
 
-        public async Task Test()
+        public async Task SetSystemSettings(string key, string value)
         {
-            var msg = JObject.Parse(@"{ ""configs"": { ""tv.model.motionProMode"": ""OLED Motion Pro"" } }");
-            var requestMessage = new RequestMessage("luna://com.webos.service.config/setConfigs", msg);
+            var lunauri = "luna://com.webos.settingsservice/setSystemSettings";
+
+            var @params = JObject.Parse(@"{ ""category"": ""picture"", ""settings"": { """ + key + @""": """ + value + @""" } }");
+
+            await ExecuteRequest(lunauri, @params);
+        }
+
+        public async Task SetConfig(string key, string value)
+        {
+            var lunauri = "luna://com.webos.service.config/setConfigs";
+
+            var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": """ + value + @""" } }");
+
+            await ExecuteRequest(lunauri, @params);
+        }
+
+        private async Task ExecuteRequest(string lunauri, object @params)
+        {
+            var buttons = new[]
+            {
+                new {
+                    label = "",
+                    onClick = lunauri,
+                    @params = @params
+                }
+            };
+
+            var payload = new
+            {
+                message = "Applying...",
+                buttons = buttons,
+                onclose = new { uri = lunauri, @params = @params },
+                onfail = new { uri = lunauri, @params = @params }
+            };
+
+            var requestMessage = new RequestMessage("ssap://system.notifications/createAlert", payload);
             var response = await _connection.SendCommandAsync(requestMessage);
+
+            var alertId = (string)response.alertId;
+            if (alertId != null)
+            {
+                var closeAlert = new
+                {
+                    alertId = alertId
+                };
+                requestMessage = new RequestMessage("ssap://system.notifications/closeAlert", closeAlert);
+                await _connection.SendCommandAsync(requestMessage);
+            }
         }
 
         public void Close()

@@ -482,6 +482,12 @@ namespace ColorControl
                 NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
                 try
                 {
+                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
+                    if (File.Exists(standByScript))
+                    {
+                        Utils.StartProcess(standByScript);
+                    }
+
                     Logger.Debug("Powering off tv...");
                     var task = PowerOffOnShutdownOrResume(PowerOnOffState.StandBy);
                     Utils.WaitForTask(task);

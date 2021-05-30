@@ -696,7 +696,7 @@ namespace ColorControl
             return null;
         }
 
-        public static void StartProcess(string fileName, string arguments)
+        public static void StartProcess(string fileName, string arguments = null)
         {
             var process = Process.Start(fileName, arguments);
         }

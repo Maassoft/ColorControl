@@ -15,6 +15,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -1565,12 +1566,15 @@ namespace ColorControl
         {
             var filename = Path.Combine(_dataDir, "LogFile.txt");
 
-            var log = "No log file found";
+            var lines = new[] { "No log file found" };
             if (File.Exists(filename))
             {
-                log = File.ReadAllText(filename);
+                lines = File.ReadAllLines(filename);
             }
-            edtLog.Text = log;
+            var reversedLines = lines.Reverse().ToList();
+            var builder = new StringBuilder();
+            reversedLines.ForEach(line => builder.AppendLine(line));
+            edtLog.Text = builder.ToString();
         }
 
         private void LoadInfo()
@@ -2432,6 +2436,52 @@ Do you want to continue?"
         {
             scLgController.Panel2Collapsed = !chkLgRemoteControlShow.Checked;
             _lgService.Config.ShowRemoteControl = chkLgRemoteControlShow.Checked;
+        }
+
+        private void mnuLgExpert_Opening(object sender, CancelEventArgs e)
+        {
+            mnuLgOLEDMotionPro.Visible = _lgService.SelectedDevice?.Name.Contains("C9") ?? _lgService.SelectedDevice?.Name.Contains("B9") ?? false;
+
+            if (mnuLgExpertBacklight.DropDownItems.Count == 0)
+            {
+                for (var i = 0; i <= 10; i++)
+                {
+                    var name = (i * 10).ToString();
+
+                    var item = mnuLgExpertBacklight.DropDownItems.Add(name);
+                    item.Click += btnLgExpertBacklight_Click;
+                }
+            }
+        }
+
+        private void btnLgExpert_Click(object sender, EventArgs e)
+        {
+            mnuLgExpert.Show(btnLgExpert, btnLgExpert.PointToClient(Cursor.Position));
+        }
+
+        private void btnLgExpertBacklight_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var backlight = int.Parse(item.Text);
+
+            _lgService.SelectedDevice?.SetBacklight(backlight);
+        }
+
+        private void miLgEnableMotionPro_Click(object sender, EventArgs e)
+        {
+            if (MessageForms.QuestionYesNo("Are you sure you want to enable OLED Motion Pro? This app and its creator are in no way accountable for any damages it may cause to your tv.") == DialogResult.Yes)
+            {
+                _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion Pro");
+
+                MessageForms.InfoOk("Setting applied.");
+            }
+        }
+
+        private void miLgDisableMotionPro_Click(object sender, EventArgs e)
+        {
+            _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion");
+
+            MessageForms.InfoOk("Setting applied.");
         }
     }
 }

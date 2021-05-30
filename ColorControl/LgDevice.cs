@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,6 +59,8 @@ namespace ColorControl
                 _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries);
 
                 //Test();
+                //_lgTvApi.Test3();
+                //_lgTvApi.SetSystemSettings();
                 return _lgTvApi != null;
             }
             catch (Exception ex)
@@ -310,6 +313,15 @@ namespace ColorControl
                 }
             }
 
+            if (result)
+            {
+                var resumeScript = Path.Combine(Program.DataDir, "ResumeScript.bat");
+                if (File.Exists(resumeScript))
+                {
+                    Utils.StartProcess(resumeScript);
+                }
+            }
+
             return result;
         }
 
@@ -353,6 +365,21 @@ namespace ColorControl
         internal void ConvertToCustom()
         {
             IsCustom = true;
+        }
+
+        internal async Task SetBacklight(int backlight)
+        {
+            await _lgTvApi.SetSystemSettings("backlight", backlight.ToString());
+        }
+
+        public async Task SetOLEDMotionPro(string mode)
+        {
+            await _lgTvApi.SetConfig("tv.model.motionProMode", mode);
+        }
+
+        internal async Task SetConfig(string key, string value)
+        {
+            await _lgTvApi.SetConfig(key, value);
         }
     }
 }

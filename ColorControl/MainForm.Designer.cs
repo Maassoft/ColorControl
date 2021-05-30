@@ -104,6 +104,7 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.btnLgExpert = new System.Windows.Forms.Button();
             this.chkLgRemoteControlShow = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.cbxLgDevices = new System.Windows.Forms.ComboBox();
@@ -176,6 +177,11 @@
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            this.mnuLgExpert = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.mnuLgExpertBacklight = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgOLEDMotionPro = new System.Windows.Forms.ToolStripMenuItem();
+            this.miLgEnableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
+            this.miLgDisableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -199,6 +205,7 @@
             this.tabInfo.SuspendLayout();
             this.grpNVIDIAInfo.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.mnuLgExpert.SuspendLayout();
             this.SuspendLayout();
             // 
             // tcMain
@@ -932,6 +939,7 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.btnLgExpert);
             this.scLgController.Panel1.Controls.Add(this.chkLgRemoteControlShow);
             this.scLgController.Panel1.Controls.Add(this.label3);
             this.scLgController.Panel1.Controls.Add(this.cbxLgDevices);
@@ -966,6 +974,17 @@
             this.scLgController.Size = new System.Drawing.Size(948, 447);
             this.scLgController.SplitterDistance = 767;
             this.scLgController.TabIndex = 43;
+            // 
+            // btnLgExpert
+            // 
+            this.btnLgExpert.ContextMenuStrip = this.mnuLgExpert;
+            this.btnLgExpert.Location = new System.Drawing.Point(315, 34);
+            this.btnLgExpert.Name = "btnLgExpert";
+            this.btnLgExpert.Size = new System.Drawing.Size(75, 23);
+            this.btnLgExpert.TabIndex = 44;
+            this.btnLgExpert.Text = "Expert...";
+            this.btnLgExpert.UseVisualStyleBackColor = true;
+            this.btnLgExpert.Click += new System.EventHandler(this.btnLgExpert_Click);
             // 
             // chkLgRemoteControlShow
             // 
@@ -1343,7 +1362,7 @@
             this.grpNvidiaOptions.Controls.Add(this.pbGradient);
             this.grpNvidiaOptions.Location = new System.Drawing.Point(412, 6);
             this.grpNvidiaOptions.Name = "grpNvidiaOptions";
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(514, 304);
+            this.grpNvidiaOptions.Size = new System.Drawing.Size(536, 304);
             this.grpNvidiaOptions.TabIndex = 6;
             this.grpNvidiaOptions.TabStop = false;
             this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
@@ -1407,7 +1426,7 @@
             this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.pbGradient.Location = new System.Drawing.Point(6, 92);
             this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(502, 205);
+            this.pbGradient.Size = new System.Drawing.Size(524, 205);
             this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbGradient.TabIndex = 0;
             this.pbGradient.TabStop = false;
@@ -1668,11 +1687,12 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.edtLog.Location = new System.Drawing.Point(6, 35);
+            this.edtLog.MaxLength = 327670;
             this.edtLog.Multiline = true;
             this.edtLog.Name = "edtLog";
             this.edtLog.ReadOnly = true;
             this.edtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.edtLog.Size = new System.Drawing.Size(920, 415);
+            this.edtLog.Size = new System.Drawing.Size(942, 415);
             this.edtLog.TabIndex = 0;
             // 
             // tabInfo
@@ -1696,7 +1716,7 @@
             this.grpNVIDIAInfo.Controls.Add(this.tvNVIDIAInfo);
             this.grpNVIDIAInfo.Location = new System.Drawing.Point(397, 6);
             this.grpNVIDIAInfo.Name = "grpNVIDIAInfo";
-            this.grpNVIDIAInfo.Size = new System.Drawing.Size(477, 443);
+            this.grpNVIDIAInfo.Size = new System.Drawing.Size(551, 443);
             this.grpNVIDIAInfo.TabIndex = 4;
             this.grpNVIDIAInfo.TabStop = false;
             this.grpNVIDIAInfo.Text = "NVIDIA info";
@@ -1719,7 +1739,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tvNVIDIAInfo.Location = new System.Drawing.Point(6, 19);
             this.tvNVIDIAInfo.Name = "tvNVIDIAInfo";
-            this.tvNVIDIAInfo.Size = new System.Drawing.Size(465, 389);
+            this.tvNVIDIAInfo.Size = new System.Drawing.Size(539, 389);
             this.tvNVIDIAInfo.TabIndex = 0;
             // 
             // groupBox3
@@ -1760,6 +1780,45 @@
             this.lblInfo.Size = new System.Drawing.Size(25, 13);
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
+            // 
+            // mnuLgExpert
+            // 
+            this.mnuLgExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuLgExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuLgExpertBacklight,
+            this.mnuLgOLEDMotionPro});
+            this.mnuLgExpert.Name = "mnuLgButtons";
+            this.mnuLgExpert.Size = new System.Drawing.Size(236, 70);
+            this.mnuLgExpert.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgExpert_Opening);
+            // 
+            // mnuLgExpertBacklight
+            // 
+            this.mnuLgExpertBacklight.Name = "mnuLgExpertBacklight";
+            this.mnuLgExpertBacklight.Size = new System.Drawing.Size(235, 22);
+            this.mnuLgExpertBacklight.Text = "Backlight";
+            // 
+            // mnuLgOLEDMotionPro
+            // 
+            this.mnuLgOLEDMotionPro.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miLgEnableMotionPro,
+            this.miLgDisableMotionPro});
+            this.mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
+            this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(235, 22);
+            this.mnuLgOLEDMotionPro.Text = "OLED Motion Pro (B9/C9 only)";
+            // 
+            // miLgEnableMotionPro
+            // 
+            this.miLgEnableMotionPro.Name = "miLgEnableMotionPro";
+            this.miLgEnableMotionPro.Size = new System.Drawing.Size(207, 22);
+            this.miLgEnableMotionPro.Text = "Enable OLED Motion Pro";
+            this.miLgEnableMotionPro.Click += new System.EventHandler(this.miLgEnableMotionPro_Click);
+            // 
+            // miLgDisableMotionPro
+            // 
+            this.miLgDisableMotionPro.Name = "miLgDisableMotionPro";
+            this.miLgDisableMotionPro.Size = new System.Drawing.Size(207, 22);
+            this.miLgDisableMotionPro.Text = "Disable OLED Motion Pro";
+            this.miLgDisableMotionPro.Click += new System.EventHandler(this.miLgDisableMotionPro_Click);
             // 
             // MainForm
             // 
@@ -1811,6 +1870,7 @@
             this.grpNVIDIAInfo.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            this.mnuLgExpert.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -1963,6 +2023,12 @@
         private System.Windows.Forms.Label lblLgError;
         private System.Windows.Forms.CheckBox chkLgRemoteControlShow;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private System.Windows.Forms.Button btnLgExpert;
+        private System.Windows.Forms.ContextMenuStrip mnuLgExpert;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgExpertBacklight;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgOLEDMotionPro;
+        private System.Windows.Forms.ToolStripMenuItem miLgEnableMotionPro;
+        private System.Windows.Forms.ToolStripMenuItem miLgDisableMotionPro;
     }
 }
 

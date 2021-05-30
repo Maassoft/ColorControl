@@ -2,6 +2,8 @@
 {
     public class AppContext
     {
+        public static AppContext CurrentContext { get; private set; }
+
         public Config Config { get; private set; }
 
         public StartUpParams StartUpParams { get; private set; }
@@ -10,6 +12,8 @@
         {
             Config = config;
             StartUpParams = startUpParams;
+
+            CurrentContext = this;
         }
     }
 }
