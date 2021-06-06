@@ -532,6 +532,9 @@ namespace ColorControl
             _monitorTaskCounter++;
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
+            //const int minBacklight = 30;
+            //const int maxBacklight = 50;
+            //var lastBacklight = minBacklight;
 
             while (Devices.Any(d => d.PowerSwitchOnScreenSaver) && validCounter == _monitorTaskCounter)
             {
@@ -579,6 +582,20 @@ namespace ColorControl
                         Logger.Debug("Screensaver check: TV(s) where not connected, but connection has now been established");
                         wasConnected = true;
                     }
+
+                    //if (Utils.IsForegroundFullScreen())
+                    //{
+                    //    if (lastBacklight != maxBacklight)
+                    //    {
+                    //        SelectedDevice?.SetBacklight(maxBacklight);
+                    //        lastBacklight = maxBacklight;
+                    //    }
+                    //}
+                    //else if (lastBacklight != minBacklight)
+                    //{
+                    //    SelectedDevice?.SetBacklight(minBacklight);
+                    //    lastBacklight = minBacklight;
+                    //}
 
                     var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
 

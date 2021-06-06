@@ -1645,8 +1645,62 @@ namespace ColorControl
         private void miLgAddAction_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripItem;
+            var action = item.Tag as LgDevice.InvokableAction;
 
-            AddToLgSteps(item.Text);
+            var text = item.Text;
+
+            var value = string.Empty;
+
+            if (action.EnumType == null)
+            {
+                var values = MessageForms.ShowDialog("Enter value", new[] {
+                    new MessageForms.FieldDefinition 
+                    { 
+                        Label = "Enter desired " + text, 
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = action.MinValue,
+                        MaxValue = action.MaxValue
+                    } 
+                });
+
+                if (!values.Any())
+                {
+                    return;
+                }
+
+                value = values.First();
+            }
+            else
+            {
+                var dropDownValues = new List<string>();
+                foreach (var enumValue in Enum.GetValues(action.EnumType))
+                {
+                    dropDownValues.Add(enumValue.ToString());
+                }
+
+                var values = MessageForms.ShowDialog("Choose value", new[] {
+                    new MessageForms.FieldDefinition
+                    { 
+                        Label = "Choose desired " + text, 
+                        FieldType = MessageForms.FieldType.DropDown, 
+                        Values = dropDownValues 
+                    } 
+                });
+
+                if (!values.Any())
+                {
+                    return;
+                }
+
+                value = values.First();
+            }
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                text += $"({value})";
+            }
+
+            AddToLgSteps(text);
         }
 
         private void AddToLgSteps(string step)
@@ -2402,11 +2456,12 @@ Do you want to continue?";
             var device = _lgService.GetPresetDevice(preset);
 
             var actions = device?.GetInvokableActions();
-            foreach (var keyValuePair in actions)
+            foreach (var action in actions)
             {
-                var text = keyValuePair.Key;
+                var text = action.Name;
 
                 var item = mnuLgActions.DropDownItems.Add(text);
+                item.Tag = action;
                 item.Click += miLgAddAction_Click;
             }
 
@@ -2441,7 +2496,9 @@ Do you want to continue?"
         private void mnuLgExpert_Opening(object sender, CancelEventArgs e)
         {
             var device = _lgService.SelectedDevice;
-            mnuLgOLEDMotionPro.Visible = device?.ModelName != null ? (device.ModelName.Contains("C9") || device.ModelName.Contains("B9")) : false;
+            var visible = device?.ModelName != null ? (device.ModelName.Contains("C9") || device.ModelName.Contains("B9")) : false;
+            mnuLgOLEDMotionPro.Visible = visible;
+            miLgExpertSeparator1.Visible = visible;
 
             if (mnuLgExpertBacklight.DropDownItems.Count == 0)
             {
@@ -2453,6 +2510,18 @@ Do you want to continue?"
                     item.Click += btnLgExpertBacklight_Click;
                 }
             }
+
+            // Does not work yet, getting a "401 no permissions" error
+            //var task = device?.GetPictureSettings();
+            //var settings = Utils.WaitForTask<dynamic>(task);
+
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Picture Mode", typeof(PictureMode), btnLgExpertColorGamut_Click, "pictureMode");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Color Gamut", typeof(ColorGamut), btnLgExpertColorGamut_Click, "colorGamut");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Dynamic Contrast", typeof(OffToAuto), btnLgExpertColorGamut_Click, "dynamicContrast");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Smooth Gradation", typeof(OffToAuto), btnLgExpertColorGamut_Click, "smoothGradation");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Peak Brightness", typeof(OffToAuto), btnLgExpertColorGamut_Click, "peakBrightness");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "OLED Motion Pro", typeof(OffToHigh), btnLgExpertColorGamut_Click, "motionProOLED");
+            Utils.BuildDropDownMenuEx(mnuLgExpert, "Energy Saving", typeof(EnergySaving), btnLgExpertColorGamut_Click, "energySaving");
         }
 
         private void btnLgExpert_Click(object sender, EventArgs e)
@@ -2466,6 +2535,15 @@ Do you want to continue?"
             var backlight = int.Parse(item.Text);
 
             _lgService.SelectedDevice?.SetBacklight(backlight);
+        }
+
+        private void btnLgExpertColorGamut_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var name = item.Tag.ToString();
+            var value = item.Text;
+
+            _lgService.SelectedDevice?.SetSystemSettings(name, value);
         }
 
         private void miLgEnableMotionPro_Click(object sender, EventArgs e)
@@ -2483,6 +2561,14 @@ Do you want to continue?"
             _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion");
 
             MessageForms.InfoOk("Setting applied.");
+        }
+
+        private void cbxLgApps_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == ((char)Keys.Back))
+            {
+                cbxLgApps.SelectedIndex = -1;
+            }
         }
     }
 }

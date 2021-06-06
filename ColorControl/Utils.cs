@@ -18,6 +18,7 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
+using System.Windows;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
@@ -511,9 +512,28 @@ namespace ColorControl
             }
         }
 
-        public static void BuildDropDownMenu(ToolStripMenuItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent)
+        public static void BuildDropDownMenuEx(ContextMenuStrip mnuParent, string name, Type enumType, EventHandler clickEvent, object tag = null)
         {
-            PropertyInfo property;
+            var subMenuName = $"{mnuParent.Name}_{name}";
+            var subMenuItems = mnuParent.Items.Find(subMenuName, false);
+            ToolStripMenuItem subMenuItem;
+            if (subMenuItems.Length == 0)
+            {
+                subMenuItem = (ToolStripMenuItem)mnuParent.Items.Add(name);
+                subMenuItem.Name = subMenuName;
+
+                foreach (var enumValue in Enum.GetValues(enumType))
+                {
+                    var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
+                    item.Tag = tag;
+                    item.Click += clickEvent;
+                }
+            }
+        }
+
+        public static void BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent)
+        {
+            PropertyInfo property = null;
             var subMenuItems = mnuParent.DropDownItems.Find("miColorSettings_" + name, false);
             ToolStripMenuItem subMenuItem;
             if (subMenuItems.Length == 0)
@@ -521,8 +541,11 @@ namespace ColorControl
                 subMenuItem = (ToolStripMenuItem)mnuParent.DropDownItems.Add(name);
                 subMenuItem.Name = "miColorSettings_" + name;
 
-                property = colorData.GetType().GetDeclaredProperty(propertyName);
-                subMenuItem.Tag = property;
+                if (colorData != null)
+                {
+                    property = colorData.GetType().GetDeclaredProperty(propertyName);
+                    subMenuItem.Tag = property;
+                }
 
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
@@ -537,6 +560,10 @@ namespace ColorControl
                 property = (PropertyInfo)subMenuItem.Tag;
             }
 
+            if (colorData == null)
+            {
+                return;
+            }
             var value = property.GetValue(colorData);
 
             foreach (var item in subMenuItem.DropDownItems)
@@ -714,6 +741,41 @@ namespace ColorControl
 
                 return result;
             }
+        }
+
+        public static bool IsForegroundFullScreen(Screen screen = null)
+        {
+
+            if (screen == null)
+            {
+                screen = Screen.PrimaryScreen;
+            }
+            tagRECT rect = new tagRECT();
+            IntPtr hWnd = (IntPtr)NativeMethods.GetForegroundWindow();
+
+
+            NativeMethods.GetWindowRect(hWnd, out rect);
+
+            /* in case you want the process name:
+            uint procId = 0;
+            GetWindowThreadProcessId(hWnd, out procId);
+            var proc = System.Diagnostics.Process.GetProcessById((int)procId);
+            Console.WriteLine(proc.ProcessName);
+            */
+
+
+            if (screen.Bounds.Width <= (rect.right - rect.left) && screen.Bounds.Height <= (rect.bottom - rect.top))
+            {
+                Console.WriteLine("Fullscreen!");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Nope, :-(");
+                return false;
+            }
+
+
         }
     }
 

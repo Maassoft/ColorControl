@@ -11,6 +11,15 @@ namespace ColorControl
 {
     class LgDevice
     {
+        public class InvokableAction
+        {
+            public Func<Dictionary<string, string>, bool> Function { get; set; }
+            public string Name { get; set; }
+            public Type EnumType { get; set; }
+            public decimal MinValue { get; set; }
+            public decimal MaxValue { get; set; }
+        }
+
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public string Name { get; private set; }
@@ -32,7 +41,7 @@ namespace ColorControl
         private bool _justWokeUp;
 
         [JsonIgnore]
-        private Dictionary<string, Func<bool>> _invokableActions = new Dictionary<string, Func<bool>>();
+        private List<InvokableAction> _invokableActions = new List<InvokableAction>();
 
         [JsonIgnore]
         public string ModelName { get; private set; }
@@ -46,7 +55,42 @@ namespace ColorControl
             IsCustom = isCustom;
             IsDummy = isDummy;
 
-            _invokableActions.Add("WOL", new Func<bool>(Wake));
+            AddInvokableAction("WOL", new Func<Dictionary<string, string>, bool>(WakeAction));
+            AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
+            AddGenericPictureAction("brightness", minValue: 0, maxValue: 100);
+            AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
+            AddGenericPictureAction("color", minValue: 0, maxValue: 100);
+            AddGenericPictureAction("pictureMode", typeof(PictureMode));
+            AddGenericPictureAction("colorGamut", typeof(ColorGamut));
+            AddGenericPictureAction("dynamicContrast", typeof(OffToAuto));
+            AddGenericPictureAction("peakBrightness", typeof(OffToAuto));
+            AddGenericPictureAction("smoothGradation", typeof(OffToAuto));
+            AddGenericPictureAction("energySaving", typeof(EnergySaving));
+            //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
+            AddGenericPictureAction("motionProOLED", typeof(OffToHigh));
+        }
+
+        private void AddInvokableAction(string name, Func<Dictionary<string, string>, bool> function)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                Function = function
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                Function = new Func<Dictionary<string, string>, bool>(GenericPictureAction),
+                EnumType = type
+            };
+
+            _invokableActions.Add(action);
         }
 
         public override string ToString()
@@ -177,8 +221,22 @@ namespace ColorControl
             {
                 var keySpec = step.Split(':');
                 var key = keySpec[0].ToUpper();
-                if (_invokableActions.ContainsKey(key))
+                var index = key.IndexOf("(");
+                string[] parameters = null;
+                if (index > -1)
                 {
+                    var keyValue = keySpec[0].Split('(');
+                    key = keyValue[0];
+                    parameters = keyValue[1].Substring(0, keyValue[1].Length - 1).Split(',');
+                }
+                var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (action != null)
+                {
+                    if (!key.Equals("WOL"))
+                    {
+                        ExecuteAction(action, parameters);
+                    }
+
                     continue;
                 }
 
@@ -191,6 +249,24 @@ namespace ColorControl
                     SendKey(mouse, key);
                 }
             }
+        }
+
+        private void ExecuteAction(InvokableAction action, string[] parameters)
+        {
+            var function = action.Function;
+
+            if (parameters?.Length > 0)
+            {
+                var keyValues = new Dictionary<string, string> {
+                    { "name", action.Name },
+                    { "value", parameters[0] } 
+                };
+
+                function(keyValues);
+                return;
+            }
+
+            function(null);
         }
 
         private void SendKey(LgWebOsMouseService mouse, string key, int delay = 180)
@@ -335,7 +411,7 @@ namespace ColorControl
             return result;
         }
 
-        public Dictionary<string, Func<bool>> GetInvokableActions()
+        public List<InvokableAction> GetInvokableActions()
         {
             return _invokableActions;
         }
@@ -390,6 +466,31 @@ namespace ColorControl
         internal async Task SetConfig(string key, string value)
         {
             await _lgTvApi.SetConfig(key, value);
+        }
+        internal async Task SetSystemSettings(string name, string value)
+        {
+            await _lgTvApi.SetSystemSettings(name, value);
+        }
+
+        internal async Task<dynamic> GetPictureSettings()
+        {
+            var keys = new[] { "backlight", "brightness", "contrast", "color", "pictureMode", "colorGamut", "dynamicContrast", "peakBrightness", "smoothGradation", "energySaving", "motionProOLED" };
+
+            return await _lgTvApi.GetSystemSettings("picture", keys);
+        }
+
+        private bool WakeAction(Dictionary<string, string> parameters)
+        {
+            return Wake();
+        }
+
+        private bool GenericPictureAction(Dictionary<string, string> parameters)
+        {
+            var settingName = parameters["name"];
+            var task = _lgTvApi.SetSystemSettings(settingName, parameters["value"]);
+            Utils.WaitForTask(task);
+
+            return true;
         }
     }
 }

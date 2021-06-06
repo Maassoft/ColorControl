@@ -170,7 +170,7 @@ namespace LgTv
                         if (id == "register_0") return;
                         if (obj.type == "error")
                         {
-                            taskCompletion.SetException(new Exception(obj.error));
+                            taskCompletion.SetException(new Exception(obj.error?.ToString()));
                         }
                         //else if (args.Cancelled)
                         //{

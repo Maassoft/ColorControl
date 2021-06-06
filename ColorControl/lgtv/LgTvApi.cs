@@ -16,6 +16,57 @@ namespace LgTv
         OK,
         Exit
     }
+
+    public enum PictureMode
+    {
+        cinema, eco, expert1, expert2, game,
+        normal, photo, sports, technicolor, vivid, hdrEffect, hdrCinema,
+        hdrCinemaBright, hdrExternal, hdrGame, hdrStandard, hdrTechnicolor,
+        hdrVivid, dolbyHdrCinema, dolbyHdrCinemaBright, dolbyHdrDarkAmazon,
+        dolbyHdrGame, dolbyHdrStandard, dolbyHdrVivid, dolbyStandard
+    }
+
+    public enum OffToHigh
+    {
+        off,
+        low,
+        medium,
+        high
+    }
+
+    public enum OffToAuto
+    {
+        off,
+        low,
+        medium,
+        high,
+        auto
+    }
+
+    public enum ColorGamut
+    {
+        auto,
+        extended,
+        wide,
+        srgb
+    }
+
+    public enum EnergySaving
+    {
+        auto,
+        off,
+        min,
+        med,
+        max,
+        screen_off
+    }
+
+    public enum TruMotionMode
+    {
+        off,
+        user
+    }
+
     public class LgTvApi:IDisposable
     {
         public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
@@ -365,11 +416,13 @@ namespace LgTv
             return (string)response.sessionId;
         }
 
-        public async Task SetSystemSettings(string key, string value)
+        public async Task SetSystemSettings(string key, string value, string category = "picture")
         {
             var lunauri = "luna://com.webos.settingsservice/setSystemSettings";
 
-            var @params = JObject.Parse(@"{ ""category"": ""picture"", ""settings"": { """ + key + @""": """ + value + @""" } }");
+            var json = @"{ ""category"": """ + category + @""", ""settings"": { """ + key + @""": """ + value + @""" } }";
+
+            var @params = JObject.Parse(json);
 
             await ExecuteRequest(lunauri, @params);
         }
@@ -425,6 +478,20 @@ namespace LgTv
             };
 
             var requestMessage = new RequestMessage("ssap://system/getSystemInfo", payload);
+            var command = _connection.SendCommandAsync(requestMessage);
+            var res = await command;
+            return res;
+        }
+
+        public async Task<dynamic> GetSystemSettings(string category, params string[] keys)
+        {
+            var payload = new
+            {
+                category = category,
+                keys = keys
+            };
+
+            var requestMessage = new RequestMessage("ssap://settings/getSystemSettings", payload);
             var command = _connection.SendCommandAsync(requestMessage);
             var res = await command;
             return res;

@@ -18,7 +18,7 @@ namespace ColorControl
         /// <param name="environmentStackTrace">Environment stack trace, for pulling additional stack frames.</param>
         public static string ToLogString(this Exception exception, string environmentStackTrace = "")
         {
-            List<string> environmentStackTraceLines = ExceptionExtensions.GetUserStackTraceLines(environmentStackTrace);
+            List<string> environmentStackTraceLines = GetUserStackTraceLines(environmentStackTrace);
             if (environmentStackTraceLines.Any())
             {
                 environmentStackTraceLines.RemoveAt(0);
@@ -29,7 +29,14 @@ namespace ColorControl
 
             string fullStackTrace = String.Join(Environment.NewLine, stackTraceLines);
 
-            string logMessage = exception.Message + Environment.NewLine + fullStackTrace;
+            string logMessage = exception.Message + Environment.NewLine;
+
+            if (exception.InnerException != null)
+            {
+                logMessage += $"Inner exception: {exception.InnerException.Message}{Environment.NewLine}";
+            }
+                
+            logMessage += fullStackTrace;
             return logMessage;
         }
 
@@ -51,7 +58,7 @@ namespace ColorControl
             List<string> outputList = new List<string>();
             Regex regex = new Regex(@"([^\)]*\)) in (.*):([A-z]*) (\d)*$");
 
-            List<string> stackTraceLines = ExceptionExtensions.GetStackTraceLines(fullStackTrace);
+            List<string> stackTraceLines = GetStackTraceLines(fullStackTrace);
             foreach (string stackTraceLine in stackTraceLines)
             {
                 if (!regex.IsMatch(stackTraceLine))
