@@ -1653,22 +1653,25 @@ namespace ColorControl
 
             if (action.EnumType == null)
             {
-                var values = MessageForms.ShowDialog("Enter value", new[] {
-                    new MessageForms.FieldDefinition 
-                    { 
-                        Label = "Enter desired " + text, 
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = action.MinValue,
-                        MaxValue = action.MaxValue
-                    } 
-                });
-
-                if (!values.Any())
+                if (action.MinValue != action.MaxValue)
                 {
-                    return;
-                }
+                    var values = MessageForms.ShowDialog("Enter value", new[] {
+                    new MessageForms.FieldDefinition
+                        {
+                            Label = "Enter desired " + text,
+                            FieldType = MessageForms.FieldType.Numeric,
+                            MinValue = action.MinValue,
+                            MaxValue = action.MaxValue
+                        }
+                    });
 
-                value = values.First();
+                    if (!values.Any())
+                    {
+                        return;
+                    }
+
+                    value = values.First();
+                }
             }
             else
             {
@@ -2496,7 +2499,10 @@ Do you want to continue?"
         private void mnuLgExpert_Opening(object sender, CancelEventArgs e)
         {
             var device = _lgService.SelectedDevice;
-            var visible = device?.ModelName != null ? (device.ModelName.Contains("C9") || device.ModelName.Contains("B9")) : false;
+
+            var eligibleModels = new[] { "B9", "C9", "E9", "W9" };
+
+            var visible = device?.ModelName != null ? eligibleModels.Any(m => device.ModelName.Contains(m)) : false;
             mnuLgOLEDMotionPro.Visible = visible;
             miLgExpertSeparator1.Visible = visible;
 

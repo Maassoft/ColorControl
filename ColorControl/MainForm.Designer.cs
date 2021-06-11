@@ -106,11 +106,11 @@
             this.scLgController = new System.Windows.Forms.SplitContainer();
             this.btnLgExpert = new System.Windows.Forms.Button();
             this.mnuLgExpert = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.mnuLgExpertBacklight = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLgOLEDMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.miLgEnableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.miLgDisableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.miLgExpertSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.mnuLgExpertBacklight = new System.Windows.Forms.ToolStripMenuItem();
             this.chkLgRemoteControlShow = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.cbxLgDevices = new System.Windows.Forms.ComboBox();
@@ -994,14 +994,8 @@
             this.miLgExpertSeparator1,
             this.mnuLgExpertBacklight});
             this.mnuLgExpert.Name = "mnuLgButtons";
-            this.mnuLgExpert.Size = new System.Drawing.Size(282, 76);
+            this.mnuLgExpert.Size = new System.Drawing.Size(321, 76);
             this.mnuLgExpert.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgExpert_Opening);
-            // 
-            // mnuLgExpertBacklight
-            // 
-            this.mnuLgExpertBacklight.Name = "mnuLgExpertBacklight";
-            this.mnuLgExpertBacklight.Size = new System.Drawing.Size(281, 22);
-            this.mnuLgExpertBacklight.Text = "Backlight";
             // 
             // mnuLgOLEDMotionPro
             // 
@@ -1009,8 +1003,8 @@
             this.miLgEnableMotionPro,
             this.miLgDisableMotionPro});
             this.mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
-            this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(281, 22);
-            this.mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9 only)";
+            this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(320, 22);
+            this.mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9 only)";
             // 
             // miLgEnableMotionPro
             // 
@@ -1029,7 +1023,13 @@
             // miLgExpertSeparator1
             // 
             this.miLgExpertSeparator1.Name = "miLgExpertSeparator1";
-            this.miLgExpertSeparator1.Size = new System.Drawing.Size(278, 6);
+            this.miLgExpertSeparator1.Size = new System.Drawing.Size(317, 6);
+            // 
+            // mnuLgExpertBacklight
+            // 
+            this.mnuLgExpertBacklight.Name = "mnuLgExpertBacklight";
+            this.mnuLgExpertBacklight.Size = new System.Drawing.Size(320, 22);
+            this.mnuLgExpertBacklight.Text = "Backlight";
             // 
             // chkLgRemoteControlShow
             // 
