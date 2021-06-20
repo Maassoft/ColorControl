@@ -429,6 +429,12 @@ namespace ColorControl
                                                  state == PowerOnOffState.ScreenSaver && d.PowerSwitchOnScreenSaver);
             foreach (var device in wakeDevices)
             {
+                if (device.PoweredOffBy == LgDevice.PowerOffSource.Manually)
+                {
+                    Logger.Debug($"[{device.Name}]: device was manually powered off by user, not powering on");
+                    continue;
+                }
+
                 device.DisposeConnection();
                 var _ = device.WakeAndConnectWithRetries(Config.PowerOnRetries);
             }

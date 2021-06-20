@@ -994,7 +994,7 @@
             this.miLgExpertSeparator1,
             this.mnuLgExpertBacklight});
             this.mnuLgExpert.Name = "mnuLgButtons";
-            this.mnuLgExpert.Size = new System.Drawing.Size(321, 76);
+            this.mnuLgExpert.Size = new System.Drawing.Size(321, 54);
             this.mnuLgExpert.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgExpert_Opening);
             // 
             // mnuLgOLEDMotionPro
@@ -1056,6 +1056,7 @@
             // cbxLgDevices
             // 
             this.cbxLgDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgDevices.DropDownWidth = 400;
             this.cbxLgDevices.FormattingEnabled = true;
             this.cbxLgDevices.Location = new System.Drawing.Point(86, 8);
             this.cbxLgDevices.Name = "cbxLgDevices";

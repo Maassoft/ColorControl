@@ -9,10 +9,14 @@ namespace LgTv
             Prefix = prefix;
             Uri = uri;
         }
-        public RequestMessage(string uri,object payload)
+        public RequestMessage(string uri, object payload, string type = "request")
         {
             Uri = uri;
-            Payload = JsonConvert.SerializeObject(payload);
+            if (payload != null)
+            {
+                Payload = JsonConvert.SerializeObject(payload);
+            }
+            Type = type;
         }
 
         public string Prefix { get; set; }

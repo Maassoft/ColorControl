@@ -52,6 +52,7 @@ namespace ColorControl
         private StartUpParams StartUpParams { get; }
 
         private AmdService _amdService;
+        private bool _skipResize;
 
         public MainForm(AppContext appContext)
         {
@@ -541,6 +542,11 @@ namespace ColorControl
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
+            if (_skipResize)
+            {
+                return;
+            }
+
             if (WindowState == FormWindowState.Minimized)
             {
                 if (_config.MinimizeToTray)
@@ -578,8 +584,16 @@ namespace ColorControl
                 Utils.RegisterShortcut(Handle, SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut);
             }
 
-            Width = _config.FormWidth;
-            Height = _config.FormHeight;
+            _skipResize = true;
+            try
+            {
+                Width = _config.FormWidth;
+                Height = _config.FormHeight;
+            }
+            finally
+            {
+                _skipResize = false;
+            }
         }
 
         private void SaveConfig()

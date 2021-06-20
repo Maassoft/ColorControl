@@ -307,7 +307,7 @@ namespace LgTv
         }
         public async Task<IEnumerable<ExternalInput>> GetInputList()
         {
-            var requestMessage = new RequestMessage("input","ssap://tv/getExternalInputList");
+           var requestMessage = new RequestMessage("input","ssap://tv/getExternalInputList");
            var results =  await _connection.SendCommandAsync(requestMessage);
             var l = new List<ExternalInput>();
             foreach (var result in results)
@@ -324,6 +324,20 @@ namespace LgTv
         {
             var requestMessage = new RequestMessage("ssap://tv/switchInput", new { inputId = id });
             await _connection.SendCommandAsync(requestMessage);
+        }
+
+        public async Task SubscribeVolume(Func<dynamic, bool> callback, dynamic payload = null)
+        {
+            var requestMessage = new RequestMessage("ssap://audio/getVolume", null, "subscribe");
+
+            await _connection.SubscribeAsync(requestMessage, callback);
+        }
+
+        public async Task SubscribePowerState(Func<dynamic, bool> callback, dynamic payload = null)
+        {
+            var requestMessage = new RequestMessage("ssap://com.webos.service.tvpower/power/getPowerState", null, "subscribe");
+
+            await _connection.SubscribeAsync(requestMessage, callback);
         }
 
         public async Task<IEnumerable<App>> GetLaunchPoints()
@@ -432,6 +446,15 @@ namespace LgTv
             var lunauri = "luna://com.webos.service.config/setConfigs";
 
             var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": """ + value + @""" } }");
+
+            await ExecuteRequest(lunauri, @params);
+        }
+
+        public async Task SetConfig(string key, bool value)
+        {
+            var lunauri = "luna://com.webos.service.config/setConfigs";
+
+            var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": " + value.ToString().ToLowerInvariant() + @" } }");
 
             await ExecuteRequest(lunauri, @params);
         }

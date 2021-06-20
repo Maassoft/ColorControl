@@ -29,6 +29,7 @@ namespace LgTv
 
         public event IsConnectedDelegate IsConnected;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<dynamic>> _tokens = new ConcurrentDictionary<string, TaskCompletionSource<dynamic>>();
+        private readonly ConcurrentDictionary<string, Func<dynamic, bool>> _callbacks = new ConcurrentDictionary<string, Func<dynamic, bool>>();
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -135,6 +136,20 @@ namespace LgTv
             return SendCommandAsync(rawMessage.Id, serialized);
         }
 
+        public Task<dynamic> SubscribeAsync(RequestMessage message, Func<dynamic, bool> callback)
+        {
+            var rawMessage = new RawRequestMessage(message, ++_commandCount);
+            var serialized = JsonConvert.SerializeObject(rawMessage, new JsonSerializerSettings()
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            });
+
+            _callbacks.TryAdd(rawMessage.Id, callback);
+
+            return SendCommandAsync(rawMessage.Id, serialized);
+        }
+
         private void Connection_Closed(IWebSocket sender, WebSocketClosedEventArgs args)
         {
             MessageWebSocket webSocket = Interlocked.Exchange(ref _connection, null);
@@ -177,6 +192,11 @@ namespace LgTv
                         //    taskSource.SetCanceled();
                         //}
                         taskCompletion.TrySetResult(obj.payload);
+
+                        if (_callbacks.TryGetValue(id, out Func<dynamic, bool> callback))
+                        {
+                            callback(obj.payload);
+                        }
                     }
                 }
             }

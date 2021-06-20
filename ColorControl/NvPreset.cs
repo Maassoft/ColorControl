@@ -51,7 +51,7 @@ namespace ColorControl
             displayName = preset.displayName;
 
             var colorData = preset.colorData;
-            this.colorData = new ColorData(colorData.ColorFormat, dynamicRange: colorData.DynamicRange, colorDepth: colorData.ColorDepth, colorSelectionPolicy: colorData.SelectionPolicy);
+            this.colorData = new ColorData(colorData.ColorFormat, dynamicRange: colorData.DynamicRange, colorDepth: colorData.ColorDepth, colorSelectionPolicy: ColorDataSelectionPolicy.User);
             applyColorData = preset.applyColorData;
 
             applyHDR = preset.applyHDR;
@@ -206,11 +206,16 @@ namespace ColorControl
             {
                 dynamicRange = (ColorDataDynamicRange)Enum.ToObject(typeof(ColorDataDynamicRange), value);
             }
-            if (dictionary.TryGetValue("SelectionPolicy", out value))
+            if (dictionary.TryGetValue("SelectionPolicy", out _))
             {
-                selectionPolicy = (ColorDataSelectionPolicy)Enum.ToObject(typeof(ColorDataSelectionPolicy), value);
+                selectionPolicy =
+                    colorDepth == ColorDataDepth.Default &&
+                    format >= ColorDataFormat.Default &&
+                    colorimetry >= ColorDataColorimetry.Default &&
+                    dynamicRange == ColorDataDynamicRange.Auto ?
+                        ColorDataSelectionPolicy.BestQuality : selectionPolicy;
             }
-            return new ColorData(format, dynamicRange: dynamicRange, colorimetry: colorimetry, colorDepth: colorDepth, colorSelectionPolicy: selectionPolicy);
+            return new ColorData(format, dynamicRange: dynamicRange, colorimetry: colorimetry, colorDepth: colorDepth, colorSelectionPolicy: selectionPolicy, desktopColorDepth: ColorDataDesktopDepth.Default);
         }
 
     }

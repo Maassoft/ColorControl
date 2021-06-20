@@ -20,6 +20,22 @@ namespace ColorControl
             public decimal MaxValue { get; set; }
         }
 
+        public enum PowerState
+        {
+            Unknown,
+            Active,
+            Power_Off,
+            Suspend,
+            Active_Standby
+        }
+
+        public enum PowerOffSource
+        {
+            Unknown,
+            App,
+            Manually
+        }
+
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public string Name { get; private set; }
@@ -36,9 +52,16 @@ namespace ColorControl
         public bool PowerSwitchOnScreenSaver { get; set; }
 
         [JsonIgnore]
+        public PowerState CurrentState { get; set; }
+
+        [JsonIgnore]
         private LgTvApi _lgTvApi;
         [JsonIgnore]
         private bool _justWokeUp;
+        [JsonIgnore]
+        public PowerOffSource PoweredOffBy { get; private set; }
+
+        public bool PoweredOffViaApp { get; private set; }
 
         [JsonIgnore]
         private List<InvokableAction> _invokableActions = new List<InvokableAction>();
@@ -87,7 +110,9 @@ namespace ColorControl
             {
                 Name = name,
                 Function = new Func<Dictionary<string, string>, bool>(GenericPictureAction),
-                EnumType = type
+                EnumType = type,
+                MinValue = minValue,
+                MaxValue = maxValue
             };
 
             _invokableActions.Add(action);
@@ -95,7 +120,8 @@ namespace ColorControl
 
         public override string ToString()
         {
-            return (IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: ")) + $"{Name}" + (!string.IsNullOrEmpty(IpAddress) ? $" ({IpAddress})" : string.Empty);
+            //return (IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: ")) + $"{Name}" + (!string.IsNullOrEmpty(IpAddress) ? $" ({IpAddress})" : string.Empty);
+            return $"{(IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: "))}{Name}{(!string.IsNullOrEmpty(IpAddress) ? ", " + IpAddress : string.Empty)}";
         }
 
         public async Task<bool> Connect(int retries = 3)
@@ -114,6 +140,14 @@ namespace ColorControl
                     {
                         ModelName = info.modelName;
                     }
+
+                    //await _lgTvApi.SubscribeVolume(VolumeChanged);
+                    await _lgTvApi.SubscribePowerState(PowerStateChanged);
+
+                    //await _lgTvApi.SetInput("HDMI_1");
+                    //await Task.Delay(2000);
+                    //await _lgTvApi.SetConfig("com.palm.app.settings.enableHdmiPcLabel", true);
+                    //await _lgTvApi.SetInput("HDMI_2");
                 }
                 return _lgTvApi != null;
             }
@@ -123,6 +157,40 @@ namespace ColorControl
                 Logger.Error($"Error while connecting to {IpAddress}: {logMessage}");
                 return false;
             }
+        }
+
+        public bool VolumeChanged(dynamic payload)
+        {
+            return true;
+        }
+        public bool PowerStateChanged(dynamic payload)
+        {
+            Logger.Debug($"[{Name}] Power state change: " + JsonConvert.SerializeObject(payload));
+
+            var state = ((string)payload.state).Replace(' ', '_');
+
+            PowerState newState;
+            if (Enum.TryParse(state, out newState))
+            {
+                CurrentState = newState;
+
+                if (CurrentState == PowerState.Active)
+                {
+                    if (payload.processing == null)
+                    {
+                        PoweredOffViaApp = false;
+                    }
+                }
+                else {
+                    PoweredOffBy = PoweredOffViaApp ? PowerOffSource.App : PowerOffSource.Manually;
+                }
+            }
+            else
+            {
+                CurrentState = PowerState.Unknown;
+                Logger.Warn($"Unknown power state: {state}");
+            }
+            return true;
         }
 
         public bool IsConnected()
@@ -303,7 +371,10 @@ namespace ColorControl
                 return false;
             }
 
+            PoweredOffViaApp = true;
+
             await _lgTvApi.TurnOff();
+
             return true;
         }
 
