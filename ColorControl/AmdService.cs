@@ -13,8 +13,6 @@ namespace ColorControl
 
         private ADLDisplayInfo _currentDisplay;
 
-        private AmdPreset _lastAppliedPreset;
-
         public AmdService(string dataPath) : base(dataPath)
         {
             LoadPresets();
@@ -190,6 +188,8 @@ namespace ColorControl
             }
 
             _lastAppliedPreset = preset;
+
+            PresetApplied();
 
             return result;
         }

@@ -182,6 +182,8 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
+            this.mnuLgNvPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -1300,21 +1302,23 @@
             this.mnuLgButtons.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.mnuLgButtons.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuLgRcButtons,
-            this.mnuLgActions});
+            this.mnuLgActions,
+            this.mnuLgNvPresets,
+            this.mnuLgAmdPresets});
             this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(116, 48);
+            this.mnuLgButtons.Size = new System.Drawing.Size(181, 114);
             this.mnuLgButtons.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgButtons_Opening);
             // 
             // mnuLgRcButtons
             // 
             this.mnuLgRcButtons.Name = "mnuLgRcButtons";
-            this.mnuLgRcButtons.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgRcButtons.Size = new System.Drawing.Size(180, 22);
             this.mnuLgRcButtons.Text = "Buttons";
             // 
             // mnuLgActions
             // 
             this.mnuLgActions.Name = "mnuLgActions";
-            this.mnuLgActions.Size = new System.Drawing.Size(115, 22);
+            this.mnuLgActions.Size = new System.Drawing.Size(180, 22);
             this.mnuLgActions.Text = "Actions";
             // 
             // btnCloneLg
@@ -1828,6 +1832,18 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
+            // mnuLgNvPresets
+            // 
+            this.mnuLgNvPresets.Name = "mnuLgNvPresets";
+            this.mnuLgNvPresets.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgNvPresets.Text = "NVIDIA presets";
+            // 
+            // mnuLgAmdPresets
+            // 
+            this.mnuLgAmdPresets.Name = "mnuLgAmdPresets";
+            this.mnuLgAmdPresets.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgAmdPresets.Text = "AMD presets";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2037,6 +2053,8 @@
         private System.Windows.Forms.ToolStripMenuItem miLgEnableMotionPro;
         private System.Windows.Forms.ToolStripMenuItem miLgDisableMotionPro;
         private System.Windows.Forms.ToolStripSeparator miLgExpertSeparator1;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgNvPresets;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgAmdPresets;
     }
 }
 

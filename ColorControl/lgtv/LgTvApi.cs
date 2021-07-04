@@ -34,6 +34,12 @@ namespace LgTv
         high
     }
 
+    public enum OffToOn
+    {
+        off,
+        on
+    }
+
     public enum OffToAuto
     {
         off,

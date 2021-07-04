@@ -7,12 +7,15 @@ namespace ColorControl
 {
     abstract class ServiceBase<T> where T : PresetBase
     {
+        public event EventHandler<T> AfterApplyPreset;
+
         protected string _dataPath;
         protected string _presetsFilename;
         protected JavaScriptSerializer _JsonSerializer;
         protected JavaScriptSerializer _JsonDeserializer;
         protected bool _initialized = false;
         protected List<T> _presets;
+        protected T _lastAppliedPreset;
 
         public ServiceBase(string dataPath)
         {
@@ -53,6 +56,11 @@ namespace ColorControl
         protected virtual void Uninitialize()
         {
 
+        }
+
+        protected void PresetApplied()
+        {
+            AfterApplyPreset?.Invoke(this, _lastAppliedPreset);
         }
     }
 }

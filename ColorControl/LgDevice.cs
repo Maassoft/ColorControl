@@ -18,6 +18,7 @@ namespace ColorControl
             public Type EnumType { get; set; }
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
+            public string Category { get; set; }
         }
 
         public enum PowerState
@@ -37,6 +38,7 @@ namespace ColorControl
         }
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        public static Func<string, string[], bool> ExternalServiceHandler;
 
         public string Name { get; private set; }
         public string IpAddress { get; private set; }
@@ -61,8 +63,10 @@ namespace ColorControl
         [JsonIgnore]
         public PowerOffSource PoweredOffBy { get; private set; }
 
+        [JsonIgnore]
         public bool PoweredOffViaApp { get; private set; }
-
+        [JsonIgnore]
+        private DateTimeOffset _poweredOffViaAppDateTime { get; set; }
         [JsonIgnore]
         private List<InvokableAction> _invokableActions = new List<InvokableAction>();
 
@@ -91,6 +95,15 @@ namespace ColorControl
             AddGenericPictureAction("energySaving", typeof(EnergySaving));
             //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh));
+            AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("uhdDeepColorHDMI4", typeof(OffToOn), category: "other");
+            //AddGenericPictureAction("hdmiPcMode", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("gameOptimizationHDMI1", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, string>, bool> function)
@@ -104,7 +117,7 @@ namespace ColorControl
             _invokableActions.Add(action);
         }
 
-        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0)
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture")
         {
             var action = new InvokableAction
             {
@@ -112,7 +125,8 @@ namespace ColorControl
                 Function = new Func<Dictionary<string, string>, bool>(GenericPictureAction),
                 EnumType = type,
                 MinValue = minValue,
-                MaxValue = maxValue
+                MaxValue = maxValue,
+                Category = category
             };
 
             _invokableActions.Add(action);
@@ -165,7 +179,7 @@ namespace ColorControl
         }
         public bool PowerStateChanged(dynamic payload)
         {
-            Logger.Debug($"[{Name}] Power state change: " + JsonConvert.SerializeObject(payload));
+            Logger.Debug($"[{Name}] Power state change: {JsonConvert.SerializeObject(payload)}");
 
             var state = ((string)payload.state).Replace(' ', '_');
 
@@ -176,9 +190,10 @@ namespace ColorControl
 
                 if (CurrentState == PowerState.Active)
                 {
-                    if (payload.processing == null)
+                    if (payload.processing == null && (DateTimeOffset.Now - _poweredOffViaAppDateTime).TotalMilliseconds > 500)
                     {
                         PoweredOffViaApp = false;
+                        _poweredOffViaAppDateTime = DateTimeOffset.MinValue;
                     }
                 }
                 else {
@@ -190,6 +205,9 @@ namespace ColorControl
                 CurrentState = PowerState.Unknown;
                 Logger.Warn($"Unknown power state: {state}");
             }
+
+            Logger.Debug($"PoweredOffBy: {PoweredOffBy}, PoweredOffViaApp: {PoweredOffViaApp}");
+
             return true;
         }
 
@@ -307,6 +325,13 @@ namespace ColorControl
 
                     continue;
                 }
+                if (ExternalServiceHandler != null && parameters != null)
+                {
+                    if (ExternalServiceHandler(key, parameters))
+                    {
+                        continue;
+                    }
+                }
 
                 if (keySpec.Length == 2)
                 {
@@ -327,7 +352,8 @@ namespace ColorControl
             {
                 var keyValues = new Dictionary<string, string> {
                     { "name", action.Name },
-                    { "value", parameters[0] } 
+                    { "value", parameters[0] },
+                    { "category", action.Category }
                 };
 
                 function(keyValues);
@@ -366,12 +392,13 @@ namespace ColorControl
 
         internal async Task<bool> PowerOff()
         {
-            if (!await Connected(true))
+            if (!await Connected(true) || CurrentState != PowerState.Active)
             {
                 return false;
             }
 
             PoweredOffViaApp = true;
+            _poweredOffViaAppDateTime = DateTimeOffset.Now;
 
             await _lgTvApi.TurnOff();
 
@@ -558,7 +585,9 @@ namespace ColorControl
         private bool GenericPictureAction(Dictionary<string, string> parameters)
         {
             var settingName = parameters["name"];
-            var task = _lgTvApi.SetSystemSettings(settingName, parameters["value"]);
+            var value = parameters["value"];
+            var category = parameters["category"];
+            var task = _lgTvApi.SetSystemSettings(settingName, value, category);
             Utils.WaitForTask(task);
 
             return true;

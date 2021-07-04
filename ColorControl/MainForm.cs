@@ -118,6 +118,8 @@ namespace ColorControl
             {
                 _nvService = new NvService(_dataDir);
                 FillNvPresets();
+
+                _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
             }
             catch (Exception)
             {
@@ -127,12 +129,19 @@ namespace ColorControl
             }
         }
 
+        private void NvServiceAfterApplyPreset(object sender, NvPreset preset)
+        {
+            UpdateDisplayInfoItems();
+        }
+
         private void InitAmdService()
         {
             try
             {
                 _amdService = new AmdService(_dataDir);
                 FillAmdPresets();
+
+                _amdService.AfterApplyPreset += AmdServiceAfterApplyPreset;
             }
             catch (Exception)
             {
@@ -140,6 +149,11 @@ namespace ColorControl
                 Logger.Debug("No AMD device detected");
                 tcMain.TabPages.Remove(tabAMD);
             }
+        }
+
+        private void AmdServiceAfterApplyPreset(object sender, AmdPreset preset)
+        {
+            UpdateDisplayInfoItemsAmd();
         }
 
         private void InitLgService()
@@ -169,6 +183,8 @@ namespace ColorControl
                 }
 
                 _lgService.InstallEventHandlers();
+
+                LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
             }
             catch (Exception e)
             {
@@ -182,6 +198,25 @@ namespace ColorControl
             {
                 var _ = _lgService.ApplyPreset(StartUpParams.LgPresetName);
             }
+        }
+
+        private bool HandleExternalServiceForLgDevice(string serviceName, string[] parameters)
+        {
+            if (string.IsNullOrEmpty(serviceName) || parameters.Length == 0)
+            {
+                return false;
+            }
+
+            if (_nvService != null && serviceName.Equals("NvPreset", StringComparison.OrdinalIgnoreCase))
+            {
+                return _nvService.ApplyPreset(parameters[0]);
+            }
+            if (_amdService != null && serviceName.Equals("AmdPreset", StringComparison.OrdinalIgnoreCase))
+            {
+                return _amdService.ApplyPreset(parameters[0]);
+            }
+
+            return false;
         }
 
         private void InitInfo()
@@ -1154,8 +1189,20 @@ namespace ColorControl
             preset.steps.Clear();
             if (!clearSteps)
             {
-                text = text.Replace(" ", string.Empty);
+                //text = text.Replace(" ", string.Empty);
                 var steps = text.Split(',');
+                for (var i = 0; i < steps.Length; i++)
+                {
+                    var step = steps[i];
+                    if (step.IndexOf("(") > -1)
+                    {
+                        steps[i] = step.Trim();
+                    }
+                    else
+                    {
+                        steps[i] = step.Replace(" ", string.Empty);
+                    }
+                }
                 preset.steps.AddRange(steps);
             }
 
@@ -1519,7 +1566,6 @@ namespace ColorControl
                     throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
                 }
 
-                UpdateDisplayInfoItems();
                 return true;
             }
             catch (Exception e)
@@ -1543,7 +1589,6 @@ namespace ColorControl
                     throw new Exception("Error while applying AMD preset. At least one setting could not be applied. Check the log for details.");
                 }
 
-                UpdateDisplayInfoItemsAmd();
                 return true;
             }
             catch (Exception e)
@@ -1716,6 +1761,26 @@ namespace ColorControl
             {
                 text += $"({value})";
             }
+
+            AddToLgSteps(text);
+        }
+
+        private void miLgAddNvPreset_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var preset = item.Tag as NvPreset;
+
+            var text = $"NvPreset({preset.name})";
+
+            AddToLgSteps(text);
+        }
+
+        private void miLgAddAmdPreset_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var preset = item.Tag as AmdPreset;
+
+            var text = $"AmdPreset({preset.name})";
 
             AddToLgSteps(text);
         }
@@ -2473,7 +2538,7 @@ Do you want to continue?";
             var device = _lgService.GetPresetDevice(preset);
 
             var actions = device?.GetInvokableActions();
-            foreach (var action in actions)
+            foreach (var action in actions.Where(a => a.Category == null || !a.Category.Equals("other")))
             {
                 var text = action.Name;
 
@@ -2482,6 +2547,45 @@ Do you want to continue?";
                 item.Click += miLgAddAction_Click;
             }
 
+            if (_nvService != null)
+            {
+                mnuLgNvPresets.DropDownItems.Clear();
+
+                foreach (var nvPreset in _nvService.GetPresets())
+                {
+                    var text = nvPreset.name;
+
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        var item = mnuLgNvPresets.DropDownItems.Add(text);
+                        item.Tag = nvPreset;
+                        item.Click += miLgAddNvPreset_Click;
+                    }
+                }
+            }
+
+            if (_amdService != null)
+            {
+                mnuLgAmdPresets.DropDownItems.Clear();
+
+                foreach (var amdPreset in _amdService.GetPresets())
+                {
+                    var text = amdPreset.name;
+
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        var item = mnuLgAmdPresets.DropDownItems.Add(text);
+                        item.Tag = amdPreset;
+                        item.Click += miLgAddAmdPreset_Click;
+                    }
+                }
+            }
+
+            mnuLgNvPresets.Visible = _nvService != null;
+            mnuLgAmdPresets.Visible = _amdService != null;
+
+            mnuLgNvPresets.Text = mnuLgNvPresets.DropDownItems.Count > 0 ? "NVIDIA presets" : "NVIDIA presets (no named presets found)";
+            mnuLgAmdPresets.Text = mnuLgAmdPresets.DropDownItems.Count > 0 ? "AMD presets" : "AMD presets (no named presets found)";
         }
 
         private void btnLgDeviceConvertToCustom_Click(object sender, EventArgs e)

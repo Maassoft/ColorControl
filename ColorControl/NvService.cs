@@ -68,7 +68,6 @@ namespace ColorControl
         };
 
         private Display _currentDisplay;
-        private NvPreset _lastAppliedPreset;
 
         public NvService(string dataPath) : base(dataPath)
         {
@@ -253,6 +252,8 @@ namespace ColorControl
             }
 
             _lastAppliedPreset = preset;
+
+            PresetApplied();
 
             return result;
         }
