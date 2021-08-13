@@ -290,26 +290,30 @@ namespace ColorControl
             {
                 if (enabled != IsHDREnabled())
                 {
-                    ToggleHDR();
+                    CCD.SetHDRState(enabled, display.Name);
+                    //ToggleHDR();
                 }
                 return;
             }
 
-            var newMaster = new MasteringDisplayColorData();
-            var hdr = new HDRColorData(enabled ? ColorDataHDRMode.UHDA : ColorDataHDRMode.Off, newMaster, colorData?.ColorFormat, colorData?.DynamicRange, colorData?.ColorDepth);
+            CCD.SetHDRState(enabled, display.Name);
 
-            display.DisplayDevice.SetHDRColorData(hdr);
+            //var newMaster = new MasteringDisplayColorData();
+            //var hdr = new HDRColorData(enabled ? ColorDataHDRMode.UHDA : ColorDataHDRMode.Off, newMaster, colorData?.ColorFormat, colorData?.DynamicRange, colorData?.ColorDepth);
+
+            //display.DisplayDevice.SetHDRColorData(hdr);
 
             // HDR will not always be disabled this way, then we can only disable it through the display settings
-            if (!enabled && IsHDREnabled())
-            {
-                ToggleHDR();
-            }
-            else if (enabled)
-            {
-                // Currectly there seems to be a bug that after enabling HDR via NVAPI, some settings are only applied upon opening the Display Settings...
-                ////OpenDisplaySettings();
-            }
+            //if (!enabled && IsHDREnabled())
+            //{
+            //    CCD.SetHDRState(enabled);
+            //    //ToggleHDR();
+            //}
+            //else if (enabled)
+            //{
+            //    // Currectly there seems to be a bug that after enabling HDR via NVAPI, some settings are only applied upon opening the Display Settings...
+            //    ////OpenDisplaySettings();
+            //}
         }
 
         public bool SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)

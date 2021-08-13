@@ -22,7 +22,7 @@ namespace ColorControl
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
 
-        public NvPreset()
+        public NvPreset() : base()
         {
             applyColorData = true;
             applyDithering = false;

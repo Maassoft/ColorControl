@@ -19,7 +19,7 @@ namespace ColorControl
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
 
-        public AmdPreset()
+        public AmdPreset() : base()
         {
             applyColorData = true;
             applyDithering = false;

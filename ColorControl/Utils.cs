@@ -36,6 +36,23 @@ namespace ColorControl
             Win = 8
         }
 
+        public enum UserNotificationState : int
+        {
+            QUNS_NOT_PRESENT = 1,
+            QUNS_BUSY,
+            QUNS_RUNNING_D3D_FULL_SCREEN,
+            QUNS_PRESENTATION_MODE,
+            QUNS_ACCEPTS_NOTIFICATIONS,
+            QUNS_QUIET_TIME,
+            QUNS_APP
+        }
+
+        public static UserNotificationState[] NotificationsDisabledStates = new[] {
+            UserNotificationState.QUNS_BUSY,
+            UserNotificationState.QUNS_RUNNING_D3D_FULL_SCREEN,
+            UserNotificationState.QUNS_PRESENTATION_MODE,
+        };
+
         public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
 
         public const int ENUM_CURRENT_SETTINGS = -1;
@@ -75,6 +92,12 @@ namespace ColorControl
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool FreeConsole();
 
+        [DllImport("shell32.dll")]
+        public static extern int SHQueryUserNotificationState(out UserNotificationState pquns);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
         //[DllImport("Wtsapi32.dll")]
         //public extern static bool WTSRegisterSessionNotification(IntPtr hWnd, uint dwFlags);
 
@@ -83,6 +106,7 @@ namespace ColorControl
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static bool WinKeyDown = false;
+        private static UserNotificationState LastNotificationState;
 
         public static Bitmap SubPixelShift(Bitmap bitmap)
         {
@@ -428,11 +452,15 @@ namespace ColorControl
             return null; // could also return string.Empty
         }
 
-        public static List<string> GetDescriptions<T>() where T : IConvertible
+        public static List<string> GetDescriptions<T>(int value = -1, int fromValue = 0) where T : IConvertible
         {
             var list = new List<string>();
             foreach (var enumValue in Enum.GetValues(typeof(T)))
             {
+                if ((int)enumValue < fromValue || value >= 0 && ((int)enumValue & value) == 0)
+                {
+                    continue;
+                }
                 list.Add(((T)enumValue).GetDescription());
             }
             return list;
@@ -579,6 +607,58 @@ namespace ColorControl
             }
         }
 
+        public static void BuildComboBox<T>(ComboBox comboBox, params T[] skip) where T : IConvertible
+        {
+            if (comboBox.Items.Count == 0)
+            {
+                foreach (var enumValue in Enum.GetValues(typeof(T)))
+                {
+                    if (skip.Contains((T)enumValue))
+                    {
+                        continue;
+                    }
+                    var item = new EnumComboBoxItem 
+                    {
+                        Name = ((T)enumValue).GetDescription(),
+                        Id = (int)enumValue
+                    };
+                    
+                    comboBox.Items.Add(item);
+                }
+            }
+        }
+
+        public static int SetComboBoxEnumIndex(ComboBox comboBox, int value)
+        {
+            var index = 0;
+
+            for (var i = 0; i < comboBox.Items.Count; i++)
+            {
+                var item = comboBox.Items[i] as EnumComboBoxItem;
+                if (item.Id == value)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            comboBox.SelectedIndex = index;
+
+            return index;
+        }
+
+        public static T GetComboBoxEnumItem<T>(ComboBox comboBox) where T : IConvertible
+        {
+            if (comboBox.SelectedIndex == -1)
+            {
+                return (T)Enum.Parse(typeof(T), "None");
+            }
+
+            var item = comboBox.SelectedItem as EnumComboBoxItem;
+
+            return (T)Enum.Parse(typeof(T), item.Id.ToString());
+        }
+
         public static string FormatKeyboardShortcut(KeyEventArgs keyEvent)
         {
             var pressedModifiers = keyEvent.Modifiers;
@@ -674,7 +754,14 @@ namespace ColorControl
                 item.Text = values[0];
                 for (var i = 1; i < values.Count; i++)
                 {
-                    item.SubItems[i].Text = values[i];
+                    if (item.SubItems.Count == i)
+                    {
+                        item.SubItems.Add(values[i]);
+                    }
+                    else
+                    {
+                        item.SubItems[i].Text = values[i];
+                    }
                 }
             }
         }
@@ -743,18 +830,34 @@ namespace ColorControl
             }
         }
 
+        public static bool IsForegroundFullScreenAndDisabledNotifications(Screen screen = null)
+        {
+            return IsNotificationDisabled() && IsForegroundFullScreen(screen);
+        }
+
+        public static bool IsNotificationDisabled()
+        {
+            var result = SHQueryUserNotificationState(out var state);
+
+            if (result == NativeConstants.ERROR_SUCCESS && state != LastNotificationState)
+            {
+                Logger.Debug($"Detected NotificationState change from {LastNotificationState} to {state}");
+                LastNotificationState = state;
+            }
+
+            return NotificationsDisabledStates.Contains(state);
+            //return state != UserNotificationState.QUNS_ACCEPTS_NOTIFICATIONS && state != UserNotificationState.QUNS_QUIET_TIME;
+        }
+
         public static bool IsForegroundFullScreen(Screen screen = null)
         {
-
             if (screen == null)
             {
                 screen = Screen.PrimaryScreen;
             }
-            tagRECT rect = new tagRECT();
-            IntPtr hWnd = (IntPtr)NativeMethods.GetForegroundWindow();
+            var hWnd = NativeMethods.GetForegroundWindow();
 
-
-            NativeMethods.GetWindowRect(hWnd, out rect);
+            NativeMethods.GetWindowRect(hWnd, out var rect);
 
             /* in case you want the process name:
             uint procId = 0;
@@ -763,19 +866,76 @@ namespace ColorControl
             Console.WriteLine(proc.ProcessName);
             */
 
+            return screen.Bounds.Width <= (rect.right - rect.left) && screen.Bounds.Height <= (rect.bottom - rect.top);
+        }
 
-            if (screen.Bounds.Width <= (rect.right - rect.left) && screen.Bounds.Height <= (rect.bottom - rect.top))
+        public static (uint, bool) GetForegroundProcessIdAndIfFullScreen(Screen screen = null)
+        {
+            if (screen == null)
             {
-                Console.WriteLine("Fullscreen!");
-                return true;
+                screen = Screen.PrimaryScreen;
             }
-            else
+            var hWnd = NativeMethods.GetForegroundWindow();
+
+            if (hWnd == IntPtr.Zero)
             {
-                Console.WriteLine("Nope, :-(");
-                return false;
+                return (0, false);
             }
 
+            NativeMethods.GetWindowRect(hWnd, out var rect);
 
+            GetWindowThreadProcessId(hWnd, out var processId);
+
+            var isFullScreen = screen.Bounds.Width <= (rect.right - rect.left) && screen.Bounds.Height <= (rect.bottom - rect.top);
+
+            return (processId, isFullScreen);
+        }
+
+        public static Process GetForegroundFullScreenProcess(Screen screen = null)
+        {
+            var (processId, isFullScreen) = GetForegroundProcessIdAndIfFullScreen(screen);
+
+            if (!isFullScreen)
+            {
+                return null;
+            }
+
+            return Process.GetProcessById((int)processId);
+        }
+
+        public static void ParseWords(List<string> target, string text)
+        {
+            target.Clear();
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+            var words = text.Split(',');
+            for (var i = 0; i < words.Length; i++)
+            {
+                var word = words[i];
+                if (word.IndexOf("(") > -1)
+                {
+                    words[i] = word.Trim();
+                }
+                else
+                {
+                    words[i] = word.Replace(" ", string.Empty);
+                }
+            }
+            target.AddRange(words);
+        }
+    }
+
+    public class EnumComboBoxItem
+    {
+        public string Name;
+        public int Id;
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 

@@ -12,7 +12,8 @@ namespace ColorControl
         {
             Text,
             Numeric,
-            DropDown
+            DropDown,
+            Flags
         }
 
         public class FieldDefinition
@@ -22,6 +23,7 @@ namespace ColorControl
             public IEnumerable<string> Values { get; set; }
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
+            public object Value { get; set; }
         }
 
         public static Form MainForm;
@@ -46,19 +48,19 @@ namespace ColorControl
             return MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information);
         }
 
-        public static List<string> ShowDialog(string caption, IEnumerable<string> labels, Func<List<string>, string> validateFunc = null)
+        public static List<FieldDefinition> ShowDialog(string caption, IEnumerable<string> labels, Func<IEnumerable<FieldDefinition>, string> validateFunc = null)
         {
             var fieldDefinitions = labels.Select(l => new FieldDefinition
             {
                 Label = l
-            });
+            }).ToList();
 
             return ShowDialog(caption, fieldDefinitions, validateFunc);
         }
 
-        public static List<string> ShowDialog(string caption, IEnumerable<FieldDefinition> fields, Func<List<string>, string> validateFunc = null)
+        public static List<FieldDefinition> ShowDialog(string caption, IEnumerable<FieldDefinition> fields, Func<IEnumerable<FieldDefinition>, string> validateFunc = null)
         {
-            var values = new List<string>();
+            var values = new List<FieldDefinition>();
 
             var prompt = new Form()
             {
@@ -131,6 +133,35 @@ namespace ColorControl
                         control = comboBox;
                         break;
 
+                    case FieldType.Flags:
+                        var checkedListBox = new CheckedListBox
+                        {
+                            Left = 40,
+                            Top = top,
+                            Width = 200,
+                            Height = 100
+                        };
+
+                        top += 80;
+                        prompt.Height += 80;
+
+                        if (field.Values != null && field.Values.Any())
+                        {
+                            var compoundValue = (int)field.Value;
+                            var enumValue = 1;
+                            foreach (var value in field.Values)
+                            {
+                                var isChecked = (compoundValue & enumValue) == enumValue;
+
+                                checkedListBox.Items.Add(value, isChecked);
+
+                                enumValue *= 2;
+                            }
+                        }
+
+                        control = checkedListBox;
+                        break;
+
                     default:
                         continue;
                 }
@@ -138,24 +169,51 @@ namespace ColorControl
                 top += 30;
                 prompt.Controls.Add(control);
                 boxes.Add(control);
+                control.Tag = field;
             }
 
             var confirmation = new Button() { Text = "OK", Left = 365, Width = 75, Top = prompt.ClientRectangle.Height - 30 };
             confirmation.Click += (sender, e) =>
             {
-                values.AddRange(boxes.Select(b => b.Text.Trim()));
+                foreach (var box in boxes)
+                {
+                    var field = (FieldDefinition)box.Tag;
+
+                    switch (field.FieldType)
+                    {
+                        case FieldType.Flags:
+                            var checkedListBox = (CheckedListBox)box;
+
+                            var compoundValue = 0;
+                            var enumValue = 1;
+                            for (var i = 0; i < checkedListBox.Items.Count; i++)
+                            {
+                                compoundValue += checkedListBox.GetItemChecked(i) ? enumValue : 0;
+                                enumValue *= 2;
+                            }
+
+                            field.Value = compoundValue;
+                            break;
+                        default:
+                            field.Value = box.Text.Trim();
+                            break;
+                    }
+                }
+
 
                 if (validateFunc != null)
                 {
-                    var message = validateFunc(values);
+                    var message = validateFunc(fields);
 
                     if (!string.IsNullOrEmpty(message))
                     {
                         WarningOk(message);
-                        values.Clear();
                         return;
                     }
                 }
+
+                values.AddRange(fields);
+
                 prompt.Close();
             };
             prompt.Controls.Add(confirmation);

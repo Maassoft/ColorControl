@@ -13,12 +13,18 @@ namespace ColorControl
     {
         public class InvokableAction
         {
-            public Func<Dictionary<string, string>, bool> Function { get; set; }
+            public Func<Dictionary<string, object>, bool> Function { get; set; }
             public string Name { get; set; }
             public Type EnumType { get; set; }
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
             public string Category { get; set; }
+        }
+
+        public class LgDevicePictureSettings
+        {
+            public int Backlight { get; set; }
+            public int Contrast { get; set; }
         }
 
         public enum PowerState
@@ -69,20 +75,27 @@ namespace ColorControl
         private DateTimeOffset _poweredOffViaAppDateTime { get; set; }
         [JsonIgnore]
         private List<InvokableAction> _invokableActions = new List<InvokableAction>();
+        [JsonIgnore]
+        private SemaphoreSlim _connectSemaphore = new SemaphoreSlim(1, 1);
 
         [JsonIgnore]
         public string ModelName { get; private set; }
 
+        [JsonIgnore]
+        public LgDevicePictureSettings PictureSettings { get; private set; }
+
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
+            PictureSettings = new LgDevicePictureSettings();
+
             Name = name;
             IpAddress = ipAddress;
             MacAddress = macAddress;
             IsCustom = isCustom;
             IsDummy = isDummy;
 
-            AddInvokableAction("WOL", new Func<Dictionary<string, string>, bool>(WakeAction));
+            AddInvokableAction("WOL", new Func<Dictionary<string, object>, bool>(WakeAction));
             AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
             AddGenericPictureAction("brightness", minValue: 0, maxValue: 100);
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
@@ -90,9 +103,14 @@ namespace ColorControl
             AddGenericPictureAction("pictureMode", typeof(PictureMode));
             AddGenericPictureAction("colorGamut", typeof(ColorGamut));
             AddGenericPictureAction("dynamicContrast", typeof(OffToAuto));
+            //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
+            //AddGenericPictureAction("superResolution", typeof(OffToAuto));
             AddGenericPictureAction("peakBrightness", typeof(OffToAuto));
             AddGenericPictureAction("smoothGradation", typeof(OffToAuto));
             AddGenericPictureAction("energySaving", typeof(EnergySaving));
+            AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping));
+            //AddGenericPictureAction("blackLevel", typeof(LowToAuto));
+            //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
             //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh));
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
@@ -104,9 +122,10 @@ namespace ColorControl
             AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
         }
 
-        private void AddInvokableAction(string name, Func<Dictionary<string, string>, bool> function)
+        private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
         {
             var action = new InvokableAction
             {
@@ -122,7 +141,7 @@ namespace ColorControl
             var action = new InvokableAction
             {
                 Name = name,
-                Function = new Func<Dictionary<string, string>, bool>(GenericPictureAction),
+                Function = new Func<Dictionary<string, object>, bool>(GenericPictureAction),
                 EnumType = type,
                 MinValue = minValue,
                 MaxValue = maxValue,
@@ -140,36 +159,56 @@ namespace ColorControl
 
         public async Task<bool> Connect(int retries = 3)
         {
+            var locked = _connectSemaphore.CurrentCount == 0;
+            await _connectSemaphore.WaitAsync();
             try
             {
-                DisposeConnection();
-                _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries);
-
-                //Test();
-                //_lgTvApi.Test3();
-                if (_lgTvApi != null)
+                if (locked && _lgTvApi != null)
                 {
-                    var info = await _lgTvApi.GetSystemInfo("modelName");
-                    if (info != null)
-                    {
-                        ModelName = info.modelName;
-                    }
-
-                    //await _lgTvApi.SubscribeVolume(VolumeChanged);
-                    await _lgTvApi.SubscribePowerState(PowerStateChanged);
-
-                    //await _lgTvApi.SetInput("HDMI_1");
-                    //await Task.Delay(2000);
-                    //await _lgTvApi.SetConfig("com.palm.app.settings.enableHdmiPcLabel", true);
-                    //await _lgTvApi.SetInput("HDMI_2");
+                    return true;
                 }
-                return _lgTvApi != null;
+
+                try
+                {
+                    DisposeConnection();
+                    _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries);
+
+                    //Test();
+                    //_lgTvApi.Test3();
+                    if (_lgTvApi != null)
+                    {
+                        var info = await _lgTvApi.GetSystemInfo("modelName");
+                        if (info != null)
+                        {
+                            ModelName = info.modelName;
+                        }
+
+                        //await _lgTvApi.SubscribeVolume(VolumeChanged);
+                        await _lgTvApi.SubscribePowerState(PowerStateChanged);
+                        await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
+
+                        //var result = await GetPictureSettings();
+
+                        //await _lgTvApi.SetSystemSettings("adjustingLuminance", new[] { 0, 0, -5, -10, -15, -20, -25, -30, -35, -40, -45, -50, -50, -50, -40, -30, -20, -10, 10, 20, 30, 50 });
+                        //await _lgTvApi.SetSystemSettings("adjustingLuminance", new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+
+                        //await _lgTvApi.SetInput("HDMI_1");
+                        //await Task.Delay(2000);
+                        //await _lgTvApi.SetConfig("com.palm.app.settings.enableHdmiPcLabel", true);
+                        //await _lgTvApi.SetInput("HDMI_2");
+                    }
+                    return _lgTvApi != null;
+                }
+                catch (Exception ex)
+                {
+                    string logMessage = ex.ToLogString(Environment.StackTrace);
+                    Logger.Error($"Error while connecting to {IpAddress}: {logMessage}");
+                    return false;
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                string logMessage = ex.ToLogString(Environment.StackTrace);
-                Logger.Error($"Error while connecting to {IpAddress}: {logMessage}");
-                return false;
+                _connectSemaphore.Release();
             }
         }
 
@@ -177,6 +216,26 @@ namespace ColorControl
         {
             return true;
         }
+
+        public bool PictureSettingsChanged(dynamic payload)
+        {
+            if (payload.settings != null)
+            {
+                var settings = payload.settings;
+
+                if (settings.backlight != null)
+                {
+                    PictureSettings.Backlight = int.Parse(settings.backlight.Value);
+                }
+                if (settings.contrast != null)
+                {
+                    PictureSettings.Contrast = int.Parse(settings.contrast.Value);
+                }
+            }
+
+            return true;
+        }
+
         public bool PowerStateChanged(dynamic payload)
         {
             Logger.Debug($"[{Name}] Power state change: {JsonConvert.SerializeObject(payload)}");
@@ -193,6 +252,7 @@ namespace ColorControl
                     if (payload.processing == null && (DateTimeOffset.Now - _poweredOffViaAppDateTime).TotalMilliseconds > 500)
                     {
                         PoweredOffViaApp = false;
+                        PoweredOffBy = PowerOffSource.Unknown;
                         _poweredOffViaAppDateTime = DateTimeOffset.MinValue;
                     }
                 }
@@ -313,7 +373,7 @@ namespace ColorControl
                 {
                     var keyValue = keySpec[0].Split('(');
                     key = keyValue[0];
-                    parameters = keyValue[1].Substring(0, keyValue[1].Length - 1).Split(',');
+                    parameters = keyValue[1].Substring(0, keyValue[1].Length - 1).Split(';');
                 }
                 var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
                 if (action != null)
@@ -350,9 +410,9 @@ namespace ColorControl
 
             if (parameters?.Length > 0)
             {
-                var keyValues = new Dictionary<string, string> {
+                var keyValues = new Dictionary<string, object> {
                     { "name", action.Name },
-                    { "value", parameters[0] },
+                    { "value", parameters },
                     { "category", action.Category }
                 };
 
@@ -551,6 +611,12 @@ namespace ColorControl
             IsCustom = true;
         }
 
+        public bool IsUsingHDRPictureMode()
+        {
+            // Temporary workaround because I cannot read the picture mode at this time
+            return PictureSettings.Backlight == 100 && PictureSettings.Contrast == 100;
+        }
+
         internal async Task SetBacklight(int backlight)
         {
             await _lgTvApi.SetSystemSettings("backlight", backlight.ToString());
@@ -572,21 +638,27 @@ namespace ColorControl
 
         internal async Task<dynamic> GetPictureSettings()
         {
-            var keys = new[] { "backlight", "brightness", "contrast", "color", "pictureMode", "colorGamut", "dynamicContrast", "peakBrightness", "smoothGradation", "energySaving", "motionProOLED" };
+            //var keys = new[] { "backlight", "brightness", "contrast", "color", "pictureMode", "colorGamut", "dynamicContrast", "peakBrightness", "smoothGradation", "energySaving", "motionProOLED" };
+            var keys = new[] { "backlight", "brightness", "contrast", "color" };
 
             return await _lgTvApi.GetSystemSettings("picture", keys);
         }
 
-        private bool WakeAction(Dictionary<string, string> parameters)
+        private bool WakeAction(Dictionary<string, object> parameters)
         {
             return Wake();
         }
 
-        private bool GenericPictureAction(Dictionary<string, string> parameters)
+        private bool GenericPictureAction(Dictionary<string, object> parameters)
         {
-            var settingName = parameters["name"];
-            var value = parameters["value"];
-            var category = parameters["category"];
+            var settingName = parameters["name"].ToString();
+            var stringValues = parameters["value"] as string[];
+            var category = parameters["category"].ToString();
+            object value = stringValues[0];
+            if (stringValues.Length > 1)
+            {
+                value = stringValues.Select(s => int.Parse(s)).ToArray();
+            }
             var task = _lgTvApi.SetSystemSettings(settingName, value, category);
             Utils.WaitForTask(task);
 

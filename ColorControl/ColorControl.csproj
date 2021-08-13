@@ -27,7 +27,7 @@
     <ProductName>ColorControl</ProductName>
     <PublisherName>Maassoft</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>3.3.0.0</ApplicationVersion>
+    <ApplicationVersion>4.0.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -74,10 +74,10 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>482C987E8C69872608C9D44751E004C5784E8540</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>CF0BC153EA664CD97AC6F234B91F45D34630958F</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>ColorControl_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>ColorControl_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -104,23 +104,23 @@
     <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.9.1.0, Culture=neutral, PublicKeyToken=e25603a88b3aa7da, processorArchitecture=MSIL">
       <HintPath>..\packages\TaskScheduler.2.9.1\lib\net452\Microsoft.Win32.TaskScheduler.dll</HintPath>
     </Reference>
-    <Reference Include="Native, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Native.0.1.0\lib\net35\Native.dll</HintPath>
+    <Reference Include="Native, Version=0.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Native.0.1.1\lib\net46\Native.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.4.7.9\lib\net45\NLog.dll</HintPath>
+      <HintPath>..\packages\NLog.4.7.10\lib\net45\NLog.dll</HintPath>
     </Reference>
-    <Reference Include="NStandard, Version=0.6.12.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NStandard.0.6.12.5\lib\net46\NStandard.dll</HintPath>
+    <Reference Include="NStandard, Version=0.8.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NStandard.0.8.9\lib\net46\NStandard.dll</HintPath>
     </Reference>
     <Reference Include="NvAPIWrapper, Version=0.8.1.100, Culture=neutral, PublicKeyToken=310fd07b25df79b3, processorArchitecture=MSIL">
       <HintPath>..\packages\NvAPIWrapper.Net.0.8.1.101\lib\net45\NvAPIWrapper.dll</HintPath>
     </Reference>
-    <Reference Include="NWin32, Version=1.0.7.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NWin32.1.0.7.6\lib\net46\NWin32.dll</HintPath>
+    <Reference Include="NWin32, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NWin32.1.2.0\lib\net46\NWin32.dll</HintPath>
     </Reference>
     <Reference Include="PacketDotNet, Version=1.2.0.0, Culture=neutral, PublicKeyToken=451414c7667b2a58, processorArchitecture=MSIL">
       <HintPath>..\packages\PacketDotNet.1.2.0\lib\net45\PacketDotNet.dll</HintPath>
@@ -177,6 +177,7 @@
     <Compile Include="ADLWrapper.cs" />
     <Compile Include="AmdDisplayInfo.cs" />
     <Compile Include="AppContext.cs" />
+    <Compile Include="CCD.cs" />
     <Compile Include="LgDevice.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -239,6 +240,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Resources\RC_coords.txt" />
+    <None Include="ColorControl_1_TemporaryKey.pfx" />
     <None Include="Resources\LG_remote.jpg" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

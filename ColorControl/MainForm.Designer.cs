@@ -104,6 +104,13 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.lblLgPresetExcludedProcesses = new System.Windows.Forms.Label();
+            this.edtLgPresetExcludedProcesses = new System.Windows.Forms.TextBox();
+            this.lblLgPresetIncludedProcesses = new System.Windows.Forms.Label();
+            this.edtLgPresetIncludedProcesses = new System.Windows.Forms.TextBox();
+            this.lblLgPresetTriggerCondition = new System.Windows.Forms.Label();
+            this.cbxLgPresetTrigger = new System.Windows.Forms.ComboBox();
+            this.lblLgPresetTrigger = new System.Windows.Forms.Label();
             this.btnLgExpert = new System.Windows.Forms.Button();
             this.mnuLgExpert = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.mnuLgOLEDMotionPro = new System.Windows.Forms.ToolStripMenuItem();
@@ -138,6 +145,8 @@
             this.mnuLgButtons = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.mnuLgRcButtons = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgNvPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
             this.btnCloneLg = new System.Windows.Forms.Button();
             this.lblStepsLg = new System.Windows.Forms.Label();
             this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
@@ -182,8 +191,8 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.mnuLgNvPresets = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuLgAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.edtLgPresetTriggerConditions = new System.Windows.Forms.TextBox();
+            this.btnLgPresetEditTriggerConditions = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -941,6 +950,15 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.btnLgPresetEditTriggerConditions);
+            this.scLgController.Panel1.Controls.Add(this.edtLgPresetTriggerConditions);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetExcludedProcesses);
+            this.scLgController.Panel1.Controls.Add(this.edtLgPresetExcludedProcesses);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetIncludedProcesses);
+            this.scLgController.Panel1.Controls.Add(this.edtLgPresetIncludedProcesses);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetTriggerCondition);
+            this.scLgController.Panel1.Controls.Add(this.cbxLgPresetTrigger);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetTrigger);
             this.scLgController.Panel1.Controls.Add(this.btnLgExpert);
             this.scLgController.Panel1.Controls.Add(this.chkLgRemoteControlShow);
             this.scLgController.Panel1.Controls.Add(this.label3);
@@ -976,6 +994,75 @@
             this.scLgController.Size = new System.Drawing.Size(948, 447);
             this.scLgController.SplitterDistance = 767;
             this.scLgController.TabIndex = 43;
+            // 
+            // lblLgPresetExcludedProcesses
+            // 
+            this.lblLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetExcludedProcesses.AutoSize = true;
+            this.lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(407, 375);
+            this.lblLgPresetExcludedProcesses.Name = "lblLgPresetExcludedProcesses";
+            this.lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(105, 13);
+            this.lblLgPresetExcludedProcesses.TabIndex = 52;
+            this.lblLgPresetExcludedProcesses.Text = "Excluded processes:";
+            // 
+            // edtLgPresetExcludedProcesses
+            // 
+            this.edtLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtLgPresetExcludedProcesses.Enabled = false;
+            this.edtLgPresetExcludedProcesses.Location = new System.Drawing.Point(515, 373);
+            this.edtLgPresetExcludedProcesses.Name = "edtLgPresetExcludedProcesses";
+            this.edtLgPresetExcludedProcesses.Size = new System.Drawing.Size(248, 20);
+            this.edtLgPresetExcludedProcesses.TabIndex = 51;
+            // 
+            // lblLgPresetIncludedProcesses
+            // 
+            this.lblLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetIncludedProcesses.AutoSize = true;
+            this.lblLgPresetIncludedProcesses.Location = new System.Drawing.Point(407, 349);
+            this.lblLgPresetIncludedProcesses.Name = "lblLgPresetIncludedProcesses";
+            this.lblLgPresetIncludedProcesses.Size = new System.Drawing.Size(102, 13);
+            this.lblLgPresetIncludedProcesses.TabIndex = 50;
+            this.lblLgPresetIncludedProcesses.Text = "Included processes:";
+            // 
+            // edtLgPresetIncludedProcesses
+            // 
+            this.edtLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtLgPresetIncludedProcesses.Enabled = false;
+            this.edtLgPresetIncludedProcesses.Location = new System.Drawing.Point(515, 347);
+            this.edtLgPresetIncludedProcesses.Name = "edtLgPresetIncludedProcesses";
+            this.edtLgPresetIncludedProcesses.Size = new System.Drawing.Size(248, 20);
+            this.edtLgPresetIncludedProcesses.TabIndex = 49;
+            // 
+            // lblLgPresetTriggerCondition
+            // 
+            this.lblLgPresetTriggerCondition.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetTriggerCondition.AutoSize = true;
+            this.lblLgPresetTriggerCondition.Location = new System.Drawing.Point(407, 322);
+            this.lblLgPresetTriggerCondition.Name = "lblLgPresetTriggerCondition";
+            this.lblLgPresetTriggerCondition.Size = new System.Drawing.Size(54, 13);
+            this.lblLgPresetTriggerCondition.TabIndex = 47;
+            this.lblLgPresetTriggerCondition.Text = "Condition:";
+            // 
+            // cbxLgPresetTrigger
+            // 
+            this.cbxLgPresetTrigger.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbxLgPresetTrigger.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgPresetTrigger.Enabled = false;
+            this.cbxLgPresetTrigger.FormattingEnabled = true;
+            this.cbxLgPresetTrigger.Location = new System.Drawing.Point(515, 292);
+            this.cbxLgPresetTrigger.Name = "cbxLgPresetTrigger";
+            this.cbxLgPresetTrigger.Size = new System.Drawing.Size(248, 21);
+            this.cbxLgPresetTrigger.TabIndex = 46;
+            // 
+            // lblLgPresetTrigger
+            // 
+            this.lblLgPresetTrigger.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetTrigger.AutoSize = true;
+            this.lblLgPresetTrigger.Location = new System.Drawing.Point(407, 295);
+            this.lblLgPresetTrigger.Name = "lblLgPresetTrigger";
+            this.lblLgPresetTrigger.Size = new System.Drawing.Size(43, 13);
+            this.lblLgPresetTrigger.TabIndex = 45;
+            this.lblLgPresetTrigger.Text = "Trigger:";
             // 
             // btnLgExpert
             // 
@@ -1306,20 +1393,32 @@
             this.mnuLgNvPresets,
             this.mnuLgAmdPresets});
             this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(181, 114);
+            this.mnuLgButtons.Size = new System.Drawing.Size(153, 92);
             this.mnuLgButtons.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgButtons_Opening);
             // 
             // mnuLgRcButtons
             // 
             this.mnuLgRcButtons.Name = "mnuLgRcButtons";
-            this.mnuLgRcButtons.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgRcButtons.Size = new System.Drawing.Size(152, 22);
             this.mnuLgRcButtons.Text = "Buttons";
             // 
             // mnuLgActions
             // 
             this.mnuLgActions.Name = "mnuLgActions";
-            this.mnuLgActions.Size = new System.Drawing.Size(180, 22);
+            this.mnuLgActions.Size = new System.Drawing.Size(152, 22);
             this.mnuLgActions.Text = "Actions";
+            // 
+            // mnuLgNvPresets
+            // 
+            this.mnuLgNvPresets.Name = "mnuLgNvPresets";
+            this.mnuLgNvPresets.Size = new System.Drawing.Size(152, 22);
+            this.mnuLgNvPresets.Text = "NVIDIA presets";
+            // 
+            // mnuLgAmdPresets
+            // 
+            this.mnuLgAmdPresets.Name = "mnuLgAmdPresets";
+            this.mnuLgAmdPresets.Size = new System.Drawing.Size(152, 22);
+            this.mnuLgAmdPresets.Text = "AMD presets";
             // 
             // btnCloneLg
             // 
@@ -1832,17 +1931,26 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // mnuLgNvPresets
+            // edtLgPresetTriggerConditions
             // 
-            this.mnuLgNvPresets.Name = "mnuLgNvPresets";
-            this.mnuLgNvPresets.Size = new System.Drawing.Size(180, 22);
-            this.mnuLgNvPresets.Text = "NVIDIA presets";
+            this.edtLgPresetTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtLgPresetTriggerConditions.Enabled = false;
+            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(515, 319);
+            this.edtLgPresetTriggerConditions.Name = "edtLgPresetTriggerConditions";
+            this.edtLgPresetTriggerConditions.ReadOnly = true;
+            this.edtLgPresetTriggerConditions.Size = new System.Drawing.Size(167, 20);
+            this.edtLgPresetTriggerConditions.TabIndex = 53;
             // 
-            // mnuLgAmdPresets
+            // btnLgPresetEditTriggerConditions
             // 
-            this.mnuLgAmdPresets.Name = "mnuLgAmdPresets";
-            this.mnuLgAmdPresets.Size = new System.Drawing.Size(180, 22);
-            this.mnuLgAmdPresets.Text = "AMD presets";
+            this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(689, 317);
+            this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
+            this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(75, 23);
+            this.btnLgPresetEditTriggerConditions.TabIndex = 54;
+            this.btnLgPresetEditTriggerConditions.Text = "Edit...";
+            this.btnLgPresetEditTriggerConditions.UseVisualStyleBackColor = true;
+            this.btnLgPresetEditTriggerConditions.Click += new System.EventHandler(this.btnLgPresetEditTriggerConditions_Click);
             // 
             // MainForm
             // 
@@ -2055,6 +2163,15 @@
         private System.Windows.Forms.ToolStripSeparator miLgExpertSeparator1;
         private System.Windows.Forms.ToolStripMenuItem mnuLgNvPresets;
         private System.Windows.Forms.ToolStripMenuItem mnuLgAmdPresets;
+        private System.Windows.Forms.ComboBox cbxLgPresetTrigger;
+        private System.Windows.Forms.Label lblLgPresetTrigger;
+        private System.Windows.Forms.Label lblLgPresetTriggerCondition;
+        private System.Windows.Forms.Label lblLgPresetExcludedProcesses;
+        private System.Windows.Forms.TextBox edtLgPresetExcludedProcesses;
+        private System.Windows.Forms.Label lblLgPresetIncludedProcesses;
+        private System.Windows.Forms.TextBox edtLgPresetIncludedProcesses;
+        private System.Windows.Forms.Button btnLgPresetEditTriggerConditions;
+        private System.Windows.Forms.TextBox edtLgPresetTriggerConditions;
     }
 }
 

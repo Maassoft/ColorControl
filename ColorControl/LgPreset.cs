@@ -20,7 +20,7 @@ namespace ColorControl
         [JsonIgnore]
         public int Y { get; set; }
 
-        public LgPreset()
+        public LgPreset() : base()
         {
             steps = new List<string>();
         }
@@ -46,7 +46,7 @@ namespace ColorControl
 
         public static List<string> GetColumnNames()
         {
-            return new List<string>() { "Name", "Device|120", "App|200", "Steps|400", "Shortcut" };
+            return new List<string>() { "Name", "Device|120", "App|200", "Steps|400", "Shortcut", "Trigger" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -89,6 +89,11 @@ namespace ColorControl
             values.Add(app);
             values.Add(GetStepsDisplay());
             values.Add(shortcut);
+
+            if (Triggers.Any())
+            {
+                values.Add(Triggers.First().ToString());
+            }
 
             return values;
         }

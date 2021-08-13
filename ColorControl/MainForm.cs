@@ -1092,6 +1092,11 @@ namespace ColorControl
             btnLgAddButton.Enabled = enabled;
             cbxLgApps.Enabled = enabled;
             btnDeleteLg.Enabled = enabled;
+            cbxLgPresetTrigger.Enabled = enabled;
+            edtLgPresetTriggerConditions.Enabled = enabled;
+            btnLgPresetEditTriggerConditions.Enabled = enabled;
+            edtLgPresetIncludedProcesses.Enabled = enabled;
+            edtLgPresetExcludedProcesses.Enabled = enabled;
 
             var preset = GetSelectedLgPreset();
 
@@ -1116,6 +1121,16 @@ namespace ColorControl
                 }
 
                 cbxLgPresetDevice.SelectedIndex = index;
+
+                var trigger = preset.Triggers.FirstOrDefault();
+
+                Utils.SetComboBoxEnumIndex(cbxLgPresetTrigger, (int)(trigger?.Trigger ?? PresetTriggerType.None));
+
+                edtLgPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>(trigger != null ? (int)trigger.Conditions : 0).Join(", ");
+                edtLgPresetTriggerConditions.Tag = trigger != null ? (int)trigger.Conditions : 0;
+
+                edtLgPresetIncludedProcesses.Text = trigger?.IncludedProcesses?.Join(", ") ?? string.Empty;
+                edtLgPresetExcludedProcesses.Text = trigger?.ExcludedProcesses?.Join(", ") ?? string.Empty;
             }
             else
             {
@@ -1124,6 +1139,11 @@ namespace ColorControl
                 edtShortcutLg.Text = string.Empty;
                 edtStepsLg.Text = string.Empty;
                 cbxLgPresetDevice.SelectedIndex = -1;
+                cbxLgPresetTrigger.SelectedIndex = -1;
+                edtLgPresetTriggerConditions.Text = string.Empty;
+                edtLgPresetTriggerConditions.Tag = 0;
+                edtLgPresetIncludedProcesses.Text = string.Empty;
+                edtLgPresetExcludedProcesses.Text = string.Empty;
             }
         }
 
@@ -1177,6 +1197,17 @@ namespace ColorControl
                 preset.appId = lgApp.appId;
             }
 
+            var triggerType = Utils.GetComboBoxEnumItem<PresetTriggerType>(cbxLgPresetTrigger);
+            preset.UpdateTrigger(triggerType,
+                                 (PresetConditionType)edtLgPresetTriggerConditions.Tag,
+                                 edtLgPresetIncludedProcesses.Text,
+                                 edtLgPresetExcludedProcesses.Text);
+
+            if (triggerType != PresetTriggerType.None)
+            {
+                _lgService.InstallEventHandlers();
+            }
+
             var shortcutChanged = !shortcut.Equals(preset.shortcut);
             if (shortcutChanged)
             {
@@ -1184,27 +1215,8 @@ namespace ColorControl
             }
 
             var text = edtStepsLg.Text;
-            var clearSteps = string.IsNullOrEmpty(text);
 
-            preset.steps.Clear();
-            if (!clearSteps)
-            {
-                //text = text.Replace(" ", string.Empty);
-                var steps = text.Split(',');
-                for (var i = 0; i < steps.Length; i++)
-                {
-                    var step = steps[i];
-                    if (step.IndexOf("(") > -1)
-                    {
-                        steps[i] = step.Trim();
-                    }
-                    else
-                    {
-                        steps[i] = step.Replace(" ", string.Empty);
-                    }
-                }
-                preset.steps.AddRange(steps);
-            }
+            Utils.ParseWords(preset.steps, text);
 
             AddOrUpdateItemLg();
 
@@ -1262,27 +1274,7 @@ namespace ColorControl
         {
             if (tcMain.SelectedTab == tabLG)
             {
-                if (cbxLgDevices.Items.Count == 0 && _lgService != null)
-                {
-                    var devices = _lgService.Devices;
-                    if (devices == null || !devices.Any())
-                    {
-                        RefreshLgDevices();
-                    }
-                    else
-                    {
-                        FillLgDevices();
-                    }
-
-                    if (scLgController.Panel2.Controls.Count == 0)
-                    {
-                        var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
-                        rcPanel.Parent = scLgController.Panel2;
-                        rcPanel.Dock = DockStyle.Fill;
-                    }
-                    chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
-                    scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
-                }
+                InitLgTab();
             }
             else if (tcMain.SelectedTab == tabLog)
             {
@@ -1294,25 +1286,57 @@ namespace ColorControl
             }
             else if (tcMain.SelectedTab == tabOptions)
             {
-                grpNvidiaOptions.Visible = _nvService != null;
-                if (grpNvidiaOptions.Visible)
+                InitOptionsTab();
+            }
+        }
+
+        private void InitLgTab()
+        {
+            if (cbxLgDevices.Items.Count == 0 && _lgService != null)
+            {
+                var devices = _lgService.Devices;
+                if (devices == null || !devices.Any())
                 {
-                    var firstTime = cbxDitheringBitDepth.Items.Count == 0;
+                    RefreshLgDevices();
+                }
+                else
+                {
+                    FillLgDevices();
+                }
 
-                    if (firstTime)
-                    {
-                        cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
-                        cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
-                    }
+                if (scLgController.Panel2.Controls.Count == 0)
+                {
+                    var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
+                    rcPanel.Parent = scLgController.Panel2;
+                    rcPanel.Dock = DockStyle.Fill;
+                }
+                chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
+                scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
 
-                    var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
-                    if (firstTime || preset != null)
-                    {
-                        chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
-                        cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? (int)NvDitherBits.Bits8);
-                        cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? (int)NvDitherMode.Temporal);
-                        FillGradient();
-                    }
+                Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Screensaver, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup);
+            }
+        }
+
+        private void InitOptionsTab()
+        {
+            grpNvidiaOptions.Visible = _nvService != null;
+            if (grpNvidiaOptions.Visible)
+            {
+                var firstTime = cbxDitheringBitDepth.Items.Count == 0;
+
+                if (firstTime)
+                {
+                    cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
+                    cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
+                }
+
+                var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
+                if (firstTime || preset != null)
+                {
+                    chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
+                    cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? (int)NvDitherBits.Bits8);
+                    cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? (int)NvDitherMode.Temporal);
+                    FillGradient();
                 }
             }
         }
@@ -1630,7 +1654,7 @@ namespace ColorControl
             {
                 lines = File.ReadAllLines(filename);
             }
-            var reversedLines = lines.Reverse().ToList();
+            var reversedLines = lines.ToList();
             var builder = new StringBuilder();
             reversedLines.ForEach(line => builder.AppendLine(line));
             edtLog.Text = builder.ToString();
@@ -1729,7 +1753,7 @@ namespace ColorControl
                         return;
                     }
 
-                    value = values.First();
+                    value = values.First().Value.ToString();
                 }
             }
             else
@@ -1754,7 +1778,7 @@ namespace ColorControl
                     return;
                 }
 
-                value = values.First();
+                value = values.First().Value.ToString();
             }
 
             if (!string.IsNullOrEmpty(value))
@@ -2001,7 +2025,7 @@ Do you want to continue?";
 
             var preset = GetSelectedNvPreset();
 
-            preset.ditheringBits = uint.Parse(item.Tag.ToString());
+            preset.ditheringMode = uint.Parse(item.Tag.ToString());
 
             AddOrUpdateItem();
 
@@ -2468,7 +2492,7 @@ Do you want to continue?";
             var values = MessageForms.ShowDialog("Add tv", new[] { "Name", "Ip-address", "MAC-address" }, ValidateAddDevice);
             if (values.Any())
             {
-                var device = new LgDevice(values[0], values[1], values[2]);
+                var device = new LgDevice(values[0].Value.ToString(), values[1].Value.ToString(), values[2].Value.ToString());
 
                 var form = MessageForms.ShowProgress("Connecting to device...");
 
@@ -2497,9 +2521,9 @@ Do you want to continue?";
             }
         }
 
-        private string ValidateAddDevice(List<string> values)
+        private string ValidateAddDevice(IEnumerable<MessageForms.FieldDefinition> values)
         {
-            if (values.Any(v => string.IsNullOrEmpty(v)))
+            if (values.Any(v => string.IsNullOrEmpty(v.Value?.ToString())))
             {
                 return "Please fill in all the fields";
             }
@@ -2538,7 +2562,7 @@ Do you want to continue?";
             var device = _lgService.GetPresetDevice(preset);
 
             var actions = device?.GetInvokableActions();
-            foreach (var action in actions.Where(a => a.Category == null || !a.Category.Equals("other")))
+            foreach (var action in actions)
             {
                 var text = action.Name;
 
@@ -2693,6 +2717,37 @@ Do you want to continue?"
             {
                 cbxLgApps.SelectedIndex = -1;
             }
+        }
+
+        private void btnLgPresetEditTriggerConditions_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedLgPreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            var dropDownValues = Utils.GetDescriptions<PresetConditionType>(fromValue: 1);
+
+            var values = MessageForms.ShowDialog("Set trigger conditions", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Set desired trigger conditions",
+                        FieldType = MessageForms.FieldType.Flags,
+                        Values = dropDownValues,
+                        Value = edtLgPresetTriggerConditions.Tag ?? 0
+                    }
+                });
+
+            if (!values.Any())
+            {
+                return;
+            }
+
+            var value = (PresetConditionType)values.First().Value;
+            edtLgPresetTriggerConditions.Tag = (PresetConditionType)values.First().Value;
+            edtLgPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>((int)value).Join(", ");
         }
     }
 }

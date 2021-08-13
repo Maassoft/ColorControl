@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -23,7 +22,20 @@ namespace ColorControl
             ShutDown = 4,
             StandBy = 5
         }
-    
+
+        internal class ProcessMonitorContext
+        {
+            public List<LgDevice> Devices { get; set; }
+            public bool WasFullScreen { get; set; }
+            public Process[] StartedProcesses { get; set; }
+            public Process[] StoppedProcesses { get; set; }
+            public Process[] RunningProcesses { get; set; }
+            public bool IsNotificationDisabled { get; set; }
+            public Process ForegroundProcess { get; set; }
+            public bool ForegroundProcessIsFullScreen { get; set; }
+            public string LastFullScreenProcessName = string.Empty;
+        }
+
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static string LgListAppsJson = "listApps.json";
@@ -52,7 +64,7 @@ namespace ColorControl
         private int _poweredOffByScreenSaverProcessId;
         private Task _monitorTask;
         private int _monitorTaskCounter;
-
+        
         public LgService(string dataPath, bool allowPowerOn) : base(dataPath)
         {
             _allowPowerOn = allowPowerOn;
@@ -352,7 +364,11 @@ namespace ColorControl
                 return false;
             }
 
-            return await device.ExecutePreset(preset, reconnect);
+            var result = await device.ExecutePreset(preset, reconnect);
+
+            _lastAppliedPreset = preset;
+
+            return result;
         }
 
         public LgDevice GetPresetDevice(LgPreset preset)
@@ -521,7 +537,7 @@ namespace ColorControl
 
         private void MonitorProcesses()
         {
-            var enableMonitoring = Devices.Any(d => d.PowerSwitchOnScreenSaver);
+            var enableMonitoring = ShouldMonitorProcesses();
             if (enableMonitoring && _monitorTask == null)
             {
                 _monitorTask = CheckProcesses();
@@ -532,22 +548,35 @@ namespace ColorControl
             }
         }
 
+        public bool ShouldMonitorProcesses()
+        {
+            return Devices.Any(d => d.PowerSwitchOnScreenSaver) || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None));
+        }
+
         public async Task CheckProcesses()
         {
             var wasConnected = Devices.Any(d => d.PowerSwitchOnScreenSaver && d.IsConnected());
             _monitorTaskCounter++;
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
-            //const int minBacklight = 30;
-            //const int maxBacklight = 50;
-            //var lastBacklight = minBacklight;
 
-            while (Devices.Any(d => d.PowerSwitchOnScreenSaver) && validCounter == _monitorTaskCounter)
+            var monitorContext = new ProcessMonitorContext();
+            //Process[] lastProcesses = null;
+
+            while (validCounter == _monitorTaskCounter)
             {
-                await Task.Delay(500);
+                await Task.Delay(_poweredOffByScreenSaver ? 500 : 1000);
 
                 try
                 {
+                    var applicableDevices = Devices.Where(d => d.PowerSwitchOnScreenSaver || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
+                        ((p.DeviceMacAddress == null && d == SelectedDevice) || p.DeviceMacAddress == d.MacAddress)));
+
+                    if (!applicableDevices.Any())
+                    {
+                        break;
+                    }
+
                     if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)
                     {
                         continue;
@@ -571,83 +600,204 @@ namespace ColorControl
                         continue;
                     }
 
-                    var devices = Devices.Where(d => d.PowerSwitchOnScreenSaver && d.IsConnected()).ToList();
+                    var connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
 
-                    if (!devices.Any())
+                    if (!connectedDevices.Any())
                     {
                         if (wasConnected)
                         {
-                            Logger.Debug("Screensaver check: TV(s) where connected, but not any longer");
+                            Logger.Debug("Process monitor: TV(s) where connected, but not any longer");
                             wasConnected = false;
+                            continue;
                         }
-                        continue;
+                        else
+                        {
+                            var devices = applicableDevices.ToList();
+                            foreach (var device in devices)
+                            {
+                                Logger.Debug($"Process monitor: test connection with {device.Name}...");
+                                var test = await device.TestConnection();
+                                Logger.Debug("Process monitor: test connection result: " + test);
+                            }
+
+                            connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
+
+                            if (!connectedDevices.Any())
+                            {
+                                continue;
+                            }
+                        }
                     }
 
                     if (!wasConnected)
                     {
-                        Logger.Debug("Screensaver check: TV(s) where not connected, but connection has now been established");
+                        Logger.Debug("Process monitor: TV(s) where not connected, but connection has now been established");
                         wasConnected = true;
                     }
 
-                    //if (Utils.IsForegroundFullScreen())
+                    monitorContext.Devices = connectedDevices;
+                    monitorContext.RunningProcesses = processes;
+                    //if (lastProcesses != null)
                     //{
-                    //    if (lastBacklight != maxBacklight)
-                    //    {
-                    //        SelectedDevice?.SetBacklight(maxBacklight);
-                    //        lastBacklight = maxBacklight;
-                    //    }
+                    //    monitorContext.StartedProcesses = processes.Where(p => !lastProcesses.Any(lp => lp.Id == p.Id)).ToArray();
+                    //    monitorContext.StoppedProcesses = lastProcesses.Where(lp => !processes.Any(p => p.Id == lp.Id)).ToArray();
                     //}
-                    //else if (lastBacklight != minBacklight)
+                    //else
                     //{
-                    //    SelectedDevice?.SetBacklight(minBacklight);
-                    //    lastBacklight = minBacklight;
+                    //    monitorContext.StartedProcesses = null;
+                    //    monitorContext.StoppedProcesses = null;
                     //}
+
+                    //if (monitorContext.StartedProcesses?.Any() ?? false)
+                    //{
+                    //    Logger.Debug("Started processes: " + string.Join(", ", monitorContext.StartedProcesses.Select(p => p.ProcessName)));
+                    //}
+                    //lastProcesses = processes;
 
                     var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
 
-                    if (process == null)
+                    if (process != null)
                     {
-                        continue;
-                    }
+                        var parent = process.Parent();
 
-                    var parent = process.Parent();
-
-                    if (parent?.ProcessName.Contains("winlogon") ?? false)
-                    {
-                        Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
-                        try
+                        if (parent?.ProcessName.Contains("winlogon") ?? false)
                         {
-                            foreach (var device in devices)
+                            Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
+                            try
                             {
-                                Logger.Debug($"Screensaver check: test connection with {device.Name}...");
-                                var test = await device.TestConnection();
-                                Logger.Debug("Screensaver check: test connection result: " + test);
-                                if (!test)
+                                foreach (var device in connectedDevices)
                                 {
-                                    continue;
+                                    Logger.Debug($"Screensaver check: test connection with {device.Name}...");
+                                    var test = await device.TestConnection();
+                                    Logger.Debug("Screensaver check: test connection result: " + test);
+                                    if (!test)
+                                    {
+                                        continue;
+                                    }
+
+                                    Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
+                                    try
+                                    {
+                                        _poweredOffByScreenSaver = await device.PowerOff();
+                                    }
+                                    catch (Exception pex)
+                                    {
+                                        // Assume powering off was successful
+                                        _poweredOffByScreenSaver = true;
+                                        Logger.Error($"Screensaver check: exception while powering off (probably connection closed): " + pex.Message);
+                                    }
+                                    Logger.Debug($"Screensaver check: powered off tv {device.Name}");
                                 }
 
-                                Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
-                                _poweredOffByScreenSaver = await device.PowerOff();
+                                _poweredOffByScreenSaverProcessId = process.Id;
+                                lastProcessId = 0;
                             }
-
-                            _poweredOffByScreenSaverProcessId = process.Id;
-                            lastProcessId = 0;
+                            catch (Exception e)
+                            {
+                                Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
+                            }
                         }
-                        catch (Exception e)
+                        else if (process.Id != lastProcessId)
                         {
-                            Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
+                            Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
+                            lastProcessId = process.Id;
                         }
                     }
-                    else if (process.Id != lastProcessId)
+                    else
                     {
-                        Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
-                        lastProcessId = process.Id;
+                        await ExecuteProcessPresets(monitorContext);
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Error("CheckProcesses: " + ex.ToLogString());
+                }
+            }
+        }
+
+        private async Task ExecuteProcessPresets(ProcessMonitorContext context)
+        {
+            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch));
+            if (!presets.Any())
+            {
+                return;
+            }
+
+            context.IsNotificationDisabled = Utils.IsNotificationDisabled();
+
+            var (processId, isFullScreen) = Utils.GetForegroundProcessIdAndIfFullScreen();
+
+            if (processId > 0)
+            {
+                context.ForegroundProcess = context.RunningProcesses.FirstOrDefault(p => p.Id == processId);
+                context.ForegroundProcessIsFullScreen = isFullScreen;
+            }
+            else
+            {
+                context.ForegroundProcess = null;
+                context.ForegroundProcessIsFullScreen = false;
+            }
+
+            var changedProcesses = new List<Process>();
+            if (context.ForegroundProcess != null)
+            {
+                changedProcesses.Add(context.ForegroundProcess);
+            }
+
+            if (context.ForegroundProcess != null && context.ForegroundProcessIsFullScreen)
+            {
+                if (!context.LastFullScreenProcessName.Equals(context.ForegroundProcess.ProcessName))
+                {
+                    context.LastFullScreenProcessName = context.ForegroundProcess.ProcessName;
+                    //Logger.Debug($"Foreground fullscreen app detected: {context.ForegroundProcess.ProcessName}");
+                }
+
+                presets = presets.Where(p => p.Triggers.Any(t => t.Conditions.HasFlag(PresetConditionType.FullScreen)));
+                context.WasFullScreen = true;
+            }
+            else if (context.WasFullScreen)
+            {
+                presets = presets.Where(p => p.Triggers.Any(t => !t.Conditions.HasFlag(PresetConditionType.FullScreen)));
+                context.WasFullScreen = false;
+                context.LastFullScreenProcessName = string.Empty;
+            }
+
+            var isHDRActive = context.Devices.Any(d => d.IsUsingHDRPictureMode());
+
+            var triggerContext = new PresetTriggerContext
+            {
+                IsHDRActive = isHDRActive,
+                ForegroundProcess = context.ForegroundProcess,
+                ForegroundProcessIsFullScreen = context.ForegroundProcessIsFullScreen,
+                ChangedProcesses = changedProcesses,
+                IsNotificationDisabled = context.IsNotificationDisabled
+            };
+
+            var toApplyPresets = new List<LgPreset>();
+            foreach (var preset in presets)
+            {
+                if (preset.Triggers.Any(t => t.TriggerActive(triggerContext)))
+                {
+                    toApplyPresets.Add(preset);
+                }
+            }
+
+            if (toApplyPresets.Any())
+            {
+                LgPreset toApplyPreset;
+                if (toApplyPresets.Count > 1)
+                {
+                    toApplyPreset = toApplyPresets.FirstOrDefault(p => p.Triggers.Any(t => !t.IncludedProcesses.Contains("*")));
+                    toApplyPreset = toApplyPreset != null ? toApplyPreset : toApplyPresets.First();
+                }
+                else
+                {
+                    toApplyPreset = toApplyPresets.First();
+                }
+
+                if (_lastAppliedPreset != toApplyPreset)
+                {
+                    await ApplyPreset(toApplyPreset);
                 }
             }
         }

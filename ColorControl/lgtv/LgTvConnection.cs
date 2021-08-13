@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
-using Windows.Web;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
+using ColorControl;
 
 namespace LgTv
 {
@@ -45,30 +45,29 @@ namespace LgTv
                     _connection.MessageReceived += Connection_MessageReceived;
 
                 _connection.Closed += Connection_Closed;
-                var cancellationTokenSource = new CancellationTokenSource();
-                var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
-
-                cancellationTokenSource.CancelAfter(5000);
-
-                var result = await connectTask.ContinueWith((antecedent) =>
+                using (var cancellationTokenSource = new CancellationTokenSource(5000))
                 {
-                    if (antecedent.Status == TaskStatus.RanToCompletion)
+                    var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
+                    var result = await connectTask.ContinueWith((antecedent) =>
                     {
-                        // connectTask ran to completion, so we know that the MessageWebSocket is connected.
-                        // Add additional code here to use the MessageWebSocket.
-                        IsConnected?.Invoke(true);
+                        if (antecedent.Status == TaskStatus.RanToCompletion)
+                        {
+                            // connectTask ran to completion, so we know that the MessageWebSocket is connected.
+                            // Add additional code here to use the MessageWebSocket.
+                            IsConnected?.Invoke(true);
 
-                        _messageWriter = new DataWriter(_connection.OutputStream);
-                        return true;
-                    }
-                    else
-                    {
-                        // connectTask timed out, or faulted.
-                        return false;
-                    }
-                });
+                            _messageWriter = new DataWriter(_connection.OutputStream);
+                            return true;
+                        }
+                        else
+                        {
+                            // connectTask timed out, or faulted.
+                            return false;
+                        }
+                    });
 
-                return result;
+                    return result;
+                }
             }
             catch (Exception e)
             {
@@ -85,12 +84,22 @@ namespace LgTv
             }
         }
 
-        public async void SendMessageAsync(string message)
+        public async Task SendMessageAsync(string message)
         {
             try
             {
                 _messageWriter.WriteString(message);
-                await _messageWriter.StoreAsync();
+
+                using (var cancellationTokenSource = new CancellationTokenSource(5000))
+                {
+                    await _messageWriter.StoreAsync().AsTask(cancellationTokenSource.Token).ContinueWith((antecedent) =>
+                    {
+                        if (antecedent.Status != TaskStatus.RanToCompletion)
+                        {
+                            throw new Exception("SendMessageAsync cancelled due to timeout");
+                        }
+                    });
+                }
             }
             catch (Exception e)
             {
@@ -100,24 +109,26 @@ namespace LgTv
             }
         }
 
-        public Task<dynamic> SendCommandAsync(string message)
+        public async Task<dynamic> SendCommandAsync(string message)
         {
             var obj = JsonConvert.DeserializeObject<dynamic>(message);
-            return SendCommandAsync((string)obj.id, message);
+            return await SendCommandAsync((string)obj.id, message);
         }
 
-        private Task<dynamic> SendCommandAsync(string id, string message)
+        private async Task<dynamic> SendCommandAsync(string id, string message)
         {
             try
             {
                 var taskSource = new TaskCompletionSource<dynamic>();
                 _tokens.TryAdd(id, taskSource);
-                SendMessageAsync(message);
+                await SendMessageAsync(message);
                 if (ConnectionClosed)
                 {
                     throw new Exception("Connection closed");
                 }
-                return taskSource.Task;
+                var result = await taskSource.Task.ConfigureAwait(false);
+
+                return result;
             }
             catch (Exception e)
             {
@@ -125,7 +136,7 @@ namespace LgTv
             }
         }
 
-        public Task<dynamic> SendCommandAsync(RequestMessage message)
+        public async Task<dynamic> SendCommandAsync(RequestMessage message)
         {
             var rawMessage = new RawRequestMessage(message, ++_commandCount);
             var serialized = JsonConvert.SerializeObject(rawMessage, new JsonSerializerSettings()
@@ -133,10 +144,10 @@ namespace LgTv
                 NullValueHandling = NullValueHandling.Ignore,
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
-            return SendCommandAsync(rawMessage.Id, serialized);
+            return await SendCommandAsync(rawMessage.Id, serialized);
         }
 
-        public Task<dynamic> SubscribeAsync(RequestMessage message, Func<dynamic, bool> callback)
+        public async Task<dynamic> SubscribeAsync(RequestMessage message, Func<dynamic, bool> callback)
         {
             var rawMessage = new RawRequestMessage(message, ++_commandCount);
             var serialized = JsonConvert.SerializeObject(rawMessage, new JsonSerializerSettings()
@@ -147,7 +158,7 @@ namespace LgTv
 
             _callbacks.TryAdd(rawMessage.Id, callback);
 
-            return SendCommandAsync(rawMessage.Id, serialized);
+            return await SendCommandAsync(rawMessage.Id, serialized);
         }
 
         private void Connection_Closed(IWebSocket sender, WebSocketClosedEventArgs args)
@@ -179,8 +190,7 @@ namespace LgTv
                         }
 
                     }
-                    else
-                    if (_tokens.TryGetValue(id, out taskCompletion))
+                    else if (_tokens.TryGetValue(id, out taskCompletion))
                     {
                         if (id == "register_0") return;
                         if (obj.type == "error")
@@ -203,11 +213,37 @@ namespace LgTv
             catch (Exception ex)
             {
                 var status = WebSocketError.GetStatus(ex.GetBaseException().HResult);
-                Logger.Error($"Connection_MessageReceived: status: {status}, exception: {ex.Message}");
+                Logger.Error($"Connection_MessageReceived: status: {status}, exception: {ex.ToLogString()}");
+
+                SetExceptionOnAllTokens(ex);
+
                 ConnectionClosed = true;
                 _messageWriter?.Dispose();
             }
         }
+
+        private void SetExceptionOnAllTokens(Exception ex)
+        {
+            //Logger.Debug($"Tokens: {_tokens.Count}");
+
+            foreach (var taskCompletion in _tokens.Values)
+            {
+                try
+                {
+                    if (taskCompletion.Task?.Status == TaskStatus.Running)
+                    {
+                        taskCompletion.SetException(new Exception(ex.Message));
+                    }
+                }
+                catch (Exception ex2)
+                {
+                    Logger.Error("SetExceptionOnAllTokens: " + ex2.Message);
+                }
+            }
+
+            _tokens.Clear();
+        }
+
         public void Close()
         {
             _connection?.Close(1, "");
