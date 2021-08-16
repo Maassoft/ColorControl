@@ -277,7 +277,7 @@ namespace ColorControl
 
         private void SaveConfig()
         {
-            Config.PowerOnAfterStartup = Devices.Any(d => d.PowerOnAfterStartup);
+            Config.PowerOnAfterStartup = Devices?.Any(d => d.PowerOnAfterStartup) ?? false;
 
             var json = JsonConvert.SerializeObject(Config);
             File.WriteAllText(_configFilename, json);

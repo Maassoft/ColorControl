@@ -12,13 +12,13 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
-using System.Windows;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
@@ -630,6 +630,11 @@ namespace ColorControl
 
         public static int SetComboBoxEnumIndex(ComboBox comboBox, int value)
         {
+            if (comboBox.Items.Count == 0)
+            {
+                return -1;
+            }
+
             var index = 0;
 
             for (var i = 0; i < comboBox.Items.Count; i++)
@@ -925,6 +930,42 @@ namespace ColorControl
                 }
             }
             target.AddRange(words);
+        }
+
+        public static int ParseInt(string value, int def = 0)
+        {
+            if (int.TryParse(value, out var result))
+            {
+                return result;
+            }
+
+            return def;
+        }
+
+        public static async Task<dynamic> GetRestJsonAsync(string url, Action<dynamic> callBack = null)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("request");
+
+            var response = await httpClient.GetAsync(url);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsAsync<dynamic>();
+
+                if (callBack != null)
+                {
+                    callBack(result);
+                }
+
+                return result;
+            }
+
+            if (callBack != null)
+            {
+                callBack(null);
+            }
+
+            return null;
         }
     }
 

@@ -38,9 +38,9 @@ namespace ColorControl
             MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        public static void InfoOk(string text)
+        public static void InfoOk(string text, string title = null, string url = null)
         {
-            MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
         }
 
         public static DialogResult QuestionYesNo(string text)

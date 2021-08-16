@@ -53,6 +53,9 @@ namespace ColorControl
 
         private AmdService _amdService;
         private bool _skipResize;
+        private FileVersionInfo _currentVersionInfo;
+        private bool _checkedForUpdates = false;
+        private string _updateHtmlUrl;
 
         public MainForm(AppContext appContext)
         {
@@ -86,6 +89,7 @@ namespace ColorControl
             };
             _trayIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
             _trayIcon.ContextMenu.Popup += trayIconContextMenu_Popup;
+            _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
 
             chkStartAfterLogin.Checked = Utils.TaskExists(TS_TASKNAME, true);
 
@@ -116,6 +120,7 @@ namespace ColorControl
         {
             try
             {
+                //throw new Exception("bla");
                 _nvService = new NvService(_dataDir);
                 FillNvPresets();
 
@@ -194,6 +199,8 @@ namespace ColorControl
 
         private void AfterLgServiceRefreshDevices()
         {
+            FillLgDevices();
+
             if (StartUpParams.ExecuteLgPreset)
             {
                 var _ = _lgService.ApplyPreset(StartUpParams.LgPresetName);
@@ -221,7 +228,7 @@ namespace ColorControl
 
         private void InitInfo()
         {
-            var fileVersionInfo = FileVersionInfo.GetVersionInfo(Path.GetFileName(Application.ExecutablePath));
+            _currentVersionInfo = FileVersionInfo.GetVersionInfo(Path.GetFileName(Application.ExecutablePath));
 
             if (ApplicationDeployment.IsNetworkDeployed)
             {
@@ -232,7 +239,7 @@ namespace ColorControl
                 Text = Application.ProductName + " " + Application.ProductVersion;
             }
 
-            lblInfo.Text = Text + " - " + fileVersionInfo.LegalCopyright;
+            lblInfo.Text = Text + " - " + _currentVersionInfo.LegalCopyright;
 
             lbPlugins.Items.Add("lgtv.net by gr4b4z");
             lbPlugins.Items.Add("Newtonsoft.Json by James Newton-King");
@@ -259,6 +266,14 @@ namespace ColorControl
         {
             Show();
             WindowState = FormWindowState.Normal;
+        }
+
+        private void trayIconBalloonTip_Clicked(object sender, EventArgs e)
+        {
+            if (_updateHtmlUrl != null)
+            {
+                Utils.StartProcess(_updateHtmlUrl);
+            }
         }
 
         private void FillNvPresets()
@@ -611,6 +626,7 @@ namespace ColorControl
             chkStartMinimized.Checked = _config.StartMinimized;
             chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
             chkMinimizeToSystemTray.Checked = _config.MinimizeToTray;
+            chkCheckForUpdates.Checked = _config.CheckForUpdates;
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
 
@@ -687,6 +703,9 @@ namespace ColorControl
                 lblLgError.Text = "Error while initializing the LG-controller. You either don't have a LG TV or it is disabled.";
                 lblLgError.Visible = true;
             }
+
+            InitSelectedTab();
+            CheckForUpdates();
         }
 
         protected override void SetVisibleCore(bool value)
@@ -1272,6 +1291,11 @@ namespace ColorControl
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            InitSelectedTab();
+        }
+
+        private void InitSelectedTab()
+        {
             if (tcMain.SelectedTab == tabLG)
             {
                 InitLgTab();
@@ -1292,29 +1316,16 @@ namespace ColorControl
 
         private void InitLgTab()
         {
-            if (cbxLgDevices.Items.Count == 0 && _lgService != null)
+            if (scLgController.Panel2.Controls.Count == 0)
             {
-                var devices = _lgService.Devices;
-                if (devices == null || !devices.Any())
-                {
-                    RefreshLgDevices();
-                }
-                else
-                {
-                    FillLgDevices();
-                }
-
-                if (scLgController.Panel2.Controls.Count == 0)
-                {
-                    var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
-                    rcPanel.Parent = scLgController.Panel2;
-                    rcPanel.Dock = DockStyle.Fill;
-                }
-                chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
-                scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
-
-                Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Screensaver, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup);
+                var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
+                rcPanel.Parent = scLgController.Panel2;
+                rcPanel.Dock = DockStyle.Fill;
             }
+            chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
+            scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
+
+            Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Screensaver, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup);
         }
 
         private void InitOptionsTab()
@@ -2039,6 +2050,52 @@ Do you want to continue?";
         {
             ApplyNvPresetOnStartup();
             ApplyAmdPresetOnStartup();
+            if (_trayIcon.Visible)
+            {
+                CheckForUpdates();
+            }
+        }
+
+        private void CheckForUpdates()
+        {
+            if (!_config.CheckForUpdates || _checkedForUpdates || Debugger.IsAttached)
+            {
+                return;
+            }
+
+            _checkedForUpdates = true;
+
+            var _ = Utils.GetRestJsonAsync("https://api.github.com/repos/maassoft/colorcontrol/releases/latest", InitHandleCheckForUpdates);
+        }
+
+        private void InitHandleCheckForUpdates(dynamic latest)
+        {
+            BeginInvoke(new Action<dynamic>(HandleCheckForUpdates), new[] { latest });
+        }
+
+        private void HandleCheckForUpdates(dynamic latest)
+        {
+            if (latest?.tag_name == null)
+            {
+                return;
+            }
+
+            var currentVersion = Application.ProductVersion;
+
+            var newVersion = latest.tag_name.Value.Substring(1);
+            if (newVersion.CompareTo(currentVersion) > 0)
+            {
+                _updateHtmlUrl = latest.html_url.Value;
+
+                if (_trayIcon.Visible)
+                {
+                    _trayIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
+                }
+                else
+                {
+                    MessageForms.InfoOk($"New version {newVersion} is available. Click on the Help-button to open the GitHub page.", "Update available", "https://github.com/Maassoft/ColorControl/releases/tag/v4.0.0.0");
+                }
+            }
         }
 
         private void ApplyNvPresetOnStartup(int attempts = 5) {
@@ -2748,6 +2805,14 @@ Do you want to continue?"
             var value = (PresetConditionType)values.First().Value;
             edtLgPresetTriggerConditions.Tag = (PresetConditionType)values.First().Value;
             edtLgPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>((int)value).Join(", ");
+        }
+
+        private void chkCheckForUpdates_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_initialized)
+            {
+                _config.CheckForUpdates = chkCheckForUpdates.Checked;
+            }
         }
     }
 }

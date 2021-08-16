@@ -223,13 +223,15 @@ namespace ColorControl
             {
                 var settings = payload.settings;
 
+                Logger.Debug($"PictureSettingsChanged: {JsonConvert.SerializeObject(settings)}");
+
                 if (settings.backlight != null)
                 {
-                    PictureSettings.Backlight = int.Parse(settings.backlight.Value);
+                    PictureSettings.Backlight = Utils.ParseInt(settings.backlight.Value, PictureSettings.Backlight);
                 }
                 if (settings.contrast != null)
                 {
-                    PictureSettings.Contrast = int.Parse(settings.contrast.Value);
+                    PictureSettings.Contrast = Utils.ParseInt(settings.contrast.Value, PictureSettings.Contrast);
                 }
             }
 

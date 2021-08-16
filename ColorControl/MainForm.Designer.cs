@@ -104,6 +104,8 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.btnLgPresetEditTriggerConditions = new System.Windows.Forms.Button();
+            this.edtLgPresetTriggerConditions = new System.Windows.Forms.TextBox();
             this.lblLgPresetExcludedProcesses = new System.Windows.Forms.Label();
             this.edtLgPresetExcludedProcesses = new System.Windows.Forms.TextBox();
             this.lblLgPresetIncludedProcesses = new System.Windows.Forms.Label();
@@ -191,8 +193,7 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.edtLgPresetTriggerConditions = new System.Windows.Forms.TextBox();
-            this.btnLgPresetEditTriggerConditions = new System.Windows.Forms.Button();
+            this.chkCheckForUpdates = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -995,6 +996,27 @@
             this.scLgController.SplitterDistance = 767;
             this.scLgController.TabIndex = 43;
             // 
+            // btnLgPresetEditTriggerConditions
+            // 
+            this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(689, 317);
+            this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
+            this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(75, 23);
+            this.btnLgPresetEditTriggerConditions.TabIndex = 54;
+            this.btnLgPresetEditTriggerConditions.Text = "Edit...";
+            this.btnLgPresetEditTriggerConditions.UseVisualStyleBackColor = true;
+            this.btnLgPresetEditTriggerConditions.Click += new System.EventHandler(this.btnLgPresetEditTriggerConditions_Click);
+            // 
+            // edtLgPresetTriggerConditions
+            // 
+            this.edtLgPresetTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtLgPresetTriggerConditions.Enabled = false;
+            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(515, 319);
+            this.edtLgPresetTriggerConditions.Name = "edtLgPresetTriggerConditions";
+            this.edtLgPresetTriggerConditions.ReadOnly = true;
+            this.edtLgPresetTriggerConditions.Size = new System.Drawing.Size(167, 20);
+            this.edtLgPresetTriggerConditions.TabIndex = 53;
+            // 
             // lblLgPresetExcludedProcesses
             // 
             this.lblLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -1755,6 +1777,7 @@
             // 
             // grpGeneralOptions
             // 
+            this.grpGeneralOptions.Controls.Add(this.chkCheckForUpdates);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeToSystemTray);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeOnClose);
             this.grpGeneralOptions.Controls.Add(this.chkStartMinimized);
@@ -1931,26 +1954,16 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // edtLgPresetTriggerConditions
+            // chkCheckForUpdates
             // 
-            this.edtLgPresetTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.edtLgPresetTriggerConditions.Enabled = false;
-            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(515, 319);
-            this.edtLgPresetTriggerConditions.Name = "edtLgPresetTriggerConditions";
-            this.edtLgPresetTriggerConditions.ReadOnly = true;
-            this.edtLgPresetTriggerConditions.Size = new System.Drawing.Size(167, 20);
-            this.edtLgPresetTriggerConditions.TabIndex = 53;
-            // 
-            // btnLgPresetEditTriggerConditions
-            // 
-            this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(689, 317);
-            this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
-            this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(75, 23);
-            this.btnLgPresetEditTriggerConditions.TabIndex = 54;
-            this.btnLgPresetEditTriggerConditions.Text = "Edit...";
-            this.btnLgPresetEditTriggerConditions.UseVisualStyleBackColor = true;
-            this.btnLgPresetEditTriggerConditions.Click += new System.EventHandler(this.btnLgPresetEditTriggerConditions_Click);
+            this.chkCheckForUpdates.AutoSize = true;
+            this.chkCheckForUpdates.Location = new System.Drawing.Point(204, 42);
+            this.chkCheckForUpdates.Name = "chkCheckForUpdates";
+            this.chkCheckForUpdates.Size = new System.Drawing.Size(177, 17);
+            this.chkCheckForUpdates.TabIndex = 6;
+            this.chkCheckForUpdates.Text = "Automatically check for updates";
+            this.chkCheckForUpdates.UseVisualStyleBackColor = true;
+            this.chkCheckForUpdates.CheckedChanged += new System.EventHandler(this.chkCheckForUpdates_CheckedChanged);
             // 
             // MainForm
             // 
@@ -2172,6 +2185,7 @@
         private System.Windows.Forms.TextBox edtLgPresetIncludedProcesses;
         private System.Windows.Forms.Button btnLgPresetEditTriggerConditions;
         private System.Windows.Forms.TextBox edtLgPresetTriggerConditions;
+        private System.Windows.Forms.CheckBox chkCheckForUpdates;
     }
 }
 

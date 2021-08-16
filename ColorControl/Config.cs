@@ -8,6 +8,8 @@
 
         public bool MinimizeToTray { get; set; }
 
+        public bool CheckForUpdates { get; set; }
+
         public int DisplaySettingsDelay { get; set; }
 
         public string ScreenSaverShortcut { get; set; }
@@ -26,6 +28,7 @@
             FormWidth = 900;
             FormHeight = 600;
             MinimizeToTray = true;
+            CheckForUpdates = true;
         }
     }
 }

@@ -205,7 +205,14 @@ namespace LgTv
 
                         if (_callbacks.TryGetValue(id, out Func<dynamic, bool> callback))
                         {
-                            callback(obj.payload);
+                            try
+                            {
+                                callback(obj.payload);
+                            }
+                            catch (Exception callbackException)
+                            {
+                                Logger.Error($"Connection_MessageReceived: the callback threw an exception: {callbackException.ToLogString()}");
+                            }
                         }
                     }
                 }
@@ -230,8 +237,9 @@ namespace LgTv
             {
                 try
                 {
-                    if (taskCompletion.Task?.Status == TaskStatus.Running)
+                    if (taskCompletion.Task.Status != TaskStatus.RanToCompletion)
                     {
+                        Logger.Debug("taskCompletion.Task.Status: " + taskCompletion.Task.Status);
                         taskCompletion.SetException(new Exception(ex.Message));
                     }
                 }
