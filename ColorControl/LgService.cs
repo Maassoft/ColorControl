@@ -65,7 +65,7 @@ namespace ColorControl
         private Task _monitorTask;
         private int _monitorTaskCounter;
         
-        public LgService(string dataPath, bool allowPowerOn) : base(dataPath)
+        public LgService(string dataPath, bool allowPowerOn) : base(dataPath, "LgPresets.json")
         {
             _allowPowerOn = allowPowerOn;
 
@@ -127,33 +127,19 @@ namespace ColorControl
 
             return preset;
         }
-
-        private void LoadPresets()
+        protected override List<LgPreset> GetDefaultPresets()
         {
-            _presetsFilename = Path.Combine(_dataPath, "LgPresets.json");
-            var toCopy = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
-            if (!File.Exists(_presetsFilename) && File.Exists(toCopy))
+            List<LgPreset> presets = null;
+
+            var defaultPresetsFileName = Path.Combine(Directory.GetCurrentDirectory(), "LgPresets.json");
+            if (File.Exists(defaultPresetsFileName))
             {
-                try
-                {
-                    File.Copy(toCopy, _presetsFilename);
-                }
-                catch (Exception e)
-                {
-                    Logger.Error($"Error while copying {toCopy} to {_presetsFilename}: {e.Message}");
-                }
+                var json = File.ReadAllText(defaultPresetsFileName);
+
+                presets = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
             }
 
-            if (File.Exists(_presetsFilename))
-            {
-                var json = File.ReadAllText(_presetsFilename);
-
-                _presets = _JsonSerializer.Deserialize<List<LgPreset>>(json);
-            }
-            else
-            {
-                _presets = new List<LgPreset>();
-            }
+            return presets;
         }
 
         private void LoadConfig()

@@ -126,10 +126,10 @@ namespace ColorControl
 
                 _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 //Logger.Error("Error initializing NvService: " + e.ToLogString());
-                Logger.Debug("No NVIDIA device detected");
+                Logger.Debug($"No NVIDIA device detected: {ex.Message}");
                 tcMain.TabPages.Remove(tabNVIDIA);
             }
         }

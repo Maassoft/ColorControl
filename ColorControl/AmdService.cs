@@ -13,14 +13,9 @@ namespace ColorControl
 
         private ADLDisplayInfo _currentDisplay;
 
-        public AmdService(string dataPath) : base(dataPath)
+        public AmdService(string dataPath) : base(dataPath, "AmdPresets.json")
         {
             LoadPresets();
-        }
-
-        public AmdPreset GetLastAppliedPreset()
-        {
-            return _lastAppliedPreset;
         }
 
         public static bool ExecutePresetAsync(string idOrName)
@@ -45,20 +40,9 @@ namespace ColorControl
             }
         }
 
-        private void LoadPresets()
+        protected override List<AmdPreset> GetDefaultPresets()
         {
-            _presetsFilename = Path.Combine(_dataPath, "AmdPresets.json");
-
-            if (File.Exists(_presetsFilename))
-            {
-                var json = File.ReadAllText(_presetsFilename);
-
-                _presets = _JsonDeserializer.Deserialize<List<AmdPreset>>(json);
-            }
-            else
-            {
-                _presets = AmdPreset.GetDefaultPresets();
-            }
+            return AmdPreset.GetDefaultPresets();
         }
 
         private void SavePresets()

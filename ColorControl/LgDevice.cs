@@ -227,11 +227,11 @@ namespace ColorControl
 
                 if (settings.backlight != null)
                 {
-                    PictureSettings.Backlight = Utils.ParseInt(settings.backlight.Value, PictureSettings.Backlight);
+                    PictureSettings.Backlight = Utils.ParseDynamicAsInt(settings.backlight, PictureSettings.Backlight);
                 }
                 if (settings.contrast != null)
                 {
-                    PictureSettings.Contrast = Utils.ParseInt(settings.contrast.Value, PictureSettings.Contrast);
+                    PictureSettings.Contrast = Utils.ParseDynamicAsInt(settings.contrast, PictureSettings.Contrast);
                 }
             }
 

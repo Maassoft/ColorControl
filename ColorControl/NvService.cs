@@ -69,7 +69,7 @@ namespace ColorControl
 
         private Display _currentDisplay;
 
-        public NvService(string dataPath) : base(dataPath)
+        public NvService(string dataPath) : base(dataPath, "NvPresets.json")
         {
             var converter = new ColorDataConverter();
             _JsonDeserializer.RegisterConverters(new[] { converter });
@@ -126,20 +126,9 @@ namespace ColorControl
             SavePresets();
         }
 
-        private void LoadPresets()
+        protected override List<NvPreset> GetDefaultPresets()
         {
-            _presetsFilename = Path.Combine(_dataPath, "NvPresets.json");
-
-            if (File.Exists(_presetsFilename))
-            {
-                var json = File.ReadAllText(_presetsFilename);
-
-                _presets = _JsonDeserializer.Deserialize<List<NvPreset>>(json);
-            }
-            else
-            {
-                _presets = NvPreset.GetDefaultPresets();
-            }
+            return NvPreset.GetDefaultPresets();
         }
 
         private void SavePresets()
@@ -491,11 +480,6 @@ namespace ColorControl
             }
 
             return list;
-        }
-
-        public NvPreset GetLastAppliedPreset()
-        {
-            return _lastAppliedPreset;
         }
 
         protected override void Initialize()

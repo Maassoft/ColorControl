@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
+using Newtonsoft.Json.Linq;
 using NStandard;
 using NWin32;
 using NWin32.NativeTypes;
@@ -939,6 +940,19 @@ namespace ColorControl
                 return result;
             }
 
+            return def;
+        }
+
+        public static int ParseDynamicAsInt(dynamic value, int def = 0)
+        {
+            if (value.Type == JTokenType.Integer)
+            {
+                return (int)value.Value;
+            }
+            if (value.Type == JTokenType.String)
+            {
+                return ParseInt(value.Value, def);
+            }
             return def;
         }
 
