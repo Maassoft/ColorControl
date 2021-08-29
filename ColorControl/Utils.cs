@@ -681,8 +681,6 @@ namespace ColorControl
 
             //Debug.WriteLine("KD: " + e.Modifiers + ", " + e.KeyCode);
 
-            var keysWithoutModifiers = new[] { Keys.F12 };
-
             var shortcutString = (pressedModifiers > 0 ? pressedModifiers.ToString() : "");
             if (keyEvent.KeyCode == Keys.LWin || WinKeyDown)
             {
@@ -695,7 +693,7 @@ namespace ColorControl
             }
 
             var empty = string.IsNullOrEmpty(shortcutString);
-            if ((!empty || keysWithoutModifiers.Contains(keyEvent.KeyCode)) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
+            if ((!empty || KeysWithoutModifiers.Contains(keyEvent.KeyCode)) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
             {
                 if (!empty)
                 {
