@@ -68,7 +68,7 @@ namespace ColorControl
 
         public static bool ConsoleOpened { get; private set; }
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", SetLastError = true)]
         public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
         [DllImport("user32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
@@ -108,6 +108,7 @@ namespace ColorControl
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static bool WinKeyDown = false;
         private static UserNotificationState LastNotificationState;
+        private static Keys[] KeysWithoutModifiers = new[] { Keys.F13, Keys.F14, Keys.F15, Keys.F16, Keys.F17, Keys.F18, Keys.F19, Keys.F20, Keys.F21, Keys.F22, Keys.F23, Keys.F24 };
 
         public static Bitmap SubPixelShift(Bitmap bitmap)
         {
@@ -527,7 +528,7 @@ namespace ColorControl
             }
         }
 
-        public static void RegisterShortcut(IntPtr handle, int id, string shortcut, bool clear = false)
+        public static bool RegisterShortcut(IntPtr handle, int id, string shortcut, bool clear = false)
         {
             if (clear)
             {
@@ -537,8 +538,17 @@ namespace ColorControl
             if (!string.IsNullOrEmpty(shortcut))
             {
                 var (mods, key) = ParseShortcut(shortcut);
-                RegisterHotKey(handle, id, mods, key);
+                var result = RegisterHotKey(handle, id, mods, key);
+                if (!result)
+                {
+                    var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
+                    Logger.Error($"Could not register shortcut {shortcut}: {errorMessage}");
+                }
+
+                return result;
             }
+
+            return true;
         }
 
         public static void BuildDropDownMenuEx(ContextMenuStrip mnuParent, string name, Type enumType, EventHandler clickEvent, object tag = null)
@@ -671,6 +681,8 @@ namespace ColorControl
 
             //Debug.WriteLine("KD: " + e.Modifiers + ", " + e.KeyCode);
 
+            var keysWithoutModifiers = new[] { Keys.F12 };
+
             var shortcutString = (pressedModifiers > 0 ? pressedModifiers.ToString() : "");
             if (keyEvent.KeyCode == Keys.LWin || WinKeyDown)
             {
@@ -682,17 +694,34 @@ namespace ColorControl
                 shortcutString += "Win";
             }
 
-            if (!string.IsNullOrEmpty(shortcutString) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
+            var empty = string.IsNullOrEmpty(shortcutString);
+            if ((!empty || keysWithoutModifiers.Contains(keyEvent.KeyCode)) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
             {
-                shortcutString += " + " + keyEvent.KeyCode.ToString();
+                if (!empty)
+                {
+                    shortcutString += " + ";
+                }
+                shortcutString += keyEvent.KeyCode.ToString();
             }
 
-            if (pressedModifiers == 0 && !WinKeyDown)
+            if (string.IsNullOrEmpty(shortcutString))
             {
                 keyEvent.SuppressKeyPress = true;
             }
 
             return shortcutString;
+        }
+
+        public static bool ValidateShortcut(string shortcut)
+        {
+            var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Contains("+") || shortcut.Contains("F12");
+
+            if (!valid)
+            {
+                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+            }
+
+            return valid;
         }
 
         public static void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)

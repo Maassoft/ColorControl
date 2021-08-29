@@ -560,7 +560,7 @@ namespace ColorControl
 
                     if (!applicableDevices.Any())
                     {
-                        break;
+                        continue;
                     }
 
                     if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)

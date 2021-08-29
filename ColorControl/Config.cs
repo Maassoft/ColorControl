@@ -21,6 +21,8 @@
 
         public int AmdPresetId_ApplyOnStartup { get; set; }
 
+        public bool FixChromeFonts { get; set; }
+
         public Config()
         {
             DisplaySettingsDelay = 1000;
@@ -29,6 +31,7 @@
             FormHeight = 600;
             MinimizeToTray = true;
             CheckForUpdates = true;
+            FixChromeFonts = false;
         }
     }
 }

@@ -172,7 +172,17 @@ namespace LgTv
         {
             try
             {
-                using (var dr = args.GetDataReader())
+                var task = new Task<DataReader>(new Func<DataReader>(args.GetDataReader));
+                task.Start();
+                var result = task.Wait(5000);
+
+                var dr = result ? task.Result : null;
+                if (!result)
+                {
+                    throw new Exception("Timeout while reading response, possible disconnect");
+                }
+
+                using (dr)
                 {
                     dr.UnicodeEncoding = UnicodeEncoding.Utf8;
                     var message = dr.ReadString(dr.UnconsumedBufferLength);

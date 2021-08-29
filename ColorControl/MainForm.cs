@@ -96,6 +96,11 @@ namespace ColorControl
             chkFixChromeFonts.Enabled = Utils.IsChromeInstalled();
             if (chkFixChromeFonts.Enabled)
             {
+                var fixInstalled = Utils.IsChromeFixInstalled();
+                if (_config.FixChromeFonts && !fixInstalled)
+                {
+                    Utils.ExecuteElevated(StartUpParams.ActivateChromeFontFixParam);
+                }
                 chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
             }
 
@@ -558,9 +563,8 @@ namespace ColorControl
         {
             var shortcut = edtShortcut.Text.Trim();
 
-            if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
+            if (!Utils.ValidateShortcut(shortcut))
             {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -1176,9 +1180,8 @@ namespace ColorControl
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcutLg.Text.Trim();
-            if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
+            if (!Utils.ValidateShortcut(shortcut))
             {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -1891,6 +1894,7 @@ See Options to test this functionality."
         {
             if (_initialized)
             {
+                _config.FixChromeFonts = chkFixChromeFonts.Checked;
                 if (chkFixChromeFonts.Checked)
                 {
                     Utils.ExecuteElevated(StartUpParams.ActivateChromeFontFixParam);
@@ -1929,9 +1933,8 @@ Do you want to continue?";
         {
             var shortcut = edtBlankScreenSaverShortcut.Text.Trim();
 
-            if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
+            if (!Utils.ValidateShortcut(shortcut))
             {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
@@ -2242,9 +2245,8 @@ Do you want to continue?";
         {
             var shortcut = edtAmdShortcut.Text.Trim();
 
-            if (!string.IsNullOrWhiteSpace(shortcut) && !shortcut.Contains("+"))
+            if (!Utils.ValidateShortcut(shortcut))
             {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
                 return;
             }
 
