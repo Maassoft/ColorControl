@@ -378,7 +378,7 @@ namespace ColorControl
                 return;
             }
 
-            var apps = await SelectedDevice.GetApps();
+            var apps = await SelectedDevice.GetApps(force);
 
             if (apps.Any())
             {

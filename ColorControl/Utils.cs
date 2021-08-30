@@ -712,14 +712,19 @@ namespace ColorControl
 
         public static bool ValidateShortcut(string shortcut)
         {
-            var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Contains("+") || shortcut.Contains("F12");
+            var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Contains("+") || ShortcutIsAllowedWithoutModifier(shortcut);
 
             if (!valid)
             {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key.");
+                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key or be F13-F24.");
             }
 
             return valid;
+        }
+
+        public static bool ShortcutIsAllowedWithoutModifier(string shortcut)
+        {
+            return Enum.TryParse<Keys>(shortcut, out var key) && KeysWithoutModifiers.Contains(key);
         }
 
         public static void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)
