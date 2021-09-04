@@ -33,7 +33,8 @@ namespace ColorControl
             Active,
             Power_Off,
             Suspend,
-            Active_Standby
+            Active_Standby,
+            Screen_Off
         }
 
         public enum PowerOffSource
@@ -123,6 +124,8 @@ namespace ColorControl
             AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
             AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
+            AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
+            AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -377,6 +380,14 @@ namespace ColorControl
                     key = keyValue[0];
                     parameters = keyValue[1].Substring(0, keyValue[1].Length - 1).Split(';');
                 }
+
+                var delay = 0;
+                if (keySpec.Length == 2)
+                {
+                    delay = Utils.ParseInt(keySpec[1]);
+                }
+
+                var executeKey = true;
                 var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
                 if (action != null)
                 {
@@ -385,23 +396,25 @@ namespace ColorControl
                         ExecuteAction(action, parameters);
                     }
 
-                    continue;
+                    executeKey = false;
                 }
                 if (ExternalServiceHandler != null && parameters != null)
                 {
                     if (ExternalServiceHandler(key, parameters))
                     {
-                        continue;
+                        executeKey = false;
                     }
                 }
 
-                if (keySpec.Length == 2)
-                {
-                    SendKey(mouse, key, int.Parse(keySpec[1]));
-                }
-                else
+                if (executeKey)
                 {
                     SendKey(mouse, key);
+                    delay = delay == 0 ? 180 : delay;
+                }
+
+                if (delay > 0)
+                {
+                    await Task.Delay(delay);
                 }
             }
         }
@@ -425,7 +438,7 @@ namespace ColorControl
             function(null);
         }
 
-        private void SendKey(LgWebOsMouseService mouse, string key, int delay = 180)
+        private void SendKey(LgWebOsMouseService mouse, string key)
         {
             if (key.Length == 1 && int.TryParse(key, out _))
             {
@@ -433,7 +446,6 @@ namespace ColorControl
             }
             var button = (ButtonType)Enum.Parse(typeof(ButtonType), key);
             mouse.SendButton(button);
-            Thread.Sleep(delay);
         }
 
         public async Task<LgWebOsMouseService> GetMouseAsync()
@@ -649,6 +661,22 @@ namespace ColorControl
         private bool WakeAction(Dictionary<string, object> parameters)
         {
             return Wake();
+        }
+
+        private bool TurnScreenOffAction(Dictionary<string, object> parameters)
+        {
+            var task = _lgTvApi.TurnScreenOff();
+            Utils.WaitForTask(task);
+
+            return true;
+        }
+
+        private bool TurnScreenOnAction(Dictionary<string, object> parameters)
+        {
+            var task = _lgTvApi.TurnScreenOn();
+            Utils.WaitForTask(task);
+
+            return true;
         }
 
         private bool GenericPictureAction(Dictionary<string, object> parameters)

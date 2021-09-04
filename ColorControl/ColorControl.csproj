@@ -27,7 +27,7 @@
     <ProductName>ColorControl</ProductName>
     <PublisherName>Maassoft</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>4.2.3.0</ApplicationVersion>
+    <ApplicationVersion>4.3.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -242,9 +242,10 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Resources\LG_register.json" />
     <EmbeddedResource Include="Resources\RC_coords.txt" />
     <None Include="ColorControl_1_TemporaryKey.pfx" />
-    <None Include="Resources\LG_remote.jpg" />
+    <EmbeddedResource Include="Resources\LG_remote.jpg" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
