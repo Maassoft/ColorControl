@@ -178,6 +178,7 @@ namespace ColorControl
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgOldWolMechanism.Checked = _lgService.Config.UseOldNpcapWol;
+                chkLgAllowDowngrade.Checked = _lgService.Config.AllowFirmwareDowngrade;
 
                 var values = Enum.GetValues(typeof(ButtonType));
                 foreach (var button in values)
@@ -2815,6 +2816,33 @@ Do you want to continue?"
             {
                 _config.CheckForUpdates = chkCheckForUpdates.Checked;
             }
+        }
+
+        private void chkLgAllowDowngrade_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            if (chkLgAllowDowngrade.Checked)
+            {
+                if (MessageForms.QuestionYesNo(
+@"Are you sure you want to enable firmware downgrade functionality with the Software Update-app?
+This may cause irreversible damage to your tv and will void your warranty.
+This app and its creator are in no way accountable for any damages it may cause to your tv."
+                ) != DialogResult.Yes)
+                {
+                    chkLgAllowDowngrade.Checked = false;
+                    return;
+                }
+                MessageForms.InfoOk(
+@"Firmware downgrade functionality activated.
+In order to use it, you must create and execute a preset on the LG controller tab that starts the app Software Update (com.webos.app.softwareupdate)."
+                );
+            }
+
+            _lgService.Config.AllowFirmwareDowngrade = chkLgAllowDowngrade.Checked;
         }
     }
 }

@@ -40,7 +40,14 @@ namespace ColorControl
 
         public static void InfoOk(string text, string title = null, string url = null)
         {
-            MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
+            if (url != null)
+            {
+                MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
+            }
+            else
+            {
+                MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         public static DialogResult QuestionYesNo(string text)

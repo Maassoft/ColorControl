@@ -178,6 +178,7 @@
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            this.chkCheckForUpdates = new System.Windows.Forms.CheckBox();
             this.chkMinimizeToSystemTray = new System.Windows.Forms.CheckBox();
             this.chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
@@ -193,7 +194,7 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.chkCheckForUpdates = new System.Windows.Forms.CheckBox();
+            this.chkLgAllowDowngrade = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -1610,7 +1611,7 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 309);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 253);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             this.grpMiscellaneousOptions.Size = new System.Drawing.Size(400, 130);
             this.grpMiscellaneousOptions.TabIndex = 5;
@@ -1668,14 +1669,15 @@
             // 
             // grpLGOptions
             // 
+            this.grpLGOptions.Controls.Add(this.chkLgAllowDowngrade);
             this.grpLGOptions.Controls.Add(this.chkLgOldWolMechanism);
             this.grpLGOptions.Controls.Add(this.btnLGTestPower);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
             this.grpLGOptions.Controls.Add(this.edtLgMaxPowerOnRetries);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetries);
-            this.grpLGOptions.Location = new System.Drawing.Point(6, 196);
+            this.grpLGOptions.Location = new System.Drawing.Point(6, 118);
             this.grpLGOptions.Name = "grpLGOptions";
-            this.grpLGOptions.Size = new System.Drawing.Size(403, 107);
+            this.grpLGOptions.Size = new System.Drawing.Size(403, 129);
             this.grpLGOptions.TabIndex = 4;
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
@@ -1739,12 +1741,13 @@
             // 
             this.grpHDROptions.Controls.Add(this.edtDelayDisplaySettings);
             this.grpHDROptions.Controls.Add(this.label6);
-            this.grpHDROptions.Location = new System.Drawing.Point(6, 118);
+            this.grpHDROptions.Location = new System.Drawing.Point(412, 316);
             this.grpHDROptions.Name = "grpHDROptions";
             this.grpHDROptions.Size = new System.Drawing.Size(400, 72);
             this.grpHDROptions.TabIndex = 3;
             this.grpHDROptions.TabStop = false;
             this.grpHDROptions.Text = "HDR";
+            this.grpHDROptions.Visible = false;
             // 
             // edtDelayDisplaySettings
             // 
@@ -1788,6 +1791,17 @@
             this.grpGeneralOptions.TabIndex = 2;
             this.grpGeneralOptions.TabStop = false;
             this.grpGeneralOptions.Text = "General";
+            // 
+            // chkCheckForUpdates
+            // 
+            this.chkCheckForUpdates.AutoSize = true;
+            this.chkCheckForUpdates.Location = new System.Drawing.Point(204, 42);
+            this.chkCheckForUpdates.Name = "chkCheckForUpdates";
+            this.chkCheckForUpdates.Size = new System.Drawing.Size(177, 17);
+            this.chkCheckForUpdates.TabIndex = 6;
+            this.chkCheckForUpdates.Text = "Automatically check for updates";
+            this.chkCheckForUpdates.UseVisualStyleBackColor = true;
+            this.chkCheckForUpdates.CheckedChanged += new System.EventHandler(this.chkCheckForUpdates_CheckedChanged);
             // 
             // chkMinimizeToSystemTray
             // 
@@ -1954,16 +1968,16 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // chkCheckForUpdates
+            // chkLgAllowDowngrade
             // 
-            this.chkCheckForUpdates.AutoSize = true;
-            this.chkCheckForUpdates.Location = new System.Drawing.Point(204, 42);
-            this.chkCheckForUpdates.Name = "chkCheckForUpdates";
-            this.chkCheckForUpdates.Size = new System.Drawing.Size(177, 17);
-            this.chkCheckForUpdates.TabIndex = 6;
-            this.chkCheckForUpdates.Text = "Automatically check for updates";
-            this.chkCheckForUpdates.UseVisualStyleBackColor = true;
-            this.chkCheckForUpdates.CheckedChanged += new System.EventHandler(this.chkCheckForUpdates_CheckedChanged);
+            this.chkLgAllowDowngrade.AutoSize = true;
+            this.chkLgAllowDowngrade.Location = new System.Drawing.Point(9, 97);
+            this.chkLgAllowDowngrade.Name = "chkLgAllowDowngrade";
+            this.chkLgAllowDowngrade.Size = new System.Drawing.Size(275, 17);
+            this.chkLgAllowDowngrade.TabIndex = 8;
+            this.chkLgAllowDowngrade.Text = "Allow firmware downgrade with Software Update-app";
+            this.chkLgAllowDowngrade.UseVisualStyleBackColor = true;
+            this.chkLgAllowDowngrade.CheckedChanged += new System.EventHandler(this.chkLgAllowDowngrade_CheckedChanged);
             // 
             // MainForm
             // 
@@ -2186,6 +2200,7 @@
         private System.Windows.Forms.Button btnLgPresetEditTriggerConditions;
         private System.Windows.Forms.TextBox edtLgPresetTriggerConditions;
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
+        private System.Windows.Forms.CheckBox chkLgAllowDowngrade;
     }
 }
 

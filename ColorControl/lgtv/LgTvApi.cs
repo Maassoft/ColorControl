@@ -447,9 +447,19 @@ namespace LgTv
             return appList.OrderBy(e => e.title);
         }
 
-        public async Task<string> LaunchApp(string appId)
+        public async Task<string> LaunchApp(string appId, dynamic @params = null)
         {
-            var requestMessage = new RequestMessage("ssap://system.launcher/launch", new { id = appId });
+            dynamic payload;
+            if (@params != null)
+            {
+                payload = new { id = appId, @params = @params };
+            }
+            else
+            {
+                payload = new { id = appId };
+            }
+
+            var requestMessage = new RequestMessage("ssap://system.launcher/launch", payload);
             var response = await _connection.SendCommandAsync(requestMessage);
             return (string)response.sessionId;
         }

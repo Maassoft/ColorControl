@@ -20,6 +20,8 @@ namespace ColorControl
 
         public bool ShowRemoteControl { get; set; }
 
+        public bool AllowFirmwareDowngrade { get; set; }
+
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;

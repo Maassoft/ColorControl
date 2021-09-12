@@ -289,7 +289,8 @@ namespace ColorControl
                 _lgTvApi = null;
             }
         }
-        public async Task<bool> ExecutePreset(LgPreset preset, bool reconnect = false)
+
+        public async Task<bool> ExecutePreset(LgPreset preset, bool reconnect, LgServiceConfig config)
         {
             var hasApp = !string.IsNullOrEmpty(preset.appId);
 
@@ -315,7 +316,12 @@ namespace ColorControl
                 {
                     try
                     {
-                        await _lgTvApi.LaunchApp(preset.appId);
+                        dynamic @params = null;
+                        if (config.AllowFirmwareDowngrade && preset.appId.Equals("com.webos.app.softwareupdate"))
+                        {
+                            @params = new { mode = "user", flagUpdate = true };
+                        }
+                        await _lgTvApi.LaunchApp(preset.appId, @params);
                     }
                     catch (Exception ex)
                     {

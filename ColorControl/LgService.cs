@@ -350,7 +350,7 @@ namespace ColorControl
                 return false;
             }
 
-            var result = await device.ExecutePreset(preset, reconnect);
+            var result = await device.ExecutePreset(preset, reconnect, Config);
 
             _lastAppliedPreset = preset;
 
