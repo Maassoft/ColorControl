@@ -97,8 +97,8 @@ namespace ColorControl
 
                         if (label.Contains("Ip-address"))
                         {
-                            textBox.Mask = "###.###.###.###";
-                            textBox.ValidatingType = typeof(System.Net.IPAddress);
+                            //textBox.Mask = "990.990.990.990";
+                            //textBox.ValidatingType = typeof(System.Net.IPAddress);
                             textBox.Culture = CultureInfo.InvariantCulture;
                         }
                         else if (label.Contains("MAC-address"))

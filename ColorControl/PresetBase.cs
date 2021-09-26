@@ -19,10 +19,14 @@ namespace ColorControl
         Shutdown = 3,
         [Description("Standby")]
         Standby = 4,
-        [Description("Screensaver")]
-        Screensaver = 5,
+        [Description("Reserved5")]
+        Reserved5 = 5,
         [Description("Process switch")]
         ProcessSwitch = 6,
+        [Description("Screensaver start")]
+        ScreensaverStart = 7,
+        [Description("Screensaver stop")]
+        ScreensaverStop = 8,
     }
 
     [Flags]

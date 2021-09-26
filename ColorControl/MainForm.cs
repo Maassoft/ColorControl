@@ -1329,7 +1329,7 @@ namespace ColorControl
             chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
             scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
 
-            Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Screensaver, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup);
+            Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
         }
 
         private void InitOptionsTab()
@@ -1776,7 +1776,7 @@ namespace ColorControl
                 var dropDownValues = new List<string>();
                 foreach (var enumValue in Enum.GetValues(action.EnumType))
                 {
-                    dropDownValues.Add(enumValue.ToString());
+                    dropDownValues.Add(enumValue.ToString().Replace("_", ""));
                 }
 
                 var values = MessageForms.ShowDialog("Choose value", new[] {

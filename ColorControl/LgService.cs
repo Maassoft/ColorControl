@@ -64,6 +64,7 @@ namespace ColorControl
         private int _poweredOffByScreenSaverProcessId;
         private Task _monitorTask;
         private int _monitorTaskCounter;
+        private LgPreset _lastTriggeredPreset;
         
         public LgService(string dataPath, bool allowPowerOn) : base(dataPath, "LgPresets.json")
         {
@@ -781,9 +782,11 @@ namespace ColorControl
                     toApplyPreset = toApplyPresets.First();
                 }
 
-                if (_lastAppliedPreset != toApplyPreset)
+                if (_lastTriggeredPreset != toApplyPreset)
                 {
                     await ApplyPreset(toApplyPreset);
+
+                    _lastTriggeredPreset = toApplyPreset;
                 }
             }
         }

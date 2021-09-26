@@ -123,6 +123,12 @@ namespace ColorControl
             AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
+            //AddGenericPictureAction("freesyncOLEDHDMI4", typeof(OffToOn), category: "other");
+            //AddGenericPictureAction("freesyncSupport", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("hdmiPcMode_hdmi1", typeof(FalseToTrue), category: "other");
+            AddGenericPictureAction("hdmiPcMode_hdmi2", typeof(FalseToTrue), category: "other");
+            AddGenericPictureAction("hdmiPcMode_hdmi3", typeof(FalseToTrue), category: "other");
+            AddGenericPictureAction("hdmiPcMode_hdmi4", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
             AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
             AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
@@ -321,6 +327,12 @@ namespace ColorControl
                         {
                             @params = new { mode = "user", flagUpdate = true };
                         }
+
+                        if (preset.appId.Equals("com.webos.app.factorywin"))
+                        {
+                            @params = new { id = "executeFactory", irKey = "inStart" };
+                        }
+
                         await _lgTvApi.LaunchApp(preset.appId, @params);
                     }
                     catch (Exception ex)

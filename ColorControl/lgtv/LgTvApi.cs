@@ -96,6 +96,12 @@ namespace LgTv
         user
     }
 
+    public enum FalseToTrue
+    {
+        false_,
+        true_
+    }
+
     public class LgTvApi:IDisposable
     {
         public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
@@ -501,7 +507,18 @@ namespace LgTv
             }
             else
             {
-                jsonValue = $"\"{value}\"";
+                if (key.Contains("_"))
+                {
+                    var keys = key.Split('_');
+                    key = keys[0];
+                    var childKey = keys[1];
+
+                    jsonValue = @"{ """ + childKey + @""": " + value + " }";
+                }
+                else
+                {
+                    jsonValue = $"\"{value}\"";
+                }
             }
 
             var lunauri = "luna://com.webos.settingsservice/setSystemSettings";
