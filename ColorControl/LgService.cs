@@ -52,6 +52,7 @@ namespace ColorControl
         }
 
         public LgServiceConfig Config { get; private set; }
+        public ProcessMonitorContext MonitorContext { get; private set; }
 
         private string _configFilename;
         private bool _allowPowerOn;
@@ -65,7 +66,7 @@ namespace ColorControl
         private Task _monitorTask;
         private int _monitorTaskCounter;
         private LgPreset _lastTriggeredPreset;
-        
+
         public LgService(string dataPath, bool allowPowerOn) : base(dataPath, "LgPresets.json")
         {
             _allowPowerOn = allowPowerOn;
@@ -137,9 +138,9 @@ namespace ColorControl
             {
                 var json = File.ReadAllText(defaultPresetsFileName);
 
-                presets = _JsonDeserializer.Deserialize<List<LgPreset>>(json);
+                presets = JsonConvert.DeserializeObject<List<LgPreset>>(json);
             }
-
+            
             return presets;
         }
 
@@ -253,7 +254,7 @@ namespace ColorControl
         {
             try
             {
-                var json = _JsonSerializer.Serialize(_presets);
+                var json = JsonConvert.SerializeObject(_presets);
                 File.WriteAllText(_presetsFilename, json);
             }
             catch (Exception e)
@@ -547,7 +548,7 @@ namespace ColorControl
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
 
-            var monitorContext = new ProcessMonitorContext();
+            MonitorContext = new ProcessMonitorContext();
             //Process[] lastProcesses = null;
 
             while (validCounter == _monitorTaskCounter)
@@ -622,8 +623,8 @@ namespace ColorControl
                         wasConnected = true;
                     }
 
-                    monitorContext.Devices = connectedDevices;
-                    monitorContext.RunningProcesses = processes;
+                    MonitorContext.Devices = connectedDevices;
+                    MonitorContext.RunningProcesses = processes;
                     //if (lastProcesses != null)
                     //{
                     //    monitorContext.StartedProcesses = processes.Where(p => !lastProcesses.Any(lp => lp.Id == p.Id)).ToArray();
@@ -692,7 +693,7 @@ namespace ColorControl
                     }
                     else
                     {
-                        await ExecuteProcessPresets(monitorContext);
+                        await ExecuteProcessPresets(MonitorContext);
                     }
                 }
                 catch (Exception ex)
@@ -713,6 +714,11 @@ namespace ColorControl
             context.IsNotificationDisabled = Utils.IsNotificationDisabled();
 
             var (processId, isFullScreen) = Utils.GetForegroundProcessIdAndIfFullScreen();
+
+            if (processId == Process.GetCurrentProcess().Id)
+            {
+                return;
+            }
 
             if (processId > 0)
             {

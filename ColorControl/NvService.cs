@@ -1,7 +1,7 @@
-﻿using NvAPIWrapper;
+﻿using Newtonsoft.Json;
+using NvAPIWrapper;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
-using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
 using System;
 using System.Collections.Generic;
@@ -71,8 +71,7 @@ namespace ColorControl
 
         public NvService(string dataPath) : base(dataPath, "NvPresets.json")
         {
-            var converter = new ColorDataConverter();
-            _JsonDeserializer.RegisterConverters(new[] { converter });
+            AddJsonConverter(new ColorDataConverter());
 
             LoadPresets();
         }
@@ -135,7 +134,7 @@ namespace ColorControl
         {
             try
             {
-                var json = _JsonSerializer.Serialize(_presets);
+                var json = JsonConvert.SerializeObject(_presets);
                 File.WriteAllText(_presetsFilename, json);
             }
             catch (Exception e)

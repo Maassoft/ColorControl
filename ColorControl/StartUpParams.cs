@@ -12,6 +12,8 @@ namespace ColorControl
         public const string ExecuteAmdPresetParam = "--amdpreset";
         public const string ExecuteLgPresetParam = "--lgpreset";
         public const string NoGuiParam = "--nogui";
+        public const string EnableAutoStartParam = "--enable-auto-start";
+        public const string DisableAutoStartParam = "--disable-auto-start";
 
         public bool RunningFromScheduledTask { get; private set; }
         public bool ActivateChromeFontFix { get; private set; }
@@ -24,6 +26,8 @@ namespace ColorControl
         public bool ExecuteLgPreset { get; private set; }
         public string LgPresetName { get; private set; }
         public bool NoGui { get; set; }
+        public bool EnableAutoStart { get; private set; }
+        public bool DisableAutoStart { get; private set; }
 
         public static StartUpParams Parse(IEnumerable<string> args)
         {
@@ -100,6 +104,16 @@ namespace ColorControl
                     case NoGuiParam:
                         {
                             settings.NoGui = true;
+                            break;
+                        }
+                    case EnableAutoStartParam:
+                        {
+                            settings.EnableAutoStart = true;
+                            break;
+                        }
+                    case DisableAutoStartParam:
+                        {
+                            settings.DisableAutoStart = true;
                             break;
                         }
                 }

@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using Newtonsoft.Json;
+using NLog;
 using NWin32;
 using System;
 using System.Diagnostics;
@@ -10,10 +11,12 @@ namespace ColorControl
 {
     static class Program
     {
+        public const string TS_TASKNAME = "ColorControl";
         public static string DataDir { get; private set; }
         public static string ConfigFilename { get; private set; }
         public static Config Config { get; private set; }
         public static AppContext AppContext { get; private set; }
+
 
         /// <summary>
         /// The main entry point for the application.
@@ -31,6 +34,11 @@ namespace ColorControl
             InitLogger();
 
             LoadConfig();
+
+            if (Config.UseGdiScaling)
+            {
+                Application.SetHighDpiMode(HighDpiMode.DpiUnawareGdiScaled);
+            }
 
             var startUpParams = StartUpParams.Parse(args);
 
@@ -112,7 +120,7 @@ namespace ColorControl
             if (File.Exists(ConfigFilename))
             {
                 var data = File.ReadAllText(ConfigFilename);
-                Config = Utils.JsonSerializer.Deserialize<Config>(data);
+                Config = JsonConvert.DeserializeObject<Config>(data);
             }
             else
             {
@@ -125,6 +133,11 @@ namespace ColorControl
             if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
             {
                 Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix);
+                return true;
+            }
+            if (startUpParams.EnableAutoStart || startUpParams.DisableAutoStart)
+            {
+                Utils.RegisterTask(TS_TASKNAME, startUpParams.EnableAutoStart);
                 return true;
             }
 

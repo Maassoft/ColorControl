@@ -41,7 +41,20 @@ namespace LgTv
         SAP,
         PROGRAM,
         PLAY,
-        PAUSE
+        PAUSE,
+        STOP,
+        REWIND,
+        FASTFORWARD,
+        GUIDE,
+        AMAZON,
+        NETFLIX,
+        MAGNIFIER_ZOOM,
+        LIVE_ZOOM,
+        _3D_MODE,
+        ASPECT_RATIO,
+        RECENT,
+        RECORD,
+        SCREEN_REMOTE
     }
 
     public class LgWebOsMouseService : IDisposable
@@ -59,7 +72,7 @@ namespace LgTv
         }
         public void SendButton(int number)
         {
-            _connection.SendMessageAsync($"type:button\nname:{number}\n\n");
+            _connection.SendMessageAsync($"type:button\nname:{number}\n\n").ConfigureAwait(false);
         }
         public void SendButton(ButtonType bt)
         {
@@ -68,23 +81,23 @@ namespace LgTv
             {
                 text = text.Substring(1);
             }
-            _connection.SendMessageAsync($"type:button\nname:{text}\n\n");
+            _connection.SendMessageAsync($"type:button\nname:{text}\n\n").ConfigureAwait(false);
         }
 
 
         public void Move(double dx, double dy, bool drag = false)
         {
-            _connection.SendMessageAsync($"type:move\ndx:{dx}\ndy:{dy}\ndown:{(drag ? 1 : 0)}\n\n");
+            _connection.SendMessageAsync($"type:move\ndx:{dx}\ndy:{dy}\ndown:{(drag ? 1 : 0)}\n\n").ConfigureAwait(false);
         }
 
         public void Scroll(double dx, double dy)
         {
-            _connection.SendMessageAsync($"type:scroll\ndx:{dx}\ndy:{dy}\n\n");
+            _connection.SendMessageAsync($"type:scroll\ndx:{dx}\ndy:{dy}\n\n").ConfigureAwait(false);
         }
 
         public void Click()
         {
-            _connection.SendMessageAsync("type:click\n\n");
+            _connection.SendMessageAsync("type:click\n\n").ConfigureAwait(false);
         }
 
         public void Dispose()

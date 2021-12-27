@@ -19,11 +19,11 @@ namespace LgTv
 
     public enum PictureMode
     {
-        cinema, eco, expert1, expert2, game,
-        normal, photo, sports, technicolor, vivid, hdrEffect, hdrCinema,
-        hdrCinemaBright, hdrExternal, hdrGame, hdrStandard, hdrTechnicolor,
-        hdrVivid, dolbyHdrCinema, dolbyHdrCinemaBright, dolbyHdrDarkAmazon,
-        dolbyHdrGame, dolbyHdrStandard, dolbyHdrVivid, dolbyStandard
+        cinema, eco, expert1, expert2, game, normal, photo, sports, technicolor, vivid, hdrEffect, filmMaker,
+        
+        hdrCinema, hdrCinemaBright, hdrExternal, hdrGame, hdrStandard, hdrTechnicolor, hdrVivid, hdrFilmMaker, 
+        
+        dolbyHdrCinema, dolbyHdrCinemaBright, dolbyHdrDarkAmazon, dolbyHdrGame, dolbyHdrStandard, dolbyHdrVivid, dolbyStandard
     }
 
     public enum OffToHigh
@@ -100,6 +100,14 @@ namespace LgTv
     {
         false_,
         true_
+    }
+
+    public enum GammaExp
+    {
+        low,
+        medium,
+        high1,
+        high2
     }
 
     public class LgTvApi:IDisposable
@@ -383,7 +391,7 @@ namespace LgTv
         {
             if (payload == null)
             {
-                var keys = @"[ ""contrast"", ""backlight"" ]";
+                var keys = @"[ ""contrast"", ""backlight"", ""brightness"", ""color"" ]";
 
                 var json = @"{ ""category"": ""picture"", ""keys"": " + keys + @", ""subscribe"": true }";
 

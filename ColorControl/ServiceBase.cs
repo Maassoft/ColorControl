@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Web.Script.Serialization;
 
 namespace ColorControl
 {
@@ -16,20 +16,17 @@ namespace ColorControl
         protected string _presetsBaseFilename;
         protected string _presetsFilename;
         protected string _presetsBackupFilename;
-        protected JavaScriptSerializer _JsonSerializer;
-        protected JavaScriptSerializer _JsonDeserializer;
         protected bool _initialized = false;
         protected List<T> _presets;
         protected T _lastAppliedPreset;
         protected string _loadPresetsError;
+        private List<JsonConverter> _jsonConverters;
 
         public ServiceBase(string dataPath, string presetsBaseFilename)
         {
             _dataPath = dataPath;
             _presetsBaseFilename = presetsBaseFilename;
-
-            _JsonSerializer = new JavaScriptSerializer();
-            _JsonDeserializer = new JavaScriptSerializer();
+            _jsonConverters = new List<JsonConverter>();
 
             Initialize();
         }
@@ -92,7 +89,7 @@ namespace ColorControl
                         // Hack to convert incorrect triggers
                         json = json.Replace(@"""Triggers"":0", @"""Triggers"":[]");
 
-                        _presets = _JsonDeserializer.Deserialize<List<T>>(json);
+                        _presets = JsonConvert.DeserializeObject<List<T>>(json, _jsonConverters.ToArray());
 
                         if (_presets != null)
                         {
@@ -134,5 +131,10 @@ namespace ColorControl
         }
 
         protected abstract List<T> GetDefaultPresets();
+
+        protected void AddJsonConverter(JsonConverter jsonConverter)
+        {
+            _jsonConverters.Add(jsonConverter);
+        }
     }
 }

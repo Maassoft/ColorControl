@@ -37,6 +37,16 @@ namespace ColorControl
             }
         }
 
+        public LgPreset(string name, string appId, IEnumerable<string> steps = null) : this()
+        {
+            this.name = name;
+            this.appId = appId;
+            if (steps != null)
+            {
+                this.steps.AddRange(steps);
+            }
+        }
+
         public LgPreset Clone()
         {
             var preset = new LgPreset(this);

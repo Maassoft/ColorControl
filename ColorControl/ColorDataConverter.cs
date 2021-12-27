@@ -1,27 +1,40 @@
-﻿using NvAPIWrapper.Display;
+﻿using Newtonsoft.Json;
+using NvAPIWrapper.Display;
 using System;
 using System.Collections.Generic;
-using System.Web.Script.Serialization;
 
 namespace ColorControl
 {
-    public class ColorDataConverter : JavaScriptConverter
+    public class ColorDataConverter : JsonConverter<ColorData>
     {
-        public override IEnumerable<Type> SupportedTypes
+        public override bool CanWrite { get { return false; } }
+
+        public override ColorData ReadJson(JsonReader reader, Type objectType, ColorData existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            get { return new List<Type>() { typeof(ColorData) }; }
+            var result = new Dictionary<string, object>();
+
+            if (reader.TokenType == JsonToken.StartObject)
+            {
+                reader.Read();
+                while (reader.TokenType == JsonToken.PropertyName)
+                {
+                    var propertyName = reader.Value;
+
+                    reader.Read();
+                    var value = reader.Value;
+
+                    result.Add(propertyName.ToString(), value);
+
+                    reader.Read();
+                }
+            }
+
+            return NvPreset.GenerateColorData(result);
         }
 
-        public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
+        public override void WriteJson(JsonWriter writer, ColorData value, JsonSerializer serializer)
         {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            if (obj == null) return result;
-            return result;
-        }
-
-        public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
-        {
-            return NvPreset.GenerateColorData(dictionary);
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using ATI.ADL;
 using LgTv;
+using Newtonsoft.Json;
 using NLog;
 using NStandard;
 using NvAPIWrapper.Display;
@@ -8,8 +9,6 @@ using NWin32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Deployment.Application;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -23,11 +22,11 @@ namespace ColorControl
 {
     public partial class MainForm : Form
     {
-        private static string TS_TASKNAME = "ColorControl";
         private static bool SystemShutdown = false;
         private static bool EndSession = false;
         private static bool UserExit = false;
         private static int SHORTCUTID_SCREENSAVER = -100;
+        private static int SHORTCUTID_GAMEBAR = -101;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -45,9 +44,9 @@ namespace ColorControl
 
         private LgService _lgService;
 
-        private MenuItem _nvTrayMenu;
-        private MenuItem _amdTrayMenu;
-        private MenuItem _lgTrayMenu;
+        private ToolStripMenuItem _nvTrayMenu;
+        private ToolStripMenuItem _amdTrayMenu;
+        private ToolStripMenuItem _lgTrayMenu;
 
         private StartUpParams StartUpParams { get; }
 
@@ -56,6 +55,8 @@ namespace ColorControl
         private FileVersionInfo _currentVersionInfo;
         private bool _checkedForUpdates = false;
         private string _updateHtmlUrl;
+
+        private LgGameBar _gameBarForm;
 
         public MainForm(AppContext appContext)
         {
@@ -69,29 +70,32 @@ namespace ColorControl
 
             MessageForms.MainForm = this;
 
-            _nvTrayMenu = new MenuItem("NVIDIA presets");
-            _amdTrayMenu = new MenuItem("NVIDIA presets");
-            _lgTrayMenu = new MenuItem("LG presets");
+            _nvTrayMenu = new ToolStripMenuItem("NVIDIA presets");
+            _amdTrayMenu = new ToolStripMenuItem("NVIDIA presets");
+            _lgTrayMenu = new ToolStripMenuItem("LG presets");
             _trayIcon = new NotifyIcon()
             {
                 Icon = Icon,
-                ContextMenu = new ContextMenu(new MenuItem[] {
-                    _nvTrayMenu,
-                    _amdTrayMenu,
-                    _lgTrayMenu,
-                    new MenuItem("-"),
-                    new MenuItem("Open", OpenForm),
-                    new MenuItem("-"),
-                    new MenuItem("Exit", Exit)
-                }),
+                ContextMenuStrip = new ContextMenuStrip(),
                 Visible = _config.MinimizeToTray,
                 Text = Text
             };
+
+            _trayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[] {
+                    _nvTrayMenu,
+                    _amdTrayMenu,
+                    _lgTrayMenu,
+                    new ToolStripSeparator(),
+                    new ToolStripMenuItem("Open", null, OpenForm),
+                    new ToolStripSeparator(),
+                    new ToolStripMenuItem("Exit", null, Exit)
+                });
+
             _trayIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
-            _trayIcon.ContextMenu.Popup += trayIconContextMenu_Popup;
+            _trayIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
             _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
 
-            chkStartAfterLogin.Checked = Utils.TaskExists(TS_TASKNAME, true);
+            chkStartAfterLogin.Checked = Utils.TaskExists(Program.TS_TASKNAME, true);
 
             chkFixChromeFonts.Enabled = Utils.IsChromeInstalled();
             if (chkFixChromeFonts.Enabled)
@@ -177,8 +181,7 @@ namespace ColorControl
 
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
-                chkLgOldWolMechanism.Checked = _lgService.Config.UseOldNpcapWol;
-                chkLgAllowDowngrade.Checked = _lgService.Config.AllowFirmwareDowngrade;
+                chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
 
                 var values = Enum.GetValues(typeof(ButtonType));
                 foreach (var button in values)
@@ -196,6 +199,13 @@ namespace ColorControl
                 _lgService.InstallEventHandlers();
 
                 LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
+
+                if (!string.IsNullOrEmpty(_lgService.Config.GameBarShortcut))
+                {
+                    Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut);
+
+                    edtLgGameBarShortcut.Text = _lgService.Config.GameBarShortcut;
+                }
             }
             catch (Exception e)
             {
@@ -236,14 +246,14 @@ namespace ColorControl
         {
             _currentVersionInfo = FileVersionInfo.GetVersionInfo(Path.GetFileName(Application.ExecutablePath));
 
-            if (ApplicationDeployment.IsNetworkDeployed)
-            {
-                Text = Application.ProductName + " " + ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-            }
-            else
-            {
+            //if (ApplicationDeployment.IsNetworkDeployed)
+            //{
+            //    Text = Application.ProductName + " " + ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
+            //}
+            //else
+            //{
                 Text = Application.ProductName + " " + Application.ProductVersion;
-            }
+            //}
 
             lblInfo.Text = Text + " - " + _currentVersionInfo.LegalCopyright;
 
@@ -316,7 +326,7 @@ namespace ColorControl
                 return;
             }
 
-            var text = TS_TASKNAME;
+            var text = Program.TS_TASKNAME;
             foreach (var displayInfo in displays)
             {
                 var display = displayInfo.Display;
@@ -372,7 +382,7 @@ namespace ColorControl
                 return;
             }
 
-            var text = TS_TASKNAME;
+            var text = Program.TS_TASKNAME;
             foreach (var displayInfo in displays)
             {
                 var display = displayInfo.Display;
@@ -504,10 +514,29 @@ namespace ColorControl
             }
         }
 
+        private Control FindFocusedControl()
+        {
+            ContainerControl container = this;
+            Control control = null;
+            while (container != null)
+            {
+                control = container.ActiveControl;
+                container = control as ContainerControl;
+            }
+            
+            return control;
+        }
+
+        private bool IsShortcutControlFocused()
+        {
+            var control = FindFocusedControl();
+            return control?.Name.Contains("Shortcut") ?? false;
+        }
+
         protected override void WndProc(ref Message m)
         {
             // 5. Catch when a HotKey is pressed !
-            if (m.Msg == NativeConstants.WM_HOTKEY && !edtShortcut.Focused && !edtShortcutLg.Focused && !edtAmdShortcut.Focused && !edtBlankScreenSaverShortcut.Focused)
+            if (m.Msg == NativeConstants.WM_HOTKEY && !IsShortcutControlFocused())
             {
                 int id = m.WParam.ToInt32();
 
@@ -515,7 +544,11 @@ namespace ColorControl
                 if (id == SHORTCUTID_SCREENSAVER)
                 {
                     var screenSaver = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
-                    Process.Start(screenSaver);
+                    Process.Start("explorer.exe", screenSaver);
+                }
+                else if (id == SHORTCUTID_GAMEBAR)
+                {
+                    ToggleGameBar();
                 }
                 else
                 {
@@ -623,7 +656,7 @@ namespace ColorControl
                 return;
             }
             var enabled = chkStartAfterLogin.Checked;
-            Utils.RegisterTask(TS_TASKNAME, enabled);
+            Utils.ExecuteElevated(enabled ? StartUpParams.EnableAutoStartParam : StartUpParams.DisableAutoStartParam);
         }
 
         private void LoadConfig()
@@ -634,6 +667,7 @@ namespace ColorControl
             chkCheckForUpdates.Checked = _config.CheckForUpdates;
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
+            chkGdiScaling.Checked = _config.UseGdiScaling;
 
             if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
             {
@@ -663,7 +697,7 @@ namespace ColorControl
 
             try
             {
-                var data = Utils.JsonSerializer.Serialize(_config);
+                var data = JsonConvert.SerializeObject(_config);
                 File.WriteAllText(Program.ConfigFilename, data);
             }
             catch (Exception e)
@@ -1348,9 +1382,25 @@ namespace ColorControl
                 var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
                 if (firstTime || preset != null)
                 {
-                    chkDitheringEnabled.Checked = preset?.ditheringEnabled ?? true;
-                    cbxDitheringBitDepth.SelectedIndex = (int)(preset?.ditheringBits ?? (int)NvDitherBits.Bits8);
-                    cbxDitheringMode.SelectedIndex = (int)(preset?.ditheringMode ?? (int)NvDitherMode.Temporal);
+                    var ditheringEnabled = true;
+                    int ditherBitsIndex;
+                    int ditherModeIndex;
+                    if (preset == null)
+                    {
+                        var hdrEnabled = _nvService.IsHDREnabled();
+                        ditherBitsIndex = (int)(hdrEnabled ? NvDitherBits.Bits8 : NvDitherBits.Bits6);
+                        ditherModeIndex = (int)NvDitherMode.Temporal;
+                    }
+                    else
+                    {
+                        ditheringEnabled = preset.ditheringEnabled;
+                        ditherBitsIndex = (int)preset.ditheringBits;
+                        ditherModeIndex = (int)preset.ditheringMode;
+                    }
+
+                    chkDitheringEnabled.Checked = ditheringEnabled;
+                    cbxDitheringBitDepth.SelectedIndex = ditherBitsIndex;
+                    cbxDitheringMode.SelectedIndex = ditherModeIndex;
                     FillGradient();
                 }
             }
@@ -1445,7 +1495,7 @@ namespace ColorControl
         {
             var presets = _nvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
 
-            _nvTrayMenu.MenuItems.Clear();
+            _nvTrayMenu.DropDownItems.Clear();
 
             foreach (var preset in presets)
             {
@@ -1455,10 +1505,10 @@ namespace ColorControl
                     name += "\t" + preset.shortcut;
                 }
 
-                var item = new MenuItem(name);
+                var item = new ToolStripMenuItem(name);
                 item.Tag = preset;
                 item.Click += TrayMenuItemNv_Click;
-                _nvTrayMenu.MenuItems.Add(item);
+                _nvTrayMenu.DropDownItems.Add(item);
             }
         }
 
@@ -1466,7 +1516,7 @@ namespace ColorControl
         {
             var presets = _amdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
 
-            _amdTrayMenu.MenuItems.Clear();
+            _amdTrayMenu.DropDownItems.Clear();
 
             foreach (var preset in presets)
             {
@@ -1476,16 +1526,16 @@ namespace ColorControl
                     name += "\t" + preset.shortcut;
                 }
 
-                var item = new MenuItem(name);
+                var item = new ToolStripMenuItem(name);
                 item.Tag = preset;
                 item.Click += TrayMenuItemAmd_Click;
-                _amdTrayMenu.MenuItems.Add(item);
+                _amdTrayMenu.DropDownItems.Add(item);
             }
         }
 
         private void TrayMenuItemNv_Click(object sender, EventArgs e)
         {
-            var item = sender as MenuItem;
+            var item = sender as ToolStripMenuItem;
             var preset = (NvPreset)item.Tag;
 
             ApplyNvPreset(preset);
@@ -1493,7 +1543,7 @@ namespace ColorControl
 
         private void TrayMenuItemAmd_Click(object sender, EventArgs e)
         {
-            var item = sender as MenuItem;
+            var item = sender as ToolStripMenuItem;
             var preset = (AmdPreset)item.Tag;
 
             ApplyAmdPreset(preset);
@@ -1524,7 +1574,7 @@ namespace ColorControl
         {
             var presets = _lgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
 
-            _lgTrayMenu.MenuItems.Clear();
+            _lgTrayMenu.DropDownItems.Clear();
 
             foreach (var preset in presets)
             {
@@ -1534,16 +1584,16 @@ namespace ColorControl
                     name += "\t" + preset.shortcut;
                 }
 
-                var item = new MenuItem(name);
+                var item = new ToolStripMenuItem(name);
                 item.Tag = preset;
                 item.Click += TrayMenuItemLg_Click;
-                _lgTrayMenu.MenuItems.Add(item);
+                _lgTrayMenu.DropDownItems.Add(item);
             }
         }
 
         private void TrayMenuItemLg_Click(object sender, EventArgs e)
         {
-            var item = sender as MenuItem;
+            var item = sender as ToolStripMenuItem;
             var preset = (LgPreset)item.Tag;
 
             ApplyLgPreset(preset);
@@ -2182,11 +2232,6 @@ Do you want to continue?";
             AddOrUpdateItem();
         }
 
-        private void chkLgAlternateWolMechanism_CheckedChanged(object sender, EventArgs e)
-        {
-            _lgService.Config.UseOldNpcapWol = chkLgOldWolMechanism.Checked;
-        }
-
         private void MainForm_Deactivate(object sender, EventArgs e)
         {
             GlobalSave();
@@ -2218,7 +2263,7 @@ Do you want to continue?";
             }
         }
 
-        private bool ShortCutExists(string shortcut, int presetId)
+        private bool ShortCutExists(string shortcut, int presetId = 0)
         {
             return
                 (_nvService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false) ||
@@ -2708,41 +2753,90 @@ Do you want to continue?"
             mnuLgOLEDMotionPro.Visible = visible;
             miLgExpertSeparator1.Visible = visible;
 
-            if (mnuLgExpertBacklight.DropDownItems.Count == 0)
-            {
-                for (var i = 0; i <= 10; i++)
-                {
-                    var name = (i * 10).ToString();
-
-                    var item = mnuLgExpertBacklight.DropDownItems.Add(name);
-                    item.Click += btnLgExpertBacklight_Click;
-                }
-            }
-
             // Does not work yet, getting a "401 no permissions" error
             //var task = device?.GetPictureSettings();
             //var settings = Utils.WaitForTask<dynamic>(task);
 
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Picture Mode", typeof(PictureMode), btnLgExpertColorGamut_Click, "pictureMode");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Color Gamut", typeof(ColorGamut), btnLgExpertColorGamut_Click, "colorGamut");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Dynamic Contrast", typeof(OffToAuto), btnLgExpertColorGamut_Click, "dynamicContrast");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Smooth Gradation", typeof(OffToAuto), btnLgExpertColorGamut_Click, "smoothGradation");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Peak Brightness", typeof(OffToAuto), btnLgExpertColorGamut_Click, "peakBrightness");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "OLED Motion Pro", typeof(OffToHigh), btnLgExpertColorGamut_Click, "motionProOLED");
-            Utils.BuildDropDownMenuEx(mnuLgExpert, "Energy Saving", typeof(EnergySaving), btnLgExpertColorGamut_Click, "energySaving");
+            if (device == null)
+            {
+                return;
+            }
+
+            var actions = device.GetInvokableActions();
+            var gameBarActions = device.GetInvokableActionsForGameBar();
+            var activatedGameBarActions = device.GetActionsForGameBar();
+
+            const string gameBarName = "miGameBar";
+
+            foreach (var action in actions.Where(a => !a.Name.Contains("Hdmi", StringComparison.OrdinalIgnoreCase) && (a.EnumType != null || a.MinValue >= 0 && a.MaxValue > a.MinValue)))
+            {
+                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action.Name, (int)action.MinValue, (int)action.MaxValue);
+
+                if (!gameBarActions.Contains(action))
+                {
+                    continue;
+                }
+
+                var itemName = $"{menu.Name}_{gameBarName}";
+                var gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Find(itemName, false).FirstOrDefault();
+
+                if (gameBarItem == null)
+                {
+                    var separator = new ToolStripSeparator();
+                    menu.DropDownItems.Add(separator);
+
+                    gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Add("Show in Game Bar", null, miLgGameBarToggle_Click);
+                    gameBarItem.CheckOnClick = true;
+                    gameBarItem.Checked = activatedGameBarActions.Contains(action);
+                    gameBarItem.Name = itemName;
+                    gameBarItem.Tag = action.Name;
+                }
+            }
+
+            if (!_lgService.Config.ShowAdvancedActions)
+            {
+                return;
+            }
+
+            var presetActions = actions.Where(a => a.Preset != null);
+
+            if (presetActions.Any() && mnuLgExpert.Items.Find("miLgExpertActionsSeparator", false).Length == 0)
+            {
+                mnuLgExpert.Items.Add(new ToolStripSeparator
+                {
+                    Name = "miLgExpertActionsSeparator"
+                });
+            }
+
+            foreach (var presetAction in presetActions)
+            {
+                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
+            }
+        }
+
+        private void miLgGameBarToggle_Click(object sender, EventArgs e)
+        {
+            var device = _lgService.SelectedDevice;
+
+            if (device == null)
+            {
+                return;
+            }
+
+            var item = sender as ToolStripMenuItem;
+            if (item.Checked)
+            {
+                device.AddGameBarAction((string)item.Tag);
+            }
+            else
+            {
+                device.RemoveGameBarAction((string)item.Tag);
+            }
         }
 
         private void btnLgExpert_Click(object sender, EventArgs e)
         {
             mnuLgExpert.Show(btnLgExpert, btnLgExpert.PointToClient(Cursor.Position));
-        }
-
-        private void btnLgExpertBacklight_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripItem;
-            var backlight = int.Parse(item.Text);
-
-            _lgService.SelectedDevice?.SetBacklight(backlight);
         }
 
         private void btnLgExpertColorGamut_Click(object sender, EventArgs e)
@@ -2752,6 +2846,14 @@ Do you want to continue?"
             var value = item.Text;
 
             _lgService.SelectedDevice?.SetSystemSettings(name, value);
+        }
+
+        private void btnLgExpertPresetAction_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var preset = (LgPreset)item.Tag;
+
+            _lgService.ApplyPreset(preset).ConfigureAwait(false);
         }
 
         private void miLgEnableMotionPro_Click(object sender, EventArgs e)
@@ -2818,31 +2920,105 @@ Do you want to continue?"
             }
         }
 
-        private void chkLgAllowDowngrade_CheckedChanged(object sender, EventArgs e)
+        private void chkLgShowAdvancedActions_CheckedChanged(object sender, EventArgs e)
         {
             if (!_initialized)
             {
                 return;
             }
 
-            if (chkLgAllowDowngrade.Checked)
+            if (chkLgShowAdvancedActions.Checked)
             {
                 if (MessageForms.QuestionYesNo(
-@"Are you sure you want to enable firmware downgrade functionality with the Software Update-app?
-This may cause irreversible damage to your tv and will void your warranty.
+@"Are you sure you want to enable the advanced actions under the Expert-button?
+These actions include:
+- InStart service menu
+- Software Update-app with firmware downgrade functionality enabled
+
+These features may cause irreversible damage to your tv and will void your warranty.
 This app and its creator are in no way accountable for any damages it may cause to your tv."
                 ) != DialogResult.Yes)
                 {
-                    chkLgAllowDowngrade.Checked = false;
+                    chkLgShowAdvancedActions.Checked = false;
                     return;
                 }
                 MessageForms.InfoOk(
-@"Firmware downgrade functionality activated.
-In order to use it, you must create and execute a preset on the LG controller tab that starts the app Software Update (com.webos.app.softwareupdate)."
+@"Advanced actions activated.
+The InStart and Software Update items are now visible under the Expert-button."
                 );
             }
 
-            _lgService.Config.AllowFirmwareDowngrade = chkLgAllowDowngrade.Checked;
+            _lgService.Config.ShowAdvancedActions = chkLgShowAdvancedActions.Checked;
+        }
+
+        private void ToggleGameBar()
+        {
+            if (_gameBarForm == null || !_gameBarForm.Visible)
+            {
+                if (_gameBarForm == null || _gameBarForm.IsDisposed)
+                {
+                    _gameBarForm = new LgGameBar(_lgService);
+                }
+
+                _gameBarForm.Show();
+                _gameBarForm.Activate();
+            }
+            else
+            {
+                _gameBarForm?.Hide();
+            }
+        }
+
+        private void btnLgGameBar_Click(object sender, EventArgs e)
+        {
+            ToggleGameBar();
+        }
+
+        private void edtLgGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
+        {
+            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+        }
+
+        private void edtLgGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
+        {
+            Utils.HandleKeyboardShortcutUp(e);
+        }
+
+        private void edtLgGameBarShortcut_TextChanged(object sender, EventArgs e)
+        {
+            var text = edtLgGameBarShortcut.Text;
+
+            var blnOk = string.IsNullOrEmpty(text) || !ShortCutExists(text);
+            edtLgGameBarShortcut.ForeColor = blnOk ? Color.Red : SystemColors.WindowText;
+
+            if (blnOk)
+            {
+                _lgService.Config.GameBarShortcut = text;
+
+                if (string.IsNullOrEmpty(text))
+                {
+                    Utils.UnregisterHotKey(Handle, SHORTCUTID_GAMEBAR);
+                }
+                else
+                {
+                    Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEBAR, text);
+                }
+            }
+        }
+
+        private void chkGdiScaling_CheckedChanged(object sender, EventArgs e)
+        {
+            _config.UseGdiScaling = chkGdiScaling.Checked;
+        }
+
+        private void MainForm_ResizeBegin(object sender, EventArgs e)
+        {
+            SuspendLayout();
+        }
+
+        private void MainForm_ResizeEnd(object sender, EventArgs e)
+        {
+            ResumeLayout(true);
         }
     }
 }

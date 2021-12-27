@@ -19,12 +19,17 @@ namespace ColorControl
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
             public string Category { get; set; }
+            public string Title { get; set; }
+            public int CurrentValue { get; set; }
+            public LgPreset Preset { get; set; }
         }
 
         public class LgDevicePictureSettings
         {
             public int Backlight { get; set; }
             public int Contrast { get; set; }
+            public int Brightness { get; set; }
+            public int Color { get; set; }
         }
 
         public enum PowerState
@@ -46,8 +51,9 @@ namespace ColorControl
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public static Func<string, string[], bool> ExternalServiceHandler;
+        public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
 
-        public string Name { get; private set; }
+    public string Name { get; private set; }
         public string IpAddress { get; private set; }
         public string MacAddress { get; private set; }
         public bool IsCustom { get; private set; }
@@ -59,6 +65,26 @@ namespace ColorControl
         public bool PowerOffOnShutdown { get; set; }
         public bool PowerOffOnStandby { get; set; }
         public bool PowerSwitchOnScreenSaver { get; set; }
+
+        private List<string> _actionsForGameBar;
+
+        public List<string> ActionsOnGameBar { 
+            get
+            {
+                return _actionsForGameBar;
+            }
+            set
+            {
+                if (value?.Any() == false)
+                {
+                    _actionsForGameBar = DefaultActionsOnGameBar;
+                }
+                else
+                {
+                    _actionsForGameBar = value;
+                }
+            } 
+        }
 
         [JsonIgnore]
         public PowerState CurrentState { get; set; }
@@ -85,10 +111,13 @@ namespace ColorControl
         [JsonIgnore]
         public LgDevicePictureSettings PictureSettings { get; private set; }
 
+        public event EventHandler PictureSettingsChangedEvent;
+
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
             PictureSettings = new LgDevicePictureSettings();
+            ActionsOnGameBar = new List<string> { "backlight", "contrast", "brightness", "color" };
 
             Name = name;
             IpAddress = ipAddress;
@@ -101,19 +130,20 @@ namespace ColorControl
             AddGenericPictureAction("brightness", minValue: 0, maxValue: 100);
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
             AddGenericPictureAction("color", minValue: 0, maxValue: 100);
-            AddGenericPictureAction("pictureMode", typeof(PictureMode));
-            AddGenericPictureAction("colorGamut", typeof(ColorGamut));
-            AddGenericPictureAction("dynamicContrast", typeof(OffToAuto));
+            AddGenericPictureAction("pictureMode", typeof(PictureMode), title: "Picture Mode");
+            AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
+            AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
+            AddGenericPictureAction("gamma", typeof(GammaExp));
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
             //AddGenericPictureAction("superResolution", typeof(OffToAuto));
-            AddGenericPictureAction("peakBrightness", typeof(OffToAuto));
-            AddGenericPictureAction("smoothGradation", typeof(OffToAuto));
-            AddGenericPictureAction("energySaving", typeof(EnergySaving));
-            AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping));
+            AddGenericPictureAction("peakBrightness", typeof(OffToHigh), title: "Peak Brightness");
+            AddGenericPictureAction("smoothGradation", typeof(OffToAuto), title: "Smooth Gradation");
+            AddGenericPictureAction("energySaving", typeof(EnergySaving), title: "Energy Saving");
+            AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping), title: "HDR Dynamic Tone Mapping");
             //AddGenericPictureAction("blackLevel", typeof(LowToAuto));
             //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
             //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
-            AddGenericPictureAction("motionProOLED", typeof(OffToHigh));
+            AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro");
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
@@ -132,6 +162,9 @@ namespace ColorControl
             AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
             AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
             AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
+
+            AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }));
+            AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate"));
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -145,7 +178,18 @@ namespace ColorControl
             _invokableActions.Add(action);
         }
 
-        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture")
+        private void AddInternalPresetAction(LgPreset preset)
+        {
+            var action = new InvokableAction
+            {
+                Name = preset.name,
+                Preset = preset
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null)
         {
             var action = new InvokableAction
             {
@@ -154,10 +198,24 @@ namespace ColorControl
                 EnumType = type,
                 MinValue = minValue,
                 MaxValue = maxValue,
-                Category = category
+                Category = category,
+                Title = title == null ? name.Substring(0, 1).ToUpper() + name.Substring(1) : title
             };
 
             _invokableActions.Add(action);
+        }
+
+        public void AddGameBarAction(string name)
+        {
+            if (!ActionsOnGameBar.Contains(name))
+            {
+                ActionsOnGameBar.Add(name);
+            }
+        }
+
+        public void RemoveGameBarAction(string name)
+        {
+            ActionsOnGameBar.Remove(name);
         }
 
         public override string ToString()
@@ -242,7 +300,17 @@ namespace ColorControl
                 {
                     PictureSettings.Contrast = Utils.ParseDynamicAsInt(settings.contrast, PictureSettings.Contrast);
                 }
+                if (settings.brightness != null)
+                {
+                    PictureSettings.Brightness = Utils.ParseDynamicAsInt(settings.brightness, PictureSettings.Brightness);
+                }
+                if (settings.color != null)
+                {
+                    PictureSettings.Color = Utils.ParseDynamicAsInt(settings.color, PictureSettings.Color);
+                }
             }
+
+            PictureSettingsChangedEvent?.Invoke(this, EventArgs.Empty);
 
             return true;
         }
@@ -323,7 +391,7 @@ namespace ColorControl
                     try
                     {
                         dynamic @params = null;
-                        if (config.AllowFirmwareDowngrade && preset.appId.Equals("com.webos.app.softwareupdate"))
+                        if (config.ShowAdvancedActions && preset.appId.Equals("com.webos.app.softwareupdate"))
                         {
                             @params = new { mode = "user", flagUpdate = true };
                         }
@@ -409,10 +477,7 @@ namespace ColorControl
                 var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
                 if (action != null)
                 {
-                    if (!key.Equals("WOL"))
-                    {
-                        ExecuteAction(action, parameters);
-                    }
+                    ExecuteAction(action, parameters);
 
                     executeKey = false;
                 }
@@ -458,7 +523,7 @@ namespace ColorControl
 
         private void SendKey(LgWebOsMouseService mouse, string key)
         {
-            if (key.Length == 1 && int.TryParse(key, out _))
+            if (key.Length >= 1 && int.TryParse(key[0].ToString(), out _))
             {
                 key = "_" + key;
             }
@@ -606,6 +671,18 @@ namespace ColorControl
             return _invokableActions;
         }
 
+        public List<InvokableAction> GetInvokableActionsForGameBar()
+        {
+            var actions = GetInvokableActions();
+            return actions.Where(a => a.Category == "picture" && (a.EnumType != null && a.EnumType != typeof(PictureMode) || a.MinValue >= 0 && a.MaxValue > 0)).ToList();
+        }
+
+        public List<InvokableAction> GetActionsForGameBar()
+        {
+            var actions = GetInvokableActions();
+            return actions.Where(a => ActionsOnGameBar.Contains(a.Name)).ToList();
+        }
+
         public async Task PowerOn()
         {
             var mouse = await _lgTvApi.GetMouse();
@@ -654,6 +731,11 @@ namespace ColorControl
             await _lgTvApi.SetSystemSettings("backlight", backlight.ToString());
         }
 
+        internal async Task SetContrast(int contrast)
+        {
+            await _lgTvApi.SetSystemSettings("contrast", contrast.ToString());
+        }
+
         public async Task SetOLEDMotionPro(string mode)
         {
             await _lgTvApi.SetConfig("tv.model.motionProMode", mode);
@@ -666,6 +748,8 @@ namespace ColorControl
         internal async Task SetSystemSettings(string name, string value)
         {
             await _lgTvApi.SetSystemSettings(name, value);
+
+            UpdateCurrentValueOfAction(name, value);
         }
 
         internal async Task<dynamic> GetPictureSettings()
@@ -710,7 +794,34 @@ namespace ColorControl
             var task = _lgTvApi.SetSystemSettings(settingName, value, category);
             Utils.WaitForTask(task);
 
+            UpdateCurrentValueOfAction(settingName, value.ToString());
+
             return true;
+        }
+
+        private void UpdateCurrentValueOfAction(string settingName, string value)
+        {
+            if (settingName != "backlight" && settingName != "contrast" && settingName != "brightness" && settingName != "color")
+            {
+                var action = _invokableActions.FirstOrDefault(a => a.Name == settingName);
+                if (action != null)
+                {
+                    if (action.EnumType != null)
+                    {
+                        try
+                        {
+                            var enumValue = Enum.Parse(action.EnumType, value);
+                            var intEnum = (int)enumValue;
+                            action.CurrentValue = intEnum;
+                        }
+                        catch (Exception) { }
+                    }
+                    else
+                    {
+                        action.CurrentValue = 0;
+                    }
+                }
+            }
         }
     }
 }

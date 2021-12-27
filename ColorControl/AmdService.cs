@@ -1,4 +1,5 @@
 ﻿using ATI.ADL;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,7 +50,7 @@ namespace ColorControl
         {
             try
             {
-                var json = _JsonSerializer.Serialize(_presets);
+                var json = JsonConvert.SerializeObject(_presets);
                 File.WriteAllText(_presetsFilename, json);
             }
             catch (Exception e)

@@ -1,12 +1,7 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace ColorControl
@@ -19,7 +14,6 @@ namespace ColorControl
 
         public static TreeNode CreateTree(object obj, string text)
         {
-            JavaScriptSerializer jss = new JavaScriptSerializer();
             var serialized = JsonConvert.SerializeObject(obj, Formatting.None,
                 new JsonSerializerSettings {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -30,7 +24,7 @@ namespace ColorControl
                     },
                     Converters = new [] { new Newtonsoft.Json.Converters.StringEnumConverter() }
                 });
-            Dictionary<string, object> dic = jss.Deserialize<Dictionary<string, object>>(serialized);
+            var dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(serialized);
             var root = new TreeNode();
             root.Text = text;
             BuildTree(dic, root);
@@ -48,9 +42,9 @@ namespace ColorControl
                 node.Nodes.Add(keyValueNode);
                 BuildTree(kv.Value, keyValueNode);
             }
-            else if (item is ArrayList)
+            else if (item.GetType() == typeof(JArray))
             {
-                ArrayList list = (ArrayList)item;
+                var list = (JArray)item;
                 int index = 0;
                 foreach (object value in list)
                 {
@@ -70,6 +64,14 @@ namespace ColorControl
                     BuildTree(d, node);
                 }
             }
+            else if (item.GetType() == typeof(JObject))
+            {
+                var jobject = item as JObject;
+                foreach (var property in jobject.Properties())
+                {
+                    BuildTree(new KeyValuePair<string, object>(property.Name, property.Value), node);
+                }
+            }
         }
 
         private static string GetValueAsString(object value)
@@ -82,13 +84,13 @@ namespace ColorControl
                 return "[]";
             }
 
-            if (value is ArrayList)
+            if (value.GetType() == typeof(JArray))
             {
-                var arr = value as ArrayList;
+                var arr = value as JArray;
                 return $"[{arr.Count}]";
             }
 
-            if (type.IsGenericType)
+            if (type.IsGenericType || value.GetType() == typeof(JObject))
             {
                 return "{}";
             }

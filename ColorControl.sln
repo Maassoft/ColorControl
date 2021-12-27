@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30128.74
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorControl", "ColorControl\ColorControl.csproj", "{A6005D08-70F0-44CB-A384-9219EBA84F21}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ColorControl", "ColorControl\ColorControl.csproj", "{A6005D08-70F0-44CB-A384-9219EBA84F21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +15,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|x64.ActiveCfg = Debug|x64
-		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|x64.Build.0 = Debug|x64
+		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Debug|x64.Build.0 = Debug|Any CPU
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|x64.ActiveCfg = Release|x64

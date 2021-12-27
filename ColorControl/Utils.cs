@@ -7,7 +7,6 @@ using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Deployment.Application;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -19,7 +18,6 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
@@ -63,8 +61,6 @@ namespace ColorControl
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
 
         public delegate void PCREATE_PROCESS_NOTIFY_ROUTINE(IntPtr ParentId, IntPtr ProcessId, bool Create);
-
-        public static JavaScriptSerializer JsonSerializer = new JavaScriptSerializer();
 
         public static bool ConsoleOpened { get; private set; }
 
@@ -205,9 +201,10 @@ namespace ColorControl
 
         internal static bool ExecuteElevated(string args)
         {
-            var info = new ProcessStartInfo(Assembly.GetEntryAssembly().Location, args)
+            var info = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, args)
             {
                 Verb = "runas", // indicates to elevate privileges
+                UseShellExecute = true,
             };
 
             var process = new Process
@@ -470,7 +467,7 @@ namespace ColorControl
 
         public static void RegisterTask(string taskName, bool enabled)
         {
-            var file = Assembly.GetExecutingAssembly().Location;
+            var file = Process.GetCurrentProcess().MainModule.FileName;
             var directory = Path.GetDirectoryName(file);
 
             try
@@ -509,19 +506,16 @@ namespace ColorControl
 
                 if (task != null)
                 {
-                    if (update && ApplicationDeployment.IsNetworkDeployed)
-                    {
-                        var action = task.Definition.Actions.FirstOrDefault(x => x.ActionType == TaskActionType.Execute);
-                        if (action != null)
-                        {
-                            var execAction = action as ExecAction;
-                            if (!execAction.Path.Equals(file))
-                            {
-                                RegisterTask(taskName, false);
-                                RegisterTask(taskName, true);
-                            }
-                        }
-                    }
+                    //var action = task.Definition.Actions.FirstOrDefault(x => x.ActionType == TaskActionType.Execute);
+                    //if (action != null)
+                    //{
+                    //    var execAction = action as ExecAction;
+                    //    if (!execAction.Path.Equals(file))
+                    //    {
+                    //        RegisterTask(taskName, false);
+                    //        RegisterTask(taskName, true);
+                    //    }
+                    //}
                     return true;
                 }
                 return false;
@@ -551,16 +545,22 @@ namespace ColorControl
             return true;
         }
 
-        public static void BuildDropDownMenuEx(ContextMenuStrip mnuParent, string name, Type enumType, EventHandler clickEvent, object tag = null)
+        public static ToolStripMenuItem BuildDropDownMenuEx(ContextMenuStrip mnuParent, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0)
         {
             var subMenuName = $"{mnuParent.Name}_{name}";
             var subMenuItems = mnuParent.Items.Find(subMenuName, false);
-            ToolStripMenuItem subMenuItem;
-            if (subMenuItems.Length == 0)
-            {
-                subMenuItem = (ToolStripMenuItem)mnuParent.Items.Add(name);
-                subMenuItem.Name = subMenuName;
 
+            if (subMenuItems.Length > 0)
+            {
+                return subMenuItems[0] as ToolStripMenuItem;
+            }
+
+            ToolStripMenuItem subMenuItem;
+            subMenuItem = (ToolStripMenuItem)mnuParent.Items.Add(name);
+            subMenuItem.Name = subMenuName;
+
+            if (enumType != null)
+            {
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
                     var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
@@ -568,6 +568,27 @@ namespace ColorControl
                     item.Click += clickEvent;
                 }
             }
+            else if (min >= 0 && max > min)
+            {
+                for (var i = 0; i <= 10; i++)
+                {
+                    var value = i * (max / 10);
+
+                    var subSubItemName = $"{subMenuName}_{value}";
+
+                    var item = subMenuItem.DropDownItems.Add(value.ToString());
+                    item.Name = subSubItemName;
+                    item.Tag = tag;
+                    item.Click += clickEvent;
+                }
+            }
+            else
+            {
+                subMenuItem.Tag = tag;
+                subMenuItem.Click += clickEvent;
+            }
+
+            return subMenuItem;
         }
 
         public static void BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent)

@@ -104,6 +104,9 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.lblGameBarShortcut = new System.Windows.Forms.Label();
+            this.edtLgGameBarShortcut = new System.Windows.Forms.TextBox();
+            this.btnLgGameBar = new System.Windows.Forms.Button();
             this.btnLgPresetEditTriggerConditions = new System.Windows.Forms.Button();
             this.edtLgPresetTriggerConditions = new System.Windows.Forms.TextBox();
             this.lblLgPresetExcludedProcesses = new System.Windows.Forms.Label();
@@ -119,7 +122,6 @@
             this.miLgEnableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.miLgDisableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             this.miLgExpertSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.mnuLgExpertBacklight = new System.Windows.Forms.ToolStripMenuItem();
             this.chkLgRemoteControlShow = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.cbxLgDevices = new System.Windows.Forms.ComboBox();
@@ -169,7 +171,7 @@
             this.lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             this.grpLGOptions = new System.Windows.Forms.GroupBox();
-            this.chkLgOldWolMechanism = new System.Windows.Forms.CheckBox();
+            this.chkLgShowAdvancedActions = new System.Windows.Forms.CheckBox();
             this.btnLGTestPower = new System.Windows.Forms.Button();
             this.lblLgMaxPowerOnRetriesDescription = new System.Windows.Forms.Label();
             this.edtLgMaxPowerOnRetries = new System.Windows.Forms.NumericUpDown();
@@ -178,6 +180,7 @@
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            this.chkGdiScaling = new System.Windows.Forms.CheckBox();
             this.chkCheckForUpdates = new System.Windows.Forms.CheckBox();
             this.chkMinimizeToSystemTray = new System.Windows.Forms.CheckBox();
             this.chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
@@ -194,7 +197,6 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.chkLgAllowDowngrade = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -232,10 +234,11 @@
             this.tcMain.Controls.Add(this.tabOptions);
             this.tcMain.Controls.Add(this.tabLog);
             this.tcMain.Controls.Add(this.tabInfo);
-            this.tcMain.Location = new System.Drawing.Point(12, 12);
+            this.tcMain.Location = new System.Drawing.Point(14, 14);
+            this.tcMain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tcMain.Name = "tcMain";
             this.tcMain.SelectedIndex = 0;
-            this.tcMain.Size = new System.Drawing.Size(962, 479);
+            this.tcMain.Size = new System.Drawing.Size(1122, 553);
             this.tcMain.TabIndex = 1;
             this.tcMain.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             // 
@@ -253,10 +256,11 @@
             this.tabNVIDIA.Controls.Add(this.btnChange);
             this.tabNVIDIA.Controls.Add(this.btnApply);
             this.tabNVIDIA.Controls.Add(this.lvNvPresets);
-            this.tabNVIDIA.Location = new System.Drawing.Point(4, 22);
+            this.tabNVIDIA.Location = new System.Drawing.Point(4, 24);
+            this.tabNVIDIA.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabNVIDIA.Name = "tabNVIDIA";
-            this.tabNVIDIA.Padding = new System.Windows.Forms.Padding(3);
-            this.tabNVIDIA.Size = new System.Drawing.Size(954, 453);
+            this.tabNVIDIA.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabNVIDIA.Size = new System.Drawing.Size(1114, 525);
             this.tabNVIDIA.TabIndex = 0;
             this.tabNVIDIA.Text = "NVIDIA controller";
             this.tabNVIDIA.UseVisualStyleBackColor = true;
@@ -265,9 +269,10 @@
             // 
             this.lblNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblNvPresetName.AutoSize = true;
-            this.lblNvPresetName.Location = new System.Drawing.Point(6, 404);
+            this.lblNvPresetName.Location = new System.Drawing.Point(7, 466);
+            this.lblNvPresetName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblNvPresetName.Name = "lblNvPresetName";
-            this.lblNvPresetName.Size = new System.Drawing.Size(38, 13);
+            this.lblNvPresetName.Size = new System.Drawing.Size(42, 15);
             this.lblNvPresetName.TabIndex = 22;
             this.lblNvPresetName.Text = "Name:";
             // 
@@ -275,17 +280,19 @@
             // 
             this.edtNvPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtNvPresetName.Enabled = false;
-            this.edtNvPresetName.Location = new System.Drawing.Point(87, 401);
+            this.edtNvPresetName.Location = new System.Drawing.Point(102, 463);
+            this.edtNvPresetName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtNvPresetName.Name = "edtNvPresetName";
-            this.edtNvPresetName.Size = new System.Drawing.Size(200, 20);
+            this.edtNvPresetName.Size = new System.Drawing.Size(233, 23);
             this.edtNvPresetName.TabIndex = 21;
             // 
             // btnAddModesNv
             // 
             this.btnAddModesNv.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddModesNv.Location = new System.Drawing.Point(330, 372);
+            this.btnAddModesNv.Location = new System.Drawing.Point(385, 429);
+            this.btnAddModesNv.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnAddModesNv.Name = "btnAddModesNv";
-            this.btnAddModesNv.Size = new System.Drawing.Size(75, 23);
+            this.btnAddModesNv.Size = new System.Drawing.Size(88, 27);
             this.btnAddModesNv.TabIndex = 9;
             this.btnAddModesNv.Text = "Add modes";
             this.btnAddModesNv.UseVisualStyleBackColor = true;
@@ -295,9 +302,10 @@
             // 
             this.btnNvPresetDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnNvPresetDelete.Enabled = false;
-            this.btnNvPresetDelete.Location = new System.Drawing.Point(249, 372);
+            this.btnNvPresetDelete.Location = new System.Drawing.Point(290, 429);
+            this.btnNvPresetDelete.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnNvPresetDelete.Name = "btnNvPresetDelete";
-            this.btnNvPresetDelete.Size = new System.Drawing.Size(75, 23);
+            this.btnNvPresetDelete.Size = new System.Drawing.Size(88, 27);
             this.btnNvPresetDelete.TabIndex = 8;
             this.btnNvPresetDelete.Text = "Delete";
             this.btnNvPresetDelete.UseVisualStyleBackColor = true;
@@ -306,9 +314,10 @@
             // lblError
             // 
             this.lblError.AutoSize = true;
-            this.lblError.Location = new System.Drawing.Point(6, 6);
+            this.lblError.Location = new System.Drawing.Point(7, 7);
+            this.lblError.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblError.Name = "lblError";
-            this.lblError.Size = new System.Drawing.Size(50, 13);
+            this.lblError.Size = new System.Drawing.Size(53, 15);
             this.lblError.TabIndex = 7;
             this.lblError.Text = "ErrorText";
             this.lblError.Visible = false;
@@ -317,9 +326,10 @@
             // 
             this.btnClone.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClone.Enabled = false;
-            this.btnClone.Location = new System.Drawing.Point(168, 372);
+            this.btnClone.Location = new System.Drawing.Point(196, 429);
+            this.btnClone.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClone.Name = "btnClone";
-            this.btnClone.Size = new System.Drawing.Size(75, 23);
+            this.btnClone.Size = new System.Drawing.Size(88, 27);
             this.btnClone.TabIndex = 6;
             this.btnClone.Text = "Clone";
             this.btnClone.UseVisualStyleBackColor = true;
@@ -329,9 +339,10 @@
             // 
             this.btnNvPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnNvPresetSave.Enabled = false;
-            this.btnNvPresetSave.Location = new System.Drawing.Point(411, 372);
+            this.btnNvPresetSave.Location = new System.Drawing.Point(479, 429);
+            this.btnNvPresetSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnNvPresetSave.Name = "btnNvPresetSave";
-            this.btnNvPresetSave.Size = new System.Drawing.Size(75, 23);
+            this.btnNvPresetSave.Size = new System.Drawing.Size(88, 27);
             this.btnNvPresetSave.TabIndex = 5;
             this.btnNvPresetSave.Text = "Save";
             this.btnNvPresetSave.UseVisualStyleBackColor = true;
@@ -341,9 +352,10 @@
             // 
             this.lblShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblShortcut.AutoSize = true;
-            this.lblShortcut.Location = new System.Drawing.Point(6, 430);
+            this.lblShortcut.Location = new System.Drawing.Point(7, 496);
+            this.lblShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblShortcut.Name = "lblShortcut";
-            this.lblShortcut.Size = new System.Drawing.Size(50, 13);
+            this.lblShortcut.Size = new System.Drawing.Size(55, 15);
             this.lblShortcut.TabIndex = 4;
             this.lblShortcut.Text = "Shortcut:";
             // 
@@ -351,10 +363,11 @@
             // 
             this.edtShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtShortcut.Enabled = false;
-            this.edtShortcut.Location = new System.Drawing.Point(87, 427);
+            this.edtShortcut.Location = new System.Drawing.Point(102, 493);
+            this.edtShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtShortcut.Name = "edtShortcut";
             this.edtShortcut.ReadOnly = true;
-            this.edtShortcut.Size = new System.Drawing.Size(200, 20);
+            this.edtShortcut.Size = new System.Drawing.Size(233, 23);
             this.edtShortcut.TabIndex = 3;
             this.edtShortcut.TextChanged += new System.EventHandler(this.edtShortcut_TextChanged);
             this.edtShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
@@ -365,9 +378,10 @@
             this.btnChange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChange.ContextMenuStrip = this.mnuNvPresets;
             this.btnChange.Enabled = false;
-            this.btnChange.Location = new System.Drawing.Point(87, 372);
+            this.btnChange.Location = new System.Drawing.Point(102, 429);
+            this.btnChange.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnChange.Name = "btnChange";
-            this.btnChange.Size = new System.Drawing.Size(75, 23);
+            this.btnChange.Size = new System.Drawing.Size(88, 27);
             this.btnChange.TabIndex = 2;
             this.btnChange.Text = "Change...";
             this.btnChange.UseVisualStyleBackColor = true;
@@ -608,9 +622,10 @@
             // 
             this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApply.Enabled = false;
-            this.btnApply.Location = new System.Drawing.Point(6, 372);
+            this.btnApply.Location = new System.Drawing.Point(7, 429);
+            this.btnApply.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnApply.Name = "btnApply";
-            this.btnApply.Size = new System.Drawing.Size(75, 23);
+            this.btnApply.Size = new System.Drawing.Size(88, 27);
             this.btnApply.TabIndex = 1;
             this.btnApply.Text = "Apply";
             this.btnApply.UseVisualStyleBackColor = true;
@@ -623,11 +638,11 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvNvPresets.ContextMenuStrip = this.mnuNvPresets;
             this.lvNvPresets.FullRowSelect = true;
-            this.lvNvPresets.HideSelection = false;
-            this.lvNvPresets.Location = new System.Drawing.Point(6, 6);
+            this.lvNvPresets.Location = new System.Drawing.Point(7, 7);
+            this.lvNvPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvNvPresets.MultiSelect = false;
             this.lvNvPresets.Name = "lvNvPresets";
-            this.lvNvPresets.Size = new System.Drawing.Size(942, 360);
+            this.lvNvPresets.Size = new System.Drawing.Size(1098, 415);
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
@@ -648,10 +663,11 @@
             this.tabAMD.Controls.Add(this.btnChangeAmd);
             this.tabAMD.Controls.Add(this.btnApplyAmd);
             this.tabAMD.Controls.Add(this.lvAmdPresets);
-            this.tabAMD.Location = new System.Drawing.Point(4, 22);
+            this.tabAMD.Location = new System.Drawing.Point(4, 24);
+            this.tabAMD.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabAMD.Name = "tabAMD";
-            this.tabAMD.Padding = new System.Windows.Forms.Padding(3);
-            this.tabAMD.Size = new System.Drawing.Size(954, 453);
+            this.tabAMD.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabAMD.Size = new System.Drawing.Size(1114, 525);
             this.tabAMD.TabIndex = 5;
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
@@ -660,9 +676,10 @@
             // 
             this.lblAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblAmdPresetName.AutoSize = true;
-            this.lblAmdPresetName.Location = new System.Drawing.Point(6, 404);
+            this.lblAmdPresetName.Location = new System.Drawing.Point(7, 466);
+            this.lblAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAmdPresetName.Name = "lblAmdPresetName";
-            this.lblAmdPresetName.Size = new System.Drawing.Size(38, 13);
+            this.lblAmdPresetName.Size = new System.Drawing.Size(42, 15);
             this.lblAmdPresetName.TabIndex = 24;
             this.lblAmdPresetName.Text = "Name:";
             // 
@@ -670,17 +687,19 @@
             // 
             this.edtAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtAmdPresetName.Enabled = false;
-            this.edtAmdPresetName.Location = new System.Drawing.Point(87, 401);
+            this.edtAmdPresetName.Location = new System.Drawing.Point(102, 463);
+            this.edtAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtAmdPresetName.Name = "edtAmdPresetName";
-            this.edtAmdPresetName.Size = new System.Drawing.Size(200, 20);
+            this.edtAmdPresetName.Size = new System.Drawing.Size(233, 23);
             this.edtAmdPresetName.TabIndex = 23;
             // 
             // btnAddAmd
             // 
             this.btnAddAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddAmd.Location = new System.Drawing.Point(330, 372);
+            this.btnAddAmd.Location = new System.Drawing.Point(385, 429);
+            this.btnAddAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnAddAmd.Name = "btnAddAmd";
-            this.btnAddAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnAddAmd.Size = new System.Drawing.Size(88, 27);
             this.btnAddAmd.TabIndex = 18;
             this.btnAddAmd.Text = "Add";
             this.btnAddAmd.UseVisualStyleBackColor = true;
@@ -689,9 +708,10 @@
             // lblErrorAMD
             // 
             this.lblErrorAMD.AutoSize = true;
-            this.lblErrorAMD.Location = new System.Drawing.Point(6, 6);
+            this.lblErrorAMD.Location = new System.Drawing.Point(7, 7);
+            this.lblErrorAMD.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblErrorAMD.Name = "lblErrorAMD";
-            this.lblErrorAMD.Size = new System.Drawing.Size(50, 13);
+            this.lblErrorAMD.Size = new System.Drawing.Size(53, 15);
             this.lblErrorAMD.TabIndex = 8;
             this.lblErrorAMD.Text = "ErrorText";
             this.lblErrorAMD.Visible = false;
@@ -700,9 +720,10 @@
             // 
             this.btnDeleteAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDeleteAmd.Enabled = false;
-            this.btnDeleteAmd.Location = new System.Drawing.Point(249, 372);
+            this.btnDeleteAmd.Location = new System.Drawing.Point(290, 429);
+            this.btnDeleteAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnDeleteAmd.Name = "btnDeleteAmd";
-            this.btnDeleteAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnDeleteAmd.Size = new System.Drawing.Size(88, 27);
             this.btnDeleteAmd.TabIndex = 17;
             this.btnDeleteAmd.Text = "Delete";
             this.btnDeleteAmd.UseVisualStyleBackColor = true;
@@ -712,9 +733,10 @@
             // 
             this.btnCloneAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloneAmd.Enabled = false;
-            this.btnCloneAmd.Location = new System.Drawing.Point(168, 372);
+            this.btnCloneAmd.Location = new System.Drawing.Point(196, 429);
+            this.btnCloneAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnCloneAmd.Name = "btnCloneAmd";
-            this.btnCloneAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnCloneAmd.Size = new System.Drawing.Size(88, 27);
             this.btnCloneAmd.TabIndex = 16;
             this.btnCloneAmd.Text = "Clone";
             this.btnCloneAmd.UseVisualStyleBackColor = true;
@@ -724,9 +746,10 @@
             // 
             this.btnAmdPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnAmdPresetSave.Enabled = false;
-            this.btnAmdPresetSave.Location = new System.Drawing.Point(411, 372);
+            this.btnAmdPresetSave.Location = new System.Drawing.Point(479, 429);
+            this.btnAmdPresetSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnAmdPresetSave.Name = "btnAmdPresetSave";
-            this.btnAmdPresetSave.Size = new System.Drawing.Size(75, 23);
+            this.btnAmdPresetSave.Size = new System.Drawing.Size(88, 27);
             this.btnAmdPresetSave.TabIndex = 15;
             this.btnAmdPresetSave.Text = "Save";
             this.btnAmdPresetSave.UseVisualStyleBackColor = true;
@@ -736,9 +759,10 @@
             // 
             this.lblAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblAmdShortcut.AutoSize = true;
-            this.lblAmdShortcut.Location = new System.Drawing.Point(6, 430);
+            this.lblAmdShortcut.Location = new System.Drawing.Point(7, 496);
+            this.lblAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAmdShortcut.Name = "lblAmdShortcut";
-            this.lblAmdShortcut.Size = new System.Drawing.Size(50, 13);
+            this.lblAmdShortcut.Size = new System.Drawing.Size(55, 15);
             this.lblAmdShortcut.TabIndex = 14;
             this.lblAmdShortcut.Text = "Shortcut:";
             // 
@@ -746,10 +770,11 @@
             // 
             this.edtAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtAmdShortcut.Enabled = false;
-            this.edtAmdShortcut.Location = new System.Drawing.Point(87, 427);
+            this.edtAmdShortcut.Location = new System.Drawing.Point(102, 493);
+            this.edtAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtAmdShortcut.Name = "edtAmdShortcut";
             this.edtAmdShortcut.ReadOnly = true;
-            this.edtAmdShortcut.Size = new System.Drawing.Size(200, 20);
+            this.edtAmdShortcut.Size = new System.Drawing.Size(233, 23);
             this.edtAmdShortcut.TabIndex = 13;
             this.edtAmdShortcut.TextChanged += new System.EventHandler(this.edtAmdShortcut_TextChanged);
             this.edtAmdShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
@@ -760,9 +785,10 @@
             this.btnChangeAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChangeAmd.ContextMenuStrip = this.mnuAmdPresets;
             this.btnChangeAmd.Enabled = false;
-            this.btnChangeAmd.Location = new System.Drawing.Point(87, 372);
+            this.btnChangeAmd.Location = new System.Drawing.Point(102, 429);
+            this.btnChangeAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnChangeAmd.Name = "btnChangeAmd";
-            this.btnChangeAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnChangeAmd.Size = new System.Drawing.Size(88, 27);
             this.btnChangeAmd.TabIndex = 12;
             this.btnChangeAmd.Text = "Change...";
             this.btnChangeAmd.UseVisualStyleBackColor = true;
@@ -907,9 +933,10 @@
             // 
             this.btnApplyAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApplyAmd.Enabled = false;
-            this.btnApplyAmd.Location = new System.Drawing.Point(6, 372);
+            this.btnApplyAmd.Location = new System.Drawing.Point(7, 429);
+            this.btnApplyAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnApplyAmd.Name = "btnApplyAmd";
-            this.btnApplyAmd.Size = new System.Drawing.Size(75, 23);
+            this.btnApplyAmd.Size = new System.Drawing.Size(88, 27);
             this.btnApplyAmd.TabIndex = 11;
             this.btnApplyAmd.Text = "Apply";
             this.btnApplyAmd.UseVisualStyleBackColor = true;
@@ -922,11 +949,11 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvAmdPresets.ContextMenuStrip = this.mnuAmdPresets;
             this.lvAmdPresets.FullRowSelect = true;
-            this.lvAmdPresets.HideSelection = false;
-            this.lvAmdPresets.Location = new System.Drawing.Point(6, 6);
+            this.lvAmdPresets.Location = new System.Drawing.Point(7, 7);
+            this.lvAmdPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvAmdPresets.MultiSelect = false;
             this.lvAmdPresets.Name = "lvAmdPresets";
-            this.lvAmdPresets.Size = new System.Drawing.Size(942, 360);
+            this.lvAmdPresets.Size = new System.Drawing.Size(1098, 415);
             this.lvAmdPresets.TabIndex = 10;
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
             this.lvAmdPresets.View = System.Windows.Forms.View.Details;
@@ -936,10 +963,11 @@
             // tabLG
             // 
             this.tabLG.Controls.Add(this.scLgController);
-            this.tabLG.Location = new System.Drawing.Point(4, 22);
+            this.tabLG.Location = new System.Drawing.Point(4, 24);
+            this.tabLG.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabLG.Name = "tabLG";
-            this.tabLG.Padding = new System.Windows.Forms.Padding(3);
-            this.tabLG.Size = new System.Drawing.Size(954, 453);
+            this.tabLG.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabLG.Size = new System.Drawing.Size(1114, 525);
             this.tabLG.TabIndex = 1;
             this.tabLG.Text = "LG controller";
             this.tabLG.UseVisualStyleBackColor = true;
@@ -947,11 +975,15 @@
             // scLgController
             // 
             this.scLgController.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.scLgController.Location = new System.Drawing.Point(3, 3);
+            this.scLgController.Location = new System.Drawing.Point(4, 3);
+            this.scLgController.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.scLgController.Name = "scLgController";
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.lblGameBarShortcut);
+            this.scLgController.Panel1.Controls.Add(this.edtLgGameBarShortcut);
+            this.scLgController.Panel1.Controls.Add(this.btnLgGameBar);
             this.scLgController.Panel1.Controls.Add(this.btnLgPresetEditTriggerConditions);
             this.scLgController.Panel1.Controls.Add(this.edtLgPresetTriggerConditions);
             this.scLgController.Panel1.Controls.Add(this.lblLgPresetExcludedProcesses);
@@ -993,16 +1025,51 @@
             this.scLgController.Panel1.Controls.Add(this.lblLgError);
             this.scLgController.Panel1MinSize = 750;
             this.scLgController.Panel2MinSize = 150;
-            this.scLgController.Size = new System.Drawing.Size(948, 447);
-            this.scLgController.SplitterDistance = 767;
+            this.scLgController.Size = new System.Drawing.Size(1106, 519);
+            this.scLgController.SplitterDistance = 894;
+            this.scLgController.SplitterWidth = 5;
             this.scLgController.TabIndex = 43;
+            // 
+            // lblGameBarShortcut
+            // 
+            this.lblGameBarShortcut.AutoSize = true;
+            this.lblGameBarShortcut.Location = new System.Drawing.Point(597, 45);
+            this.lblGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGameBarShortcut.Name = "lblGameBarShortcut";
+            this.lblGameBarShortcut.Size = new System.Drawing.Size(55, 15);
+            this.lblGameBarShortcut.TabIndex = 57;
+            this.lblGameBarShortcut.Text = "Shortcut:";
+            // 
+            // edtLgGameBarShortcut
+            // 
+            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(667, 42);
+            this.edtLgGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtLgGameBarShortcut.Name = "edtLgGameBarShortcut";
+            this.edtLgGameBarShortcut.ReadOnly = true;
+            this.edtLgGameBarShortcut.Size = new System.Drawing.Size(128, 23);
+            this.edtLgGameBarShortcut.TabIndex = 56;
+            this.edtLgGameBarShortcut.TextChanged += new System.EventHandler(this.edtLgGameBarShortcut_TextChanged);
+            this.edtLgGameBarShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyDown);
+            this.edtLgGameBarShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyUp);
+            // 
+            // btnLgGameBar
+            // 
+            this.btnLgGameBar.Location = new System.Drawing.Point(478, 40);
+            this.btnLgGameBar.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnLgGameBar.Name = "btnLgGameBar";
+            this.btnLgGameBar.Size = new System.Drawing.Size(88, 27);
+            this.btnLgGameBar.TabIndex = 55;
+            this.btnLgGameBar.Text = "Game Bar";
+            this.btnLgGameBar.UseVisualStyleBackColor = true;
+            this.btnLgGameBar.Click += new System.EventHandler(this.btnLgGameBar_Click);
             // 
             // btnLgPresetEditTriggerConditions
             // 
             this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(689, 317);
+            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 369);
+            this.btnLgPresetEditTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
-            this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(75, 23);
+            this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(88, 27);
             this.btnLgPresetEditTriggerConditions.TabIndex = 54;
             this.btnLgPresetEditTriggerConditions.Text = "Edit...";
             this.btnLgPresetEditTriggerConditions.UseVisualStyleBackColor = true;
@@ -1012,19 +1079,21 @@
             // 
             this.edtLgPresetTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetTriggerConditions.Enabled = false;
-            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(515, 319);
+            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(601, 371);
+            this.edtLgPresetTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetTriggerConditions.Name = "edtLgPresetTriggerConditions";
             this.edtLgPresetTriggerConditions.ReadOnly = true;
-            this.edtLgPresetTriggerConditions.Size = new System.Drawing.Size(167, 20);
+            this.edtLgPresetTriggerConditions.Size = new System.Drawing.Size(194, 23);
             this.edtLgPresetTriggerConditions.TabIndex = 53;
             // 
             // lblLgPresetExcludedProcesses
             // 
             this.lblLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetExcludedProcesses.AutoSize = true;
-            this.lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(407, 375);
+            this.lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(475, 436);
+            this.lblLgPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetExcludedProcesses.Name = "lblLgPresetExcludedProcesses";
-            this.lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(105, 13);
+            this.lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(112, 15);
             this.lblLgPresetExcludedProcesses.TabIndex = 52;
             this.lblLgPresetExcludedProcesses.Text = "Excluded processes:";
             // 
@@ -1032,18 +1101,20 @@
             // 
             this.edtLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetExcludedProcesses.Enabled = false;
-            this.edtLgPresetExcludedProcesses.Location = new System.Drawing.Point(515, 373);
+            this.edtLgPresetExcludedProcesses.Location = new System.Drawing.Point(601, 433);
+            this.edtLgPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetExcludedProcesses.Name = "edtLgPresetExcludedProcesses";
-            this.edtLgPresetExcludedProcesses.Size = new System.Drawing.Size(248, 20);
+            this.edtLgPresetExcludedProcesses.Size = new System.Drawing.Size(289, 23);
             this.edtLgPresetExcludedProcesses.TabIndex = 51;
             // 
             // lblLgPresetIncludedProcesses
             // 
             this.lblLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetIncludedProcesses.AutoSize = true;
-            this.lblLgPresetIncludedProcesses.Location = new System.Drawing.Point(407, 349);
+            this.lblLgPresetIncludedProcesses.Location = new System.Drawing.Point(475, 406);
+            this.lblLgPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetIncludedProcesses.Name = "lblLgPresetIncludedProcesses";
-            this.lblLgPresetIncludedProcesses.Size = new System.Drawing.Size(102, 13);
+            this.lblLgPresetIncludedProcesses.Size = new System.Drawing.Size(110, 15);
             this.lblLgPresetIncludedProcesses.TabIndex = 50;
             this.lblLgPresetIncludedProcesses.Text = "Included processes:";
             // 
@@ -1051,18 +1122,20 @@
             // 
             this.edtLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetIncludedProcesses.Enabled = false;
-            this.edtLgPresetIncludedProcesses.Location = new System.Drawing.Point(515, 347);
+            this.edtLgPresetIncludedProcesses.Location = new System.Drawing.Point(601, 403);
+            this.edtLgPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetIncludedProcesses.Name = "edtLgPresetIncludedProcesses";
-            this.edtLgPresetIncludedProcesses.Size = new System.Drawing.Size(248, 20);
+            this.edtLgPresetIncludedProcesses.Size = new System.Drawing.Size(289, 23);
             this.edtLgPresetIncludedProcesses.TabIndex = 49;
             // 
             // lblLgPresetTriggerCondition
             // 
             this.lblLgPresetTriggerCondition.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetTriggerCondition.AutoSize = true;
-            this.lblLgPresetTriggerCondition.Location = new System.Drawing.Point(407, 322);
+            this.lblLgPresetTriggerCondition.Location = new System.Drawing.Point(475, 375);
+            this.lblLgPresetTriggerCondition.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetTriggerCondition.Name = "lblLgPresetTriggerCondition";
-            this.lblLgPresetTriggerCondition.Size = new System.Drawing.Size(54, 13);
+            this.lblLgPresetTriggerCondition.Size = new System.Drawing.Size(63, 15);
             this.lblLgPresetTriggerCondition.TabIndex = 47;
             this.lblLgPresetTriggerCondition.Text = "Condition:";
             // 
@@ -1072,27 +1145,30 @@
             this.cbxLgPresetTrigger.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgPresetTrigger.Enabled = false;
             this.cbxLgPresetTrigger.FormattingEnabled = true;
-            this.cbxLgPresetTrigger.Location = new System.Drawing.Point(515, 292);
+            this.cbxLgPresetTrigger.Location = new System.Drawing.Point(601, 340);
+            this.cbxLgPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgPresetTrigger.Name = "cbxLgPresetTrigger";
-            this.cbxLgPresetTrigger.Size = new System.Drawing.Size(248, 21);
+            this.cbxLgPresetTrigger.Size = new System.Drawing.Size(289, 23);
             this.cbxLgPresetTrigger.TabIndex = 46;
             // 
             // lblLgPresetTrigger
             // 
             this.lblLgPresetTrigger.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetTrigger.AutoSize = true;
-            this.lblLgPresetTrigger.Location = new System.Drawing.Point(407, 295);
+            this.lblLgPresetTrigger.Location = new System.Drawing.Point(475, 343);
+            this.lblLgPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetTrigger.Name = "lblLgPresetTrigger";
-            this.lblLgPresetTrigger.Size = new System.Drawing.Size(43, 13);
+            this.lblLgPresetTrigger.Size = new System.Drawing.Size(46, 15);
             this.lblLgPresetTrigger.TabIndex = 45;
             this.lblLgPresetTrigger.Text = "Trigger:";
             // 
             // btnLgExpert
             // 
             this.btnLgExpert.ContextMenuStrip = this.mnuLgExpert;
-            this.btnLgExpert.Location = new System.Drawing.Point(315, 34);
+            this.btnLgExpert.Location = new System.Drawing.Point(368, 39);
+            this.btnLgExpert.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgExpert.Name = "btnLgExpert";
-            this.btnLgExpert.Size = new System.Drawing.Size(75, 23);
+            this.btnLgExpert.Size = new System.Drawing.Size(88, 27);
             this.btnLgExpert.TabIndex = 44;
             this.btnLgExpert.Text = "Expert...";
             this.btnLgExpert.UseVisualStyleBackColor = true;
@@ -1103,10 +1179,9 @@
             this.mnuLgExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.mnuLgExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mnuLgOLEDMotionPro,
-            this.miLgExpertSeparator1,
-            this.mnuLgExpertBacklight});
+            this.miLgExpertSeparator1});
             this.mnuLgExpert.Name = "mnuLgButtons";
-            this.mnuLgExpert.Size = new System.Drawing.Size(321, 54);
+            this.mnuLgExpert.Size = new System.Drawing.Size(321, 32);
             this.mnuLgExpert.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgExpert_Opening);
             // 
             // mnuLgOLEDMotionPro
@@ -1137,20 +1212,15 @@
             this.miLgExpertSeparator1.Name = "miLgExpertSeparator1";
             this.miLgExpertSeparator1.Size = new System.Drawing.Size(317, 6);
             // 
-            // mnuLgExpertBacklight
-            // 
-            this.mnuLgExpertBacklight.Name = "mnuLgExpertBacklight";
-            this.mnuLgExpertBacklight.Size = new System.Drawing.Size(320, 22);
-            this.mnuLgExpertBacklight.Text = "Backlight";
-            // 
             // chkLgRemoteControlShow
             // 
             this.chkLgRemoteControlShow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkLgRemoteControlShow.Appearance = System.Windows.Forms.Appearance.Button;
             this.chkLgRemoteControlShow.AutoSize = true;
-            this.chkLgRemoteControlShow.Location = new System.Drawing.Point(673, 7);
+            this.chkLgRemoteControlShow.Location = new System.Drawing.Point(788, 8);
+            this.chkLgRemoteControlShow.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkLgRemoteControlShow.Name = "chkLgRemoteControlShow";
-            this.chkLgRemoteControlShow.Size = new System.Drawing.Size(90, 23);
+            this.chkLgRemoteControlShow.Size = new System.Drawing.Size(101, 25);
             this.chkLgRemoteControlShow.TabIndex = 43;
             this.chkLgRemoteControlShow.Text = "Remote Control";
             this.chkLgRemoteControlShow.UseVisualStyleBackColor = true;
@@ -1159,9 +1229,10 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(5, 12);
+            this.label3.Location = new System.Drawing.Point(6, 14);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(44, 13);
+            this.label3.Size = new System.Drawing.Size(45, 15);
             this.label3.TabIndex = 31;
             this.label3.Text = "Device:";
             // 
@@ -1170,17 +1241,19 @@
             this.cbxLgDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgDevices.DropDownWidth = 400;
             this.cbxLgDevices.FormattingEnabled = true;
-            this.cbxLgDevices.Location = new System.Drawing.Point(86, 8);
+            this.cbxLgDevices.Location = new System.Drawing.Point(100, 9);
+            this.cbxLgDevices.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgDevices.Name = "cbxLgDevices";
-            this.cbxLgDevices.Size = new System.Drawing.Size(318, 21);
+            this.cbxLgDevices.Size = new System.Drawing.Size(370, 23);
             this.cbxLgDevices.TabIndex = 30;
             this.cbxLgDevices.SelectedIndexChanged += new System.EventHandler(this.cbxLgDevices_SelectedIndexChanged);
             // 
             // btnLgDeviceConvertToCustom
             // 
-            this.btnLgDeviceConvertToCustom.Location = new System.Drawing.Point(572, 7);
+            this.btnLgDeviceConvertToCustom.Location = new System.Drawing.Point(667, 8);
+            this.btnLgDeviceConvertToCustom.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgDeviceConvertToCustom.Name = "btnLgDeviceConvertToCustom";
-            this.btnLgDeviceConvertToCustom.Size = new System.Drawing.Size(75, 23);
+            this.btnLgDeviceConvertToCustom.Size = new System.Drawing.Size(88, 27);
             this.btnLgDeviceConvertToCustom.TabIndex = 41;
             this.btnLgDeviceConvertToCustom.Text = "To custom...";
             this.btnLgDeviceConvertToCustom.UseVisualStyleBackColor = true;
@@ -1192,9 +1265,10 @@
             this.cbxLgApps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgApps.Enabled = false;
             this.cbxLgApps.FormattingEnabled = true;
-            this.cbxLgApps.Location = new System.Drawing.Point(86, 346);
+            this.cbxLgApps.Location = new System.Drawing.Point(100, 402);
+            this.cbxLgApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgApps.Name = "cbxLgApps";
-            this.cbxLgApps.Size = new System.Drawing.Size(200, 21);
+            this.cbxLgApps.Size = new System.Drawing.Size(233, 23);
             this.cbxLgApps.TabIndex = 26;
             this.cbxLgApps.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.cbxLgApps_KeyPress);
             // 
@@ -1204,11 +1278,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvLgPresets.FullRowSelect = true;
-            this.lvLgPresets.HideSelection = false;
-            this.lvLgPresets.Location = new System.Drawing.Point(5, 146);
+            this.lvLgPresets.Location = new System.Drawing.Point(6, 168);
+            this.lvLgPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(758, 111);
+            this.lvLgPresets.Size = new System.Drawing.Size(883, 130);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -1219,9 +1293,10 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(5, 349);
+            this.label5.Location = new System.Drawing.Point(6, 406);
+            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(29, 13);
+            this.label5.Size = new System.Drawing.Size(32, 15);
             this.label5.TabIndex = 25;
             this.label5.Text = "App:";
             // 
@@ -1231,18 +1306,20 @@
             this.cbxLgPresetDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgPresetDevice.Enabled = false;
             this.cbxLgPresetDevice.FormattingEnabled = true;
-            this.cbxLgPresetDevice.Location = new System.Drawing.Point(86, 318);
+            this.cbxLgPresetDevice.Location = new System.Drawing.Point(100, 370);
+            this.cbxLgPresetDevice.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgPresetDevice.Name = "cbxLgPresetDevice";
-            this.cbxLgPresetDevice.Size = new System.Drawing.Size(318, 21);
+            this.cbxLgPresetDevice.Size = new System.Drawing.Size(370, 23);
             this.cbxLgPresetDevice.TabIndex = 40;
             // 
             // btnDeleteLg
             // 
             this.btnDeleteLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDeleteLg.Enabled = false;
-            this.btnDeleteLg.Location = new System.Drawing.Point(248, 263);
+            this.btnDeleteLg.Location = new System.Drawing.Point(289, 306);
+            this.btnDeleteLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnDeleteLg.Name = "btnDeleteLg";
-            this.btnDeleteLg.Size = new System.Drawing.Size(75, 23);
+            this.btnDeleteLg.Size = new System.Drawing.Size(88, 27);
             this.btnDeleteLg.TabIndex = 27;
             this.btnDeleteLg.Text = "Delete";
             this.btnDeleteLg.UseVisualStyleBackColor = true;
@@ -1252,9 +1329,10 @@
             // 
             this.btnApplyLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApplyLg.Enabled = false;
-            this.btnApplyLg.Location = new System.Drawing.Point(5, 263);
+            this.btnApplyLg.Location = new System.Drawing.Point(6, 306);
+            this.btnApplyLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnApplyLg.Name = "btnApplyLg";
-            this.btnApplyLg.Size = new System.Drawing.Size(75, 23);
+            this.btnApplyLg.Size = new System.Drawing.Size(88, 27);
             this.btnApplyLg.TabIndex = 9;
             this.btnApplyLg.Text = "Apply";
             this.btnApplyLg.UseVisualStyleBackColor = true;
@@ -1263,9 +1341,10 @@
             // lblDeviceFilter
             // 
             this.lblDeviceFilter.AutoSize = true;
-            this.lblDeviceFilter.Location = new System.Drawing.Point(5, 39);
+            this.lblDeviceFilter.Location = new System.Drawing.Point(6, 45);
+            this.lblDeviceFilter.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDeviceFilter.Name = "lblDeviceFilter";
-            this.lblDeviceFilter.Size = new System.Drawing.Size(66, 13);
+            this.lblDeviceFilter.Size = new System.Drawing.Size(72, 15);
             this.lblDeviceFilter.TabIndex = 24;
             this.lblDeviceFilter.Text = "Device filter:";
             // 
@@ -1273,18 +1352,20 @@
             // 
             this.lblLgPresetDevice.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetDevice.AutoSize = true;
-            this.lblLgPresetDevice.Location = new System.Drawing.Point(5, 321);
+            this.lblLgPresetDevice.Location = new System.Drawing.Point(6, 373);
+            this.lblLgPresetDevice.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetDevice.Name = "lblLgPresetDevice";
-            this.lblLgPresetDevice.Size = new System.Drawing.Size(44, 13);
+            this.lblLgPresetDevice.Size = new System.Drawing.Size(45, 15);
             this.lblLgPresetDevice.TabIndex = 39;
             this.lblLgPresetDevice.Text = "Device:";
             // 
             // btnAddLg
             // 
             this.btnAddLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddLg.Location = new System.Drawing.Point(167, 263);
+            this.btnAddLg.Location = new System.Drawing.Point(195, 306);
+            this.btnAddLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnAddLg.Name = "btnAddLg";
-            this.btnAddLg.Size = new System.Drawing.Size(75, 23);
+            this.btnAddLg.Size = new System.Drawing.Size(88, 27);
             this.btnAddLg.TabIndex = 28;
             this.btnAddLg.Text = "Add";
             this.btnAddLg.UseVisualStyleBackColor = true;
@@ -1294,10 +1375,11 @@
             // 
             this.edtShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtShortcutLg.Enabled = false;
-            this.edtShortcutLg.Location = new System.Drawing.Point(86, 373);
+            this.edtShortcutLg.Location = new System.Drawing.Point(100, 433);
+            this.edtShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtShortcutLg.Name = "edtShortcutLg";
             this.edtShortcutLg.ReadOnly = true;
-            this.edtShortcutLg.Size = new System.Drawing.Size(200, 20);
+            this.edtShortcutLg.Size = new System.Drawing.Size(233, 23);
             this.edtShortcutLg.TabIndex = 11;
             this.edtShortcutLg.TextChanged += new System.EventHandler(this.edtShortcutLg_TextChanged);
             this.edtShortcutLg.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
@@ -1305,17 +1387,19 @@
             // 
             // edtLgDeviceFilter
             // 
-            this.edtLgDeviceFilter.Location = new System.Drawing.Point(86, 35);
+            this.edtLgDeviceFilter.Location = new System.Drawing.Point(100, 40);
+            this.edtLgDeviceFilter.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgDeviceFilter.Name = "edtLgDeviceFilter";
-            this.edtLgDeviceFilter.Size = new System.Drawing.Size(142, 20);
+            this.edtLgDeviceFilter.Size = new System.Drawing.Size(165, 23);
             this.edtLgDeviceFilter.TabIndex = 23;
             this.edtLgDeviceFilter.TextChanged += new System.EventHandler(this.edtLgDeviceFilter_TextChanged);
             // 
             // btnLgRemoveDevice
             // 
-            this.btnLgRemoveDevice.Location = new System.Drawing.Point(491, 7);
+            this.btnLgRemoveDevice.Location = new System.Drawing.Point(573, 8);
+            this.btnLgRemoveDevice.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgRemoveDevice.Name = "btnLgRemoveDevice";
-            this.btnLgRemoveDevice.Size = new System.Drawing.Size(75, 23);
+            this.btnLgRemoveDevice.Size = new System.Drawing.Size(88, 27);
             this.btnLgRemoveDevice.TabIndex = 38;
             this.btnLgRemoveDevice.Text = "Remove";
             this.btnLgRemoveDevice.UseVisualStyleBackColor = true;
@@ -1324,9 +1408,10 @@
             // btnLgRefreshApps
             // 
             this.btnLgRefreshApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgRefreshApps.Location = new System.Drawing.Point(292, 344);
+            this.btnLgRefreshApps.Location = new System.Drawing.Point(341, 400);
+            this.btnLgRefreshApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgRefreshApps.Name = "btnLgRefreshApps";
-            this.btnLgRefreshApps.Size = new System.Drawing.Size(75, 23);
+            this.btnLgRefreshApps.Size = new System.Drawing.Size(88, 27);
             this.btnLgRefreshApps.TabIndex = 29;
             this.btnLgRefreshApps.Text = "Refresh";
             this.btnLgRefreshApps.UseVisualStyleBackColor = true;
@@ -1336,9 +1421,10 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(5, 376);
+            this.label2.Location = new System.Drawing.Point(6, 437);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(50, 13);
+            this.label2.Size = new System.Drawing.Size(55, 15);
             this.label2.TabIndex = 12;
             this.label2.Text = "Shortcut:";
             // 
@@ -1346,17 +1432,19 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(5, 295);
+            this.label1.Location = new System.Drawing.Point(6, 343);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(38, 13);
+            this.label1.Size = new System.Drawing.Size(42, 15);
             this.label1.TabIndex = 20;
             this.label1.Text = "Name:";
             // 
             // btnLgAddDevice
             // 
-            this.btnLgAddDevice.Location = new System.Drawing.Point(410, 7);
+            this.btnLgAddDevice.Location = new System.Drawing.Point(478, 8);
+            this.btnLgAddDevice.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgAddDevice.Name = "btnLgAddDevice";
-            this.btnLgAddDevice.Size = new System.Drawing.Size(75, 23);
+            this.btnLgAddDevice.Size = new System.Drawing.Size(88, 27);
             this.btnLgAddDevice.TabIndex = 37;
             this.btnLgAddDevice.Text = "Add";
             this.btnLgAddDevice.UseVisualStyleBackColor = true;
@@ -1366,18 +1454,20 @@
             // 
             this.edtNameLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtNameLg.Enabled = false;
-            this.edtNameLg.Location = new System.Drawing.Point(86, 292);
+            this.edtNameLg.Location = new System.Drawing.Point(100, 340);
+            this.edtNameLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtNameLg.Name = "edtNameLg";
-            this.edtNameLg.Size = new System.Drawing.Size(200, 20);
+            this.edtNameLg.Size = new System.Drawing.Size(233, 23);
             this.edtNameLg.TabIndex = 19;
             // 
             // btnSetShortcutLg
             // 
             this.btnSetShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnSetShortcutLg.Enabled = false;
-            this.btnSetShortcutLg.Location = new System.Drawing.Point(329, 263);
+            this.btnSetShortcutLg.Location = new System.Drawing.Point(384, 306);
+            this.btnSetShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnSetShortcutLg.Name = "btnSetShortcutLg";
-            this.btnSetShortcutLg.Size = new System.Drawing.Size(75, 23);
+            this.btnSetShortcutLg.Size = new System.Drawing.Size(88, 27);
             this.btnSetShortcutLg.TabIndex = 13;
             this.btnSetShortcutLg.Text = "Save";
             this.btnSetShortcutLg.UseVisualStyleBackColor = true;
@@ -1388,10 +1478,11 @@
             this.edtStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.edtStepsLg.Enabled = false;
-            this.edtStepsLg.Location = new System.Drawing.Point(86, 398);
+            this.edtStepsLg.Location = new System.Drawing.Point(100, 462);
+            this.edtStepsLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtStepsLg.Multiline = true;
             this.edtStepsLg.Name = "edtStepsLg";
-            this.edtStepsLg.Size = new System.Drawing.Size(596, 38);
+            this.edtStepsLg.Size = new System.Drawing.Size(694, 43);
             this.edtStepsLg.TabIndex = 17;
             // 
             // btnLgAddButton
@@ -1399,9 +1490,10 @@
             this.btnLgAddButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnLgAddButton.ContextMenuStrip = this.mnuLgButtons;
             this.btnLgAddButton.Enabled = false;
-            this.btnLgAddButton.Location = new System.Drawing.Point(688, 397);
+            this.btnLgAddButton.Location = new System.Drawing.Point(802, 461);
+            this.btnLgAddButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgAddButton.Name = "btnLgAddButton";
-            this.btnLgAddButton.Size = new System.Drawing.Size(75, 23);
+            this.btnLgAddButton.Size = new System.Drawing.Size(88, 27);
             this.btnLgAddButton.TabIndex = 32;
             this.btnLgAddButton.Text = "Add step";
             this.btnLgAddButton.UseVisualStyleBackColor = true;
@@ -1447,9 +1539,10 @@
             // 
             this.btnCloneLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloneLg.Enabled = false;
-            this.btnCloneLg.Location = new System.Drawing.Point(86, 263);
+            this.btnCloneLg.Location = new System.Drawing.Point(100, 306);
+            this.btnCloneLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnCloneLg.Name = "btnCloneLg";
-            this.btnCloneLg.Size = new System.Drawing.Size(75, 23);
+            this.btnCloneLg.Size = new System.Drawing.Size(88, 27);
             this.btnCloneLg.TabIndex = 14;
             this.btnCloneLg.Text = "Clone";
             this.btnCloneLg.UseVisualStyleBackColor = true;
@@ -1459,17 +1552,19 @@
             // 
             this.lblStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblStepsLg.AutoSize = true;
-            this.lblStepsLg.Location = new System.Drawing.Point(5, 402);
+            this.lblStepsLg.Location = new System.Drawing.Point(6, 467);
+            this.lblStepsLg.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStepsLg.Name = "lblStepsLg";
-            this.lblStepsLg.Size = new System.Drawing.Size(37, 13);
+            this.lblStepsLg.Size = new System.Drawing.Size(38, 15);
             this.lblStepsLg.TabIndex = 16;
             this.lblStepsLg.Text = "Steps:";
             // 
             // btnLgDeviceFilterRefresh
             // 
-            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(234, 34);
+            this.btnLgDeviceFilterRefresh.Location = new System.Drawing.Point(273, 39);
+            this.btnLgDeviceFilterRefresh.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgDeviceFilterRefresh.Name = "btnLgDeviceFilterRefresh";
-            this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(75, 23);
+            this.btnLgDeviceFilterRefresh.Size = new System.Drawing.Size(88, 27);
             this.btnLgDeviceFilterRefresh.TabIndex = 35;
             this.btnLgDeviceFilterRefresh.Text = "Refresh";
             this.btnLgDeviceFilterRefresh.UseVisualStyleBackColor = true;
@@ -1491,18 +1586,20 @@
                 ".",
             "Automatically power off on standby",
             "Automatically power off on screensaver and power on when screensaver deactivates"});
-            this.clbLgPower.Location = new System.Drawing.Point(5, 61);
+            this.clbLgPower.Location = new System.Drawing.Point(6, 70);
+            this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.clbLgPower.Name = "clbLgPower";
-            this.clbLgPower.Size = new System.Drawing.Size(758, 79);
+            this.clbLgPower.Size = new System.Drawing.Size(883, 76);
             this.clbLgPower.TabIndex = 34;
             this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
             // 
             // lblLgError
             // 
             this.lblLgError.AutoSize = true;
-            this.lblLgError.Location = new System.Drawing.Point(5, 8);
+            this.lblLgError.Location = new System.Drawing.Point(6, 9);
+            this.lblLgError.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgError.Name = "lblLgError";
-            this.lblLgError.Size = new System.Drawing.Size(50, 13);
+            this.lblLgError.Size = new System.Drawing.Size(53, 15);
             this.lblLgError.TabIndex = 15;
             this.lblLgError.Text = "ErrorText";
             this.lblLgError.Visible = false;
@@ -1514,10 +1611,11 @@
             this.tabOptions.Controls.Add(this.grpLGOptions);
             this.tabOptions.Controls.Add(this.grpHDROptions);
             this.tabOptions.Controls.Add(this.grpGeneralOptions);
-            this.tabOptions.Location = new System.Drawing.Point(4, 22);
+            this.tabOptions.Location = new System.Drawing.Point(4, 24);
+            this.tabOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabOptions.Name = "tabOptions";
-            this.tabOptions.Padding = new System.Windows.Forms.Padding(3);
-            this.tabOptions.Size = new System.Drawing.Size(954, 453);
+            this.tabOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabOptions.Size = new System.Drawing.Size(1114, 525);
             this.tabOptions.TabIndex = 2;
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
@@ -1533,9 +1631,11 @@
             this.grpNvidiaOptions.Controls.Add(this.cbxDitheringBitDepth);
             this.grpNvidiaOptions.Controls.Add(this.chkDitheringEnabled);
             this.grpNvidiaOptions.Controls.Add(this.pbGradient);
-            this.grpNvidiaOptions.Location = new System.Drawing.Point(412, 6);
+            this.grpNvidiaOptions.Location = new System.Drawing.Point(481, 7);
+            this.grpNvidiaOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpNvidiaOptions.Name = "grpNvidiaOptions";
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(536, 304);
+            this.grpNvidiaOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpNvidiaOptions.Size = new System.Drawing.Size(625, 351);
             this.grpNvidiaOptions.TabIndex = 6;
             this.grpNvidiaOptions.TabStop = false;
             this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
@@ -1543,9 +1643,10 @@
             // lblDitheringMode
             // 
             this.lblDitheringMode.AutoSize = true;
-            this.lblDitheringMode.Location = new System.Drawing.Point(6, 70);
+            this.lblDitheringMode.Location = new System.Drawing.Point(7, 81);
+            this.lblDitheringMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDitheringMode.Name = "lblDitheringMode";
-            this.lblDitheringMode.Size = new System.Drawing.Size(37, 13);
+            this.lblDitheringMode.Size = new System.Drawing.Size(41, 15);
             this.lblDitheringMode.TabIndex = 7;
             this.lblDitheringMode.Text = "Mode:";
             // 
@@ -1553,18 +1654,20 @@
             // 
             this.cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxDitheringMode.FormattingEnabled = true;
-            this.cbxDitheringMode.Location = new System.Drawing.Point(64, 65);
+            this.cbxDitheringMode.Location = new System.Drawing.Point(75, 75);
+            this.cbxDitheringMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxDitheringMode.Name = "cbxDitheringMode";
-            this.cbxDitheringMode.Size = new System.Drawing.Size(117, 21);
+            this.cbxDitheringMode.Size = new System.Drawing.Size(136, 23);
             this.cbxDitheringMode.TabIndex = 6;
             this.cbxDitheringMode.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringMode_SelectedIndexChanged);
             // 
             // lblDitheringBitDepth
             // 
             this.lblDitheringBitDepth.AutoSize = true;
-            this.lblDitheringBitDepth.Location = new System.Drawing.Point(6, 43);
+            this.lblDitheringBitDepth.Location = new System.Drawing.Point(7, 50);
+            this.lblDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDitheringBitDepth.Name = "lblDitheringBitDepth";
-            this.lblDitheringBitDepth.Size = new System.Drawing.Size(52, 13);
+            this.lblDitheringBitDepth.Size = new System.Drawing.Size(60, 15);
             this.lblDitheringBitDepth.TabIndex = 5;
             this.lblDitheringBitDepth.Text = "Bit-depth:";
             // 
@@ -1572,9 +1675,10 @@
             // 
             this.cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxDitheringBitDepth.FormattingEnabled = true;
-            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(64, 38);
+            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 44);
+            this.cbxDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
-            this.cbxDitheringBitDepth.Size = new System.Drawing.Size(117, 21);
+            this.cbxDitheringBitDepth.Size = new System.Drawing.Size(136, 23);
             this.cbxDitheringBitDepth.TabIndex = 4;
             this.cbxDitheringBitDepth.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringBitDepth_SelectedIndexChanged);
             // 
@@ -1583,9 +1687,10 @@
             this.chkDitheringEnabled.AutoSize = true;
             this.chkDitheringEnabled.Checked = true;
             this.chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkDitheringEnabled.Location = new System.Drawing.Point(6, 19);
+            this.chkDitheringEnabled.Location = new System.Drawing.Point(7, 22);
+            this.chkDitheringEnabled.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkDitheringEnabled.Name = "chkDitheringEnabled";
-            this.chkDitheringEnabled.Size = new System.Drawing.Size(109, 17);
+            this.chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
             this.chkDitheringEnabled.TabIndex = 3;
             this.chkDitheringEnabled.Text = "Dithering enabled";
             this.chkDitheringEnabled.UseVisualStyleBackColor = true;
@@ -1597,9 +1702,10 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pbGradient.Location = new System.Drawing.Point(6, 92);
+            this.pbGradient.Location = new System.Drawing.Point(7, 106);
+            this.pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(524, 205);
+            this.pbGradient.Size = new System.Drawing.Size(611, 236);
             this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbGradient.TabIndex = 0;
             this.pbGradient.TabStop = false;
@@ -1611,18 +1717,21 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(6, 253);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 292);
+            this.grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
-            this.grpMiscellaneousOptions.Size = new System.Drawing.Size(400, 130);
+            this.grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpMiscellaneousOptions.Size = new System.Drawing.Size(467, 150);
             this.grpMiscellaneousOptions.TabIndex = 5;
             this.grpMiscellaneousOptions.TabStop = false;
             this.grpMiscellaneousOptions.Text = "Miscellaneous";
             // 
             // btnSetShortcutScreenSaver
             // 
-            this.btnSetShortcutScreenSaver.Location = new System.Drawing.Point(154, 90);
+            this.btnSetShortcutScreenSaver.Location = new System.Drawing.Point(180, 104);
+            this.btnSetShortcutScreenSaver.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnSetShortcutScreenSaver.Name = "btnSetShortcutScreenSaver";
-            this.btnSetShortcutScreenSaver.Size = new System.Drawing.Size(34, 23);
+            this.btnSetShortcutScreenSaver.Size = new System.Drawing.Size(40, 27);
             this.btnSetShortcutScreenSaver.TabIndex = 10;
             this.btnSetShortcutScreenSaver.Text = "Set";
             this.btnSetShortcutScreenSaver.UseVisualStyleBackColor = true;
@@ -1631,18 +1740,20 @@
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(3, 74);
+            this.label11.Location = new System.Drawing.Point(4, 85);
+            this.label11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(219, 13);
+            this.label11.Size = new System.Drawing.Size(238, 15);
             this.label11.TabIndex = 9;
             this.label11.Text = "Set a shortcut to start the blank screensaver:";
             // 
             // edtBlankScreenSaverShortcut
             // 
-            this.edtBlankScreenSaverShortcut.Location = new System.Drawing.Point(6, 92);
+            this.edtBlankScreenSaverShortcut.Location = new System.Drawing.Point(7, 106);
+            this.edtBlankScreenSaverShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtBlankScreenSaverShortcut.Name = "edtBlankScreenSaverShortcut";
             this.edtBlankScreenSaverShortcut.ReadOnly = true;
-            this.edtBlankScreenSaverShortcut.Size = new System.Drawing.Size(142, 20);
+            this.edtBlankScreenSaverShortcut.Size = new System.Drawing.Size(165, 23);
             this.edtBlankScreenSaverShortcut.TabIndex = 7;
             this.edtBlankScreenSaverShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
             this.edtBlankScreenSaverShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
@@ -1650,18 +1761,20 @@
             // lblFixChromeFontsDescription
             // 
             this.lblFixChromeFontsDescription.AutoSize = true;
-            this.lblFixChromeFontsDescription.Location = new System.Drawing.Point(3, 39);
+            this.lblFixChromeFontsDescription.Location = new System.Drawing.Point(4, 45);
+            this.lblFixChromeFontsDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFixChromeFontsDescription.Name = "lblFixChromeFontsDescription";
-            this.lblFixChromeFontsDescription.Size = new System.Drawing.Size(373, 13);
+            this.lblFixChromeFontsDescription.Size = new System.Drawing.Size(427, 15);
             this.lblFixChromeFontsDescription.TabIndex = 6;
             this.lblFixChromeFontsDescription.Text = "This will add the parameter --disable-lcd-text to Chrome and requires elevation.";
             // 
             // chkFixChromeFonts
             // 
             this.chkFixChromeFonts.AutoSize = true;
-            this.chkFixChromeFonts.Location = new System.Drawing.Point(6, 19);
+            this.chkFixChromeFonts.Location = new System.Drawing.Point(7, 22);
+            this.chkFixChromeFonts.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkFixChromeFonts.Name = "chkFixChromeFonts";
-            this.chkFixChromeFonts.Size = new System.Drawing.Size(335, 17);
+            this.chkFixChromeFonts.Size = new System.Drawing.Size(378, 19);
             this.chkFixChromeFonts.TabIndex = 4;
             this.chkFixChromeFonts.Text = "ClearType: fix bad fonts in Chrome (turn on grayscale anti-aliasing)";
             this.chkFixChromeFonts.UseVisualStyleBackColor = true;
@@ -1669,35 +1782,38 @@
             // 
             // grpLGOptions
             // 
-            this.grpLGOptions.Controls.Add(this.chkLgAllowDowngrade);
-            this.grpLGOptions.Controls.Add(this.chkLgOldWolMechanism);
+            this.grpLGOptions.Controls.Add(this.chkLgShowAdvancedActions);
             this.grpLGOptions.Controls.Add(this.btnLGTestPower);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
             this.grpLGOptions.Controls.Add(this.edtLgMaxPowerOnRetries);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetries);
-            this.grpLGOptions.Location = new System.Drawing.Point(6, 118);
+            this.grpLGOptions.Location = new System.Drawing.Point(7, 136);
+            this.grpLGOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpLGOptions.Name = "grpLGOptions";
-            this.grpLGOptions.Size = new System.Drawing.Size(403, 129);
+            this.grpLGOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpLGOptions.Size = new System.Drawing.Size(470, 149);
             this.grpLGOptions.TabIndex = 4;
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
             // 
-            // chkLgOldWolMechanism
+            // chkLgShowAdvancedActions
             // 
-            this.chkLgOldWolMechanism.AutoSize = true;
-            this.chkLgOldWolMechanism.Location = new System.Drawing.Point(158, 72);
-            this.chkLgOldWolMechanism.Name = "chkLgOldWolMechanism";
-            this.chkLgOldWolMechanism.Size = new System.Drawing.Size(187, 17);
-            this.chkLgOldWolMechanism.TabIndex = 7;
-            this.chkLgOldWolMechanism.Text = "Use old WOL mechanism (Npcap)";
-            this.chkLgOldWolMechanism.UseVisualStyleBackColor = true;
-            this.chkLgOldWolMechanism.CheckedChanged += new System.EventHandler(this.chkLgAlternateWolMechanism_CheckedChanged);
+            this.chkLgShowAdvancedActions.AutoSize = true;
+            this.chkLgShowAdvancedActions.Location = new System.Drawing.Point(10, 112);
+            this.chkLgShowAdvancedActions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkLgShowAdvancedActions.Name = "chkLgShowAdvancedActions";
+            this.chkLgShowAdvancedActions.Size = new System.Drawing.Size(419, 19);
+            this.chkLgShowAdvancedActions.TabIndex = 8;
+            this.chkLgShowAdvancedActions.Text = "Show advanced actions under the Expert-button (InStart, Software Update)";
+            this.chkLgShowAdvancedActions.UseVisualStyleBackColor = true;
+            this.chkLgShowAdvancedActions.CheckedChanged += new System.EventHandler(this.chkLgShowAdvancedActions_CheckedChanged);
             // 
             // btnLGTestPower
             // 
-            this.btnLGTestPower.Location = new System.Drawing.Point(9, 68);
+            this.btnLGTestPower.Location = new System.Drawing.Point(10, 78);
+            this.btnLGTestPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLGTestPower.Name = "btnLGTestPower";
-            this.btnLGTestPower.Size = new System.Drawing.Size(143, 23);
+            this.btnLGTestPower.Size = new System.Drawing.Size(167, 27);
             this.btnLGTestPower.TabIndex = 6;
             this.btnLGTestPower.Text = "Test power off/on";
             this.btnLGTestPower.UseVisualStyleBackColor = true;
@@ -1706,16 +1822,18 @@
             // lblLgMaxPowerOnRetriesDescription
             // 
             this.lblLgMaxPowerOnRetriesDescription.AutoSize = true;
-            this.lblLgMaxPowerOnRetriesDescription.Location = new System.Drawing.Point(6, 40);
+            this.lblLgMaxPowerOnRetriesDescription.Location = new System.Drawing.Point(7, 46);
+            this.lblLgMaxPowerOnRetriesDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgMaxPowerOnRetriesDescription.Name = "lblLgMaxPowerOnRetriesDescription";
-            this.lblLgMaxPowerOnRetriesDescription.Size = new System.Drawing.Size(375, 13);
+            this.lblLgMaxPowerOnRetriesDescription.Size = new System.Drawing.Size(415, 15);
             this.lblLgMaxPowerOnRetriesDescription.TabIndex = 5;
             this.lblLgMaxPowerOnRetriesDescription.Text = "Retries are necessary to wait for the network link of your pc to be established. " +
     "";
             // 
             // edtLgMaxPowerOnRetries
             // 
-            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(299, 17);
+            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(349, 20);
+            this.edtLgMaxPowerOnRetries.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgMaxPowerOnRetries.Maximum = new decimal(new int[] {
             25,
             0,
@@ -1723,7 +1841,7 @@
             0});
             this.edtLgMaxPowerOnRetries.Name = "edtLgMaxPowerOnRetries";
             this.edtLgMaxPowerOnRetries.ReadOnly = true;
-            this.edtLgMaxPowerOnRetries.Size = new System.Drawing.Size(74, 20);
+            this.edtLgMaxPowerOnRetries.Size = new System.Drawing.Size(86, 23);
             this.edtLgMaxPowerOnRetries.TabIndex = 1;
             this.edtLgMaxPowerOnRetries.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.edtLgMaxPowerOnRetries.ValueChanged += new System.EventHandler(this.edtLgPowerOnAfterResumeDelay_ValueChanged);
@@ -1731,9 +1849,10 @@
             // lblLgMaxPowerOnRetries
             // 
             this.lblLgMaxPowerOnRetries.AutoSize = true;
-            this.lblLgMaxPowerOnRetries.Location = new System.Drawing.Point(6, 19);
+            this.lblLgMaxPowerOnRetries.Location = new System.Drawing.Point(7, 22);
+            this.lblLgMaxPowerOnRetries.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgMaxPowerOnRetries.Name = "lblLgMaxPowerOnRetries";
-            this.lblLgMaxPowerOnRetries.Size = new System.Drawing.Size(294, 13);
+            this.lblLgMaxPowerOnRetries.Size = new System.Drawing.Size(340, 15);
             this.lblLgMaxPowerOnRetries.TabIndex = 0;
             this.lblLgMaxPowerOnRetries.Text = "Maximum number of retries powering on after startup/resume:";
             // 
@@ -1741,9 +1860,11 @@
             // 
             this.grpHDROptions.Controls.Add(this.edtDelayDisplaySettings);
             this.grpHDROptions.Controls.Add(this.label6);
-            this.grpHDROptions.Location = new System.Drawing.Point(412, 316);
+            this.grpHDROptions.Location = new System.Drawing.Point(481, 365);
+            this.grpHDROptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpHDROptions.Name = "grpHDROptions";
-            this.grpHDROptions.Size = new System.Drawing.Size(400, 72);
+            this.grpHDROptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpHDROptions.Size = new System.Drawing.Size(467, 83);
             this.grpHDROptions.TabIndex = 3;
             this.grpHDROptions.TabStop = false;
             this.grpHDROptions.Text = "HDR";
@@ -1756,7 +1877,8 @@
             0,
             0,
             0});
-            this.edtDelayDisplaySettings.Location = new System.Drawing.Point(296, 17);
+            this.edtDelayDisplaySettings.Location = new System.Drawing.Point(345, 20);
+            this.edtDelayDisplaySettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtDelayDisplaySettings.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -1764,7 +1886,7 @@
             0});
             this.edtDelayDisplaySettings.Name = "edtDelayDisplaySettings";
             this.edtDelayDisplaySettings.ReadOnly = true;
-            this.edtDelayDisplaySettings.Size = new System.Drawing.Size(74, 20);
+            this.edtDelayDisplaySettings.Size = new System.Drawing.Size(86, 23);
             this.edtDelayDisplaySettings.TabIndex = 1;
             this.edtDelayDisplaySettings.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.edtDelayDisplaySettings.ValueChanged += new System.EventHandler(this.edtDelayDisplaySettings_ValueChanged);
@@ -1772,32 +1894,49 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 19);
+            this.label6.Location = new System.Drawing.Point(7, 22);
+            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(174, 13);
+            this.label6.Size = new System.Drawing.Size(197, 15);
             this.label6.TabIndex = 0;
             this.label6.Text = "Delay opening display settings (ms):";
             // 
             // grpGeneralOptions
             // 
+            this.grpGeneralOptions.Controls.Add(this.chkGdiScaling);
             this.grpGeneralOptions.Controls.Add(this.chkCheckForUpdates);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeToSystemTray);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeOnClose);
             this.grpGeneralOptions.Controls.Add(this.chkStartMinimized);
             this.grpGeneralOptions.Controls.Add(this.chkStartAfterLogin);
-            this.grpGeneralOptions.Location = new System.Drawing.Point(6, 6);
+            this.grpGeneralOptions.Location = new System.Drawing.Point(7, 7);
+            this.grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpGeneralOptions.Name = "grpGeneralOptions";
-            this.grpGeneralOptions.Size = new System.Drawing.Size(400, 106);
+            this.grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpGeneralOptions.Size = new System.Drawing.Size(467, 122);
             this.grpGeneralOptions.TabIndex = 2;
             this.grpGeneralOptions.TabStop = false;
             this.grpGeneralOptions.Text = "General";
             // 
+            // chkGdiScaling
+            // 
+            this.chkGdiScaling.AutoSize = true;
+            this.chkGdiScaling.Location = new System.Drawing.Point(238, 75);
+            this.chkGdiScaling.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkGdiScaling.Name = "chkGdiScaling";
+            this.chkGdiScaling.Size = new System.Drawing.Size(197, 19);
+            this.chkGdiScaling.TabIndex = 7;
+            this.chkGdiScaling.Text = "Use GDI Scaling (requires restart)";
+            this.chkGdiScaling.UseVisualStyleBackColor = true;
+            this.chkGdiScaling.CheckedChanged += new System.EventHandler(this.chkGdiScaling_CheckedChanged);
+            // 
             // chkCheckForUpdates
             // 
             this.chkCheckForUpdates.AutoSize = true;
-            this.chkCheckForUpdates.Location = new System.Drawing.Point(204, 42);
+            this.chkCheckForUpdates.Location = new System.Drawing.Point(238, 48);
+            this.chkCheckForUpdates.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkCheckForUpdates.Name = "chkCheckForUpdates";
-            this.chkCheckForUpdates.Size = new System.Drawing.Size(177, 17);
+            this.chkCheckForUpdates.Size = new System.Drawing.Size(197, 19);
             this.chkCheckForUpdates.TabIndex = 6;
             this.chkCheckForUpdates.Text = "Automatically check for updates";
             this.chkCheckForUpdates.UseVisualStyleBackColor = true;
@@ -1806,9 +1945,10 @@
             // chkMinimizeToSystemTray
             // 
             this.chkMinimizeToSystemTray.AutoSize = true;
-            this.chkMinimizeToSystemTray.Location = new System.Drawing.Point(204, 19);
+            this.chkMinimizeToSystemTray.Location = new System.Drawing.Point(238, 22);
+            this.chkMinimizeToSystemTray.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkMinimizeToSystemTray.Name = "chkMinimizeToSystemTray";
-            this.chkMinimizeToSystemTray.Size = new System.Drawing.Size(133, 17);
+            this.chkMinimizeToSystemTray.Size = new System.Drawing.Size(152, 19);
             this.chkMinimizeToSystemTray.TabIndex = 5;
             this.chkMinimizeToSystemTray.Text = "Minimize to system tray";
             this.chkMinimizeToSystemTray.UseVisualStyleBackColor = true;
@@ -1817,9 +1957,10 @@
             // chkMinimizeOnClose
             // 
             this.chkMinimizeOnClose.AutoSize = true;
-            this.chkMinimizeOnClose.Location = new System.Drawing.Point(6, 65);
+            this.chkMinimizeOnClose.Location = new System.Drawing.Point(7, 75);
+            this.chkMinimizeOnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkMinimizeOnClose.Name = "chkMinimizeOnClose";
-            this.chkMinimizeOnClose.Size = new System.Drawing.Size(109, 17);
+            this.chkMinimizeOnClose.Size = new System.Drawing.Size(122, 19);
             this.chkMinimizeOnClose.TabIndex = 4;
             this.chkMinimizeOnClose.Text = "Minimize on close";
             this.chkMinimizeOnClose.UseVisualStyleBackColor = true;
@@ -1828,9 +1969,10 @@
             // chkStartMinimized
             // 
             this.chkStartMinimized.AutoSize = true;
-            this.chkStartMinimized.Location = new System.Drawing.Point(6, 42);
+            this.chkStartMinimized.Location = new System.Drawing.Point(7, 48);
+            this.chkStartMinimized.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkStartMinimized.Name = "chkStartMinimized";
-            this.chkStartMinimized.Size = new System.Drawing.Size(96, 17);
+            this.chkStartMinimized.Size = new System.Drawing.Size(109, 19);
             this.chkStartMinimized.TabIndex = 3;
             this.chkStartMinimized.Text = "Start minimized";
             this.chkStartMinimized.UseVisualStyleBackColor = true;
@@ -1838,9 +1980,10 @@
             // chkStartAfterLogin
             // 
             this.chkStartAfterLogin.AutoSize = true;
-            this.chkStartAfterLogin.Location = new System.Drawing.Point(6, 19);
+            this.chkStartAfterLogin.Location = new System.Drawing.Point(7, 22);
+            this.chkStartAfterLogin.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkStartAfterLogin.Name = "chkStartAfterLogin";
-            this.chkStartAfterLogin.Size = new System.Drawing.Size(160, 17);
+            this.chkStartAfterLogin.Size = new System.Drawing.Size(183, 19);
             this.chkStartAfterLogin.TabIndex = 2;
             this.chkStartAfterLogin.Text = "Automatically start after login";
             this.chkStartAfterLogin.UseVisualStyleBackColor = true;
@@ -1850,19 +1993,21 @@
             // 
             this.tabLog.Controls.Add(this.btnClearLog);
             this.tabLog.Controls.Add(this.edtLog);
-            this.tabLog.Location = new System.Drawing.Point(4, 22);
+            this.tabLog.Location = new System.Drawing.Point(4, 24);
+            this.tabLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabLog.Name = "tabLog";
-            this.tabLog.Padding = new System.Windows.Forms.Padding(3);
-            this.tabLog.Size = new System.Drawing.Size(954, 453);
+            this.tabLog.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabLog.Size = new System.Drawing.Size(1114, 525);
             this.tabLog.TabIndex = 3;
             this.tabLog.Text = "Log";
             this.tabLog.UseVisualStyleBackColor = true;
             // 
             // btnClearLog
             // 
-            this.btnClearLog.Location = new System.Drawing.Point(6, 6);
+            this.btnClearLog.Location = new System.Drawing.Point(7, 7);
+            this.btnClearLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClearLog.Name = "btnClearLog";
-            this.btnClearLog.Size = new System.Drawing.Size(75, 23);
+            this.btnClearLog.Size = new System.Drawing.Size(88, 27);
             this.btnClearLog.TabIndex = 2;
             this.btnClearLog.Text = "Clear log";
             this.btnClearLog.UseVisualStyleBackColor = true;
@@ -1873,23 +2018,25 @@
             this.edtLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.edtLog.Location = new System.Drawing.Point(6, 35);
+            this.edtLog.Location = new System.Drawing.Point(7, 40);
+            this.edtLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLog.MaxLength = 327670;
             this.edtLog.Multiline = true;
             this.edtLog.Name = "edtLog";
             this.edtLog.ReadOnly = true;
             this.edtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.edtLog.Size = new System.Drawing.Size(942, 415);
+            this.edtLog.Size = new System.Drawing.Size(1098, 478);
             this.edtLog.TabIndex = 0;
             // 
             // tabInfo
             // 
             this.tabInfo.Controls.Add(this.grpNVIDIAInfo);
             this.tabInfo.Controls.Add(this.groupBox3);
-            this.tabInfo.Location = new System.Drawing.Point(4, 22);
+            this.tabInfo.Location = new System.Drawing.Point(4, 24);
+            this.tabInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tabInfo.Name = "tabInfo";
-            this.tabInfo.Padding = new System.Windows.Forms.Padding(3);
-            this.tabInfo.Size = new System.Drawing.Size(954, 453);
+            this.tabInfo.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.tabInfo.Size = new System.Drawing.Size(1114, 525);
             this.tabInfo.TabIndex = 4;
             this.tabInfo.Text = "Info";
             this.tabInfo.UseVisualStyleBackColor = true;
@@ -1901,9 +2048,11 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.grpNVIDIAInfo.Controls.Add(this.btnRefreshNVIDIAInfo);
             this.grpNVIDIAInfo.Controls.Add(this.tvNVIDIAInfo);
-            this.grpNVIDIAInfo.Location = new System.Drawing.Point(397, 6);
+            this.grpNVIDIAInfo.Location = new System.Drawing.Point(463, 7);
+            this.grpNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpNVIDIAInfo.Name = "grpNVIDIAInfo";
-            this.grpNVIDIAInfo.Size = new System.Drawing.Size(551, 443);
+            this.grpNVIDIAInfo.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpNVIDIAInfo.Size = new System.Drawing.Size(643, 511);
             this.grpNVIDIAInfo.TabIndex = 4;
             this.grpNVIDIAInfo.TabStop = false;
             this.grpNVIDIAInfo.Text = "NVIDIA info";
@@ -1911,9 +2060,10 @@
             // btnRefreshNVIDIAInfo
             // 
             this.btnRefreshNVIDIAInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnRefreshNVIDIAInfo.Location = new System.Drawing.Point(6, 414);
+            this.btnRefreshNVIDIAInfo.Location = new System.Drawing.Point(7, 478);
+            this.btnRefreshNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnRefreshNVIDIAInfo.Name = "btnRefreshNVIDIAInfo";
-            this.btnRefreshNVIDIAInfo.Size = new System.Drawing.Size(75, 23);
+            this.btnRefreshNVIDIAInfo.Size = new System.Drawing.Size(88, 27);
             this.btnRefreshNVIDIAInfo.TabIndex = 1;
             this.btnRefreshNVIDIAInfo.Text = "Refresh";
             this.btnRefreshNVIDIAInfo.UseVisualStyleBackColor = true;
@@ -1924,9 +2074,10 @@
             this.tvNVIDIAInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tvNVIDIAInfo.Location = new System.Drawing.Point(6, 19);
+            this.tvNVIDIAInfo.Location = new System.Drawing.Point(7, 22);
+            this.tvNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.tvNVIDIAInfo.Name = "tvNVIDIAInfo";
-            this.tvNVIDIAInfo.Size = new System.Drawing.Size(539, 389);
+            this.tvNVIDIAInfo.Size = new System.Drawing.Size(628, 448);
             this.tvNVIDIAInfo.TabIndex = 0;
             // 
             // groupBox3
@@ -1934,9 +2085,11 @@
             this.groupBox3.Controls.Add(this.lbPlugins);
             this.groupBox3.Controls.Add(this.label7);
             this.groupBox3.Controls.Add(this.lblInfo);
-            this.groupBox3.Location = new System.Drawing.Point(6, 6);
+            this.groupBox3.Location = new System.Drawing.Point(7, 7);
+            this.groupBox3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(385, 220);
+            this.groupBox3.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.groupBox3.Size = new System.Drawing.Size(449, 254);
             this.groupBox3.TabIndex = 5;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Info";
@@ -1945,49 +2098,43 @@
             // 
             this.lbPlugins.FormattingEnabled = true;
             this.lbPlugins.HorizontalScrollbar = true;
-            this.lbPlugins.Location = new System.Drawing.Point(9, 67);
+            this.lbPlugins.ItemHeight = 15;
+            this.lbPlugins.Location = new System.Drawing.Point(10, 77);
+            this.lbPlugins.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lbPlugins.Name = "lbPlugins";
-            this.lbPlugins.Size = new System.Drawing.Size(371, 147);
+            this.lbPlugins.Size = new System.Drawing.Size(432, 169);
             this.lbPlugins.TabIndex = 3;
             // 
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(6, 51);
+            this.label7.Location = new System.Drawing.Point(7, 59);
+            this.label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(236, 13);
+            this.label7.Size = new System.Drawing.Size(267, 15);
             this.label7.TabIndex = 2;
             this.label7.Text = "This app contains the following 3rd party plugins:";
             // 
             // lblInfo
             // 
             this.lblInfo.AutoSize = true;
-            this.lblInfo.Location = new System.Drawing.Point(6, 20);
+            this.lblInfo.Location = new System.Drawing.Point(7, 23);
+            this.lblInfo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblInfo.Name = "lblInfo";
-            this.lblInfo.Size = new System.Drawing.Size(25, 13);
+            this.lblInfo.Size = new System.Drawing.Size(28, 15);
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // chkLgAllowDowngrade
-            // 
-            this.chkLgAllowDowngrade.AutoSize = true;
-            this.chkLgAllowDowngrade.Location = new System.Drawing.Point(9, 97);
-            this.chkLgAllowDowngrade.Name = "chkLgAllowDowngrade";
-            this.chkLgAllowDowngrade.Size = new System.Drawing.Size(275, 17);
-            this.chkLgAllowDowngrade.TabIndex = 8;
-            this.chkLgAllowDowngrade.Text = "Allow firmware downgrade with Software Update-app";
-            this.chkLgAllowDowngrade.UseVisualStyleBackColor = true;
-            this.chkLgAllowDowngrade.CheckedChanged += new System.EventHandler(this.chkLgAllowDowngrade_CheckedChanged);
-            // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(986, 503);
+            this.ClientSize = new System.Drawing.Size(1150, 580);
             this.Controls.Add(this.tcMain);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(800, 535);
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.MinimumSize = new System.Drawing.Size(1140, 611);
             this.Name = "MainForm";
             this.Text = "ColorControl";
             this.Activated += new System.EventHandler(this.MainForm_Activated);
@@ -1995,6 +2142,8 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.ResizeBegin += new System.EventHandler(this.MainForm_ResizeBegin);
+            this.ResizeEnd += new System.EventHandler(this.MainForm_ResizeEnd);
             this.Resize += new System.EventHandler(this.MainForm_Resize);
             this.tcMain.ResumeLayout(false);
             this.tabNVIDIA.ResumeLayout(false);
@@ -2116,7 +2265,6 @@
         private System.Windows.Forms.ToolStripMenuItem spatialStatic2x2ToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem temporalToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetApplyOnStartup;
-        private System.Windows.Forms.CheckBox chkLgOldWolMechanism;
         private System.Windows.Forms.ToolStripMenuItem mnuLgRcButtons;
         private System.Windows.Forms.ToolStripMenuItem mnuLgActions;
         private System.Windows.Forms.Button btnDeleteAmd;
@@ -2183,7 +2331,6 @@
         private System.Windows.Forms.CheckBox chkLgRemoteControlShow;
         private System.Windows.Forms.Button btnLgExpert;
         private System.Windows.Forms.ContextMenuStrip mnuLgExpert;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgExpertBacklight;
         private System.Windows.Forms.ToolStripMenuItem mnuLgOLEDMotionPro;
         private System.Windows.Forms.ToolStripMenuItem miLgEnableMotionPro;
         private System.Windows.Forms.ToolStripMenuItem miLgDisableMotionPro;
@@ -2200,7 +2347,11 @@
         private System.Windows.Forms.Button btnLgPresetEditTriggerConditions;
         private System.Windows.Forms.TextBox edtLgPresetTriggerConditions;
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
-        private System.Windows.Forms.CheckBox chkLgAllowDowngrade;
+        private System.Windows.Forms.CheckBox chkLgShowAdvancedActions;
+        private System.Windows.Forms.Button btnLgGameBar;
+        private System.Windows.Forms.Label lblGameBarShortcut;
+        private System.Windows.Forms.TextBox edtLgGameBarShortcut;
+        private System.Windows.Forms.CheckBox chkGdiScaling;
     }
 }
 
