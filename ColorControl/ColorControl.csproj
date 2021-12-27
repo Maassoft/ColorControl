@@ -18,8 +18,8 @@
     <PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>5.0.0.0</ApplicationVersion>
-	<Version>5.0.0.0</Version>
+    <ApplicationVersion>5.0.1.0</ApplicationVersion>
+	<Version>5.0.1.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>false</BootstrapperEnabled>
@@ -81,10 +81,8 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -92,11 +90,7 @@
     <PackageReference Include="NStandard" Version="0.8.28" />
     <PackageReference Include="NvAPIWrapper.Net" Version="0.8.1.101" />
     <PackageReference Include="NWin32" Version="1.2.0" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="TaskScheduler" Version="2.9.3" />
-  </ItemGroup>
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Properties\Settings.settings">

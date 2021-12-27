@@ -1435,6 +1435,10 @@ namespace ColorControl
                 _lgService.RefreshApps().ContinueWith((task) => BeginInvoke(new Action(FillLgApps)));
             }
 
+            btnLgDeviceConvertToCustom.Enabled = devices.Any();
+            btnLgExpert.Enabled = devices.Any();
+            btnLgGameBar.Enabled = devices.Any();
+
             SetLgDevicePowerOptions();
         }
 

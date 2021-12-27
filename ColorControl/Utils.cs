@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NStandard;
 using NWin32;
@@ -1017,14 +1018,16 @@ namespace ColorControl
             var response = await httpClient.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadAsAsync<dynamic>();
+                var result = await response.Content.ReadAsStringAsync();
+
+                var data = JsonConvert.DeserializeObject<dynamic>(result);
 
                 if (callBack != null)
                 {
-                    callBack(result);
+                    callBack(data);
                 }
 
-                return result;
+                return data;
             }
 
             if (callBack != null)
