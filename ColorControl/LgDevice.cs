@@ -148,7 +148,6 @@ namespace ColorControl
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI4", typeof(OffToOn), category: "other");
-            //AddGenericPictureAction("hdmiPcMode", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
@@ -165,6 +164,11 @@ namespace ColorControl
 
             AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }));
             AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate"));
+
+            AddSetDeviceConfigAction("HDMI_1_icon", typeof(HdmiIcon), "HDMI 1 icon");
+            AddSetDeviceConfigAction("HDMI_2_icon", typeof(HdmiIcon), "HDMI 2 icon");
+            AddSetDeviceConfigAction("HDMI_3_icon", typeof(HdmiIcon), "HDMI 3 icon");
+            AddSetDeviceConfigAction("HDMI_4_icon", typeof(HdmiIcon), "HDMI 4 icon");
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -199,6 +203,19 @@ namespace ColorControl
                 MinValue = minValue,
                 MaxValue = maxValue,
                 Category = category,
+                Title = title == null ? name.Substring(0, 1).ToUpper() + name.Substring(1) : title
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        private void AddSetDeviceConfigAction(string name, Type type, string title)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                Function = new Func<Dictionary<string, object>, bool>(GenericDeviceConfigAction),
+                EnumType = type,
                 Title = title == null ? name.Substring(0, 1).ToUpper() + name.Substring(1) : title
             };
 
@@ -253,6 +270,8 @@ namespace ColorControl
                         //await _lgTvApi.SubscribeVolume(VolumeChanged);
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
+
+                        //await _lgTvApi.SetDeviceConfig("PC");
 
                         //var result = await GetPictureSettings();
 
@@ -502,9 +521,13 @@ namespace ColorControl
             }
         }
 
-        private void ExecuteAction(InvokableAction action, string[] parameters)
+        public void ExecuteAction(InvokableAction action, string[] parameters)
         {
             var function = action.Function;
+            if (function == null)
+            {
+                return;
+            }
 
             if (parameters?.Length > 0)
             {
@@ -741,7 +764,7 @@ namespace ColorControl
             await _lgTvApi.SetConfig("tv.model.motionProMode", mode);
         }
 
-        internal async Task SetConfig(string key, string value)
+        internal async Task SetConfig(string key, object value)
         {
             await _lgTvApi.SetConfig(key, value);
         }
@@ -795,6 +818,17 @@ namespace ColorControl
             Utils.WaitForTask(task);
 
             UpdateCurrentValueOfAction(settingName, value.ToString());
+
+            return true;
+        }
+
+        private bool GenericDeviceConfigAction(Dictionary<string, object> parameters)
+        {
+            var id = parameters["name"].ToString().Replace("_icon", string.Empty);
+            var stringValues = parameters["value"] as string[];
+            var value = stringValues[0];
+            var task = _lgTvApi.SetDeviceConfig(id, value);
+            Utils.WaitForTask(task);
 
             return true;
         }

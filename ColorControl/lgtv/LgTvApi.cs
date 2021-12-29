@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -108,6 +109,32 @@ namespace LgTv
         medium,
         high1,
         high2
+    }
+
+    public enum HdmiIcon
+    {
+        [Description("HDMI")]
+        hdmigeneric,
+        [Description("Satellite")]
+        satellite,
+        [Description("Set-Top Box")]
+        settopbox,
+        [Description("DVD Player")]
+        dvd,
+        [Description("Blu-ray Player")]
+        bluray,
+        [Description("Home Theater")]
+        hometheater,
+        [Description("Game Console")]
+        gameconsole,
+        [Description("Streaming Box")]
+        streamingbox,
+        [Description("Generic Camera")]
+        camera,
+        [Description("PC")]
+        pc,
+        [Description("Mobile Device")]
+        mobile
     }
 
     public class LgTvApi:IDisposable
@@ -505,29 +532,7 @@ namespace LgTv
 
         public async Task SetSystemSettings(string key, object value, string category = "picture")
         {
-            string jsonValue;
-            var valueType = value.GetType();
-            var intType = typeof(int);
-            if (valueType.IsArray && intType.IsAssignableFrom(valueType.GetElementType()))
-            {
-                var values = ((Array)value).Cast<int>();
-                jsonValue = "[" + string.Join(", ", values.Select(x => x.ToString()).ToArray()) + ']';
-            }
-            else
-            {
-                if (key.Contains("_"))
-                {
-                    var keys = key.Split('_');
-                    key = keys[0];
-                    var childKey = keys[1];
-
-                    jsonValue = @"{ """ + childKey + @""": " + value + " }";
-                }
-                else
-                {
-                    jsonValue = $"\"{value}\"";
-                }
-            }
+            var jsonValue = ParamToJson(value, ref key);
 
             var lunauri = "luna://com.webos.settingsservice/setSystemSettings";
 
@@ -538,21 +543,60 @@ namespace LgTv
             await ExecuteRequest(lunauri, @params);
         }
 
-        public async Task SetConfig(string key, string value)
+        private static string ParamToJson(object value, ref string key)
+        {
+            string jsonValue;
+            var valueType = value.GetType();
+            var intType = typeof(int);
+            if (valueType.IsArray && intType.IsAssignableFrom(valueType.GetElementType()))
+            {
+                var values = ((Array)value).Cast<int>();
+                jsonValue = "[" + string.Join(", ", values.Select(x => x.ToString()).ToArray()) + ']';
+            }
+            else if (key?.Contains("_") == true)
+            {
+                var keys = key.Split('_');
+                key = keys[0];
+                var childKey = keys[1];
+
+                jsonValue = @"{ """ + childKey + @""": " + value + " }";
+            }
+            else if (value is bool)
+            {
+                jsonValue = value.ToString().ToLowerInvariant();
+            }
+            else
+            {
+                jsonValue = $"\"{value}\"";
+            }
+
+            return jsonValue;
+        }
+
+        public async Task SetConfig(string key, object value)
         {
             var lunauri = "luna://com.webos.service.config/setConfigs";
 
-            var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": """ + value + @""" } }");
+            var jsonValue = ParamToJson(value, ref key);
+
+            var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": " + jsonValue + @" } }");
 
             await ExecuteRequest(lunauri, @params);
         }
 
-        public async Task SetConfig(string key, bool value)
+        public async Task SetDeviceConfig(string id, string label)
         {
-            var lunauri = "luna://com.webos.service.config/setConfigs";
+            var lunauri = "luna://com.webos.service.eim/setDeviceInfo";
 
-            var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": " + value.ToString().ToLowerInvariant() + @" } }");
+            var icon = label + ".png";
 
+            var @params = new
+            {
+                id = id,
+                //label = label,
+                icon = icon
+            };
+                
             await ExecuteRequest(lunauri, @params);
         }
 

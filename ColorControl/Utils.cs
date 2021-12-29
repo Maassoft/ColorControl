@@ -427,24 +427,38 @@ namespace ColorControl
 
         public static string GetDescription<T>(this T e) where T : IConvertible
         {
-            if (e is Enum)
+            return GetDescription(e.GetType(), e);
+        }
+
+        public static string GetDescription(Type enumType, IConvertible value)
+        {
+            if (enumType.BaseType == typeof(Enum))
             {
-                var type = e.GetType();
-                var values = Enum.GetValues(type);
+                var val = value.ToInt32(CultureInfo.InvariantCulture);
 
-                foreach (int val in values)
+                var memInfo = enumType.GetMember(enumType.GetEnumName(val));
+                var descriptionAttribute = memInfo[0]
+                    .GetCustomAttributes(typeof(DescriptionAttribute), false)
+                    .FirstOrDefault() as DescriptionAttribute;
+
+                if (descriptionAttribute != null)
                 {
-                    if (val == e.ToInt32(CultureInfo.InvariantCulture))
-                    {
-                        var memInfo = type.GetMember(type.GetEnumName(val));
-                        var descriptionAttribute = memInfo[0]
-                            .GetCustomAttributes(typeof(DescriptionAttribute), false)
-                            .FirstOrDefault() as DescriptionAttribute;
+                    return descriptionAttribute.Description;
+                }
+            }
 
-                        if (descriptionAttribute != null)
-                        {
-                            return descriptionAttribute.Description;
-                        }
+            return null; // could also return string.Empty
+        }
+
+        public static string GetEnumNameByDescription(Type enumType, string description)
+        {
+            if (enumType.BaseType == typeof(Enum))
+            {
+                foreach (var enumValue in Enum.GetValues(enumType))
+                {
+                    if (description.Equals(GetDescription(enumType, enumValue as IConvertible), StringComparison.Ordinal))
+                    {
+                        return Enum.GetName(enumType, enumValue);
                     }
                 }
             }
@@ -454,14 +468,19 @@ namespace ColorControl
 
         public static List<string> GetDescriptions<T>(int value = -1, int fromValue = 0) where T : IConvertible
         {
+            return GetDescriptions(typeof(T), value, fromValue);
+        }
+
+        public static List<string> GetDescriptions(Type enumType, int value = -1, int fromValue = 0)
+        {
             var list = new List<string>();
-            foreach (var enumValue in Enum.GetValues(typeof(T)))
+            foreach (var enumValue in Enum.GetValues(enumType))
             {
                 if ((int)enumValue < fromValue || value >= 0 && ((int)enumValue & value) == 0)
                 {
                     continue;
                 }
-                list.Add(((T)enumValue).GetDescription());
+                list.Add(GetDescription(enumType, enumValue as IConvertible));
             }
             return list;
         }
@@ -564,8 +583,10 @@ namespace ColorControl
             {
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
-                    var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
+                    var itemText = (enumValue as IConvertible).GetDescription() ?? enumValue.ToString();
+                    var item = subMenuItem.DropDownItems.Add(itemText);
                     item.Tag = tag;
+                    item.AccessibleName = enumValue.ToString();
                     item.Click += clickEvent;
                 }
             }

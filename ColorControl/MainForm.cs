@@ -1799,7 +1799,7 @@ namespace ColorControl
             var item = sender as ToolStripItem;
             var action = item.Tag as LgDevice.InvokableAction;
 
-            var text = item.Text;
+            var text = action.Name;
 
             var value = string.Empty;
 
@@ -1810,7 +1810,7 @@ namespace ColorControl
                     var values = MessageForms.ShowDialog("Enter value", new[] {
                     new MessageForms.FieldDefinition
                         {
-                            Label = "Enter desired " + text,
+                            Label = "Enter desired " + item.Text,
                             FieldType = MessageForms.FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue
@@ -1830,7 +1830,8 @@ namespace ColorControl
                 var dropDownValues = new List<string>();
                 foreach (var enumValue in Enum.GetValues(action.EnumType))
                 {
-                    dropDownValues.Add(enumValue.ToString().Replace("_", ""));
+                    var description = Utils.GetDescription(action.EnumType, enumValue as IConvertible) ?? enumValue.ToString().Replace("_", "");
+                    dropDownValues.Add(description);
                 }
 
                 var values = MessageForms.ShowDialog("Choose value", new[] {
@@ -1848,6 +1849,11 @@ namespace ColorControl
                 }
 
                 value = values.First().Value.ToString();
+                var enumName = Utils.GetEnumNameByDescription(action.EnumType, value);
+                if (enumName != null)
+                {
+                    value = enumName;
+                }
             }
 
             if (!string.IsNullOrEmpty(value))
@@ -2671,9 +2677,9 @@ Do you want to continue?";
             var device = _lgService.GetPresetDevice(preset);
 
             var actions = device?.GetInvokableActions();
-            foreach (var action in actions)
+            foreach (var action in actions.Where(a => a.Function != null))
             {
-                var text = action.Name;
+                var text = action.Title ?? action.Name;
 
                 var item = mnuLgActions.DropDownItems.Add(text);
                 item.Tag = action;
@@ -2772,9 +2778,12 @@ Do you want to continue?"
 
             const string gameBarName = "miGameBar";
 
-            foreach (var action in actions.Where(a => !a.Name.Contains("Hdmi", StringComparison.OrdinalIgnoreCase) && (a.EnumType != null || a.MinValue >= 0 && a.MaxValue > a.MinValue)))
+            foreach (var action in actions.Where(a => !a.Name.Contains("uhd", StringComparison.OrdinalIgnoreCase) &&
+                !a.Name.Contains("gameOpt", StringComparison.OrdinalIgnoreCase) &&
+                !a.Name.Contains("hdmiPc", StringComparison.OrdinalIgnoreCase) &&
+                (a.EnumType != null || a.MinValue >= 0 && a.MaxValue > a.MinValue)))
             {
-                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action.Name, (int)action.MinValue, (int)action.MaxValue);
+                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue);
 
                 if (!gameBarActions.Contains(action))
                 {
@@ -2846,10 +2855,10 @@ Do you want to continue?"
         private void btnLgExpertColorGamut_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripItem;
-            var name = item.Tag.ToString();
-            var value = item.Text;
+            var action = item.Tag as LgDevice.InvokableAction;
+            var value = item.AccessibleName ?? item.Text;
 
-            _lgService.SelectedDevice?.SetSystemSettings(name, value);
+            _lgService.SelectedDevice?.ExecuteAction(action, new[] { value });
         }
 
         private void btnLgExpertPresetAction_Click(object sender, EventArgs e)
