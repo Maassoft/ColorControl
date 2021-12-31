@@ -9,11 +9,10 @@ namespace ColorControl
     {
         public static List<LgApp> LgApps { get; set; }
         public static List<LgDevice> LgDevices { get; set; }
-
-
         public string appId { get; set; }
         public List<string> steps { get; set; }
         public string DeviceMacAddress { get; set; }
+        public dynamic AppParams { get; set; }
 
         [JsonIgnore]
         public int X { get; set; }
@@ -37,7 +36,7 @@ namespace ColorControl
             }
         }
 
-        public LgPreset(string name, string appId, IEnumerable<string> steps = null) : this()
+        public LgPreset(string name, string appId, IEnumerable<string> steps = null, dynamic appParams = null) : this()
         {
             this.name = name;
             this.appId = appId;
@@ -45,6 +44,7 @@ namespace ColorControl
             {
                 this.steps.AddRange(steps);
             }
+            AppParams = appParams;
         }
 
         public LgPreset Clone()

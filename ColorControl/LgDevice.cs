@@ -162,8 +162,9 @@ namespace ColorControl
             AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
             AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
 
-            AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }));
-            AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate"));
+            AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "inStart" }));
+            AddInternalPresetAction(new LgPreset("EzAdjust", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "ezAdjust" }));
+            AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate", null, new { mode = "user", flagUpdate = true }));
 
             AddSetDeviceConfigAction("HDMI_1_icon", typeof(HdmiIcon), "HDMI 1 icon");
             AddSetDeviceConfigAction("HDMI_2_icon", typeof(HdmiIcon), "HDMI 2 icon");
@@ -203,7 +204,7 @@ namespace ColorControl
                 MinValue = minValue,
                 MaxValue = maxValue,
                 Category = category,
-                Title = title == null ? name.Substring(0, 1).ToUpper() + name.Substring(1) : title
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title
             };
 
             _invokableActions.Add(action);
@@ -216,7 +217,7 @@ namespace ColorControl
                 Name = name,
                 Function = new Func<Dictionary<string, object>, bool>(GenericDeviceConfigAction),
                 EnumType = type,
-                Title = title == null ? name.Substring(0, 1).ToUpper() + name.Substring(1) : title
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title
             };
 
             _invokableActions.Add(action);
@@ -409,15 +410,24 @@ namespace ColorControl
                 {
                     try
                     {
-                        dynamic @params = null;
-                        if (config.ShowAdvancedActions && preset.appId.Equals("com.webos.app.softwareupdate"))
+                        var @params = preset.AppParams;
+                        if (@params == null && config.ShowAdvancedActions)
                         {
-                            @params = new { mode = "user", flagUpdate = true };
-                        }
-
-                        if (preset.appId.Equals("com.webos.app.factorywin"))
-                        {
-                            @params = new { id = "executeFactory", irKey = "inStart" };
+                            if (preset.appId.Equals("com.webos.app.softwareupdate"))
+                            {
+                                @params = new { mode = "user", flagUpdate = true };
+                            }
+                            else if (preset.appId.Equals("com.webos.app.factorywin"))
+                            {
+                                if (preset.name.Contains("ezadjust", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    @params = new { id = "executeFactory", irKey = "ezAdjust" };
+                                }
+                                else
+                                {
+                                    @params = new { id = "executeFactory", irKey = "inStart" };
+                                }
+                            }
                         }
 
                         await _lgTvApi.LaunchApp(preset.appId, @params);
@@ -827,7 +837,10 @@ namespace ColorControl
             var id = parameters["name"].ToString().Replace("_icon", string.Empty);
             var stringValues = parameters["value"] as string[];
             var value = stringValues[0];
-            var task = _lgTvApi.SetDeviceConfig(id, value);
+
+            var description = Utils.GetDescriptionByEnumName<HdmiIcon>(value);
+
+            var task = _lgTvApi.SetDeviceConfig(id, value, description);
             Utils.WaitForTask(task);
 
             return true;

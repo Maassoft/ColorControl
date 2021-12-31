@@ -584,17 +584,17 @@ namespace LgTv
             await ExecuteRequest(lunauri, @params);
         }
 
-        public async Task SetDeviceConfig(string id, string label)
+        public async Task SetDeviceConfig(string id, string icon, string label)
         {
             var lunauri = "luna://com.webos.service.eim/setDeviceInfo";
 
-            var icon = label + ".png";
+            var iconPng = icon + ".png";
 
             var @params = new
             {
                 id = id,
-                //label = label,
-                icon = icon
+                label = label,
+                icon = iconPng
             };
                 
             await ExecuteRequest(lunauri, @params);

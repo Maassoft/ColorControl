@@ -1388,7 +1388,8 @@ namespace ColorControl
                     if (preset == null)
                     {
                         var hdrEnabled = _nvService.IsHDREnabled();
-                        ditherBitsIndex = (int)(hdrEnabled ? NvDitherBits.Bits8 : NvDitherBits.Bits6);
+                        var minBits = _nvService.GetPresets().Where(p => p.HDREnabled == hdrEnabled && p.applyDithering).DefaultIfEmpty().Min(p => p?.ditheringBits);
+                        ditherBitsIndex = minBits.HasValue ? (int)minBits.Value : (int)(hdrEnabled ? NvDitherBits.Bits8 : NvDitherBits.Bits6);
                         ditherModeIndex = (int)NvDitherMode.Temporal;
                     }
                     else

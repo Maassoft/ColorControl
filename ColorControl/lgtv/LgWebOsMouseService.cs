@@ -54,7 +54,8 @@ namespace LgTv
         ASPECT_RATIO,
         RECENT,
         RECORD,
-        SCREEN_REMOTE
+        SCREEN_REMOTE,
+        MYAPPS
     }
 
     public class LgWebOsMouseService : IDisposable

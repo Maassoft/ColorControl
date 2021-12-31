@@ -425,6 +425,25 @@ namespace ColorControl
             return bitmap;
         }
 
+        public static string FirstCharUpperCase(string name)
+        {
+            return name.Substring(0, 1).ToUpper() + name.Substring(1);
+        }
+
+        public static string GetDescriptionByEnumName<T>(string value) where T : IConvertible
+        {
+            string description = null;
+
+            if (Enum.TryParse(typeof(T), value, out var result))
+            {
+                description = (result as IConvertible)?.GetDescription();
+            }
+
+            description = description ?? FirstCharUpperCase(value);
+
+            return description;
+        }
+
         public static string GetDescription<T>(this T e) where T : IConvertible
         {
             return GetDescription(e.GetType(), e);
