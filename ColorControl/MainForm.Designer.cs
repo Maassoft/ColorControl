@@ -1693,8 +1693,9 @@
             this.chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
             this.chkDitheringEnabled.TabIndex = 3;
             this.chkDitheringEnabled.Text = "Dithering enabled";
+            this.chkDitheringEnabled.ThreeState = true;
             this.chkDitheringEnabled.UseVisualStyleBackColor = true;
-            this.chkDitheringEnabled.CheckedChanged += new System.EventHandler(this.chkDitheringEnabled_CheckedChanged);
+            this.chkDitheringEnabled.CheckStateChanged += new System.EventHandler(this.chkDitheringEnabled_CheckStateChanged);
             // 
             // pbGradient
             // 

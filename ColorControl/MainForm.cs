@@ -55,6 +55,7 @@ namespace ColorControl
         private FileVersionInfo _currentVersionInfo;
         private bool _checkedForUpdates = false;
         private string _updateHtmlUrl;
+        private bool _updatingDitherSettings;
 
         private LgGameBar _gameBarForm;
 
@@ -1350,6 +1351,10 @@ namespace ColorControl
             {
                 InitOptionsTab();
             }
+            else if (tcMain.SelectedTab == tabNVIDIA)
+            {
+                UpdateDisplayInfoItems();
+            }
         }
 
         private void InitLgTab()
@@ -1371,39 +1376,42 @@ namespace ColorControl
             grpNvidiaOptions.Visible = _nvService != null;
             if (grpNvidiaOptions.Visible)
             {
-                var firstTime = cbxDitheringBitDepth.Items.Count == 0;
-
-                if (firstTime)
+                if (cbxDitheringBitDepth.Items.Count == 0)
                 {
                     cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
                     cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
-                }
-
-                var preset = _nvService.GetLastAppliedPreset() ?? GetSelectedNvPreset();
-                if (firstTime || preset != null)
-                {
-                    var ditheringEnabled = true;
-                    int ditherBitsIndex;
-                    int ditherModeIndex;
-                    if (preset == null)
-                    {
-                        var hdrEnabled = _nvService.IsHDREnabled();
-                        var minBits = _nvService.GetPresets().Where(p => p.HDREnabled == hdrEnabled && p.applyDithering).DefaultIfEmpty().Min(p => p?.ditheringBits);
-                        ditherBitsIndex = minBits.HasValue ? (int)minBits.Value : (int)(hdrEnabled ? NvDitherBits.Bits8 : NvDitherBits.Bits6);
-                        ditherModeIndex = (int)NvDitherMode.Temporal;
-                    }
-                    else
-                    {
-                        ditheringEnabled = preset.ditheringEnabled;
-                        ditherBitsIndex = (int)preset.ditheringBits;
-                        ditherModeIndex = (int)preset.ditheringMode;
-                    }
-
-                    chkDitheringEnabled.Checked = ditheringEnabled;
-                    cbxDitheringBitDepth.SelectedIndex = ditherBitsIndex;
-                    cbxDitheringMode.SelectedIndex = ditherModeIndex;
                     FillGradient();
                 }
+
+                UpdateDitherSettings();
+            }
+        }
+
+        private void UpdateDitherSettings()
+        {
+            var ditherInfo = _nvService.GetDithering();
+
+            if (ditherInfo.state == -1)
+            {
+                MessageForms.ErrorOk("Error retrieving dithering settings. See log for details.");
+                return;
+            }
+
+            var state = (NvDitherState)ditherInfo.state;
+
+            _updatingDitherSettings = true;
+            try
+            {
+                chkDitheringEnabled.CheckState = state switch { NvDitherState.Enabled => CheckState.Checked, NvDitherState.Disabled => CheckState.Unchecked, _ => CheckState.Indeterminate };
+                cbxDitheringBitDepth.SelectedIndex = ditherInfo.bits;
+                cbxDitheringMode.SelectedIndex = ditherInfo.mode;
+
+                cbxDitheringBitDepth.Enabled = state == NvDitherState.Enabled;
+                cbxDitheringMode.Enabled = state == NvDitherState.Enabled;
+            }
+            finally
+            {
+                _updatingDitherSettings = false;
             }
         }
 
@@ -2061,17 +2069,21 @@ Do you want to continue?";
             }
         }
 
-        private void chkDitheringEnabled_CheckedChanged(object sender, EventArgs e)
-        {
-            ApplyDitheringOptions();
-        }
-
         private void ApplyDitheringOptions()
         {
+            if (_updatingDitherSettings)
+            {
+                return;
+            }
+
+            var state = chkDitheringEnabled.CheckState switch { CheckState.Checked => NvDitherState.Enabled, CheckState.Unchecked => NvDitherState.Disabled, _ => NvDitherState.Auto };
             var bitDepth = cbxDitheringBitDepth.SelectedIndex;
             var mode = cbxDitheringMode.SelectedIndex;
 
-            _nvService.SetDithering(chkDitheringEnabled.Checked, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal));
+            if (_nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal)) && state == NvDitherState.Auto)
+            {
+                UpdateDitherSettings();
+            }
         }
 
         private void cbxDitheringBitDepth_SelectedIndexChanged(object sender, EventArgs e)
@@ -3033,6 +3045,14 @@ The InStart and Software Update items are now visible under the Expert-button."
         private void MainForm_ResizeEnd(object sender, EventArgs e)
         {
             ResumeLayout(true);
+        }
+
+        private void chkDitheringEnabled_CheckStateChanged(object sender, EventArgs e)
+        {
+            cbxDitheringBitDepth.Enabled = chkDitheringEnabled.CheckState == CheckState.Checked;
+            cbxDitheringMode.Enabled = chkDitheringEnabled.CheckState == CheckState.Checked;
+
+            ApplyDitheringOptions();
         }
     }
 }

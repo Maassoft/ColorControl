@@ -13,6 +13,16 @@ using System.Windows.Forms;
 
 namespace ColorControl
 {
+    enum NvDitherState
+    {
+        [Description("Auto")]
+        Auto = 0,
+        [Description("Enabled")]
+        Enabled = 1,
+        [Description("Disabled")]
+        Disabled = 2
+    }
+
     enum NvDitherBits
     {
         [Description("6-bit")]
@@ -45,7 +55,7 @@ namespace ColorControl
                     PreserveSig = true)]
         private static extern IntPtr NvAPI64_QueryInterface(uint interfaceId);
 
-        public delegate long NvAPI_Disp_SetDitherControl(
+        public delegate int NvAPI_Disp_SetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
             [In] uint OutputId,
             [In] uint state,
@@ -53,18 +63,19 @@ namespace ColorControl
             [In] uint mode
         );
 
-        public delegate long NvAPI_Disp_GetDitherControl(
-            [In] PhysicalGPUHandle physicalGpu,
-            [In] uint OutputId,
-            [In] IntPtr ditherControl);
+        public delegate int NvAPI_Disp_GetDitherControl(
+            [In] uint DisplayId,
+            [MarshalAs(UnmanagedType.Struct)] ref NV_GPU_DITHER_CONTROL_V1 ditherControl);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct NV_GPU_DITHER_CONTROL_V1
         {
-            public int version;
-            public uint state;
-            public uint bits;
-            public uint mode;
+            public uint version;
+            public int state;
+            public int bits;
+            public int mode;
+            public uint bitsCaps;
+            public uint modeCaps;
         };
 
         private Display _currentDisplay;
@@ -233,7 +244,7 @@ namespace ColorControl
 
             if (preset.applyDithering)
             {
-                if (!SetDithering(preset.ditheringEnabled, preset: preset))
+                if (!SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, preset: preset))
                 {
                     result = false;
                 }
@@ -304,7 +315,7 @@ namespace ColorControl
             //}
         }
 
-        public bool SetDithering(bool enabled, uint bits = 1, uint mode = 4, NvPreset preset = null)
+        public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null)
         {
             var result = true;
 
@@ -317,14 +328,20 @@ namespace ColorControl
 
                 var gpuHandle = displayDevice.PhysicalGPU.Handle;
                 var displayId = displayDevice.DisplayId;
-
-                if (preset != null)
+                
+                if (state == NvDitherState.Auto)
+                {
+                    // These seem to be ignored in Auto-state
+                    bits = 0;
+                    mode = 0;
+                }
+                else if (preset != null)
                 {
                     bits = preset.ditheringBits;
                     mode = preset.ditheringMode;
                 }
 
-                var resultValue = delegateValue(gpuHandle, displayId, (uint)(enabled ? 1 : 2), bits, mode);
+                var resultValue = delegateValue(gpuHandle, displayId, (uint)state, bits, mode);
                 if (resultValue != 0)
                 {
                     Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
@@ -340,40 +357,31 @@ namespace ColorControl
             return result;
         }
 
-        public bool GetDithering()
+        public NV_GPU_DITHER_CONTROL_V1 GetDithering()
         {
-            // Requires elevation, too bad :(
-            //Utils.GetRegistryKeyValue(@"SYSTEM\CurrentControlSet\Services\nvlddmkm\State\DisplayDatabase", "DitherRegistryKey");
+            var dither = new NV_GPU_DITHER_CONTROL_V1 { version = 0x10018 };
 
-            /*
             var ptr = NvAPI64_QueryInterface(0x932AC8FB);
             if (ptr != IntPtr.Zero)
             {
                 var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetDitherControl)) as NvAPI_Disp_GetDitherControl;
 
                 var displayDevice = GetCurrentDisplay().DisplayDevice;
-
-                var gpuHandle = displayDevice.PhysicalGPU.Handle;
                 var displayId = displayDevice.DisplayId;
 
-                NV_GPU_DITHER_CONTROL_V1 info = new NV_GPU_DITHER_CONTROL_V1();
-                info.version = 1;
-                var size = Marshal.SizeOf(info.GetType());
-                IntPtr bla = Marshal.AllocHGlobal(size);
-                Marshal.StructureToPtr(info, bla, false);
-
-                // Does not work yet...What is the exact interface of NvAPI_Disp_GetDitherControl?
-
-                var result = delegateValue(gpuHandle, displayId, bla);
+                var result = delegateValue(displayId, ref dither);
                 if (result != 0)
                 {
                     Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
+                    dither.state = -1;
                 }
-
-                return info.state == 1;
             }
-            */
-            return false;
+            else
+            {
+                dither.state = -2;
+            }
+
+            return dither;
         }
 
         public bool SetRefreshRate(uint refreshRate)
@@ -458,15 +466,26 @@ namespace ColorControl
 
                 values.Add($"{refreshRate}Hz");
 
-                var lastPreset = GetLastAppliedPreset();
-                if (lastPreset != null)
+                var ditherInfo = GetDithering();
+
+                string dithering;
+                if (ditherInfo.state == -1)
                 {
-                    values.Add(lastPreset.GetDitheringDescription());
+                    dithering = "Error";
                 }
                 else
                 {
-                    values.Add(string.Empty);
+                    var state = (NvDitherState)ditherInfo.state;
+                    dithering = state switch { NvDitherState.Disabled => "Disabled", NvDitherState.Auto => "Auto: ", _ => string.Empty };
+                    if (state is NvDitherState.Enabled or NvDitherState.Auto)
+                    {
+                        var ditherBitsDescription = ((NvDitherBits)ditherInfo.bits).GetDescription();
+                        var ditherModeDescription = ((NvDitherMode)ditherInfo.mode).GetDescription();
+                        dithering = string.Format("{0}{1} {2}", dithering, ditherBitsDescription, ditherModeDescription);
+                    }
                 }
+
+                values.Add(dithering);
 
                 var hdrEnabled = IsHDREnabled();
                 values.Add(hdrEnabled ? "Yes" : "No");
