@@ -27,6 +27,12 @@ namespace LgTv
         dolbyHdrCinema, dolbyHdrCinemaBright, dolbyHdrDarkAmazon, dolbyHdrGame, dolbyHdrStandard, dolbyHdrVivid, dolbyStandard
     }
 
+    public enum DynamicRange
+    {
+        sdr, hdr, technicolorHdr, dolbyHdr,
+        sdrALLM, hdrALLM, technicolorHdrALLM, dolbyHdrALLM
+    }
+
     public enum OffToHigh
     {
         off,
@@ -99,7 +105,9 @@ namespace LgTv
 
     public enum FalseToTrue
     {
+        [Description("Disabled")]
         false_,
+        [Description("Enabled")]
         true_
     }
 
@@ -135,6 +143,62 @@ namespace LgTv
         pc,
         [Description("Mobile Device")]
         mobile
+    }
+
+    public enum SoundMode
+    {
+        [Description("AI Sound Pro")]
+        aiSoundPlus,
+        [Description("AI Sound")]
+        aiSound,
+        [Description("Standard")]
+        standard,
+        [Description("Clear Voice")]
+        news,
+        [Description("Music")]
+        music,
+        [Description("Cinema")]
+        movie,
+        [Description("Sports")]
+        sports,
+        [Description("Game Optimizer")]
+        game,
+        [Description("Pagode")]
+        pagode,
+        [Description("Serta Wego")]
+        sertaWego,
+        [Description("Brazilian Punk")]
+        brazilianPunk,
+        [Description("ASC")]
+        asc,
+        [Description("Bass Boost")]
+        bass,
+    }
+
+    public enum SoundOutput
+    {
+        [Description("TV Speaker")]
+        tv_speaker,
+        [Description("HDMI(ARC) Device")]
+        external_arc,
+        [Description("Optical Out Device")]
+        external_optical,
+        [Description("Bluetooth Device")]
+        bt_soundbar,
+        [Description("Mobile Device")]
+        mobile_phone,
+        [Description("Audio Out Device")]
+        lineout,
+        [Description("Wired Headphones")]
+        headphone,
+        [Description("Bluetooth Device + TV Speaker")]
+        tv_speaker_bluetooth,
+        [Description("Optical Out Device + TV Speaker")]
+        tv_external_speaker,
+        [Description("Wired Headphones + TV Speaker")]
+        tv_speaker_headphone,
+        [Description("WiSA Speakers")]
+        wisa_speaker,
     }
 
     public class LgTvApi:IDisposable
@@ -600,6 +664,19 @@ namespace LgTv
             await ExecuteRequest(lunauri, @params);
         }
 
+        public async Task Reboot()
+        {
+            //await ExecuteRequest("luna://com.webos.service.oledepl/setGlobalStressReduction", new { enable = true });
+
+            //var requestMessage = new RequestMessage("ssap://com.webos.service.devicereset/requestReboot", new { reason = "broadcastSystemChanged" });
+            //var response = await _connection.SendCommandAsync(requestMessage);
+
+            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "network", settings = new { wolwowlOnOff = "true" } });
+
+            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "general", settings = new { powerOffBySCA3SystemChanged = "true" } });
+            //await ExecuteRequest("luna://com.webos.service.devicereset/requestReboot", new { reason = "broadcastSystemChanged" });
+        }
+
         private async Task ExecuteRequest(string lunauri, object @params)
         {
             var buttons = new[]
@@ -654,6 +731,23 @@ namespace LgTv
                 category = category,
                 keys = keys
             };
+
+            var requestMessage = new RequestMessage("ssap://settings/getSystemSettings", payload);
+            var command = _connection.SendCommandAsync(requestMessage);
+            var res = await command;
+            return res;
+        }
+
+        public async Task<dynamic> GetSystemSettings2(string category)
+        {
+            var payload = new
+            {
+                category = "dimensionInfo",
+                //dimension = new { input = "default", _3dStatus = "2d", dynamicRange = "sdr" },
+                keys = new[] { "input", "_3dStatus", "colorSystem", "dynamicRange", "gameInput" }
+            };
+            //await ExecuteRequest("luna://com.webos.settingsservice/getSystemSettings", payload);
+            //return null;
 
             var requestMessage = new RequestMessage("ssap://settings/getSystemSettings", payload);
             var command = _connection.SendCommandAsync(requestMessage);

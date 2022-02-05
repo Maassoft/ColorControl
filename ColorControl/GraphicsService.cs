@@ -15,7 +15,6 @@ namespace ColorControl
 
         public GraphicsService(string dataPath, string presetsBaseFilename) : base(dataPath, presetsBaseFilename)
         {
-            Initialize();
         }
 
         ~GraphicsService()
@@ -23,7 +22,7 @@ namespace ColorControl
             Uninitialize();
         }
 
-        public abstract bool HasDisplaysAttached();
+        public abstract bool HasDisplaysAttached(bool reinitialize = false);
 
         protected void ToggleHDR(int delay = 1000)
         {

@@ -64,7 +64,7 @@ namespace ColorControl
             SavePresets();
         }
 
-        public override bool HasDisplaysAttached()
+        public override bool HasDisplaysAttached(bool reinitialize = false)
         {
             try
             {

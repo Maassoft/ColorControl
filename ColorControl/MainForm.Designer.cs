@@ -104,6 +104,7 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.btnLgDeviceOptionsHelp = new System.Windows.Forms.Button();
             this.lblGameBarShortcut = new System.Windows.Forms.Label();
             this.edtLgGameBarShortcut = new System.Windows.Forms.TextBox();
             this.btnLgGameBar = new System.Windows.Forms.Button();
@@ -981,6 +982,7 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.btnLgDeviceOptionsHelp);
             this.scLgController.Panel1.Controls.Add(this.lblGameBarShortcut);
             this.scLgController.Panel1.Controls.Add(this.edtLgGameBarShortcut);
             this.scLgController.Panel1.Controls.Add(this.btnLgGameBar);
@@ -1029,6 +1031,18 @@
             this.scLgController.SplitterDistance = 894;
             this.scLgController.SplitterWidth = 5;
             this.scLgController.TabIndex = 43;
+            // 
+            // btnLgDeviceOptionsHelp
+            // 
+            this.btnLgDeviceOptionsHelp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnLgDeviceOptionsHelp.Location = new System.Drawing.Point(867, 70);
+            this.btnLgDeviceOptionsHelp.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnLgDeviceOptionsHelp.Name = "btnLgDeviceOptionsHelp";
+            this.btnLgDeviceOptionsHelp.Size = new System.Drawing.Size(22, 27);
+            this.btnLgDeviceOptionsHelp.TabIndex = 58;
+            this.btnLgDeviceOptionsHelp.Text = "?";
+            this.btnLgDeviceOptionsHelp.UseVisualStyleBackColor = true;
+            this.btnLgDeviceOptionsHelp.Click += new System.EventHandler(this.btnLgDeviceOptionsHelp_Click);
             // 
             // lblGameBarShortcut
             // 
@@ -1278,11 +1292,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lvLgPresets.FullRowSelect = true;
-            this.lvLgPresets.Location = new System.Drawing.Point(6, 168);
+            this.lvLgPresets.Location = new System.Drawing.Point(6, 152);
             this.lvLgPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(883, 130);
+            this.lvLgPresets.Size = new System.Drawing.Size(883, 146);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -1575,21 +1589,21 @@
             this.clbLgPower.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.clbLgPower.CheckOnClick = true;
+            this.clbLgPower.ColumnWidth = 380;
             this.clbLgPower.FormattingEnabled = true;
             this.clbLgPower.Items.AddRange(new object[] {
-            "Automatically power on after startup. Requires \"Automatically start after login\" " +
-                "- see Options.",
-            "Automatically power on after resume from standby. May need some retries for wakin" +
-                "g TV, see Options.",
-            "Automatically power off on shutdown. Because this app cannot detect a restart, re" +
-                "starting could also trigger this. Hold down Ctrl on restart to prevent power off" +
-                ".",
+            "Automatically power on after startup",
+            "Automatically power on after resume from standby",
+            "Automatically power off on shutdown",
             "Automatically power off on standby",
-            "Automatically power off on screensaver and power on when screensaver deactivates"});
+            "Automatically power off/on when screensaver activates/deactivates",
+            "Power on even after manual power off",
+            "Allow triggers to be fired for this device"});
             this.clbLgPower.Location = new System.Drawing.Point(6, 70);
             this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.clbLgPower.MultiColumn = true;
             this.clbLgPower.Name = "clbLgPower";
-            this.clbLgPower.Size = new System.Drawing.Size(883, 76);
+            this.clbLgPower.Size = new System.Drawing.Size(856, 76);
             this.clbLgPower.TabIndex = 34;
             this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
             // 
@@ -2353,6 +2367,7 @@
         private System.Windows.Forms.Label lblGameBarShortcut;
         private System.Windows.Forms.TextBox edtLgGameBarShortcut;
         private System.Windows.Forms.CheckBox chkGdiScaling;
+        private System.Windows.Forms.Button btnLgDeviceOptionsHelp;
     }
 }
 

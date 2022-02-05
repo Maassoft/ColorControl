@@ -433,7 +433,7 @@ namespace ColorControl
                                                  state == PowerOnOffState.ScreenSaver && d.PowerSwitchOnScreenSaver);
             foreach (var device in wakeDevices)
             {
-                if (device.PoweredOffBy == LgDevice.PowerOffSource.Manually)
+                if (!device.PowerOnAfterManualPowerOff && device.PoweredOffBy == LgDevice.PowerOffSource.Manually)
                 {
                     Logger.Debug($"[{device.Name}]: device was manually powered off by user, not powering on");
                     continue;
@@ -557,8 +557,8 @@ namespace ColorControl
 
                 try
                 {
-                    var applicableDevices = Devices.Where(d => d.PowerSwitchOnScreenSaver || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-                        ((p.DeviceMacAddress == null && d == SelectedDevice) || p.DeviceMacAddress == d.MacAddress)));
+                    var applicableDevices = Devices.Where(d => d.PowerSwitchOnScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
+                        ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
 
                     if (!applicableDevices.Any())
                     {
@@ -623,7 +623,7 @@ namespace ColorControl
                         wasConnected = true;
                     }
 
-                    MonitorContext.Devices = connectedDevices;
+                    MonitorContext.Devices = connectedDevices.Where(d => d.TriggersEnabled).ToList();
                     MonitorContext.RunningProcesses = processes;
                     //if (lastProcesses != null)
                     //{
@@ -646,7 +646,7 @@ namespace ColorControl
 
                     if (process != null)
                     {
-                        var parent = process.Parent();
+                        var parent = process.Parent(processes);
 
                         if (parent?.ProcessName.Contains("winlogon") ?? false)
                         {
@@ -705,7 +705,11 @@ namespace ColorControl
 
         private async Task ExecuteProcessPresets(ProcessMonitorContext context)
         {
-            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch));
+            var selectedDevice = SelectedDevice;
+
+            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch) && 
+                                        ((string.IsNullOrEmpty(p.DeviceMacAddress) && selectedDevice?.TriggersEnabled == true) 
+                                            || Devices.Any(d => d.TriggersEnabled && p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
             if (!presets.Any())
             {
                 return;
@@ -715,7 +719,7 @@ namespace ColorControl
 
             var (processId, isFullScreen) = Utils.GetForegroundProcessIdAndIfFullScreen();
 
-            if (processId == Process.GetCurrentProcess().Id)
+            if (processId == Environment.ProcessId)
             {
                 return;
             }
@@ -808,7 +812,7 @@ namespace ColorControl
 
             if (!string.IsNullOrEmpty(device.MacAddress))
             {
-                var presets = _presets.Where(p => !string.IsNullOrEmpty(p.DeviceMacAddress) && p.DeviceMacAddress.Equals(device.MacAddress)).ToList();
+                var presets = _presets.Where(p => !string.IsNullOrEmpty(p.DeviceMacAddress) && p.DeviceMacAddress.Equals(device.MacAddress, StringComparison.OrdinalIgnoreCase)).ToList();
                 presets.ForEach(preset =>
                 {
                     preset.DeviceMacAddress = null;

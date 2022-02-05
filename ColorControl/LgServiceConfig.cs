@@ -13,6 +13,8 @@ namespace ColorControl
         public bool ShowRemoteControl { get; set; }
         public bool ShowAdvancedActions { get; set; }
         public string GameBarShortcut { get; set; }
+        public int GameBarTop { get; set; }
+        public int GameBarLeft { get; set; }
 
         public LgServiceConfig()
         {
@@ -20,6 +22,8 @@ namespace ColorControl
             DeviceSearchKey = "[LG]";
             PowerOnRetries = 10;
             Devices = new List<LgDevice>();
+            GameBarTop = 100;
+            GameBarLeft = 100;
         }
     }
 }

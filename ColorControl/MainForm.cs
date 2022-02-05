@@ -2,6 +2,7 @@
 using LgTv;
 using Newtonsoft.Json;
 using NLog;
+using NonInvasiveKeyboardHookLibrary;
 using NStandard;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
@@ -59,6 +60,8 @@ namespace ColorControl
 
         private LgGameBar _gameBarForm;
 
+        private KeyboardHookManager _keyboardHookManager;
+
         public MainForm(AppContext appContext)
         {
             InitializeComponent();
@@ -72,7 +75,7 @@ namespace ColorControl
             MessageForms.MainForm = this;
 
             _nvTrayMenu = new ToolStripMenuItem("NVIDIA presets");
-            _amdTrayMenu = new ToolStripMenuItem("NVIDIA presets");
+            _amdTrayMenu = new ToolStripMenuItem("AMD presets");
             _lgTrayMenu = new ToolStripMenuItem("LG presets");
             _trayIcon = new NotifyIcon()
             {
@@ -205,6 +208,14 @@ namespace ColorControl
                 {
                     Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut);
 
+                    // New shortcut manager, not working yet
+                    //if (_keyboardHookManager == null)
+                    //{
+                    //    _keyboardHookManager = new KeyboardHookManager();
+                    //    _keyboardHookManager.Start();
+                    //}
+                    //_keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control | NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt, 0x47, new Action(Invoke));
+
                     edtLgGameBarShortcut.Text = _lgService.Config.GameBarShortcut;
                 }
             }
@@ -212,6 +223,11 @@ namespace ColorControl
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
+        }
+
+        private void Invoke()
+        {
+            BeginInvoke(new Action(ToggleGameBar));
         }
 
         private void AfterLgServiceRefreshDevices()
@@ -1464,6 +1480,8 @@ namespace ColorControl
                 clbLgPower.SetItemChecked(2, device?.PowerOffOnShutdown ?? false);
                 clbLgPower.SetItemChecked(3, device?.PowerOffOnStandby ?? false);
                 clbLgPower.SetItemChecked(4, device?.PowerSwitchOnScreenSaver ?? false);
+                clbLgPower.SetItemChecked(5, device?.PowerOnAfterManualPowerOff ?? false);
+                clbLgPower.SetItemChecked(6, device?.TriggersEnabled ?? true);
             }
             finally
             {
@@ -1939,7 +1957,8 @@ namespace ColorControl
 
 Connection > Mobile TV On > Turn on via Wi-Fi (Networked Standby Mode)
 
-See Options to test this functionality."
+See Options to test this functionality.
+You can also activate this option by using the Expert-button and selecting Wake-On-LAN > Enabled."
                 );
             }
 
@@ -1950,6 +1969,8 @@ See Options to test this functionality."
                 device.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
                 device.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
                 device.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
+                device.PowerOnAfterManualPowerOff = clbLgPower.GetItemChecked(5);
+                device.TriggersEnabled = clbLgPower.GetItemChecked(6);
 
                 _lgService.InstallEventHandlers();
             }));
@@ -1978,8 +1999,6 @@ See Options to test this functionality."
 
         private void btnLGTestPower_Click(object sender, EventArgs e)
         {
-            //_lgService.WakeSelectedDevice();
-            //return;
             var text =
 @"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
 For waking up to work, you need to activate the following setting on the TV:
@@ -1987,6 +2006,8 @@ For waking up to work, you need to activate the following setting on the TV:
 Connection > Mobile TV On > Turn on via Wi-Fi
 
 It will also work over a wired connection.
+You can also activate this option by using the Expert-button and selecting Wake-On-LAN > Enabled.
+
 Do you want to continue?";
 
             if (MessageForms.QuestionYesNo(text) == DialogResult.Yes)
@@ -2983,6 +3004,11 @@ The InStart and Software Update items are now visible under the Expert-button."
             {
                 if (_gameBarForm == null || _gameBarForm.IsDisposed)
                 {
+                    if (_lgService?.SelectedDevice == null)
+                    {
+                        return;
+                    }
+
                     _gameBarForm = new LgGameBar(_lgService);
                 }
 
@@ -3053,6 +3079,16 @@ The InStart and Software Update items are now visible under the Expert-button."
             cbxDitheringMode.Enabled = chkDitheringEnabled.CheckState == CheckState.Checked;
 
             ApplyDitheringOptions();
+        }
+
+        private void btnLgDeviceOptionsHelp_Click(object sender, EventArgs e)
+        {
+            MessageForms.InfoOk(
+@"Notes:
+- power on after startup requires ""Automatically start after login"" - see Options
+- power on after resume from standby may need some retries for waking TV - see Options
+- power off on shutdown: because this app cannot detect a restart, restarting could also trigger this. Hold down Ctrl on restart to prevent power off.
+");
         }
     }
 }

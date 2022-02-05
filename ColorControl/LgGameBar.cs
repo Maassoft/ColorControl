@@ -178,6 +178,8 @@ namespace ColorControl
 
         private void RemoteControlForm_Load(object sender, EventArgs e)
         {
+            Left = _lgService.Config.GameBarLeft;
+            Top = _lgService.Config.GameBarTop;
         }
 
         private void ButtonClick(object sender, EventArgs e)
@@ -242,22 +244,6 @@ namespace ColorControl
             ResetAutoHide();
         }
 
-        private void pnlMouse_MouseEnter(object sender, EventArgs e)
-        {
-        }
-
-        private void RemoteControlForm_FormClosed(object sender, FormClosedEventArgs e)
-        {
-        }
-
-        private void pnlMouse_MouseUp(object sender, MouseEventArgs e)
-        {
-        }
-
-        private void HandleMouse(MouseEventArgs e)
-        {
-        }
-
         private void RemoteControlForm_Shown(object sender, EventArgs e)
         {
             GenerateComponents();
@@ -273,22 +259,17 @@ namespace ColorControl
             UpdateValues();
         }
 
-        private void pnlMouse_MouseMove(object sender, MouseEventArgs e)
-        {
-            HandleMouse(e);
-        }
-
-        private void pnlMouse_MouseWheel(object sender, MouseEventArgs e)
-        {
-        }
-
         private void LgGameBar_Deactivate(object sender, EventArgs e)
         {
+            _lgService.Config.GameBarLeft = Left;
+            _lgService.Config.GameBarTop = Top;
             Hide();
         }
 
         private void tmrHide_Tick(object sender, EventArgs e)
         {
+            _lgService.Config.GameBarLeft = Left;
+            _lgService.Config.GameBarTop = Top;
             Hide();
         }
 

@@ -111,6 +111,12 @@ namespace ColorControl
 
         public Display GetCurrentDisplay()
         {
+            if (!HasDisplaysAttached())
+            {
+                _currentDisplay = null;
+                return null;
+            }
+
             if (_currentDisplay == null)
             {
                 _currentDisplay = Display.GetDisplays()[0];
@@ -119,15 +125,28 @@ namespace ColorControl
             return _currentDisplay;
         }
 
-        public override bool HasDisplaysAttached()
+        public override bool HasDisplaysAttached(bool reinitialize = false)
         {
+            if (reinitialize)
+            {
+                try
+                {
+                    Initialize();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Could not reinitialize NVIDIA API: {ex.Message}");
+                    return false;
+                }
+            }
+
             try
             {
                 return DisplayDevice.GetGDIPrimaryDisplayDevice() != null;
             }
             catch (Exception)
             {
-                return false;
+                return reinitialize ? false : HasDisplaysAttached(true);
             }
         }
 
@@ -200,6 +219,11 @@ namespace ColorControl
             if (preset.applyColorData && (ColorDataDiffers(preset.colorData) || (!newHdrEnabled && preset.applyColorData && preset.colorData.Colorimetry != ColorDataColorimetry.Auto)))
             {
                 var display = GetCurrentDisplay();
+                if (display == null)
+                {
+                    return false;
+                }
+
                 if (hdrEnabled)
                 {
                     SetHDRState(display, false);
@@ -228,6 +252,10 @@ namespace ColorControl
             if (applyHdr)
             {
                 var display = GetCurrentDisplay();
+                if (display == null)
+                {
+                    return false;
+                }
 
                 var colorData = preset.applyColorData ? preset.colorData : display.DisplayDevice.CurrentColorData;
 
@@ -324,7 +352,13 @@ namespace ColorControl
             {
                 var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_SetDitherControl)) as NvAPI_Disp_SetDitherControl;
 
-                var displayDevice = GetCurrentDisplay().DisplayDevice;
+                var display = GetCurrentDisplay();
+                if (display == null)
+                {
+                    return false;
+                }
+
+                var displayDevice = display.DisplayDevice;
 
                 var gpuHandle = displayDevice.PhysicalGPU.Handle;
                 var displayId = displayDevice.DisplayId;
@@ -366,7 +400,14 @@ namespace ColorControl
             {
                 var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetDitherControl)) as NvAPI_Disp_GetDitherControl;
 
-                var displayDevice = GetCurrentDisplay().DisplayDevice;
+                var display = GetCurrentDisplay();
+                if (display == null)
+                {
+                    dither.state = -1;
+                    return dither;
+                }
+
+                var displayDevice = display.DisplayDevice;
                 var displayId = displayDevice.DisplayId;
 
                 var result = delegateValue(displayId, ref dither);
@@ -387,6 +428,11 @@ namespace ColorControl
         public bool SetRefreshRate(uint refreshRate)
         {
             var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return false;
+            }
+
             var timing = display.DisplayDevice.CurrentTiming;
 
             if (timing.Extra.RefreshRate == refreshRate)
@@ -407,6 +453,11 @@ namespace ColorControl
             }
 
             var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return new List<uint>();
+            }
+
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
             var timing = display.DisplayDevice.CurrentTiming;
 
@@ -415,7 +466,13 @@ namespace ColorControl
 
         public bool IsHDREnabled()
         {
-            var displayDevice = GetCurrentDisplay().DisplayDevice;
+            var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return false;
+            }
+
+            var displayDevice = display.DisplayDevice;
             var hdr = displayDevice.HDRColorData;
             return hdr?.HDRMode == ColorDataHDRMode.UHDA;
         }

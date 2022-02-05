@@ -65,6 +65,8 @@ namespace ColorControl
         public bool PowerOffOnShutdown { get; set; }
         public bool PowerOffOnStandby { get; set; }
         public bool PowerSwitchOnScreenSaver { get; set; }
+        public bool PowerOnAfterManualPowerOff { get; set; }
+        public bool TriggersEnabled { get; set; }
 
         private List<string> _actionsForGameBar;
 
@@ -124,6 +126,7 @@ namespace ColorControl
             MacAddress = macAddress;
             IsCustom = isCustom;
             IsDummy = isDummy;
+            TriggersEnabled = true;
 
             AddInvokableAction("WOL", new Func<Dictionary<string, object>, bool>(WakeAction));
             AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
@@ -131,6 +134,7 @@ namespace ColorControl
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
             AddGenericPictureAction("color", minValue: 0, maxValue: 100);
             AddGenericPictureAction("pictureMode", typeof(PictureMode), title: "Picture Mode");
+            //AddGenericPictureAction("dynamicRange", typeof(DynamicRange), category: "dimensionInfo", title: "Dynamic Range");
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
             AddGenericPictureAction("gamma", typeof(GammaExp));
@@ -159,6 +163,7 @@ namespace ColorControl
             AddGenericPictureAction("hdmiPcMode_hdmi3", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi4", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
+            //AddGenericPictureAction("wb20PointsGammaValue", minValue: -50, maxValue: 50);
             AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
             AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
 
@@ -170,6 +175,11 @@ namespace ColorControl
             AddSetDeviceConfigAction("HDMI_2_icon", typeof(HdmiIcon), "HDMI 2 icon");
             AddSetDeviceConfigAction("HDMI_3_icon", typeof(HdmiIcon), "HDMI 3 icon");
             AddSetDeviceConfigAction("HDMI_4_icon", typeof(HdmiIcon), "HDMI 4 icon");
+
+            AddGenericPictureAction("soundMode", typeof(SoundMode), category: "sound", title: "Sound Mode");
+            AddGenericPictureAction("soundOutput", typeof(SoundOutput), category: "sound", title: "Sound Output");
+            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "network", settings = new { wolwowlOnOff = "true" } });
+            AddGenericPictureAction("wolwowlOnOff", typeof(FalseToTrue), category: "network", title: "Wake-On-LAN");
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -272,7 +282,7 @@ namespace ColorControl
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
 
-                        //await _lgTvApi.SetDeviceConfig("PC");
+                        //await _lgTvApi.Reboot();
 
                         //var result = await GetPictureSettings();
 
@@ -788,9 +798,9 @@ namespace ColorControl
         internal async Task<dynamic> GetPictureSettings()
         {
             //var keys = new[] { "backlight", "brightness", "contrast", "color", "pictureMode", "colorGamut", "dynamicContrast", "peakBrightness", "smoothGradation", "energySaving", "motionProOLED" };
-            var keys = new[] { "backlight", "brightness", "contrast", "color" };
+            //var keys = new[] { "backlight", "brightness", "contrast", "color" };
 
-            return await _lgTvApi.GetSystemSettings("picture", keys);
+            return await _lgTvApi.GetSystemSettings2("picture");
         }
 
         private bool WakeAction(Dictionary<string, object> parameters)

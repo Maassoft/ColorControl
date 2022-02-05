@@ -41,9 +41,10 @@ namespace ColorControl
             // 
             this.flowPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.flowPanel.Location = new System.Drawing.Point(12, 41);
+            this.flowPanel.Location = new System.Drawing.Point(14, 47);
+            this.flowPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.flowPanel.Name = "flowPanel";
-            this.flowPanel.Size = new System.Drawing.Size(231, 282);
+            this.flowPanel.Size = new System.Drawing.Size(270, 325);
             this.flowPanel.TabIndex = 0;
             this.flowPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RemoteControlForm_MouseDown);
             this.flowPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.flowPanel_MouseMove);
@@ -56,9 +57,10 @@ namespace ColorControl
             this.btnClose.FlatAppearance.BorderSize = 0;
             this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClose.ForeColor = System.Drawing.Color.White;
-            this.btnClose.Location = new System.Drawing.Point(240, 0);
+            this.btnClose.Location = new System.Drawing.Point(280, 0);
+            this.btnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(14, 23);
+            this.btnClose.Size = new System.Drawing.Size(16, 27);
             this.btnClose.TabIndex = 1;
             this.btnClose.TabStop = false;
             this.btnClose.Text = "x";
@@ -69,9 +71,10 @@ namespace ColorControl
             // 
             this.lblTvName.AutoSize = true;
             this.lblTvName.ForeColor = System.Drawing.Color.White;
-            this.lblTvName.Location = new System.Drawing.Point(12, 0);
+            this.lblTvName.Location = new System.Drawing.Point(14, 0);
+            this.lblTvName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTvName.Name = "lblTvName";
-            this.lblTvName.Size = new System.Drawing.Size(25, 13);
+            this.lblTvName.Size = new System.Drawing.Size(25, 15);
             this.lblTvName.TabIndex = 0;
             this.lblTvName.Text = "      ";
             // 
@@ -84,33 +87,35 @@ namespace ColorControl
             // 
             this.lblProcessName.AutoSize = true;
             this.lblProcessName.ForeColor = System.Drawing.Color.White;
-            this.lblProcessName.Location = new System.Drawing.Point(12, 20);
+            this.lblProcessName.Location = new System.Drawing.Point(14, 23);
+            this.lblProcessName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblProcessName.Name = "lblProcessName";
-            this.lblProcessName.Size = new System.Drawing.Size(25, 13);
+            this.lblProcessName.Size = new System.Drawing.Size(25, 15);
             this.lblProcessName.TabIndex = 2;
             this.lblProcessName.Text = "      ";
             // 
             // LgGameBar
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(255, 335);
+            this.ClientSize = new System.Drawing.Size(298, 387);
             this.Controls.Add(this.lblProcessName);
             this.Controls.Add(this.lblTvName);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.flowPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.KeyPreview = true;
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "LgGameBar";
             this.Opacity = 0.7D;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "RemoteControlForm";
             this.TopMost = true;
             this.Activated += new System.EventHandler(this.LgGameBar_Activated);
             this.Deactivate += new System.EventHandler(this.LgGameBar_Deactivate);
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.RemoteControlForm_FormClosed);
             this.Load += new System.EventHandler(this.RemoteControlForm_Load);
             this.Shown += new System.EventHandler(this.RemoteControlForm_Shown);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.RemoteControlForm_KeyDown);

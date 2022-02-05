@@ -605,7 +605,12 @@ namespace ColorControl
                     var itemText = (enumValue as IConvertible).GetDescription() ?? enumValue.ToString();
                     var item = subMenuItem.DropDownItems.Add(itemText);
                     item.Tag = tag;
-                    item.AccessibleName = enumValue.ToString();
+                    var strValue = enumValue.ToString();
+                    if (strValue.EndsWith("_"))
+                    {
+                        strValue = strValue.Substring(0, strValue.Length - 1);
+                    }
+                    item.AccessibleName = strValue;
                     item.Click += clickEvent;
                 }
             }
@@ -898,7 +903,7 @@ namespace ColorControl
 
         public static Process GetProcessByName(string name, bool skipCurrent = true)
         {
-            var currentProcessId = Process.GetCurrentProcess().Id;
+            var currentProcessId = Environment.ProcessId;
             foreach (var process in Process.GetProcesses())
             {
                 if (process.ProcessName.Equals(name) && (!skipCurrent || process.Id != currentProcessId))
@@ -1092,34 +1097,48 @@ namespace ColorControl
 
     public static class ProcessExtensions
     {
-        private static string FindIndexedProcessName(int pid)
+        private static string FindIndexedProcessName(int pid, string processName, IEnumerable<Process> processes = null)
         {
-            var processName = Process.GetProcessById(pid).ProcessName;
-            var processesByName = Process.GetProcessesByName(processName);
-            string processIndexdName = null;
+            var processesByName = processes == null ? Process.GetProcessesByName(processName) : processes.Where(p => p.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)).ToArray();
+            string processIndexedName = null;
 
             for (var index = 0; index < processesByName.Length; index++)
             {
-                processIndexdName = index == 0 ? processName : processName + "#" + index;
-                var processId = new PerformanceCounter("Process", "ID Process", processIndexdName);
+                processIndexedName = index == 0 ? processName : processName + "#" + index;
+                var processId = new PerformanceCounter("Process", "ID Process", processIndexedName);
                 if ((int)processId.NextValue() == pid)
                 {
-                    return processIndexdName;
+                    return processIndexedName;
                 }
             }
 
-            return processIndexdName;
+            return processIndexedName;
         }
 
-        private static Process FindPidFromIndexedProcessName(string indexedProcessName)
+        private static Process FindPidFromIndexedProcessName(string indexedProcessName, IEnumerable<Process> processes = null)
         {
             var parentId = new PerformanceCounter("Process", "Creating Process ID", indexedProcessName);
-            return Process.GetProcessById((int)parentId.NextValue());
+            var parentProcessId = (int)parentId.NextValue();
+
+            try
+            {
+                return processes == null ? Process.GetProcessById(parentProcessId) : processes.FirstOrDefault(p => p.Id == parentProcessId);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
-        public static Process Parent(this Process process)
+        public static Process Parent(this Process process, IEnumerable<Process> processes = null)
         {
-            return FindPidFromIndexedProcessName(FindIndexedProcessName(process.Id));
+            var indexedProcessName = FindIndexedProcessName(process.Id, process.ProcessName, processes);
+            if (indexedProcessName == null)
+            {
+                return null;
+            }
+
+            return FindPidFromIndexedProcessName(indexedProcessName, processes);
         }
     }
 }
