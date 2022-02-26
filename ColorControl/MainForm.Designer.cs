@@ -172,6 +172,9 @@
             this.lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             this.grpLGOptions = new System.Windows.Forms.GroupBox();
+            this.lblLgOptionShutdownDelayHelp = new System.Windows.Forms.Label();
+            this.edtLgOptionShutdownDelay = new System.Windows.Forms.NumericUpDown();
+            this.lblLgOptionShutdownDelay = new System.Windows.Forms.Label();
             this.chkLgShowAdvancedActions = new System.Windows.Forms.CheckBox();
             this.btnLGTestPower = new System.Windows.Forms.Button();
             this.lblLgMaxPowerOnRetriesDescription = new System.Windows.Forms.Label();
@@ -214,6 +217,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
             this.grpMiscellaneousOptions.SuspendLayout();
             this.grpLGOptions.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgOptionShutdownDelay)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).BeginInit();
             this.grpHDROptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtDelayDisplaySettings)).BeginInit();
@@ -1732,7 +1736,7 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 292);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 332);
             this.grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             this.grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -1797,6 +1801,9 @@
             // 
             // grpLGOptions
             // 
+            this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelayHelp);
+            this.grpLGOptions.Controls.Add(this.edtLgOptionShutdownDelay);
+            this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelay);
             this.grpLGOptions.Controls.Add(this.chkLgShowAdvancedActions);
             this.grpLGOptions.Controls.Add(this.btnLGTestPower);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
@@ -1806,15 +1813,56 @@
             this.grpLGOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpLGOptions.Name = "grpLGOptions";
             this.grpLGOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpLGOptions.Size = new System.Drawing.Size(470, 149);
+            this.grpLGOptions.Size = new System.Drawing.Size(470, 190);
             this.grpLGOptions.TabIndex = 4;
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
             // 
+            // lblLgOptionShutdownDelayHelp
+            // 
+            this.lblLgOptionShutdownDelayHelp.AutoSize = true;
+            this.lblLgOptionShutdownDelayHelp.Location = new System.Drawing.Point(7, 94);
+            this.lblLgOptionShutdownDelayHelp.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLgOptionShutdownDelayHelp.Name = "lblLgOptionShutdownDelayHelp";
+            this.lblLgOptionShutdownDelayHelp.Size = new System.Drawing.Size(385, 15);
+            this.lblLgOptionShutdownDelayHelp.TabIndex = 11;
+            this.lblLgOptionShutdownDelayHelp.Text = "This delay may prevent the tv from powering off when restarting the pc.";
+            // 
+            // edtLgOptionShutdownDelay
+            // 
+            this.edtLgOptionShutdownDelay.Increment = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.edtLgOptionShutdownDelay.Location = new System.Drawing.Point(349, 68);
+            this.edtLgOptionShutdownDelay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtLgOptionShutdownDelay.Maximum = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.edtLgOptionShutdownDelay.Name = "edtLgOptionShutdownDelay";
+            this.edtLgOptionShutdownDelay.ReadOnly = true;
+            this.edtLgOptionShutdownDelay.Size = new System.Drawing.Size(86, 23);
+            this.edtLgOptionShutdownDelay.TabIndex = 10;
+            this.edtLgOptionShutdownDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.edtLgOptionShutdownDelay.ValueChanged += new System.EventHandler(this.edtLgOptionShutdownDelay_ValueChanged);
+            // 
+            // lblLgOptionShutdownDelay
+            // 
+            this.lblLgOptionShutdownDelay.AutoSize = true;
+            this.lblLgOptionShutdownDelay.Location = new System.Drawing.Point(7, 70);
+            this.lblLgOptionShutdownDelay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLgOptionShutdownDelay.Name = "lblLgOptionShutdownDelay";
+            this.lblLgOptionShutdownDelay.Size = new System.Drawing.Size(249, 15);
+            this.lblLgOptionShutdownDelay.TabIndex = 9;
+            this.lblLgOptionShutdownDelay.Text = "Delay when shutting down/restarting pc (ms):";
+            // 
             // chkLgShowAdvancedActions
             // 
             this.chkLgShowAdvancedActions.AutoSize = true;
-            this.chkLgShowAdvancedActions.Location = new System.Drawing.Point(10, 112);
+            this.chkLgShowAdvancedActions.Location = new System.Drawing.Point(8, 155);
             this.chkLgShowAdvancedActions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkLgShowAdvancedActions.Name = "chkLgShowAdvancedActions";
             this.chkLgShowAdvancedActions.Size = new System.Drawing.Size(419, 19);
@@ -1825,7 +1873,7 @@
             // 
             // btnLGTestPower
             // 
-            this.btnLGTestPower.Location = new System.Drawing.Point(10, 78);
+            this.btnLGTestPower.Location = new System.Drawing.Point(8, 121);
             this.btnLGTestPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLGTestPower.Name = "btnLGTestPower";
             this.btnLGTestPower.Size = new System.Drawing.Size(167, 27);
@@ -2182,6 +2230,7 @@
             this.grpMiscellaneousOptions.PerformLayout();
             this.grpLGOptions.ResumeLayout(false);
             this.grpLGOptions.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.edtLgOptionShutdownDelay)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).EndInit();
             this.grpHDROptions.ResumeLayout(false);
             this.grpHDROptions.PerformLayout();
@@ -2368,6 +2417,9 @@
         private System.Windows.Forms.TextBox edtLgGameBarShortcut;
         private System.Windows.Forms.CheckBox chkGdiScaling;
         private System.Windows.Forms.Button btnLgDeviceOptionsHelp;
+        private System.Windows.Forms.Label lblLgOptionShutdownDelayHelp;
+        private System.Windows.Forms.NumericUpDown edtLgOptionShutdownDelay;
+        private System.Windows.Forms.Label lblLgOptionShutdownDelay;
     }
 }
 

@@ -138,6 +138,7 @@ namespace ColorControl
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
             AddGenericPictureAction("gamma", typeof(GammaExp));
+            AddGenericPictureAction("whiteBalanceColorTemperature", typeof(WhiteBalanceColorTemperature), title: "White Balance Color Temperature");
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
             //AddGenericPictureAction("superResolution", typeof(OffToAuto));
             AddGenericPictureAction("peakBrightness", typeof(OffToHigh), title: "Peak Brightness");
@@ -148,6 +149,7 @@ namespace ColorControl
             //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
             //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro");
+            AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
@@ -702,7 +704,7 @@ namespace ColorControl
                 var resumeScript = Path.Combine(Program.DataDir, "ResumeScript.bat");
                 if (File.Exists(resumeScript))
                 {
-                    Utils.StartProcess(resumeScript);
+                    Utils.StartProcess(resumeScript, hidden: true);
                 }
             }
 

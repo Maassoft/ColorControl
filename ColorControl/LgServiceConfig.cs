@@ -15,10 +15,12 @@ namespace ColorControl
         public string GameBarShortcut { get; set; }
         public int GameBarTop { get; set; }
         public int GameBarLeft { get; set; }
+        public int ShutdownDelay { get; set; }
 
         public LgServiceConfig()
         {
             PowerOnDelayAfterResume = 5000;
+            ShutdownDelay = 1000;
             DeviceSearchKey = "[LG]";
             PowerOnRetries = 10;
             Devices = new List<LgDevice>();

@@ -455,7 +455,13 @@ namespace ColorControl
             {
                 var val = value.ToInt32(CultureInfo.InvariantCulture);
 
-                var memInfo = enumType.GetMember(enumType.GetEnumName(val));
+                var enumName = enumType.GetEnumName(val);
+                if (enumName == null)
+                {
+                    return string.Empty;
+                }
+
+                var memInfo = enumType.GetMember(enumName);
                 var descriptionAttribute = memInfo[0]
                     .GetCustomAttributes(typeof(DescriptionAttribute), false)
                     .FirstOrDefault() as DescriptionAttribute;
@@ -915,9 +921,9 @@ namespace ColorControl
             return null;
         }
 
-        public static void StartProcess(string fileName, string arguments = null)
+        public static void StartProcess(string fileName, string arguments = null, bool hidden = false)
         {
-            var process = Process.Start(fileName, arguments);
+            Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = true, WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal });
         }
 
         public static string GetResourceFile(string resourceName)

@@ -9,7 +9,8 @@ namespace ColorControl
     public class RestartDetector : IDisposable
     {
         public bool RestartDetected { get; private set; }
-        
+        public bool PowerOffDetected { get; private set; }
+
         private EventLogWatcher watcher = null;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -17,8 +18,7 @@ namespace ColorControl
         {
             try
             {
-                EventLogQuery subscriptionQuery = new EventLogQuery(
-                    "System", PathType.LogName, "*[System[Provider[@Name='USER32'] and (EventID=1074)]]");
+                EventLogQuery subscriptionQuery = new EventLogQuery("System", PathType.LogName, "*[System[Provider[@Name='USER32'] and (EventID=1074)]]");
 
                 watcher = new EventLogWatcher(subscriptionQuery);
 
@@ -47,6 +47,7 @@ namespace ColorControl
         public void EventLogEventRead(object obj, EventRecordWrittenEventArgs arg)
         {
             RestartDetected = false;
+            PowerOffDetected = false;
             try
             {
                 Logger.Debug("Logging event: " + arg);
@@ -60,26 +61,14 @@ namespace ColorControl
                         {
                             RestartDetected = true; 
                             break; 
-                        } 
+                        }
+                        if (x.Value.Equals("power off"))
+                        {
+                            PowerOffDetected = true;
+                            break;
+                        }
                     }
                 }
-
-                //if (arg.EventRecord != null)
-                //{
-                //    String[] xPathRefs = new String[1];
-                //    xPathRefs[0] = "Event/EventData/Data";
-                //    IEnumerable<String> xPathEnum = xPathRefs;
-
-                //    EventLogPropertySelector logPropertyContext = new EventLogPropertySelector(xPathEnum);
-                //    IList<object> logEventProps = ((EventLogRecord)arg.EventRecord).GetPropertyValues(logPropertyContext);
-
-                //    string[] eventData = (string[])logEventProps[0];
-
-                //    foreach (string attribute in eventData)
-                //    {
-                //        if (attribute.Contains("restart")) { restart = true; break; }
-                //    }
-                //}
             }
             catch (Exception)
             {

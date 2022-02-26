@@ -77,7 +77,8 @@ namespace LgTv
         auto,
         extended,
         wide,
-        srgb
+        srgb,
+        native
     }
 
     public enum EnergySaving
@@ -100,7 +101,19 @@ namespace LgTv
     public enum TruMotionMode
     {
         off,
+        smooth,
+        clear,
+        clearPlus,
         user
+    }
+
+    public enum WhiteBalanceColorTemperature
+    {
+        cool,
+        medium,
+        warm1,
+        warm2,
+        warm3
     }
 
     public enum FalseToTrue

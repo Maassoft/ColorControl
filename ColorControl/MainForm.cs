@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -50,6 +51,7 @@ namespace ColorControl
         private ToolStripMenuItem _lgTrayMenu;
 
         private StartUpParams StartUpParams { get; }
+        public string _lgTabMessage { get; private set; }
 
         private AmdService _amdService;
         private bool _skipResize;
@@ -184,6 +186,7 @@ namespace ColorControl
                 FillLgPresets();
 
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
+                edtLgOptionShutdownDelay.Value = _lgService.Config.ShutdownDelay;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
 
@@ -478,21 +481,41 @@ namespace ColorControl
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
 
-                if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
-                {
-                    Logger.Debug("Not powering off because of a restart");
-                }
-                else if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_CONTROL) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RCONTROL) < 0)
+                if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_CONTROL) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RCONTROL) < 0)
                 {
                     Logger.Debug("Not powering off because CONTROL-key is down");
+                    return;
                 }
-                else
+
+                var sleep = _lgService.Config.ShutdownDelay;
+
+                Logger.Debug($"MainForm_FormClosing: Waiting for {sleep} milliseconds...");
+
+                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
+                try
                 {
+                    while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
+                    {
+                        Thread.Sleep(100);
+
+                        if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
+                        {
+                            Logger.Debug("Not powering off because of a restart");
+                            return;
+                        }
+
+                        sleep -= 100;
+                    }
+
                     Logger.Debug("Powering off tv...");
                     var task = _lgService.PowerOffOnShutdownOrResume();
                     Utils.WaitForTask(task);
                     Logger.Debug("Done powering off tv");
                     //ExecPowerOffPreset(true);
+                }
+                finally
+                {
+                    NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
                 }
             }
         }
@@ -1384,7 +1407,13 @@ namespace ColorControl
             chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
             scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
 
-            Utils.BuildComboBox<PresetTriggerType>(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
+            Utils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
+
+            if (!string.IsNullOrEmpty(_lgTabMessage))
+            {
+                MessageForms.WarningOk(_lgTabMessage);
+                _lgTabMessage = null;
+            }
         }
 
         private void InitOptionsTab()
@@ -1452,7 +1481,16 @@ namespace ColorControl
 
             if (!devices.Any())
             {
-                MessageForms.WarningOk("It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.");
+                var message = "It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.";
+
+                if (tcMain.SelectedTab == tabLG)
+                {
+                    MessageForms.WarningOk(message);
+                }
+                else
+                {
+                    _lgTabMessage = message;
+                }
             }
 
             if (cbxLgApps.Items.Count == 0 && device != null)
@@ -2137,7 +2175,6 @@ Do you want to continue?";
             preset.ditheringMode = uint.Parse(item.Tag.ToString());
 
             AddOrUpdateItem();
-
         }
 
         private void btnLGRemoteControl_Click(object sender, EventArgs e)
@@ -3089,6 +3126,11 @@ The InStart and Software Update items are now visible under the Expert-button."
 - power on after resume from standby may need some retries for waking TV - see Options
 - power off on shutdown: because this app cannot detect a restart, restarting could also trigger this. Hold down Ctrl on restart to prevent power off.
 ");
+        }
+
+        private void edtLgOptionShutdownDelay_ValueChanged(object sender, EventArgs e)
+        {
+            _lgService.Config.ShutdownDelay = (int)edtLgOptionShutdownDelay.Value;
         }
     }
 }

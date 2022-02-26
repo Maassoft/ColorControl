@@ -495,7 +495,7 @@ namespace ColorControl
                     var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
                     if (File.Exists(standByScript))
                     {
-                        Utils.StartProcess(standByScript);
+                        Utils.StartProcess(standByScript, hidden: true);
                     }
 
                     Logger.Debug("Powering off tv...");
