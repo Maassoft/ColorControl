@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using NLog;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 
@@ -13,6 +14,9 @@ namespace ColorControl
 
         private EventLogWatcher watcher = null;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        private static readonly IEnumerable<string> RestartNames = new[] { "restart", "herstart", "reinicio" };
+        private static readonly IEnumerable<string> PowerOffNames = new[] { "power off", "uitschakelen", "apagar" };
 
         public RestartDetector()
         {
@@ -56,13 +60,14 @@ namespace ColorControl
                 {
                     foreach (EventProperty x in ((EventLogRecord)arg.EventRecord).Properties) 
                     {
-                        Logger.Debug("Event value: " + x.Value);
-                        if (x.Value.Equals("restart")) 
+                        var strValue = x.Value.ToString();
+                        Logger.Debug("Event value: " + strValue);
+                        if (RestartNames.Any(n => n.Equals(strValue, StringComparison.OrdinalIgnoreCase)))
                         {
                             RestartDetected = true; 
                             break; 
                         }
-                        if (x.Value.Equals("power off"))
+                        if (PowerOffNames.Any(n => n.Equals(strValue, StringComparison.OrdinalIgnoreCase)))
                         {
                             PowerOffDetected = true;
                             break;
