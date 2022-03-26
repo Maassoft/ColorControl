@@ -201,6 +201,8 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
+            this.edtLgPresetDescription = new System.Windows.Forms.TextBox();
+            this.lblLgPresetDescription = new System.Windows.Forms.Label();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -986,6 +988,8 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.edtLgPresetDescription);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPresetDescription);
             this.scLgController.Panel1.Controls.Add(this.btnLgDeviceOptionsHelp);
             this.scLgController.Panel1.Controls.Add(this.lblGameBarShortcut);
             this.scLgController.Panel1.Controls.Add(this.edtLgGameBarShortcut);
@@ -1084,7 +1088,7 @@
             // btnLgPresetEditTriggerConditions
             // 
             this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 369);
+            this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 327);
             this.btnLgPresetEditTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
             this.btnLgPresetEditTriggerConditions.Size = new System.Drawing.Size(88, 27);
@@ -1097,7 +1101,7 @@
             // 
             this.edtLgPresetTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetTriggerConditions.Enabled = false;
-            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(601, 371);
+            this.edtLgPresetTriggerConditions.Location = new System.Drawing.Point(601, 329);
             this.edtLgPresetTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetTriggerConditions.Name = "edtLgPresetTriggerConditions";
             this.edtLgPresetTriggerConditions.ReadOnly = true;
@@ -1108,7 +1112,7 @@
             // 
             this.lblLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetExcludedProcesses.AutoSize = true;
-            this.lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(475, 436);
+            this.lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(475, 394);
             this.lblLgPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetExcludedProcesses.Name = "lblLgPresetExcludedProcesses";
             this.lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(112, 15);
@@ -1119,7 +1123,7 @@
             // 
             this.edtLgPresetExcludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetExcludedProcesses.Enabled = false;
-            this.edtLgPresetExcludedProcesses.Location = new System.Drawing.Point(601, 433);
+            this.edtLgPresetExcludedProcesses.Location = new System.Drawing.Point(601, 391);
             this.edtLgPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetExcludedProcesses.Name = "edtLgPresetExcludedProcesses";
             this.edtLgPresetExcludedProcesses.Size = new System.Drawing.Size(289, 23);
@@ -1129,7 +1133,7 @@
             // 
             this.lblLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetIncludedProcesses.AutoSize = true;
-            this.lblLgPresetIncludedProcesses.Location = new System.Drawing.Point(475, 406);
+            this.lblLgPresetIncludedProcesses.Location = new System.Drawing.Point(475, 364);
             this.lblLgPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetIncludedProcesses.Name = "lblLgPresetIncludedProcesses";
             this.lblLgPresetIncludedProcesses.Size = new System.Drawing.Size(110, 15);
@@ -1140,7 +1144,7 @@
             // 
             this.edtLgPresetIncludedProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtLgPresetIncludedProcesses.Enabled = false;
-            this.edtLgPresetIncludedProcesses.Location = new System.Drawing.Point(601, 403);
+            this.edtLgPresetIncludedProcesses.Location = new System.Drawing.Point(601, 361);
             this.edtLgPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetIncludedProcesses.Name = "edtLgPresetIncludedProcesses";
             this.edtLgPresetIncludedProcesses.Size = new System.Drawing.Size(289, 23);
@@ -1150,7 +1154,7 @@
             // 
             this.lblLgPresetTriggerCondition.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetTriggerCondition.AutoSize = true;
-            this.lblLgPresetTriggerCondition.Location = new System.Drawing.Point(475, 375);
+            this.lblLgPresetTriggerCondition.Location = new System.Drawing.Point(475, 333);
             this.lblLgPresetTriggerCondition.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetTriggerCondition.Name = "lblLgPresetTriggerCondition";
             this.lblLgPresetTriggerCondition.Size = new System.Drawing.Size(63, 15);
@@ -1163,7 +1167,7 @@
             this.cbxLgPresetTrigger.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgPresetTrigger.Enabled = false;
             this.cbxLgPresetTrigger.FormattingEnabled = true;
-            this.cbxLgPresetTrigger.Location = new System.Drawing.Point(601, 340);
+            this.cbxLgPresetTrigger.Location = new System.Drawing.Point(601, 298);
             this.cbxLgPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgPresetTrigger.Name = "cbxLgPresetTrigger";
             this.cbxLgPresetTrigger.Size = new System.Drawing.Size(289, 23);
@@ -1173,7 +1177,7 @@
             // 
             this.lblLgPresetTrigger.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetTrigger.AutoSize = true;
-            this.lblLgPresetTrigger.Location = new System.Drawing.Point(475, 343);
+            this.lblLgPresetTrigger.Location = new System.Drawing.Point(475, 301);
             this.lblLgPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetTrigger.Name = "lblLgPresetTrigger";
             this.lblLgPresetTrigger.Size = new System.Drawing.Size(46, 15);
@@ -1283,7 +1287,7 @@
             this.cbxLgApps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgApps.Enabled = false;
             this.cbxLgApps.FormattingEnabled = true;
-            this.cbxLgApps.Location = new System.Drawing.Point(100, 402);
+            this.cbxLgApps.Location = new System.Drawing.Point(100, 360);
             this.cbxLgApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgApps.Name = "cbxLgApps";
             this.cbxLgApps.Size = new System.Drawing.Size(233, 23);
@@ -1300,7 +1304,7 @@
             this.lvLgPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
-            this.lvLgPresets.Size = new System.Drawing.Size(883, 146);
+            this.lvLgPresets.Size = new System.Drawing.Size(883, 106);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -1311,7 +1315,7 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(6, 406);
+            this.label5.Location = new System.Drawing.Point(6, 364);
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(32, 15);
@@ -1324,7 +1328,7 @@
             this.cbxLgPresetDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxLgPresetDevice.Enabled = false;
             this.cbxLgPresetDevice.FormattingEnabled = true;
-            this.cbxLgPresetDevice.Location = new System.Drawing.Point(100, 370);
+            this.cbxLgPresetDevice.Location = new System.Drawing.Point(100, 328);
             this.cbxLgPresetDevice.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxLgPresetDevice.Name = "cbxLgPresetDevice";
             this.cbxLgPresetDevice.Size = new System.Drawing.Size(370, 23);
@@ -1334,7 +1338,7 @@
             // 
             this.btnDeleteLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnDeleteLg.Enabled = false;
-            this.btnDeleteLg.Location = new System.Drawing.Point(289, 306);
+            this.btnDeleteLg.Location = new System.Drawing.Point(289, 264);
             this.btnDeleteLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnDeleteLg.Name = "btnDeleteLg";
             this.btnDeleteLg.Size = new System.Drawing.Size(88, 27);
@@ -1347,7 +1351,7 @@
             // 
             this.btnApplyLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnApplyLg.Enabled = false;
-            this.btnApplyLg.Location = new System.Drawing.Point(6, 306);
+            this.btnApplyLg.Location = new System.Drawing.Point(6, 264);
             this.btnApplyLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnApplyLg.Name = "btnApplyLg";
             this.btnApplyLg.Size = new System.Drawing.Size(88, 27);
@@ -1370,7 +1374,7 @@
             // 
             this.lblLgPresetDevice.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblLgPresetDevice.AutoSize = true;
-            this.lblLgPresetDevice.Location = new System.Drawing.Point(6, 373);
+            this.lblLgPresetDevice.Location = new System.Drawing.Point(6, 331);
             this.lblLgPresetDevice.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblLgPresetDevice.Name = "lblLgPresetDevice";
             this.lblLgPresetDevice.Size = new System.Drawing.Size(45, 15);
@@ -1380,7 +1384,7 @@
             // btnAddLg
             // 
             this.btnAddLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddLg.Location = new System.Drawing.Point(195, 306);
+            this.btnAddLg.Location = new System.Drawing.Point(195, 264);
             this.btnAddLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnAddLg.Name = "btnAddLg";
             this.btnAddLg.Size = new System.Drawing.Size(88, 27);
@@ -1393,7 +1397,7 @@
             // 
             this.edtShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtShortcutLg.Enabled = false;
-            this.edtShortcutLg.Location = new System.Drawing.Point(100, 433);
+            this.edtShortcutLg.Location = new System.Drawing.Point(100, 391);
             this.edtShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtShortcutLg.Name = "edtShortcutLg";
             this.edtShortcutLg.ReadOnly = true;
@@ -1426,7 +1430,7 @@
             // btnLgRefreshApps
             // 
             this.btnLgRefreshApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnLgRefreshApps.Location = new System.Drawing.Point(341, 400);
+            this.btnLgRefreshApps.Location = new System.Drawing.Point(341, 358);
             this.btnLgRefreshApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgRefreshApps.Name = "btnLgRefreshApps";
             this.btnLgRefreshApps.Size = new System.Drawing.Size(88, 27);
@@ -1439,7 +1443,7 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 437);
+            this.label2.Location = new System.Drawing.Point(6, 395);
             this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(55, 15);
@@ -1450,7 +1454,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 343);
+            this.label1.Location = new System.Drawing.Point(6, 301);
             this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(42, 15);
@@ -1472,7 +1476,7 @@
             // 
             this.edtNameLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtNameLg.Enabled = false;
-            this.edtNameLg.Location = new System.Drawing.Point(100, 340);
+            this.edtNameLg.Location = new System.Drawing.Point(100, 298);
             this.edtNameLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtNameLg.Name = "edtNameLg";
             this.edtNameLg.Size = new System.Drawing.Size(233, 23);
@@ -1482,7 +1486,7 @@
             // 
             this.btnSetShortcutLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnSetShortcutLg.Enabled = false;
-            this.btnSetShortcutLg.Location = new System.Drawing.Point(384, 306);
+            this.btnSetShortcutLg.Location = new System.Drawing.Point(384, 264);
             this.btnSetShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnSetShortcutLg.Name = "btnSetShortcutLg";
             this.btnSetShortcutLg.Size = new System.Drawing.Size(88, 27);
@@ -1496,7 +1500,7 @@
             this.edtStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.edtStepsLg.Enabled = false;
-            this.edtStepsLg.Location = new System.Drawing.Point(100, 462);
+            this.edtStepsLg.Location = new System.Drawing.Point(100, 420);
             this.edtStepsLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtStepsLg.Multiline = true;
             this.edtStepsLg.Name = "edtStepsLg";
@@ -1508,7 +1512,7 @@
             this.btnLgAddButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnLgAddButton.ContextMenuStrip = this.mnuLgButtons;
             this.btnLgAddButton.Enabled = false;
-            this.btnLgAddButton.Location = new System.Drawing.Point(802, 461);
+            this.btnLgAddButton.Location = new System.Drawing.Point(802, 419);
             this.btnLgAddButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgAddButton.Name = "btnLgAddButton";
             this.btnLgAddButton.Size = new System.Drawing.Size(88, 27);
@@ -1557,7 +1561,7 @@
             // 
             this.btnCloneLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnCloneLg.Enabled = false;
-            this.btnCloneLg.Location = new System.Drawing.Point(100, 306);
+            this.btnCloneLg.Location = new System.Drawing.Point(100, 264);
             this.btnCloneLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnCloneLg.Name = "btnCloneLg";
             this.btnCloneLg.Size = new System.Drawing.Size(88, 27);
@@ -1570,7 +1574,7 @@
             // 
             this.lblStepsLg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblStepsLg.AutoSize = true;
-            this.lblStepsLg.Location = new System.Drawing.Point(6, 467);
+            this.lblStepsLg.Location = new System.Drawing.Point(6, 425);
             this.lblStepsLg.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStepsLg.Name = "lblStepsLg";
             this.lblStepsLg.Size = new System.Drawing.Size(38, 15);
@@ -2188,6 +2192,29 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
+            // edtLgPresetDescription
+            // 
+            this.edtLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.edtLgPresetDescription.Enabled = false;
+            this.edtLgPresetDescription.Location = new System.Drawing.Point(100, 469);
+            this.edtLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtLgPresetDescription.Multiline = true;
+            this.edtLgPresetDescription.Name = "edtLgPresetDescription";
+            this.edtLgPresetDescription.Size = new System.Drawing.Size(694, 43);
+            this.edtLgPresetDescription.TabIndex = 60;
+            // 
+            // lblLgPresetDescription
+            // 
+            this.lblLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetDescription.AutoSize = true;
+            this.lblLgPresetDescription.Location = new System.Drawing.Point(6, 474);
+            this.lblLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLgPresetDescription.Name = "lblLgPresetDescription";
+            this.lblLgPresetDescription.Size = new System.Drawing.Size(70, 15);
+            this.lblLgPresetDescription.TabIndex = 59;
+            this.lblLgPresetDescription.Text = "Description:";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -2420,6 +2447,8 @@
         private System.Windows.Forms.Label lblLgOptionShutdownDelayHelp;
         private System.Windows.Forms.NumericUpDown edtLgOptionShutdownDelay;
         private System.Windows.Forms.Label lblLgOptionShutdownDelay;
+        private System.Windows.Forms.TextBox edtLgPresetDescription;
+        private System.Windows.Forms.Label lblLgPresetDescription;
     }
 }
 

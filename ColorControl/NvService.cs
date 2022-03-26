@@ -484,77 +484,75 @@ namespace ColorControl
 
         public List<NvDisplayInfo> GetDisplayInfos()
         {
-            Display[] displays;
             try
             {
-                displays = GetDisplays();
+                var displays = GetDisplays();
+                var list = new List<NvDisplayInfo>();
+
+                foreach (var display in displays)
+                {
+                    var values = new List<string>();
+
+                    values.Add("Current settings");
+
+                    var name = display.Name;
+
+                    var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
+                    if (screen != null)
+                    {
+                        name += " (" + screen.DeviceFriendlyName() + ")";
+                    }
+
+                    values.Add(name);
+
+                    var colorData = GetCurrentColorData(display);
+
+                    var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
+
+                    values.Add(colorSettings);
+
+                    var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
+
+                    values.Add($"{refreshRate}Hz");
+
+                    var ditherInfo = GetDithering();
+
+                    string dithering;
+                    if (ditherInfo.state == -1)
+                    {
+                        dithering = "Error";
+                    }
+                    else
+                    {
+                        var state = (NvDitherState)ditherInfo.state;
+                        dithering = state switch { NvDitherState.Disabled => "Disabled", NvDitherState.Auto => "Auto: ", _ => string.Empty };
+                        if (state is NvDitherState.Enabled or NvDitherState.Auto)
+                        {
+                            var ditherBitsDescription = ((NvDitherBits)ditherInfo.bits).GetDescription();
+                            var ditherModeDescription = ((NvDitherMode)ditherInfo.mode).GetDescription();
+                            dithering = string.Format("{0}{1} {2}", dithering, ditherBitsDescription, ditherModeDescription);
+                        }
+                    }
+
+                    values.Add(dithering);
+
+                    var hdrEnabled = IsHDREnabled();
+                    values.Add(hdrEnabled ? "Yes" : "No");
+
+                    var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
+
+                    var displayInfo = new NvDisplayInfo(display, values, infoLine);
+
+                    list.Add(displayInfo);
+                }
+
+                return list;
             }
             catch (Exception e)
             {
                 Logger.Error("Error while getting displays: " + e.ToLogString());
                 return null;
             }
-
-            var list = new List<NvDisplayInfo>();
-
-            foreach (var display in displays)
-            {
-                var values = new List<string>();
-
-                values.Add("Current settings");
-
-                var name = display.Name;
-
-                var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
-                if (screen != null)
-                {
-                    name += " (" + screen.DeviceFriendlyName() + ")";
-                }
-
-                values.Add(name);
-
-                var colorData = GetCurrentColorData(display);
-                
-                var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
-
-                values.Add(colorSettings);
-
-                var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
-
-                values.Add($"{refreshRate}Hz");
-
-                var ditherInfo = GetDithering();
-
-                string dithering;
-                if (ditherInfo.state == -1)
-                {
-                    dithering = "Error";
-                }
-                else
-                {
-                    var state = (NvDitherState)ditherInfo.state;
-                    dithering = state switch { NvDitherState.Disabled => "Disabled", NvDitherState.Auto => "Auto: ", _ => string.Empty };
-                    if (state is NvDitherState.Enabled or NvDitherState.Auto)
-                    {
-                        var ditherBitsDescription = ((NvDitherBits)ditherInfo.bits).GetDescription();
-                        var ditherModeDescription = ((NvDitherMode)ditherInfo.mode).GetDescription();
-                        dithering = string.Format("{0}{1} {2}", dithering, ditherBitsDescription, ditherModeDescription);
-                    }
-                }
-
-                values.Add(dithering);
-
-                var hdrEnabled = IsHDREnabled();
-                values.Add(hdrEnabled ? "Yes" : "No");
-
-                var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
-
-                var displayInfo = new NvDisplayInfo(display, values, infoLine);
-
-                list.Add(displayInfo);
-            }
-
-            return list;
         }
 
         protected override void Initialize()

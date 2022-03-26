@@ -41,33 +41,46 @@ namespace LgTv
                 _commandCount = 0;
                 _connection = new MessageWebSocket();
                 _connection.Control.MessageType = SocketMessageType.Utf8;
-              //  if(ignoreReceiver==false)
-                    _connection.MessageReceived += Connection_MessageReceived;
-
+                _connection.MessageReceived += Connection_MessageReceived;
                 _connection.Closed += Connection_Closed;
-                using (var cancellationTokenSource = new CancellationTokenSource(5000))
+
+                try
                 {
-                    var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
-                    var result = await connectTask.ContinueWith((antecedent) =>
-                    {
-                        if (antecedent.Status == TaskStatus.RanToCompletion)
-                        {
-                            // connectTask ran to completion, so we know that the MessageWebSocket is connected.
-                            // Add additional code here to use the MessageWebSocket.
-                            IsConnected?.Invoke(true);
+                    await _connection.ConnectAsync(uri).AsTask().WaitAsync(TimeSpan.FromSeconds(5));
 
-                            _messageWriter = new DataWriter(_connection.OutputStream);
-                            return true;
-                        }
-                        else
-                        {
-                            // connectTask timed out, or faulted.
-                            return false;
-                        }
-                    });
+                    _messageWriter = new DataWriter(_connection.OutputStream);
 
-                    return result;
+                    IsConnected?.Invoke(true);
+                    return true;
                 }
+                catch (TimeoutException)
+                {
+                    return false;
+                }
+
+                //using (var cancellationTokenSource = new CancellationTokenSource(5000))
+                //{
+                //    var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
+                //    var result = await connectTask.ContinueWith((antecedent) =>
+                //    {
+                //        if (antecedent.Status == TaskStatus.RanToCompletion)
+                //        {
+                //            // connectTask ran to completion, so we know that the MessageWebSocket is connected.
+                //            // Add additional code here to use the MessageWebSocket.
+                //            IsConnected?.Invoke(true);
+
+                //            _messageWriter = new DataWriter(_connection.OutputStream);
+                //            return true;
+                //        }
+                //        else
+                //        {
+                //            // connectTask timed out, or faulted.
+                //            return false;
+                //        }
+                //    });
+
+                //    return result;
+                //}
             }
             catch (Exception e)
             {

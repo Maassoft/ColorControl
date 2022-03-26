@@ -114,6 +114,7 @@ namespace ColorControl
         public string name { get; set; }
         public string shortcut { get; set; }
         public List<PresetTrigger> Triggers { get; set; }
+        public string Description { get; set; }
 
         private int _id;
 

@@ -114,6 +114,7 @@ namespace ColorControl
         public LgDevicePictureSettings PictureSettings { get; private set; }
 
         public event EventHandler PictureSettingsChangedEvent;
+        public event EventHandler PowerStateChangedEvent;
 
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
@@ -378,6 +379,8 @@ namespace ColorControl
             }
 
             Logger.Debug($"PoweredOffBy: {PoweredOffBy}, PoweredOffViaApp: {PoweredOffViaApp}");
+
+            PowerStateChangedEvent?.Invoke(this, EventArgs.Empty);
 
             return true;
         }
@@ -648,7 +651,7 @@ namespace ColorControl
                 }
                 Logger.Debug("WOL succeeded");
                 await Task.Delay(connectDelay);
-                result = await Connect();
+                result = await Connect(1);
                 Logger.Debug("Connect succeeded: " + result);
                 return result;
             }

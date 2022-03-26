@@ -18,8 +18,8 @@
     <PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>5.5.1.0</ApplicationVersion>
-	<Version>5.5.1.0</Version>
+    <ApplicationVersion>5.6.0.0</ApplicationVersion>
+	<Version>5.6.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>false</BootstrapperEnabled>

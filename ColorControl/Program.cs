@@ -17,6 +17,7 @@ namespace ColorControl
         public static Config Config { get; private set; }
         public static AppContext AppContext { get; private set; }
 
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
         /// The main entry point for the application.
@@ -228,14 +229,22 @@ namespace ColorControl
 
         private static void GlobalUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            var ex = (Exception)e.ExceptionObject;
-            MessageBox.Show("Unhandled exception: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            GlobalHandleException((Exception)e.ExceptionObject, "Unhandled exception");
         }
 
         private static void GlobalThreadExceptionHandler(object sender, System.Threading.ThreadExceptionEventArgs e)
         {
-            var ex = e.Exception;
-            MessageBox.Show("Exception in thread: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            GlobalHandleException(e.Exception, "Exception in thread");
+        }
+
+        private static void GlobalHandleException(Exception exception, string type)
+        {
+            var trace = exception.ToLogString(Environment.StackTrace);
+            var message = $"{type}: {trace}";
+
+            Logger.Error(message);
+
+            MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

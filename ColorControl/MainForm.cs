@@ -114,9 +114,9 @@ namespace ColorControl
                 chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
             }
 
+            InitLgService();
             InitNvService();
             InitAmdService();
-            InitLgService();
 
             InitInfo();
 
@@ -136,8 +136,10 @@ namespace ColorControl
             try
             {
                 //throw new Exception("bla");
+                Logger.Debug("Initializing NVIDIA...");
                 _nvService = new NvService(_dataDir);
                 FillNvPresets();
+                Logger.Debug("Initializing NVIDIA...Done.");
 
                 _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
             }
@@ -1183,6 +1185,7 @@ namespace ColorControl
             btnApplyLg.Enabled = enabled;
             btnCloneLg.Enabled = enabled;
             edtNameLg.Enabled = enabled;
+            edtLgPresetDescription.Enabled = enabled;
             cbxLgPresetDevice.Enabled = enabled;
             edtShortcutLg.Enabled = enabled;
             btnSetShortcutLg.Enabled = enabled;
@@ -1201,6 +1204,7 @@ namespace ColorControl
             if (preset != null)
             {
                 edtNameLg.Text = preset.name;
+                edtLgPresetDescription.Text = preset.Description;
                 var lgApps = _lgService?.GetApps();
                 cbxLgApps.SelectedIndex = lgApps == null ? -1 : lgApps.FindIndex(x => x.appId.Equals(preset.appId));
                 edtShortcutLg.Text = preset.shortcut;
@@ -1233,6 +1237,7 @@ namespace ColorControl
             else
             {
                 edtNameLg.Text = string.Empty;
+                edtLgPresetDescription.Text = string.Empty;
                 cbxLgApps.SelectedIndex = -1;
                 edtShortcutLg.Text = string.Empty;
                 edtStepsLg.Text = string.Empty;
@@ -1273,6 +1278,7 @@ namespace ColorControl
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.name = name;
+            preset.Description = edtLgPresetDescription.Text.Trim();
 
             if (cbxLgPresetDevice.SelectedIndex == -1)
             {

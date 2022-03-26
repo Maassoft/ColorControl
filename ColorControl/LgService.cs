@@ -316,6 +316,11 @@ namespace ColorControl
                 return;
             }
 
+            foreach (var device in Devices)
+            {
+                device.PowerStateChangedEvent += LgDevice_PowerStateChangedEvent;
+            }
+
             if (connect && SelectedDevice != null)
             {
                 if (_allowPowerOn)
@@ -523,6 +528,20 @@ namespace ColorControl
             //}
         }
 
+        private void LgDevice_PowerStateChangedEvent(object sender, EventArgs e)
+        {
+            if (!(sender is LgDevice device))
+            {
+                return;
+            }
+
+            //if (device.CurrentState == LgDevice.PowerState.Active)
+            //{
+            //    _monitorTask = null;
+            //    MonitorProcesses();
+            //}
+        }
+
         private void MonitorProcesses()
         {
             var enableMonitoring = ShouldMonitorProcesses();
@@ -548,7 +567,9 @@ namespace ColorControl
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
 
-            MonitorContext = new ProcessMonitorContext();
+            await Task.Delay(2000);
+
+            MonitorContext ??= new ProcessMonitorContext();
             //Process[] lastProcesses = null;
 
             while (validCounter == _monitorTaskCounter)
@@ -666,7 +687,13 @@ namespace ColorControl
                                     Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
                                     try
                                     {
-                                        _poweredOffByScreenSaver = await device.PowerOff();
+                                        _poweredOffByScreenSaver = await device.PowerOff().WaitAsync(TimeSpan.FromSeconds(5));
+                                    }
+                                    catch (TimeoutException)
+                                    {
+                                        // Assume powering off was successful
+                                        _poweredOffByScreenSaver = true;
+                                        Logger.Error($"Screensaver check: timeout exception while powering off (probably connection closed)");
                                     }
                                     catch (Exception pex)
                                     {
