@@ -118,15 +118,19 @@ namespace ColorControl
         {
             ConfigFilename = Path.Combine(DataDir, "Settings.json");
 
-            if (File.Exists(ConfigFilename))
+            try
             {
-                var data = File.ReadAllText(ConfigFilename);
-                Config = JsonConvert.DeserializeObject<Config>(data);
+                if (File.Exists(ConfigFilename))
+                {
+                    var data = File.ReadAllText(ConfigFilename);
+                    Config = JsonConvert.DeserializeObject<Config>(data);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Config = new Config();
+                Logger.Error($"LoadConfig: {ex.Message}");
             }
+            Config ??= new Config();
         }
 
         private static bool HandleStartupParams(StartUpParams startUpParams, Process existingProcess)

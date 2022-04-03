@@ -53,6 +53,14 @@ namespace ColorControl
             UserNotificationState.QUNS_PRESENTATION_MODE,
         };
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        internal struct POWERBROADCAST_SETTING
+        {
+            public Guid PowerSetting;
+            public uint DataLength;
+            public byte Data;
+        }
+
         public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
 
         public const int ENUM_CURRENT_SETTINGS = -1;
@@ -60,6 +68,8 @@ namespace ColorControl
 
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
+        public static Guid GUID_CONSOLE_DISPLAY_STATE = Guid.Parse("6FE69556-704A-47A0-8F24-C28D936FDA47");
+        public static int PBT_POWERSETTINGCHANGE = 32787;
 
         public delegate void PCREATE_PROCESS_NOTIFY_ROUTINE(IntPtr ParentId, IntPtr ProcessId, bool Create);
 
@@ -95,6 +105,12 @@ namespace ColorControl
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [DllImport(@"User32", SetLastError = true)]
+        public static extern IntPtr RegisterPowerSettingNotification(IntPtr hRecipient, ref Guid PowerSettingGuid, Int32 Flags);
+
+        [DllImport("User32.dll", SetLastError = true)]
+        public static extern bool UnregisterPowerSettingNotification(IntPtr hWnd);
 
         //[DllImport("Wtsapi32.dll")]
         //public extern static bool WTSRegisterSessionNotification(IntPtr hWnd, uint dwFlags);

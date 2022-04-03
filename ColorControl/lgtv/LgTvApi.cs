@@ -491,6 +491,13 @@ namespace LgTv
             await _connection.SubscribeAsync(requestMessage, callback);
         }
 
+        public async Task SubscribeForegroundApp(Func<dynamic, bool> callback, dynamic payload = null)
+        {
+            var requestMessage = new RequestMessage("ssap://com.webos.applicationManager/getForegroundAppInfo", null, "subscribe");
+
+            await _connection.SubscribeAsync(requestMessage, callback);
+        }
+
         public async Task SubscribePictureSettings(Func<dynamic, bool> callback, dynamic payload = null)
         {
             if (payload == null)

@@ -53,7 +53,7 @@ namespace ColorControl
         public static Func<string, string[], bool> ExternalServiceHandler;
         public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
 
-    public string Name { get; private set; }
+        public string Name { get; private set; }
         public string IpAddress { get; private set; }
         public string MacAddress { get; private set; }
         public bool IsCustom { get; private set; }
@@ -66,7 +66,9 @@ namespace ColorControl
         public bool PowerOffOnStandby { get; set; }
         public bool PowerSwitchOnScreenSaver { get; set; }
         public bool PowerOnAfterManualPowerOff { get; set; }
+        public bool PowerByWindows { get; set; }
         public bool TriggersEnabled { get; set; }
+        public int HDMIPortNumber { get; set; }
 
         private List<string> _actionsForGameBar;
 
@@ -112,6 +114,9 @@ namespace ColorControl
 
         [JsonIgnore]
         public LgDevicePictureSettings PictureSettings { get; private set; }
+
+        [JsonIgnore]
+        public string CurrentAppId { get; private set; }
 
         public event EventHandler PictureSettingsChangedEvent;
         public event EventHandler PowerStateChangedEvent;
@@ -284,6 +289,7 @@ namespace ColorControl
                         //await _lgTvApi.SubscribeVolume(VolumeChanged);
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
+                        await _lgTvApi.SubscribeForegroundApp(ForegroundAppChanged);
 
                         //await _lgTvApi.Reboot();
 
@@ -323,7 +329,7 @@ namespace ColorControl
             {
                 var settings = payload.settings;
 
-                Logger.Debug($"PictureSettingsChanged: {JsonConvert.SerializeObject(settings)}");
+                Logger.Debug($"[{Name}] PictureSettingsChanged: {JsonConvert.SerializeObject(settings)}");
 
                 if (settings.backlight != null)
                 {
@@ -381,6 +387,18 @@ namespace ColorControl
             Logger.Debug($"PoweredOffBy: {PoweredOffBy}, PoweredOffViaApp: {PoweredOffViaApp}");
 
             PowerStateChangedEvent?.Invoke(this, EventArgs.Empty);
+
+            return true;
+        }
+
+        public bool ForegroundAppChanged(dynamic payload)
+        {
+            Logger.Debug($"[{Name}] ForegroundAppChanged: {JsonConvert.SerializeObject(payload)}");
+
+            if (payload.appId != null)
+            {
+                CurrentAppId = payload.appId;
+            }
 
             return true;
         }
@@ -586,6 +604,11 @@ namespace ColorControl
 
         public async Task<IEnumerable<LgApp>> GetApps(bool force = false)
         {
+            if (!force)
+            {
+                await Task.Delay(5000);
+            }
+
             if (!await Connected(force))
             {
                 Logger.Debug("Cannot refresh apps: no connection could be made");
@@ -595,17 +618,30 @@ namespace ColorControl
             return await _lgTvApi.GetApps(force);
         }
 
-        internal async Task<bool> PowerOff()
+        internal async Task<bool> PowerOff(bool checkHdmi = false)
         {
             if (!await Connected(true) || CurrentState != PowerState.Active)
             {
                 return false;
             }
 
+            if (checkHdmi && CurrentAppId != null && HDMIPortNumber != 0 && !CurrentAppId.EndsWith($".hdmi{HDMIPortNumber}", StringComparison.InvariantCulture)) 
+            {
+                Logger.Debug($"[{Name}] PowerOff is ignored because current app {CurrentAppId} does not match configured HDMI port {HDMIPortNumber}");
+                return true;
+            }
+
             PoweredOffViaApp = true;
             _poweredOffViaAppDateTime = DateTimeOffset.Now;
 
-            await _lgTvApi.TurnOff();
+            try
+            {
+                await _lgTvApi.TurnOff().WaitAsync(TimeSpan.FromSeconds(2));
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Debug($"Timeout when turning off tv: {ex.Message}");
+            }
 
             return true;
         }
@@ -699,15 +735,6 @@ namespace ColorControl
                     {
                         await Task.Delay((int)delay);
                     }
-                }
-            }
-
-            if (result)
-            {
-                var resumeScript = Path.Combine(Program.DataDir, "ResumeScript.bat");
-                if (File.Exists(resumeScript))
-                {
-                    Utils.StartProcess(resumeScript, hidden: true);
                 }
             }
 

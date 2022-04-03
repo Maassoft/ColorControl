@@ -15,8 +15,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -42,7 +42,6 @@ namespace ColorControl
         private bool _disableEvents = false;
         private Config _config;
         private bool _setVisibleCalled = false;
-        private RestartDetector _restartDetector;
 
         private LgService _lgService;
 
@@ -63,6 +62,7 @@ namespace ColorControl
         private LgGameBar _gameBarForm;
 
         private KeyboardHookManager _keyboardHookManager;
+        private IntPtr _screenStateNotify;
 
         public MainForm(AppContext appContext)
         {
@@ -121,8 +121,7 @@ namespace ColorControl
             InitInfo();
 
             UserSessionInfo.Install();
-
-            _restartDetector = new RestartDetector();
+            _screenStateNotify = Utils.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
             //Scale(new SizeF(1.25F, 1.25F));
 
@@ -183,7 +182,7 @@ namespace ColorControl
             try
             {
                 _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
-                _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(new Action(AfterLgServiceRefreshDevices)));
+                _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
 
                 FillLgPresets();
 
@@ -232,7 +231,7 @@ namespace ColorControl
 
         private void Invoke()
         {
-            BeginInvoke(new Action(ToggleGameBar));
+            BeginInvoke(() => ToggleGameBar());
         }
 
         private void AfterLgServiceRefreshDevices()
@@ -479,46 +478,13 @@ namespace ColorControl
 
             GlobalSave();
 
-            if (SystemShutdown && _lgService.Devices.Any(d => d.PowerOffOnShutdown))
+            if (SystemShutdown && _lgService != null)
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
 
-                if (NativeMethods.GetAsyncKeyState(NativeConstants.VK_CONTROL) < 0 || NativeMethods.GetAsyncKeyState(NativeConstants.VK_RCONTROL) < 0)
-                {
-                    Logger.Debug("Not powering off because CONTROL-key is down");
-                    return;
-                }
+                var devices = _lgService.Devices.Where(d => d.PowerOffOnShutdown);
 
-                var sleep = _lgService.Config.ShutdownDelay;
-
-                Logger.Debug($"MainForm_FormClosing: Waiting for {sleep} milliseconds...");
-
-                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
-                try
-                {
-                    while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
-                    {
-                        Thread.Sleep(100);
-
-                        if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
-                        {
-                            Logger.Debug("Not powering off because of a restart");
-                            return;
-                        }
-
-                        sleep -= 100;
-                    }
-
-                    Logger.Debug("Powering off tv...");
-                    var task = _lgService.PowerOffOnShutdownOrResume();
-                    Utils.WaitForTask(task);
-                    Logger.Debug("Done powering off tv");
-                    //ExecPowerOffPreset(true);
-                }
-                finally
-                {
-                    NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
-                }
+                _lgService.PowerOffDevices(devices);
             }
         }
 
@@ -626,6 +592,26 @@ namespace ColorControl
                 Logger.Debug("WM_BRINGTOFRONT message received, opening form");
                 OpenForm(this, EventArgs.Empty);
             }
+            else if (m.Msg == NativeConstants.WM_SYSCOMMAND)
+            {
+                //Logger.Debug($"WM_SYSCOMMAND: {m.WParam.ToInt32()}");
+
+                if (m.WParam.ToInt32() == NativeConstants.SC_MONITORPOWER)
+                {
+
+                }
+            }
+            else if (m.Msg == NativeConstants.WM_POWERBROADCAST)
+            {
+                if (m.WParam.ToInt32() == Utils.PBT_POWERSETTINGCHANGE)
+                {
+                    var ps = Marshal.PtrToStructure<Utils.POWERBROADCAST_SETTING>(m.LParam);
+
+                    Logger.Debug($"PBT_POWERSETTINGCHANGE: {ps.Data}");
+
+                    _lgService?.PowerSettingChanged((LgService.WindowsPowerSetting)ps.Data);
+                }
+            }
 
             base.WndProc(ref m);
         }
@@ -668,6 +654,12 @@ namespace ColorControl
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
             _trayIcon.Visible = false;
+
+            if (_screenStateNotify != IntPtr.Zero)
+            {
+                Utils.UnregisterPowerSettingNotification(_screenStateNotify);
+                _screenStateNotify = IntPtr.Zero;
+            }
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
@@ -781,7 +773,7 @@ namespace ColorControl
             if (_lgService == null)
             {
                 ShowControls(tabLG, false, lblLgError);
-                lblLgError.Text = "Error while initializing the LG-controller. You either don't have a LG TV or it is disabled.";
+                lblLgError.Text = "Error while initializing the LG-controller. You either don't have a LG TV, it is disabled or a configuration file is corrupt.";
                 lblLgError.Visible = true;
             }
 
@@ -1404,6 +1396,11 @@ namespace ColorControl
 
         private void InitLgTab()
         {
+            if (_lgService == null)
+            {
+                return;
+            }
+
             if (scLgController.Panel2.Controls.Count == 0)
             {
                 var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
@@ -1501,7 +1498,7 @@ namespace ColorControl
 
             if (cbxLgApps.Items.Count == 0 && device != null)
             {
-                _lgService.RefreshApps().ContinueWith((task) => BeginInvoke(new Action(FillLgApps)));
+                _lgService.RefreshApps().ContinueWith((task) => BeginInvoke(() => FillLgApps(false)));
             }
 
             btnLgDeviceConvertToCustom.Enabled = devices.Any();
@@ -1526,6 +1523,7 @@ namespace ColorControl
                 clbLgPower.SetItemChecked(4, device?.PowerSwitchOnScreenSaver ?? false);
                 clbLgPower.SetItemChecked(5, device?.PowerOnAfterManualPowerOff ?? false);
                 clbLgPower.SetItemChecked(6, device?.TriggersEnabled ?? true);
+                clbLgPower.SetItemChecked(7, device?.PowerByWindows ?? false);
             }
             finally
             {
@@ -1533,10 +1531,10 @@ namespace ColorControl
             }
         }
 
-        private void FillLgApps()
+        private void FillLgApps(bool forced)
         {
             var lgApps = _lgService?.GetApps();
-            if (lgApps == null || !lgApps.Any())
+            if (forced && (lgApps == null || !lgApps.Any()))
             {
                 MessageForms.WarningOk("Could not refresh the apps. Check the log for details.");
                 return;
@@ -1769,7 +1767,7 @@ namespace ColorControl
                 return;
             }
 
-            var applyTask = _lgService.ApplyPreset(preset, reconnect).ContinueWith((task) => BeginInvoke(new Action<Task<bool>>(LgPresetApplied), new[] { task }));
+            var applyTask = _lgService.ApplyPreset(preset, reconnect).ContinueWith((task) => BeginInvoke(() => LgPresetApplied(task)));
             if (wait)
             {
                 Utils.WaitForTask(applyTask);
@@ -1807,18 +1805,21 @@ namespace ColorControl
 
         private void btnLgRefreshApps_Click(object sender, EventArgs e)
         {
-            _lgService.RefreshApps(true).ContinueWith((task) => BeginInvoke(new Action(FillLgApps)));
+            _lgService.RefreshApps(true).ContinueWith((task) => BeginInvoke(() => FillLgApps(true)));
         }
 
         private void cbxLgDevices_SelectedIndexChanged(object sender, EventArgs e)
         {
+            cbxLgPcHdmiPort.Enabled = cbxLgDevices.SelectedIndex > -1;
             if (cbxLgDevices.SelectedIndex == -1)
             {
                 _lgService.SelectedDevice = null;
+                cbxLgPcHdmiPort.SelectedIndex = 0;
             }
             else
             {
                 _lgService.SelectedDevice = (LgDevice)cbxLgDevices.SelectedItem;
+                cbxLgPcHdmiPort.SelectedIndex = _lgService.SelectedDevice.HDMIPortNumber;
             }
             chkLgRemoteControlShow.Enabled = _lgService.SelectedDevice != null;
             btnLgRemoveDevice.Enabled = _lgService.SelectedDevice != null && _lgService.SelectedDevice.IsCustom;
@@ -2006,7 +2007,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 );
             }
 
-            BeginInvoke(new Action(() =>
+            BeginInvoke(() =>
             {
                 device.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
                 device.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
@@ -2015,9 +2016,10 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 device.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
                 device.PowerOnAfterManualPowerOff = clbLgPower.GetItemChecked(5);
                 device.TriggersEnabled = clbLgPower.GetItemChecked(6);
+                device.PowerByWindows = clbLgPower.GetItemChecked(7);
 
                 _lgService.InstallEventHandlers();
-            }));
+            });
         }
 
         private void edtLgPowerOnAfterResumeDelay_ValueChanged(object sender, EventArgs e)
@@ -2123,7 +2125,7 @@ Do you want to continue?";
 
         private void RefreshLgDevices()
         {
-            _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(new Action(FillLgDevices)));
+            _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(() => FillLgDevices()));
         }
 
         private void FillGradient()
@@ -2211,7 +2213,7 @@ Do you want to continue?";
 
         private void InitHandleCheckForUpdates(dynamic latest)
         {
-            BeginInvoke(new Action<dynamic>(HandleCheckForUpdates), new[] { latest });
+            BeginInvoke(() => HandleCheckForUpdates(latest));
         }
 
         private void HandleCheckForUpdates(dynamic latest)
@@ -2267,7 +2269,7 @@ Do you want to continue?";
                             Task.Run(async () =>
                             {
                                 await Task.Delay(2000);
-                                BeginInvoke(new Action(() => ApplyNvPresetOnStartup(attempts)));
+                                BeginInvoke(() => ApplyNvPresetOnStartup(attempts));
                             });
                         }
                     }
@@ -2303,7 +2305,7 @@ Do you want to continue?";
                             Task.Run(async () =>
                             {
                                 await Task.Delay(2000);
-                                BeginInvoke(new Action(() => ApplyAmdPresetOnStartup(attempts)));
+                                BeginInvoke(() => ApplyAmdPresetOnStartup(attempts));
                             });
                         }
                     }
@@ -3131,12 +3133,23 @@ The InStart and Software Update items are now visible under the Expert-button."
 - power on after startup requires ""Automatically start after login"" - see Options
 - power on after resume from standby may need some retries for waking TV - see Options
 - power off on shutdown: because this app cannot detect a restart, restarting could also trigger this. Hold down Ctrl on restart to prevent power off.
+- Use Windows power settings: powering on/off of TV will follow Windows settings. If activated, it's better to disable all other power options except power off on shutdown.
 ");
         }
 
         private void edtLgOptionShutdownDelay_ValueChanged(object sender, EventArgs e)
         {
             _lgService.Config.ShutdownDelay = (int)edtLgOptionShutdownDelay.Value;
+        }
+
+        private void cbxLgPcHdmiPort_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_lgService?.SelectedDevice == null)
+            {
+                return;
+            }
+
+            _lgService.SelectedDevice.HDMIPortNumber = cbxLgPcHdmiPort.SelectedIndex;
         }
     }
 }

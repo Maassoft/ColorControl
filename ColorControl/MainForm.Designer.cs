@@ -104,9 +104,11 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.cbxLgPcHdmiPort = new System.Windows.Forms.ComboBox();
+            this.lblLgPcHdmiPort = new System.Windows.Forms.Label();
+            this.edtLgPresetDescription = new System.Windows.Forms.TextBox();
+            this.lblLgPresetDescription = new System.Windows.Forms.Label();
             this.btnLgDeviceOptionsHelp = new System.Windows.Forms.Button();
-            this.lblGameBarShortcut = new System.Windows.Forms.Label();
-            this.edtLgGameBarShortcut = new System.Windows.Forms.TextBox();
             this.btnLgGameBar = new System.Windows.Forms.Button();
             this.btnLgPresetEditTriggerConditions = new System.Windows.Forms.Button();
             this.edtLgPresetTriggerConditions = new System.Windows.Forms.TextBox();
@@ -172,6 +174,8 @@
             this.lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             this.grpLGOptions = new System.Windows.Forms.GroupBox();
+            this.lblGameBarShortcut = new System.Windows.Forms.Label();
+            this.edtLgGameBarShortcut = new System.Windows.Forms.TextBox();
             this.lblLgOptionShutdownDelayHelp = new System.Windows.Forms.Label();
             this.edtLgOptionShutdownDelay = new System.Windows.Forms.NumericUpDown();
             this.lblLgOptionShutdownDelay = new System.Windows.Forms.Label();
@@ -201,8 +205,6 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.edtLgPresetDescription = new System.Windows.Forms.TextBox();
-            this.lblLgPresetDescription = new System.Windows.Forms.Label();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -988,11 +990,11 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.cbxLgPcHdmiPort);
+            this.scLgController.Panel1.Controls.Add(this.lblLgPcHdmiPort);
             this.scLgController.Panel1.Controls.Add(this.edtLgPresetDescription);
             this.scLgController.Panel1.Controls.Add(this.lblLgPresetDescription);
             this.scLgController.Panel1.Controls.Add(this.btnLgDeviceOptionsHelp);
-            this.scLgController.Panel1.Controls.Add(this.lblGameBarShortcut);
-            this.scLgController.Panel1.Controls.Add(this.edtLgGameBarShortcut);
             this.scLgController.Panel1.Controls.Add(this.btnLgGameBar);
             this.scLgController.Panel1.Controls.Add(this.btnLgPresetEditTriggerConditions);
             this.scLgController.Panel1.Controls.Add(this.edtLgPresetTriggerConditions);
@@ -1040,6 +1042,56 @@
             this.scLgController.SplitterWidth = 5;
             this.scLgController.TabIndex = 43;
             // 
+            // cbxLgPcHdmiPort
+            // 
+            this.cbxLgPcHdmiPort.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLgPcHdmiPort.FormattingEnabled = true;
+            this.cbxLgPcHdmiPort.Items.AddRange(new object[] {
+            "None",
+            "HDMI1",
+            "HDMI2",
+            "HDMI3",
+            "HDMI4"});
+            this.cbxLgPcHdmiPort.Location = new System.Drawing.Point(667, 42);
+            this.cbxLgPcHdmiPort.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cbxLgPcHdmiPort.Name = "cbxLgPcHdmiPort";
+            this.cbxLgPcHdmiPort.Size = new System.Drawing.Size(86, 23);
+            this.cbxLgPcHdmiPort.TabIndex = 62;
+            this.cbxLgPcHdmiPort.SelectedIndexChanged += new System.EventHandler(this.cbxLgPcHdmiPort_SelectedIndexChanged);
+            // 
+            // lblLgPcHdmiPort
+            // 
+            this.lblLgPcHdmiPort.AutoSize = true;
+            this.lblLgPcHdmiPort.Location = new System.Drawing.Point(577, 45);
+            this.lblLgPcHdmiPort.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLgPcHdmiPort.Name = "lblLgPcHdmiPort";
+            this.lblLgPcHdmiPort.Size = new System.Drawing.Size(84, 15);
+            this.lblLgPcHdmiPort.TabIndex = 61;
+            this.lblLgPcHdmiPort.Text = "PC HDMI port:";
+            // 
+            // edtLgPresetDescription
+            // 
+            this.edtLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.edtLgPresetDescription.Enabled = false;
+            this.edtLgPresetDescription.Location = new System.Drawing.Point(100, 469);
+            this.edtLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtLgPresetDescription.Multiline = true;
+            this.edtLgPresetDescription.Name = "edtLgPresetDescription";
+            this.edtLgPresetDescription.Size = new System.Drawing.Size(694, 43);
+            this.edtLgPresetDescription.TabIndex = 60;
+            // 
+            // lblLgPresetDescription
+            // 
+            this.lblLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblLgPresetDescription.AutoSize = true;
+            this.lblLgPresetDescription.Location = new System.Drawing.Point(6, 474);
+            this.lblLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblLgPresetDescription.Name = "lblLgPresetDescription";
+            this.lblLgPresetDescription.Size = new System.Drawing.Size(70, 15);
+            this.lblLgPresetDescription.TabIndex = 59;
+            this.lblLgPresetDescription.Text = "Description:";
+            // 
             // btnLgDeviceOptionsHelp
             // 
             this.btnLgDeviceOptionsHelp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -1051,28 +1103,6 @@
             this.btnLgDeviceOptionsHelp.Text = "?";
             this.btnLgDeviceOptionsHelp.UseVisualStyleBackColor = true;
             this.btnLgDeviceOptionsHelp.Click += new System.EventHandler(this.btnLgDeviceOptionsHelp_Click);
-            // 
-            // lblGameBarShortcut
-            // 
-            this.lblGameBarShortcut.AutoSize = true;
-            this.lblGameBarShortcut.Location = new System.Drawing.Point(597, 45);
-            this.lblGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblGameBarShortcut.Name = "lblGameBarShortcut";
-            this.lblGameBarShortcut.Size = new System.Drawing.Size(55, 15);
-            this.lblGameBarShortcut.TabIndex = 57;
-            this.lblGameBarShortcut.Text = "Shortcut:";
-            // 
-            // edtLgGameBarShortcut
-            // 
-            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(667, 42);
-            this.edtLgGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtLgGameBarShortcut.Name = "edtLgGameBarShortcut";
-            this.edtLgGameBarShortcut.ReadOnly = true;
-            this.edtLgGameBarShortcut.Size = new System.Drawing.Size(128, 23);
-            this.edtLgGameBarShortcut.TabIndex = 56;
-            this.edtLgGameBarShortcut.TextChanged += new System.EventHandler(this.edtLgGameBarShortcut_TextChanged);
-            this.edtLgGameBarShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyDown);
-            this.edtLgGameBarShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyUp);
             // 
             // btnLgGameBar
             // 
@@ -1606,7 +1636,8 @@
             "Automatically power off on standby",
             "Automatically power off/on when screensaver activates/deactivates",
             "Power on even after manual power off",
-            "Allow triggers to be fired for this device"});
+            "Allow triggers to be fired for this device",
+            "Use Windows power settings"});
             this.clbLgPower.Location = new System.Drawing.Point(6, 70);
             this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.clbLgPower.MultiColumn = true;
@@ -1805,6 +1836,8 @@
             // 
             // grpLGOptions
             // 
+            this.grpLGOptions.Controls.Add(this.lblGameBarShortcut);
+            this.grpLGOptions.Controls.Add(this.edtLgGameBarShortcut);
             this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelayHelp);
             this.grpLGOptions.Controls.Add(this.edtLgOptionShutdownDelay);
             this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelay);
@@ -1821,6 +1854,28 @@
             this.grpLGOptions.TabIndex = 4;
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
+            // 
+            // lblGameBarShortcut
+            // 
+            this.lblGameBarShortcut.AutoSize = true;
+            this.lblGameBarShortcut.Location = new System.Drawing.Point(201, 127);
+            this.lblGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGameBarShortcut.Name = "lblGameBarShortcut";
+            this.lblGameBarShortcut.Size = new System.Drawing.Size(108, 15);
+            this.lblGameBarShortcut.TabIndex = 59;
+            this.lblGameBarShortcut.Text = "Game Bar shortcut:";
+            // 
+            // edtLgGameBarShortcut
+            // 
+            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(307, 121);
+            this.edtLgGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtLgGameBarShortcut.Name = "edtLgGameBarShortcut";
+            this.edtLgGameBarShortcut.ReadOnly = true;
+            this.edtLgGameBarShortcut.Size = new System.Drawing.Size(128, 23);
+            this.edtLgGameBarShortcut.TabIndex = 58;
+            this.edtLgGameBarShortcut.TextChanged += new System.EventHandler(this.edtLgGameBarShortcut_TextChanged);
+            this.edtLgGameBarShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyDown);
+            this.edtLgGameBarShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyUp);
             // 
             // lblLgOptionShutdownDelayHelp
             // 
@@ -2192,29 +2247,6 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
-            // edtLgPresetDescription
-            // 
-            this.edtLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.edtLgPresetDescription.Enabled = false;
-            this.edtLgPresetDescription.Location = new System.Drawing.Point(100, 469);
-            this.edtLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtLgPresetDescription.Multiline = true;
-            this.edtLgPresetDescription.Name = "edtLgPresetDescription";
-            this.edtLgPresetDescription.Size = new System.Drawing.Size(694, 43);
-            this.edtLgPresetDescription.TabIndex = 60;
-            // 
-            // lblLgPresetDescription
-            // 
-            this.lblLgPresetDescription.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblLgPresetDescription.AutoSize = true;
-            this.lblLgPresetDescription.Location = new System.Drawing.Point(6, 474);
-            this.lblLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblLgPresetDescription.Name = "lblLgPresetDescription";
-            this.lblLgPresetDescription.Size = new System.Drawing.Size(70, 15);
-            this.lblLgPresetDescription.TabIndex = 59;
-            this.lblLgPresetDescription.Text = "Description:";
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -2440,8 +2472,6 @@
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
         private System.Windows.Forms.CheckBox chkLgShowAdvancedActions;
         private System.Windows.Forms.Button btnLgGameBar;
-        private System.Windows.Forms.Label lblGameBarShortcut;
-        private System.Windows.Forms.TextBox edtLgGameBarShortcut;
         private System.Windows.Forms.CheckBox chkGdiScaling;
         private System.Windows.Forms.Button btnLgDeviceOptionsHelp;
         private System.Windows.Forms.Label lblLgOptionShutdownDelayHelp;
@@ -2449,6 +2479,10 @@
         private System.Windows.Forms.Label lblLgOptionShutdownDelay;
         private System.Windows.Forms.TextBox edtLgPresetDescription;
         private System.Windows.Forms.Label lblLgPresetDescription;
+        private System.Windows.Forms.Label lblGameBarShortcut;
+        private System.Windows.Forms.TextBox edtLgGameBarShortcut;
+        private System.Windows.Forms.ComboBox cbxLgPcHdmiPort;
+        private System.Windows.Forms.Label lblLgPcHdmiPort;
     }
 }
 
