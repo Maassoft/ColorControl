@@ -8,6 +8,7 @@ using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using NWin32;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -140,6 +141,8 @@ namespace ColorControl
                 FillNvPresets();
                 Logger.Debug("Initializing NVIDIA...Done.");
 
+                InitSortState(lvNvPresets, _config.NvPresetsSortState);
+
                 _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
             }
             catch (Exception ex)
@@ -161,6 +164,8 @@ namespace ColorControl
             {
                 _amdService = new AmdService(_dataDir);
                 FillAmdPresets();
+
+                InitSortState(lvAmdPresets, _config.AmdPresetsSortState);
 
                 _amdService.AfterApplyPreset += AmdServiceAfterApplyPreset;
             }
@@ -190,6 +195,8 @@ namespace ColorControl
                 edtLgOptionShutdownDelay.Value = _lgService.Config.ShutdownDelay;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
+
+                InitSortState(lvLgPresets, _config.LgPresetsSortState);
 
                 var values = Enum.GetValues(typeof(ButtonType));
                 foreach (var button in values)
@@ -227,6 +234,14 @@ namespace ColorControl
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
+        }
+
+        private void InitSortState(ListView listView, ListViewSortState sortState)
+        {
+            var sorter = new ListViewColumnSorter();
+            sorter.SortColumn = sortState.SortIndex;
+            sorter.Order = sortState.SortOrder;
+            listView.ListViewItemSorter = sorter;
         }
 
         private void Invoke()
@@ -494,7 +509,22 @@ namespace ColorControl
             _amdService?.GlobalSave();
             _lgService?.GlobalSave();
 
+            SaveSortState(lvNvPresets.ListViewItemSorter, _config.NvPresetsSortState);
+            SaveSortState(lvAmdPresets.ListViewItemSorter, _config.AmdPresetsSortState);
+            SaveSortState(lvLgPresets.ListViewItemSorter, _config.LgPresetsSortState);
+
             SaveConfig();
+        }
+
+        private void SaveSortState(IComparer comparer, ListViewSortState sortState)
+        {
+            if (!(comparer is ListViewColumnSorter sorter))
+            {
+                return;
+            }
+
+            sortState.SortOrder = sorter.Order;
+            sortState.SortIndex = sorter.SortColumn;
         }
 
         private void lvNvPresets_SelectedIndexChanged(object sender, EventArgs e)
@@ -1879,22 +1909,46 @@ namespace ColorControl
             {
                 if (action.MinValue != action.MaxValue)
                 {
-                    var values = MessageForms.ShowDialog("Enter value", new[] {
-                    new MessageForms.FieldDefinition
+                    List<MessageForms.FieldDefinition> fields = new();
+
+                    if (action.NumberOfValues == 1)
+                    {
+                        fields.Add(new MessageForms.FieldDefinition
                         {
                             Label = "Enter desired " + item.Text,
                             FieldType = MessageForms.FieldType.Numeric,
                             MinValue = action.MinValue,
-                            MaxValue = action.MaxValue
-                        }
-                    });
+                            MaxValue = action.MaxValue,
+                        });
+                    }
+                    else
+                    {
+                        var array = Enumerable.Range(0, action.NumberOfValues);
+
+                        fields.AddRange(array.Select(i => new MessageForms.FieldDefinition
+                        {
+                            Label = "Value for " + i,
+                            FieldType = MessageForms.FieldType.Numeric,
+                            MinValue = action.MinValue,
+                            MaxValue = action.MaxValue,
+                        }));
+                    }
+
+                    var values = MessageForms.ShowDialog("Enter value", fields);
 
                     if (!values.Any())
                     {
                         return;
                     }
 
-                    value = values.First().Value.ToString();
+                    if (values.Count > 1)
+                    {
+                        value = string.Join("; ", values.Select(v => v.Value));
+                    }
+                    else
+                    {
+                        value = values.First().Value.ToString();
+                    }
                 }
             }
             else
@@ -1995,7 +2049,7 @@ namespace ColorControl
                 return;
             }
 
-            if (!(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerSwitchOnScreenSaver))
+            if (e.Index is 0 or 1 or 4 or 7 && !(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerSwitchOnScreenSaver || device.PowerByWindows))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
@@ -3150,6 +3204,39 @@ The InStart and Software Update items are now visible under the Expert-button."
             }
 
             _lgService.SelectedDevice.HDMIPortNumber = cbxLgPcHdmiPort.SelectedIndex;
+        }
+
+        private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            var listView = (ListView)sender;
+            var sorter = (ListViewColumnSorter)listView.ListViewItemSorter;
+
+            // Determine if clicked column is already the column that is being sorted.
+            if (e.Column == sorter.SortColumn)
+            {
+                //if (sorter.Order == SortOrder.None)
+                //{
+                //    sorter.Order = SortOrder.Ascending;
+                //}
+                // Reverse the current sort direction for this column.
+                if (sorter.Order == SortOrder.Ascending)
+                {
+                    sorter.Order = SortOrder.Descending;
+                }
+                else
+                {
+                    sorter.Order = SortOrder.Ascending;
+                }
+            }
+            else
+            {
+                // Set the column number that is to be sorted; default to ascending.
+                sorter.SortColumn = e.Column;
+                sorter.Order = SortOrder.Ascending;
+            }
+
+            // Perform the sort with these new sort options.
+            listView.Sort();
         }
     }
 }

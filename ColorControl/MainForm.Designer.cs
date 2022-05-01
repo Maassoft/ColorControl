@@ -655,6 +655,7 @@
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
+            this.lvNvPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
             this.lvNvPresets.SelectedIndexChanged += new System.EventHandler(this.lvNvPresets_SelectedIndexChanged);
             this.lvNvPresets.DoubleClick += new System.EventHandler(this.btnApply_Click);
             // 
@@ -966,6 +967,7 @@
             this.lvAmdPresets.TabIndex = 10;
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
             this.lvAmdPresets.View = System.Windows.Forms.View.Details;
+            this.lvAmdPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
             this.lvAmdPresets.SelectedIndexChanged += new System.EventHandler(this.lvAmdPresets_SelectedIndexChanged);
             this.lvAmdPresets.DoubleClick += new System.EventHandler(this.btnApplyAmd_Click);
             // 
@@ -1338,6 +1340,7 @@
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
+            this.lvLgPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
             this.lvLgPresets.SelectedIndexChanged += new System.EventHandler(this.lvLgPresets_SelectedIndexChanged);
             this.lvLgPresets.DoubleClick += new System.EventHandler(this.lvLgPresets_DoubleClick);
             // 

@@ -211,6 +211,13 @@ namespace ColorControl
 
             SetCurrentDisplay(preset);
 
+            var display = GetCurrentDisplay();
+
+            if (display == null)
+            {
+                return false;
+            }
+
             var hdrEnabled = IsHDREnabled();
 
             var newHdrEnabled = preset.applyHDR && (preset.HDREnabled || (preset.toggleHDR && !hdrEnabled));
@@ -218,17 +225,20 @@ namespace ColorControl
 
             if (preset.applyColorData && (ColorDataDiffers(preset.colorData) || (!newHdrEnabled && preset.applyColorData && preset.colorData.Colorimetry != ColorDataColorimetry.Auto)))
             {
-                var display = GetCurrentDisplay();
-                if (display == null)
-                {
-                    return false;
-                }
+                //if (hdrEnabled)
+                //{
+                //    SetHDRState(display, false);
 
-                if (hdrEnabled)
-                {
-                    SetHDRState(display, false);
+                //    applyHdr = false;
+                //}
 
-                    applyHdr = false;
+                if (preset.applyRefreshRate)
+                {
+                    var timing = display.DisplayDevice.CurrentTiming;
+                    if (preset.refreshRate < timing.Extra.RefreshRate)
+                    {
+                        SetRefreshRate(preset.refreshRate, true);
+                    }
                 }
 
                 try
@@ -241,22 +251,16 @@ namespace ColorControl
                     result = false;
                 }
 
-                if (hdrEnabled && newHdrEnabled)
-                {
-                    SetHDRState(display, true, useSwitch: appContext.StartUpParams.NoGui);
+                //if (hdrEnabled && newHdrEnabled)
+                //{
+                //    SetHDRState(display, true, useSwitch: appContext.StartUpParams.NoGui);
 
-                    applyHdr = false;
-                }
+                //    applyHdr = false;
+                //}
             }
 
             if (applyHdr)
             {
-                var display = GetCurrentDisplay();
-                if (display == null)
-                {
-                    return false;
-                }
-
                 var colorData = preset.applyColorData ? preset.colorData : display.DisplayDevice.CurrentColorData;
 
                 SetHDRState(display, newHdrEnabled, colorData, appContext.StartUpParams.NoGui);
@@ -264,7 +268,9 @@ namespace ColorControl
 
             if (preset.applyRefreshRate)
             {
-                if (!SetRefreshRate(preset.refreshRate))
+                var timing = display.DisplayDevice.CurrentTiming;
+
+                if (preset.refreshRate != timing.Extra.RefreshRate && !SetRefreshRate(preset.refreshRate, true))
                 {
                     result = false;
                 }
@@ -425,7 +431,7 @@ namespace ColorControl
             return dither;
         }
 
-        public bool SetRefreshRate(uint refreshRate)
+        public bool SetRefreshRate(uint refreshRate, bool updateRegistry = false)
         {
             var display = GetCurrentDisplay();
             if (display == null)
@@ -442,7 +448,7 @@ namespace ColorControl
 
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
 
-            return SetRefreshRateInternal(display.Name, refreshRate, portrait, timing.HorizontalVisible, timing.VerticalVisible);
+            return SetRefreshRateInternal(display.Name, refreshRate, portrait, timing.HorizontalVisible, timing.VerticalVisible, updateRegistry);
         }
 
         public List<uint> GetAvailableRefreshRates(NvPreset preset = null)

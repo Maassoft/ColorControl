@@ -210,6 +210,7 @@ namespace ColorControl
             }
 
             list.Add(GeneratePreset("Power", step: "POWER"));
+            list.Add(GeneratePreset("Wol", step: "WOL"));
             list.Add(GeneratePreset("Home", appId: "com.webos.app.home", key: Keys.H));
             list.Add(GeneratePreset("Settings", appId: "com.palm.app.settings", key: Keys.S));
             list.Add(GeneratePreset("TV Guide", appId: "com.webos.app.livemenu"));
@@ -867,14 +868,6 @@ namespace ColorControl
                         sleep -= 100;
                     }
                 }
-                else if (state == PowerOnOffState.StandBy)
-                {
-                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
-                    if (File.Exists(standByScript))
-                    {
-                        Utils.StartProcess(standByScript, hidden: true);
-                    }
-                }
 
                 Logger.Debug("Powering off tv(s)...");
                 var tasks = new List<Task>();
@@ -883,6 +876,15 @@ namespace ColorControl
                     var task = device.PowerOff(true);
 
                     tasks.Add(task);
+                }
+
+                if (state == PowerOnOffState.StandBy)
+                {
+                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
+                    if (File.Exists(standByScript))
+                    {
+                        Utils.StartProcess(standByScript, hidden: true, wait: true);
+                    }
                 }
 
                 var waitTask = Task.WhenAll(tasks.ToArray());

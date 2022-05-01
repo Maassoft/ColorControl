@@ -891,6 +891,11 @@ namespace ColorControl
                     }
                 }
             }
+
+            if (listView.ListViewItemSorter is ListViewColumnSorter sorter && sorter?.Order != SortOrder.None)
+            {
+                listView.Sort();
+            }
         }
 
         public static bool OpenConsole()
@@ -937,9 +942,13 @@ namespace ColorControl
             return null;
         }
 
-        public static void StartProcess(string fileName, string arguments = null, bool hidden = false)
+        public static void StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false)
         {
-            Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = true, WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal });
+            var process = Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = true, WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal });
+            if (wait)
+            {
+                process.WaitForExit();
+            }
         }
 
         public static string GetResourceFile(string resourceName)

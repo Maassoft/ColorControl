@@ -23,6 +23,7 @@ namespace ColorControl
             public IEnumerable<string> Values { get; set; }
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
+            public int NumberOfValues { get; set; }
             public object Value { get; set; }
         }
 

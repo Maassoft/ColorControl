@@ -101,6 +101,11 @@ namespace LgTv
         {
             try
             {
+                if (_messageWriter == null)
+                {
+                    throw new Exception("SendMessageAsync: no writer");
+                }
+
                 _messageWriter.WriteString(message);
 
                 using (var cancellationTokenSource = new CancellationTokenSource(5000))

@@ -51,7 +51,7 @@ namespace ColorControl
             }
         }
 
-        protected bool SetRefreshRateInternal(string displayName, uint refreshRate, bool portrait, int horizontal, int vertical)
+        protected bool SetRefreshRateInternal(string displayName, uint refreshRate, bool portrait, int horizontal, int vertical, bool updateRegistry = false)
         {
             uint i = 0;
             DEVMODEA devMode;
@@ -64,7 +64,7 @@ namespace ColorControl
                 {
                     IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(devMode));
                     Marshal.StructureToPtr(devMode, bla, false);
-                    var result = NativeMethods.ChangeDisplaySettingsExA(displayName, bla, IntPtr.Zero, 0, IntPtr.Zero);
+                    var result = NativeMethods.ChangeDisplaySettingsExA(displayName, bla, IntPtr.Zero, updateRegistry ? (uint)NativeConstants.CDS_UPDATEREGISTRY : 0, IntPtr.Zero);
                     if (result != NativeConstants.DISP_CHANGE_SUCCESSFUL)
                     {
                         Logger.Error($"Could not set refreshrate {refreshRate} on display {displayName} because ChangeDisplaySettingsExA returned a non-zero return code: {result}");

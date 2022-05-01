@@ -21,6 +21,7 @@ namespace ColorControl
             public string Category { get; set; }
             public string Title { get; set; }
             public int CurrentValue { get; set; }
+            public int NumberOfValues { get; set; }
             public LgPreset Preset { get; set; }
         }
 
@@ -170,7 +171,10 @@ namespace ColorControl
             AddGenericPictureAction("hdmiPcMode_hdmi2", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi3", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi4", typeof(FalseToTrue), category: "other");
-            AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50);
+            AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50, numberOfValues: 22);
+            AddGenericPictureAction("whiteBalanceBlue", minValue: -50, maxValue: 50, numberOfValues: 22);
+            AddGenericPictureAction("whiteBalanceGreen", minValue: -50, maxValue: 50, numberOfValues: 22);
+            AddGenericPictureAction("whiteBalanceRed", minValue: -50, maxValue: 50, numberOfValues: 22);
             //AddGenericPictureAction("wb20PointsGammaValue", minValue: -50, maxValue: 50);
             AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
             AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
@@ -212,7 +216,7 @@ namespace ColorControl
             _invokableActions.Add(action);
         }
 
-        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null)
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1)
         {
             var action = new InvokableAction
             {
@@ -221,6 +225,7 @@ namespace ColorControl
                 EnumType = type,
                 MinValue = minValue,
                 MaxValue = maxValue,
+                NumberOfValues = numberOfValues,
                 Category = category,
                 Title = title == null ? Utils.FirstCharUpperCase(name) : title
             };
@@ -372,6 +377,10 @@ namespace ColorControl
                         PoweredOffViaApp = false;
                         PoweredOffBy = PowerOffSource.Unknown;
                         _poweredOffViaAppDateTime = DateTimeOffset.MinValue;
+                    }
+                    else if (payload.processing != null && ((string)payload.processing).Equals("Request Power Off", StringComparison.Ordinal))
+                    {
+                        PoweredOffBy = PoweredOffViaApp ? PowerOffSource.App : PowerOffSource.Manually;
                     }
                 }
                 else {

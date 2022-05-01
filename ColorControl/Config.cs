@@ -1,5 +1,13 @@
-﻿namespace ColorControl
+﻿using System.Windows.Forms;
+
+namespace ColorControl
 {
+    public class ListViewSortState
+    {
+        public SortOrder SortOrder { get; set; }
+        public int SortIndex { get; set; }
+    }
+
     public class Config
     {
         public bool StartMinimized { get; set; }
@@ -14,6 +22,9 @@
         public int AmdPresetId_ApplyOnStartup { get; set; }
         public bool FixChromeFonts { get; set; }
         public bool UseGdiScaling { get; set; }
+        public ListViewSortState NvPresetsSortState { get; set; }
+        public ListViewSortState AmdPresetsSortState { get; set; }
+        public ListViewSortState LgPresetsSortState { get; set; }
 
         public Config()
         {
@@ -25,6 +36,9 @@
             CheckForUpdates = true;
             FixChromeFonts = false;
             UseGdiScaling = true;
+            LgPresetsSortState = new ListViewSortState();
+            NvPresetsSortState = new ListViewSortState();
+            AmdPresetsSortState = new ListViewSortState();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace ColorControl
     partial class RemoteControlPanel : UserControl
     {
         private static int Range = 35;
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private LgService _lgService;
         private List<LgPreset> _buttons;
@@ -65,6 +67,17 @@ namespace ColorControl
 
                 if (preset != null)
                 {
+                    if (preset.steps.Contains("POWER") && _lgService.SelectedDevice?.CurrentState != LgDevice.PowerState.Active)
+                    {
+                        Logger.Debug("Executing WOL instead of POWER");
+
+                        var wolPreset = _buttons.FirstOrDefault(p => p.name.Equals("Wol"));
+                        if (wolPreset != null)
+                        {
+                            preset = wolPreset;
+                        }
+                    }
+
                     var _ = _lgService.ApplyPreset(preset);
                 }
             }
