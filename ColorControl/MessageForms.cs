@@ -120,6 +120,11 @@ namespace ColorControl
                             numericEdit.Maximum = field.MaxValue;
                         }
 
+                        if (field.Value != null)
+                        {
+                            numericEdit.Text = field.Value.ToString();
+                        }
+
                         control = numericEdit;
                         break;
 

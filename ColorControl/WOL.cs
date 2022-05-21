@@ -22,6 +22,7 @@ namespace ColorControl
         public static bool WakeFunctionToAllNics(string macAddress)
         {
             var result = false;
+            Logger.Debug($"Sending WOL packet to MAC-address {macAddress}");
 
             try
             {

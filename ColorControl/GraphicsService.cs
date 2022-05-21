@@ -51,7 +51,7 @@ namespace ColorControl
             }
         }
 
-        protected bool SetRefreshRateInternal(string displayName, uint refreshRate, bool portrait, int horizontal, int vertical, bool updateRegistry = false)
+        protected bool SetRefreshRateInternal(string displayName, int refreshRate, bool portrait, int horizontal, int vertical, bool updateRegistry = false)
         {
             uint i = 0;
             DEVMODEA devMode;
@@ -106,5 +106,29 @@ namespace ColorControl
             }
             return 0;
         }
+
+        protected List<DEVMODEA> GetAvailableResolutionsInternal(string displayName, bool portrait, uint refreshRate = 0)
+        {
+            var list = new List<DEVMODEA>();
+
+            uint i = 0;
+            DEVMODEA devMode;
+            while (NativeMethods.EnumDisplaySettingsA(displayName, i, out devMode))
+            {
+                if ((portrait ? devMode.dmPelsWidth < devMode.dmPelsHeight : devMode.dmPelsWidth > devMode.dmPelsHeight) && 
+                    (refreshRate == 0 || devMode.dmDisplayFrequency == refreshRate) && 
+                    !list.Any(m => m.dmPelsWidth == devMode.dmPelsWidth && m.dmPelsHeight == devMode.dmPelsHeight))
+                {
+                    list.Add(devMode);
+                }
+                i++;
+            }
+
+            list.Sort((a, b) => (int)(a.dmPelsWidth - b.dmPelsWidth));
+
+            return list;
+        }
+
+
     }
 }

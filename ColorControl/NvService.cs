@@ -1,8 +1,11 @@
 ﻿using Newtonsoft.Json;
+using nspector.Common;
+using nspector.Common.Meta;
 using NvAPIWrapper;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.GPU.Structures;
+using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -79,9 +82,24 @@ namespace ColorControl
         };
 
         private Display _currentDisplay;
+        private string _baseProfileName = "";
+
+        private DrsSettingsService _drs;
+        private DrsSettingsMetaService _meta;
+        private List<SettingItem> _settings = new List<SettingItem>();
+
+        public const uint DRS_GSYNC_APPLICATION_MODE = 294973784;
+        public const uint DRS_VSYNC_CONTROL          = 11041231;
+        //public const uint DRS_ULTRA_LOW_LATENCY      = 0x10835000;
+        public const uint DRS_PRERENDERED_FRAMES     = 8102046;
+        public const uint DRS_FRAME_RATE_LIMITER_V3  = 277041154;
+
+        private static readonly List<uint> _driverSettingIds = new() { DRS_GSYNC_APPLICATION_MODE, DRS_VSYNC_CONTROL, DRS_PRERENDERED_FRAMES, DRS_FRAME_RATE_LIMITER_V3 };
 
         public NvService(string dataPath) : base(dataPath, "NvPresets.json")
         {
+            NvPreset.NvService = this;
+
             AddJsonConverter(new ColorDataConverter());
 
             LoadPresets();
@@ -232,14 +250,23 @@ namespace ColorControl
                 //    applyHdr = false;
                 //}
 
-                if (preset.applyRefreshRate)
+                if (preset.applyRefreshRate || preset.applyResolution)
                 {
                     var timing = display.DisplayDevice.CurrentTiming;
-                    if (preset.refreshRate < timing.Extra.RefreshRate)
+                    if ((preset.applyRefreshRate && preset.refreshRate < timing.Extra.RefreshRate) || (preset.applyResolution && preset.resolutionWidth < timing.HorizontalVisible))
                     {
-                        SetRefreshRate(preset.refreshRate, true);
+                        SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true);
                     }
                 }
+
+                //if (preset.applyRefreshRate)
+                //{
+                //    var timing = display.DisplayDevice.CurrentTiming;
+                //    if (preset.refreshRate < timing.Extra.RefreshRate)
+                //    {
+                //        SetRefreshRate(preset.refreshRate, true);
+                //    }
+                //}
 
                 try
                 {
@@ -266,14 +293,19 @@ namespace ColorControl
                 SetHDRState(display, newHdrEnabled, colorData, appContext.StartUpParams.NoGui);
             }
 
-            if (preset.applyRefreshRate)
+            if (preset.applyRefreshRate || preset.applyResolution)
             {
-                var timing = display.DisplayDevice.CurrentTiming;
-
-                if (preset.refreshRate != timing.Extra.RefreshRate && !SetRefreshRate(preset.refreshRate, true))
+                if (!SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true))
                 {
                     result = false;
                 }
+
+                //var timing = display.DisplayDevice.CurrentTiming;
+
+                //if (preset.refreshRate != timing.Extra.RefreshRate && !SetRefreshRate(preset.refreshRate, true))
+                //{
+                //    result = false;
+                //}
             }
 
             if (preset.applyDithering)
@@ -284,11 +316,37 @@ namespace ColorControl
                 }
             }
 
+            if (preset.applyDriverSettings)
+            {
+                SetDriverSettings(preset);
+            }
+
             _lastAppliedPreset = preset;
 
             PresetApplied();
 
             return result;
+        }
+
+        private void SetDriverSettings(NvPreset preset)
+        {
+            var settings = new List<KeyValuePair<uint, string>>();
+
+            foreach (var keyValue in preset.driverSettings)
+            {
+                var settingMeta = _meta.GetSettingMeta(keyValue.Key);
+
+                var value = settingMeta.DwordValues.FirstOrDefault(v => v.Value == keyValue.Value);
+
+                if (value == null)
+                {
+                    continue;
+                }
+
+                settings.Add(new KeyValuePair<uint, string>(keyValue.Key, value.ValueName));
+            }
+
+            _drs.StoreSettingsToProfile(_baseProfileName, settings);
         }
 
         private ColorData GetCurrentColorData(Display display)
@@ -431,7 +489,7 @@ namespace ColorControl
             return dither;
         }
 
-        public bool SetRefreshRate(uint refreshRate, bool updateRegistry = false)
+        public bool SetMode(uint resolutionWidth = 0, uint resolutionHeight = 0, uint refreshRate = 0, bool updateRegistry = false)
         {
             var display = GetCurrentDisplay();
             if (display == null)
@@ -440,15 +498,27 @@ namespace ColorControl
             }
 
             var timing = display.DisplayDevice.CurrentTiming;
+            var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
 
-            if (timing.Extra.RefreshRate == refreshRate)
+            if (refreshRate == 0)
+            {
+                refreshRate = (uint)timing.Extra.RefreshRate;
+            }
+
+            if (resolutionWidth == 0)
+            {
+                resolutionWidth = (uint)desktopRect.Width;
+                resolutionHeight = (uint)desktopRect.Height;
+            }
+
+            if (timing.Extra.RefreshRate == refreshRate && desktopRect.Width == resolutionWidth && desktopRect.Height == resolutionHeight)
             {
                 return true;
             }
 
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
 
-            return SetRefreshRateInternal(display.Name, refreshRate, portrait, timing.HorizontalVisible, timing.VerticalVisible, updateRegistry);
+            return SetRefreshRateInternal(display.Name, (int)refreshRate, portrait, (int)resolutionWidth, (int)resolutionHeight, updateRegistry);
         }
 
         public List<uint> GetAvailableRefreshRates(NvPreset preset = null)
@@ -465,9 +535,28 @@ namespace ColorControl
             }
 
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
+            var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
+
+            return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+        }
+
+        public List<DEVMODEA> GetAvailableResolutions(NvPreset preset = null)
+        {
+            if (preset != null)
+            {
+                SetCurrentDisplay(preset);
+            }
+
+            var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return new List<DEVMODEA>();
+            }
+
+            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
             var timing = display.DisplayDevice.CurrentTiming;
 
-            return GetAvailableRefreshRatesInternal(display.Name, portrait, timing.HorizontalVisible, timing.VerticalVisible);
+            return GetAvailableResolutionsInternal(display.Name, portrait, (uint)(timing.Extra.RefreshRate));
         }
 
         public bool IsHDREnabled()
@@ -495,6 +584,8 @@ namespace ColorControl
                 var displays = GetDisplays();
                 var list = new List<NvDisplayInfo>();
 
+                RefreshProfileSettings();
+
                 foreach (var display in displays)
                 {
                     var values = new List<string>();
@@ -521,6 +612,10 @@ namespace ColorControl
 
                     values.Add($"{refreshRate}Hz");
 
+                    var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
+
+                    values.Add($"{desktopRect.Width}x{desktopRect.Height}");
+
                     var ditherInfo = GetDithering();
 
                     string dithering;
@@ -545,6 +640,20 @@ namespace ColorControl
                     var hdrEnabled = IsHDREnabled();
                     values.Add(hdrEnabled ? "Yes" : "No");
 
+                    var settings = GetVisibleSettings();
+                    var drsValues = new List<string>();
+
+                    foreach (var setting in settings)
+                    {
+                        var settingMeta = GetSettingMeta(setting.SettingId);
+
+                        var settingValue = settingMeta.DwordValues.FirstOrDefault(s => s.ValueName == setting.ValueText);
+
+                        drsValues.Add($"{settingMeta.SettingName}: {settingValue?.ValueName ?? "Unknown"}");
+                    }
+
+                    values.Add(string.Join(", ", drsValues));
+
                     var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
 
                     var displayInfo = new NvDisplayInfo(display, values, infoLine);
@@ -561,10 +670,36 @@ namespace ColorControl
             }
         }
 
+        public List<SettingItem> GetVisibleSettings()
+        {
+            return _settings.Where(s => _driverSettingIds.Contains(s.SettingId)).ToList();
+        }
+
+        public SettingMeta GetSettingMeta(uint settingId)
+        {
+            return _meta.GetSettingMeta(settingId);
+        }
+
         protected override void Initialize()
         {
             NVIDIA.Initialize();
             _initialized = true;
+
+            _drs = DrsServiceLocator.SettingService;
+            _meta = DrsServiceLocator.MetaService;
+
+            _drs.GetProfileNames(ref _baseProfileName, false);
+
+            RefreshProfileSettings();
+        }
+
+        private void RefreshProfileSettings()
+        {
+            var applications = new Dictionary<string, string>();
+            var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications);
+
+            _settings = new List<SettingItem>();
+            _settings.AddRange(normalSettings);
         }
 
         protected override void Uninitialize()

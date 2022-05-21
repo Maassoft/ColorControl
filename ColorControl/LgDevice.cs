@@ -137,10 +137,11 @@ namespace ColorControl
 
             AddInvokableAction("WOL", new Func<Dictionary<string, object>, bool>(WakeAction));
             AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
-            AddGenericPictureAction("brightness", minValue: 0, maxValue: 100);
+            AddGenericPictureAction("brightness", minValue: 0, maxValue: 100, title: "Brightness/Black Level");
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
             AddGenericPictureAction("color", minValue: 0, maxValue: 100);
             AddGenericPictureAction("pictureMode", typeof(PictureMode), title: "Picture Mode");
+            AddGenericPictureAction("sharpness", minValue: 0, maxValue: 50);
             //AddGenericPictureAction("dynamicRange", typeof(DynamicRange), category: "dimensionInfo", title: "Dynamic Range");
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
@@ -152,9 +153,11 @@ namespace ColorControl
             AddGenericPictureAction("smoothGradation", typeof(OffToAuto), title: "Smooth Gradation");
             AddGenericPictureAction("energySaving", typeof(EnergySaving), title: "Energy Saving");
             AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping), title: "HDR Dynamic Tone Mapping");
-            //AddGenericPictureAction("blackLevel", typeof(LowToAuto));
+            AddGenericPictureAction("blackLevel", typeof(BlackLevel), title: "HDMI Black Level");
             //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
-            //AddGenericPictureAction("truMotionMode", typeof(TruMotionMode));
+            AddGenericPictureAction("truMotionMode", typeof(TruMotionMode), title: "TruMotion");
+            AddGenericPictureAction("truMotionJudder", minValue: 0, maxValue: 10, title: "TruMotion Judder");
+            AddGenericPictureAction("truMotionBlur", minValue: 0, maxValue: 10, title: "TruMotion Blur");
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro");
             AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
@@ -181,6 +184,7 @@ namespace ColorControl
 
             AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "inStart" }));
             AddInternalPresetAction(new LgPreset("EzAdjust", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "ezAdjust" }));
+            //AddInternalPresetAction(new LgPreset("PictureCheck", "com.webos.app.factorywin", null, new { id = "executeFactory", irKey = "pCheck" }));
             AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate", null, new { mode = "user", flagUpdate = true }));
 
             AddSetDeviceConfigAction("HDMI_1_icon", typeof(HdmiIcon), "HDMI 1 icon");

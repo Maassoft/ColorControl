@@ -144,8 +144,8 @@ namespace ColorControl
 
             if (preset.applyRefreshRate)
             {
-                if (!SetRefreshRate(preset.refreshRate))
                 {
+                if (!SetRefreshRate(preset.refreshRate))
                     result = false;
                 }
             }
@@ -218,7 +218,7 @@ namespace ColorControl
 
             var portrait = vertical > horizontal;
 
-            return SetRefreshRateInternal(GetDisplayDeviceName(display), refreshRate, portrait, horizontal, vertical);
+            return SetRefreshRateInternal(GetDisplayDeviceName(display), (int)refreshRate, portrait, horizontal, vertical);
         }
 
         public List<uint> GetAvailableRefreshRates(AmdPreset preset = null)

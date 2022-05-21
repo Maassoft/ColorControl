@@ -18,8 +18,8 @@
     <PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>5.7.1.0</ApplicationVersion>
-	<Version>5.7.1.0</Version>
+    <ApplicationVersion>6.0.0.0</ApplicationVersion>
+	<Version>6.0.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>false</BootstrapperEnabled>
@@ -93,6 +93,12 @@
     <PackageReference Include="TaskScheduler" Version="2.9.3" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="nspector\CustomSettingNames.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="nspector\Reference.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

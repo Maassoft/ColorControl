@@ -132,6 +132,16 @@ namespace LgTv
         high2
     }
 
+    public enum BlackLevel
+    {
+        low,
+        medium,
+        high,
+        limited,
+        full,
+        auto
+    }
+
     public enum HdmiIcon
     {
         [Description("HDMI")]
@@ -627,7 +637,7 @@ namespace LgTv
             await ExecuteRequest(lunauri, @params);
         }
 
-        private static string ParamToJson(object value, ref string key)
+        private static string ParamToJson(object value, ref string key, bool skipSeparator = false)
         {
             string jsonValue;
             var valueType = value.GetType();
@@ -637,7 +647,7 @@ namespace LgTv
                 var values = ((Array)value).Cast<int>();
                 jsonValue = "[" + string.Join(", ", values.Select(x => x.ToString()).ToArray()) + ']';
             }
-            else if (key?.Contains("_") == true)
+            else if (key?.Contains("_") == true && !skipSeparator)
             {
                 var keys = key.Split('_');
                 key = keys[0];
@@ -648,6 +658,21 @@ namespace LgTv
             else if (value is bool)
             {
                 jsonValue = value.ToString().ToLowerInvariant();
+            }
+            else if (key.Equals("blackLevel", StringComparison.Ordinal))
+            {
+                jsonValue = @"{
+                    ""ntsc"": ""auto"",
+                    ""ntsc443"": ""auto"",
+                    ""pal"": ""auto"",
+                    ""pal60"": ""auto"",
+                    ""palm"": ""auto"",
+                    ""paln"": ""auto"",
+                    ""secam"": ""auto"",
+                    ""unknown"": ""auto""
+                    }";
+
+                jsonValue = jsonValue.Replace("auto", value.ToString());
             }
             else
             {
@@ -664,6 +689,18 @@ namespace LgTv
             var jsonValue = ParamToJson(value, ref key);
 
             var @params = JObject.Parse(@"{ ""configs"": { """ + key + @""": " + jsonValue + @" } }");
+
+            await ExecuteRequest(lunauri, @params);
+        }
+
+        public async Task SetSystemProperty(string key, object value)
+        {
+            var lunauri = "luna://com.webos.service.tv.systemproperty/setProperties";
+
+            var jsonValue = ParamToJson(value, ref key, true);
+
+            //var @params = JObject.Parse(@"{ ""keys"": { """ + key + @""": " + jsonValue + @" } }");
+            var @params = JObject.Parse(@"{ """ + key + @""": " + jsonValue + @" }");
 
             await ExecuteRequest(lunauri, @params);
         }

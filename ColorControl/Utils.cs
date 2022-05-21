@@ -370,7 +370,7 @@ namespace ColorControl
             foreach (var dev in list)
             {
                 string name = dev.Name;
-                if (/*dev.IsEnabled &&*/ dev.Name.Contains(deviceName))
+                if (/*dev.IsEnabled &&*/ dev.Name.Contains(deviceName, StringComparison.OrdinalIgnoreCase))
                 {
                     var guid = dev.Properties["System.Devices.DeviceInstanceId"];
 

@@ -1,13 +1,18 @@
-﻿using NvAPIWrapper.Display;
+﻿using nspector.Common;
+using nspector.Common.Meta;
+using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ColorControl
 {
     class NvPreset : PresetBase
     {
+        public static NvService NvService { get; set; }
+
         public bool applyColorData { get; set; }
         public ColorData colorData { get; set; }
         public bool applyHDR { get; set; }
@@ -17,10 +22,15 @@ namespace ColorControl
         public bool ditheringEnabled { get; set; }
         public bool applyRefreshRate { get; set; }
         public uint refreshRate { get; set; }
+        public bool applyResolution { get; set; }
+        public uint resolutionWidth { get; set; }
+        public uint resolutionHeight { get; set; }
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
+        public bool applyDriverSettings { get; set; }
+        public Dictionary<uint, uint> driverSettings { get; set; }
 
         public NvPreset() : base()
         {
@@ -32,9 +42,14 @@ namespace ColorControl
             toggleHDR = false;
             applyRefreshRate = false;
             refreshRate = 60;
+            applyResolution = false;
+            resolutionWidth = 0;
+            resolutionHeight = 0;
             primaryDisplay = true;
             ditheringBits = 1;
             ditheringMode = 4;
+            applyDriverSettings = false;
+            driverSettings = new Dictionary<uint, uint>();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -61,6 +76,11 @@ namespace ColorControl
             ditheringEnabled = preset.ditheringEnabled;
             applyRefreshRate = preset.applyRefreshRate;
             refreshRate = preset.refreshRate;
+            applyResolution = preset.applyResolution;
+            resolutionWidth = preset.resolutionWidth;
+            resolutionHeight = preset.resolutionHeight;
+            applyDriverSettings = preset.applyDriverSettings;
+            driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
         }
 
         public NvPreset Clone()
@@ -73,7 +93,7 @@ namespace ColorControl
         public static string[] GetColumnNames()
         {
             //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -90,20 +110,48 @@ namespace ColorControl
             values.Add(colorSettings);
             values.Add(string.Format("{0}: {1}Hz", applyRefreshRate ? "Included" : "Excluded", refreshRate));
 
+            if (applyResolution || resolutionWidth > 0)
+            {
+                values.Add(string.Format("{0}: {1}x{2}", applyResolution ? "Included" : "Excluded", resolutionWidth, resolutionHeight));
+            }
+            else
+            {
+                values.Add(string.Format("Excluded"));
+            }
+
             var dithering = GetDitheringDescription();
 
             values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", dithering));
             values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
 
-            //values.Add(colorData.ColorDepth.ToString());
-            //values.Add(colorData.ColorFormat.ToString());
-            //values.Add(colorData.DynamicRange.ToString());
-            //values.Add(toggleHDR.ToString());
+            values.Add(string.Format("{0}: {1}", applyDriverSettings ? "Included" : "Excluded", GetDriverSettingsDescription()));
+
             values.Add(shortcut);
 
             values.Add(string.Format("{0}", config?.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
 
             return values;
+        }
+
+        public string GetDriverSettingsDescription()
+        {
+            if (driverSettings.Count == 0)
+            {
+                return "None";
+            }
+
+            var values = new List<string>();
+
+            foreach (var driverSetting in driverSettings)
+            {
+                var settingMeta = NvService.GetSettingMeta(driverSetting.Key);
+
+                var settingValue = settingMeta.DwordValues.FirstOrDefault(s => s.Value == driverSetting.Value);
+
+                values.Add($"{settingMeta.SettingName}: {settingValue?.ValueName ?? "Unknown"}");
+            }
+
+            return string.Join(", ", values);
         }
 
         public string GetDitheringDescription(string disabledText = "Disabled")
@@ -166,6 +214,11 @@ namespace ColorControl
                     sb.AppendFormat("{0}Hz", refreshRate);
                     sb.Append(" / ");
                 }
+                if (applyResolution)
+                {
+                    sb.AppendFormat("{0}x{1}", resolutionWidth, resolutionHeight);
+                    sb.Append(" / ");
+                }
                 if (applyDithering)
                 {
                     var dithering = GetDitheringDescription("No");
@@ -175,6 +228,11 @@ namespace ColorControl
                 if (applyHDR)
                 {
                     sb.AppendFormat("HDR: {0}", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled");
+                    sb.Append(" / ");
+                }
+                if (applyDriverSettings)
+                {
+                    sb.AppendFormat("DRS: {0}", GetDriverSettingsDescription());
                     sb.Append(" / ");
                 }
             }
@@ -218,6 +276,15 @@ namespace ColorControl
             return new ColorData(format, dynamicRange: dynamicRange, colorimetry: colorimetry, colorDepth: colorDepth, colorSelectionPolicy: selectionPolicy, desktopColorDepth: ColorDataDesktopDepth.Default);
         }
 
+        internal void UpdateDriverSetting(SettingItem settingItem, uint settingValue)
+        {
+            driverSettings[settingItem.SettingId] = settingValue;
+        }
+
+        internal void ResetDriverSetting(uint settingId)
+        {
+            driverSettings.Remove(settingId);
+        }
     }
 }
 

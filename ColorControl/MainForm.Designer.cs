@@ -52,6 +52,8 @@
             this.miNvPresetColorSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
             this.miRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuNvResolution = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvResolutionIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetDithering = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetApplyDithering = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetDitheringEnabled = new System.Windows.Forms.ToolStripMenuItem();
@@ -69,6 +71,8 @@
             this.miHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miToggleHDR = new System.Windows.Forms.ToolStripMenuItem();
             this.miHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuNvDriverSettings = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvDriverSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvCopyId = new System.Windows.Forms.ToolStripMenuItem();
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
@@ -406,11 +410,13 @@
             this.mnuNvDisplay,
             this.mnuNvPresetsColorSettings,
             this.mnuRefreshRate,
+            this.mnuNvResolution,
             this.miNvPresetDithering,
             this.miNvHDR,
+            this.mnuNvDriverSettings,
             this.miNvCopyId});
             this.mnuNvPresets.Name = "mnuNvPresets";
-            this.mnuNvPresets.Size = new System.Drawing.Size(185, 186);
+            this.mnuNvPresets.Size = new System.Drawing.Size(185, 230);
             this.mnuNvPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuNvPresets_Opening);
             // 
             // miNvApply
@@ -454,7 +460,7 @@
             this.miNvPresetColorSettings});
             this.mnuNvPresetsColorSettings.Name = "mnuNvPresetsColorSettings";
             this.mnuNvPresetsColorSettings.Size = new System.Drawing.Size(184, 22);
-            this.mnuNvPresetsColorSettings.Text = "Color settings";
+            this.mnuNvPresetsColorSettings.Text = "Color Settings";
             // 
             // miNvPresetColorSettings
             // 
@@ -477,6 +483,22 @@
             this.miRefreshRateIncluded.Size = new System.Drawing.Size(120, 22);
             this.miRefreshRateIncluded.Text = "Included";
             this.miRefreshRateIncluded.Click += new System.EventHandler(this.includedToolStripMenuItem_Click);
+            // 
+            // mnuNvResolution
+            // 
+            this.mnuNvResolution.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miNvResolutionIncluded});
+            this.mnuNvResolution.Name = "mnuNvResolution";
+            this.mnuNvResolution.Size = new System.Drawing.Size(184, 22);
+            this.mnuNvResolution.Text = "Resolution";
+            // 
+            // miNvResolutionIncluded
+            // 
+            this.miNvResolutionIncluded.CheckOnClick = true;
+            this.miNvResolutionIncluded.Name = "miNvResolutionIncluded";
+            this.miNvResolutionIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miNvResolutionIncluded.Text = "Included";
+            this.miNvResolutionIncluded.Click += new System.EventHandler(this.miNvResolutionIncluded_Click);
             // 
             // miNvPresetDithering
             // 
@@ -620,6 +642,21 @@
             this.miHDREnabled.Text = "Enabled";
             this.miHDREnabled.Click += new System.EventHandler(this.miHDREnabled_Click);
             // 
+            // mnuNvDriverSettings
+            // 
+            this.mnuNvDriverSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miNvDriverSettingsIncluded});
+            this.mnuNvDriverSettings.Name = "mnuNvDriverSettings";
+            this.mnuNvDriverSettings.Size = new System.Drawing.Size(184, 22);
+            this.mnuNvDriverSettings.Text = "Driver Settings";
+            // 
+            // miNvDriverSettingsIncluded
+            // 
+            this.miNvDriverSettingsIncluded.Name = "miNvDriverSettingsIncluded";
+            this.miNvDriverSettingsIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miNvDriverSettingsIncluded.Text = "Included";
+            this.miNvDriverSettingsIncluded.Click += new System.EventHandler(this.miNvDriverSettingsIncluded_Click);
+            // 
             // miNvCopyId
             // 
             this.miNvCopyId.Name = "miNvCopyId";
@@ -651,6 +688,7 @@
             this.lvNvPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvNvPresets.MultiSelect = false;
             this.lvNvPresets.Name = "lvNvPresets";
+            this.lvNvPresets.ShowItemToolTips = true;
             this.lvNvPresets.Size = new System.Drawing.Size(1098, 415);
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
@@ -963,6 +1001,7 @@
             this.lvAmdPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvAmdPresets.MultiSelect = false;
             this.lvAmdPresets.Name = "lvAmdPresets";
+            this.lvAmdPresets.ShowItemToolTips = true;
             this.lvAmdPresets.Size = new System.Drawing.Size(1098, 415);
             this.lvAmdPresets.TabIndex = 10;
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
@@ -1245,7 +1284,7 @@
             this.miLgDisableMotionPro});
             this.mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
             this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(320, 22);
-            this.mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9 only)";
+            this.mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9/C2/G2 only)";
             // 
             // miLgEnableMotionPro
             // 
@@ -1336,6 +1375,7 @@
             this.lvLgPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
+            this.lvLgPresets.ShowItemToolTips = true;
             this.lvLgPresets.Size = new System.Drawing.Size(883, 106);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
@@ -2486,6 +2526,10 @@
         private System.Windows.Forms.TextBox edtLgGameBarShortcut;
         private System.Windows.Forms.ComboBox cbxLgPcHdmiPort;
         private System.Windows.Forms.Label lblLgPcHdmiPort;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvResolution;
+        private System.Windows.Forms.ToolStripMenuItem miNvResolutionIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvDriverSettings;
+        private System.Windows.Forms.ToolStripMenuItem miNvDriverSettingsIncluded;
     }
 }
 
