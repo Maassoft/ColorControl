@@ -1,4 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using ColorControl.Common;
+using ColorControl.Services.AMD;
+using ColorControl.Services.LG;
+using ColorControl.Services.NVIDIA;
+using Newtonsoft.Json;
 using NLog;
 using NWin32;
 using System;

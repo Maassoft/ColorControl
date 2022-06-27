@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWindowsForms>true</UseWindowsForms>
+		<Nullable>enable</Nullable>
+		<AppDesignerFolder>Properties</AppDesignerFolder>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="frmBitEditor.cs">
+			<SubType>Form</SubType>
+		</Compile>
+		<Compile Update="frmDrvSettings.cs">
+			<SubType>Form</SubType>
+		</Compile>
+		<Compile Update="frmExportProfiles.cs">
+			<SubType>Form</SubType>
+		</Compile>
+		<Compile Update="ListViewEx.cs">
+			<SubType>Component</SubType>
+		</Compile>
+		<Compile Update="Native\NVAPI\NvApiDriverSettings.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>NvApiDriverSettings.tt</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="nspector\CustomSettingNames.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Native\NVAPI\NvApiDriverSettings.tt">
+			<Generator>TextTemplatingFileGenerator</Generator>
+			<LastGenOutput>NvApiDriverSettings.cs</LastGenOutput>
+		</None>
+		<None Update="nspector\Reference.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	</ItemGroup>
+
+</Project>

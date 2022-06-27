@@ -8,6 +8,7 @@ using Windows.Storage.Streams;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 using ColorControl;
+using ColorControl.Common;
 
 namespace LgTv
 {

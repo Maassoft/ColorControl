@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ColorControl", "ColorControl\ColorControl.csproj", "{A6005D08-70F0-44CB-A384-9219EBA84F21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nspector", "Nspector\Nspector.csproj", "{76797290-48F5-4A82-86C3-FAD25DAE4500}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,14 @@ Global
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|x64.ActiveCfg = Release|x64
 		{A6005D08-70F0-44CB-A384-9219EBA84F21}.Release|x64.Build.0 = Release|x64
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Debug|x64.Build.0 = Debug|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|x64.ActiveCfg = Release|Any CPU
+		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

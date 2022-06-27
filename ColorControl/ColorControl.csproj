@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0-windows10.0.20348.0</TargetFramework>
+    <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
     <OutputType>WinExe</OutputType>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -18,8 +18,8 @@
     <PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>6.0.0.0</ApplicationVersion>
-	<Version>6.0.0.0</Version>
+    <ApplicationVersion>7.0.0.0</ApplicationVersion>
+	<Version>7.0.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>false</BootstrapperEnabled>
@@ -53,7 +53,10 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Update="RemoteControlPanel.cs">
+    <Compile Update="Services\Common\QuickAccessForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="services\lg\RemoteControlPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <EmbeddedResource Include="Resources\LG_register.json" />
@@ -93,12 +96,9 @@
     <PackageReference Include="TaskScheduler" Version="2.9.3" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="nspector\CustomSettingNames.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="nspector\Reference.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\Nspector\Nspector.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

@@ -32,6 +32,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tcMain = new System.Windows.Forms.TabControl();
             this.tabNVIDIA = new System.Windows.Forms.TabPage();
+            this.btnNvSettings = new System.Windows.Forms.Button();
+            this.chkNvShowInQuickAccess = new System.Windows.Forms.CheckBox();
             this.lblNvPresetName = new System.Windows.Forms.Label();
             this.edtNvPresetName = new System.Windows.Forms.TextBox();
             this.btnAddModesNv = new System.Windows.Forms.Button();
@@ -77,6 +79,7 @@
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
             this.tabAMD = new System.Windows.Forms.TabPage();
+            this.chkAmdQuickAccess = new System.Windows.Forms.CheckBox();
             this.lblAmdPresetName = new System.Windows.Forms.Label();
             this.edtAmdPresetName = new System.Windows.Forms.TextBox();
             this.btnAddAmd = new System.Windows.Forms.Button();
@@ -108,6 +111,8 @@
             this.lvAmdPresets = new System.Windows.Forms.ListView();
             this.tabLG = new System.Windows.Forms.TabPage();
             this.scLgController = new System.Windows.Forms.SplitContainer();
+            this.btnLgSettings = new System.Windows.Forms.Button();
+            this.chkLgQuickAccess = new System.Windows.Forms.CheckBox();
             this.cbxLgPcHdmiPort = new System.Windows.Forms.ComboBox();
             this.lblLgPcHdmiPort = new System.Windows.Forms.Label();
             this.edtLgPresetDescription = new System.Windows.Forms.TextBox();
@@ -158,11 +163,40 @@
             this.mnuLgActions = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLgNvPresets = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuLgAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuLgProgram = new System.Windows.Forms.ToolStripMenuItem();
             this.btnCloneLg = new System.Windows.Forms.Button();
             this.lblStepsLg = new System.Windows.Forms.Label();
             this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.lblLgError = new System.Windows.Forms.Label();
+            this.tabGameLauncher = new System.Windows.Forms.TabPage();
+            this.chkGameQuickAccess = new System.Windows.Forms.CheckBox();
+            this.btnGameSettings = new System.Windows.Forms.Button();
+            this.mnuGameActions = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.mnuGameNvInspector = new System.Windows.Forms.ToolStripMenuItem();
+            this.miGameSetQuickAccessShortcut = new System.Windows.Forms.ToolStripMenuItem();
+            this.chkGameRunAsAdmin = new System.Windows.Forms.CheckBox();
+            this.lblGameParameters = new System.Windows.Forms.Label();
+            this.edtGameParameters = new System.Windows.Forms.TextBox();
+            this.btnGameBrowse = new System.Windows.Forms.Button();
+            this.lblGameFilePath = new System.Windows.Forms.Label();
+            this.edtGamePath = new System.Windows.Forms.TextBox();
+            this.edtGamePrelaunchSteps = new System.Windows.Forms.TextBox();
+            this.btnGameAddStep = new System.Windows.Forms.Button();
+            this.mnuGameAddStep = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.mnuGameNvidiaPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuGameAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuGameLgPresets = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuGameStartProgram = new System.Windows.Forms.ToolStripMenuItem();
+            this.lblGamePreLaunch = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.edtGameName = new System.Windows.Forms.TextBox();
+            this.btnGameDelete = new System.Windows.Forms.Button();
+            this.btnGameClone = new System.Windows.Forms.Button();
+            this.btnGameSave = new System.Windows.Forms.Button();
+            this.btnGameAdd = new System.Windows.Forms.Button();
+            this.btnGameLaunch = new System.Windows.Forms.Button();
+            this.lvGamePresets = new System.Windows.Forms.ListView();
             this.tabOptions = new System.Windows.Forms.TabPage();
             this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
             this.lblDitheringMode = new System.Windows.Forms.Label();
@@ -209,6 +243,10 @@
             this.lbPlugins = new System.Windows.Forms.ListBox();
             this.label7 = new System.Windows.Forms.Label();
             this.lblInfo = new System.Windows.Forms.Label();
+            this.mnuNvSettings = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miNvProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
+            this.btnAmdSettings = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -220,6 +258,9 @@
             this.scLgController.SuspendLayout();
             this.mnuLgExpert.SuspendLayout();
             this.mnuLgButtons.SuspendLayout();
+            this.tabGameLauncher.SuspendLayout();
+            this.mnuGameActions.SuspendLayout();
+            this.mnuGameAddStep.SuspendLayout();
             this.tabOptions.SuspendLayout();
             this.grpNvidiaOptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
@@ -234,6 +275,7 @@
             this.tabInfo.SuspendLayout();
             this.grpNVIDIAInfo.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.mnuNvSettings.SuspendLayout();
             this.SuspendLayout();
             // 
             // tcMain
@@ -244,6 +286,7 @@
             this.tcMain.Controls.Add(this.tabNVIDIA);
             this.tcMain.Controls.Add(this.tabAMD);
             this.tcMain.Controls.Add(this.tabLG);
+            this.tcMain.Controls.Add(this.tabGameLauncher);
             this.tcMain.Controls.Add(this.tabOptions);
             this.tcMain.Controls.Add(this.tabLog);
             this.tcMain.Controls.Add(this.tabInfo);
@@ -257,6 +300,8 @@
             // 
             // tabNVIDIA
             // 
+            this.tabNVIDIA.Controls.Add(this.btnNvSettings);
+            this.tabNVIDIA.Controls.Add(this.chkNvShowInQuickAccess);
             this.tabNVIDIA.Controls.Add(this.lblNvPresetName);
             this.tabNVIDIA.Controls.Add(this.edtNvPresetName);
             this.tabNVIDIA.Controls.Add(this.btnAddModesNv);
@@ -277,6 +322,30 @@
             this.tabNVIDIA.TabIndex = 0;
             this.tabNVIDIA.Text = "NVIDIA controller";
             this.tabNVIDIA.UseVisualStyleBackColor = true;
+            // 
+            // btnNvSettings
+            // 
+            this.btnNvSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnNvSettings.Location = new System.Drawing.Point(1017, 428);
+            this.btnNvSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnNvSettings.Name = "btnNvSettings";
+            this.btnNvSettings.Size = new System.Drawing.Size(88, 27);
+            this.btnNvSettings.TabIndex = 59;
+            this.btnNvSettings.Text = "Settings...";
+            this.btnNvSettings.UseVisualStyleBackColor = true;
+            this.btnNvSettings.Click += new System.EventHandler(this.btnNvSettings_Click);
+            // 
+            // chkNvShowInQuickAccess
+            // 
+            this.chkNvShowInQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkNvShowInQuickAccess.AutoSize = true;
+            this.chkNvShowInQuickAccess.Location = new System.Drawing.Point(343, 465);
+            this.chkNvShowInQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkNvShowInQuickAccess.Name = "chkNvShowInQuickAccess";
+            this.chkNvShowInQuickAccess.Size = new System.Drawing.Size(141, 19);
+            this.chkNvShowInQuickAccess.TabIndex = 45;
+            this.chkNvShowInQuickAccess.Text = "Show in Quick Access";
+            this.chkNvShowInQuickAccess.UseVisualStyleBackColor = true;
             // 
             // lblNvPresetName
             // 
@@ -682,6 +751,7 @@
             this.lvNvPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvNvPresets.CheckBoxes = true;
             this.lvNvPresets.ContextMenuStrip = this.mnuNvPresets;
             this.lvNvPresets.FullRowSelect = true;
             this.lvNvPresets.Location = new System.Drawing.Point(7, 7);
@@ -694,11 +764,15 @@
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
             this.lvNvPresets.View = System.Windows.Forms.View.Details;
             this.lvNvPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
+            this.lvNvPresets.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.lvNvPresets_ItemCheck);
+            this.lvNvPresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvNvPresets_ItemChecked);
             this.lvNvPresets.SelectedIndexChanged += new System.EventHandler(this.lvNvPresets_SelectedIndexChanged);
             this.lvNvPresets.DoubleClick += new System.EventHandler(this.btnApply_Click);
             // 
             // tabAMD
             // 
+            this.tabAMD.Controls.Add(this.btnAmdSettings);
+            this.tabAMD.Controls.Add(this.chkAmdQuickAccess);
             this.tabAMD.Controls.Add(this.lblAmdPresetName);
             this.tabAMD.Controls.Add(this.edtAmdPresetName);
             this.tabAMD.Controls.Add(this.btnAddAmd);
@@ -719,6 +793,18 @@
             this.tabAMD.TabIndex = 5;
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
+            // 
+            // chkAmdQuickAccess
+            // 
+            this.chkAmdQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkAmdQuickAccess.AutoSize = true;
+            this.chkAmdQuickAccess.Location = new System.Drawing.Point(343, 465);
+            this.chkAmdQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkAmdQuickAccess.Name = "chkAmdQuickAccess";
+            this.chkAmdQuickAccess.Size = new System.Drawing.Size(141, 19);
+            this.chkAmdQuickAccess.TabIndex = 46;
+            this.chkAmdQuickAccess.Text = "Show in Quick Access";
+            this.chkAmdQuickAccess.UseVisualStyleBackColor = true;
             // 
             // lblAmdPresetName
             // 
@@ -995,6 +1081,7 @@
             this.lvAmdPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvAmdPresets.CheckBoxes = true;
             this.lvAmdPresets.ContextMenuStrip = this.mnuAmdPresets;
             this.lvAmdPresets.FullRowSelect = true;
             this.lvAmdPresets.Location = new System.Drawing.Point(7, 7);
@@ -1007,6 +1094,8 @@
             this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
             this.lvAmdPresets.View = System.Windows.Forms.View.Details;
             this.lvAmdPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
+            this.lvAmdPresets.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.lvNvPresets_ItemCheck);
+            this.lvAmdPresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvAmdPresets_ItemChecked);
             this.lvAmdPresets.SelectedIndexChanged += new System.EventHandler(this.lvAmdPresets_SelectedIndexChanged);
             this.lvAmdPresets.DoubleClick += new System.EventHandler(this.btnApplyAmd_Click);
             // 
@@ -1031,6 +1120,8 @@
             // 
             // scLgController.Panel1
             // 
+            this.scLgController.Panel1.Controls.Add(this.btnLgSettings);
+            this.scLgController.Panel1.Controls.Add(this.chkLgQuickAccess);
             this.scLgController.Panel1.Controls.Add(this.cbxLgPcHdmiPort);
             this.scLgController.Panel1.Controls.Add(this.lblLgPcHdmiPort);
             this.scLgController.Panel1.Controls.Add(this.edtLgPresetDescription);
@@ -1082,6 +1173,30 @@
             this.scLgController.SplitterDistance = 894;
             this.scLgController.SplitterWidth = 5;
             this.scLgController.TabIndex = 43;
+            // 
+            // btnLgSettings
+            // 
+            this.btnLgSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnLgSettings.Location = new System.Drawing.Point(804, 264);
+            this.btnLgSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnLgSettings.Name = "btnLgSettings";
+            this.btnLgSettings.Size = new System.Drawing.Size(88, 27);
+            this.btnLgSettings.TabIndex = 64;
+            this.btnLgSettings.Text = "Settings...";
+            this.btnLgSettings.UseVisualStyleBackColor = true;
+            this.btnLgSettings.Click += new System.EventHandler(this.btnLgSettings_Click);
+            // 
+            // chkLgQuickAccess
+            // 
+            this.chkLgQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkLgQuickAccess.AutoSize = true;
+            this.chkLgQuickAccess.Location = new System.Drawing.Point(341, 300);
+            this.chkLgQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkLgQuickAccess.Name = "chkLgQuickAccess";
+            this.chkLgQuickAccess.Size = new System.Drawing.Size(96, 19);
+            this.chkLgQuickAccess.TabIndex = 63;
+            this.chkLgQuickAccess.Text = "Quick Access";
+            this.chkLgQuickAccess.UseVisualStyleBackColor = true;
             // 
             // cbxLgPcHdmiPort
             // 
@@ -1274,7 +1389,7 @@
             this.mnuLgOLEDMotionPro,
             this.miLgExpertSeparator1});
             this.mnuLgExpert.Name = "mnuLgButtons";
-            this.mnuLgExpert.Size = new System.Drawing.Size(321, 32);
+            this.mnuLgExpert.Size = new System.Drawing.Size(359, 32);
             this.mnuLgExpert.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgExpert_Opening);
             // 
             // mnuLgOLEDMotionPro
@@ -1283,7 +1398,7 @@
             this.miLgEnableMotionPro,
             this.miLgDisableMotionPro});
             this.mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
-            this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(320, 22);
+            this.mnuLgOLEDMotionPro.Size = new System.Drawing.Size(358, 22);
             this.mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9/C2/G2 only)";
             // 
             // miLgEnableMotionPro
@@ -1303,7 +1418,7 @@
             // miLgExpertSeparator1
             // 
             this.miLgExpertSeparator1.Name = "miLgExpertSeparator1";
-            this.miLgExpertSeparator1.Size = new System.Drawing.Size(317, 6);
+            this.miLgExpertSeparator1.Size = new System.Drawing.Size(355, 6);
             // 
             // chkLgRemoteControlShow
             // 
@@ -1370,6 +1485,7 @@
             this.lvLgPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvLgPresets.CheckBoxes = true;
             this.lvLgPresets.FullRowSelect = true;
             this.lvLgPresets.Location = new System.Drawing.Point(6, 152);
             this.lvLgPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -1381,6 +1497,7 @@
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
             this.lvLgPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
+            this.lvLgPresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvLgPresets_ItemChecked);
             this.lvLgPresets.SelectedIndexChanged += new System.EventHandler(this.lvLgPresets_SelectedIndexChanged);
             this.lvLgPresets.DoubleClick += new System.EventHandler(this.lvLgPresets_DoubleClick);
             // 
@@ -1601,9 +1718,10 @@
             this.mnuLgRcButtons,
             this.mnuLgActions,
             this.mnuLgNvPresets,
-            this.mnuLgAmdPresets});
+            this.mnuLgAmdPresets,
+            this.mnuLgProgram});
             this.mnuLgButtons.Name = "mnuLgButtons";
-            this.mnuLgButtons.Size = new System.Drawing.Size(153, 92);
+            this.mnuLgButtons.Size = new System.Drawing.Size(153, 114);
             this.mnuLgButtons.Opening += new System.ComponentModel.CancelEventHandler(this.mnuLgButtons_Opening);
             // 
             // mnuLgRcButtons
@@ -1629,6 +1747,13 @@
             this.mnuLgAmdPresets.Name = "mnuLgAmdPresets";
             this.mnuLgAmdPresets.Size = new System.Drawing.Size(152, 22);
             this.mnuLgAmdPresets.Text = "AMD presets";
+            // 
+            // mnuLgProgram
+            // 
+            this.mnuLgProgram.Name = "mnuLgProgram";
+            this.mnuLgProgram.Size = new System.Drawing.Size(152, 22);
+            this.mnuLgProgram.Text = "Start Program";
+            this.mnuLgProgram.Click += new System.EventHandler(this.mnuLgProgram_Click);
             // 
             // btnCloneLg
             // 
@@ -1699,6 +1824,335 @@
             this.lblLgError.TabIndex = 15;
             this.lblLgError.Text = "ErrorText";
             this.lblLgError.Visible = false;
+            // 
+            // tabGameLauncher
+            // 
+            this.tabGameLauncher.Controls.Add(this.chkGameQuickAccess);
+            this.tabGameLauncher.Controls.Add(this.btnGameSettings);
+            this.tabGameLauncher.Controls.Add(this.chkGameRunAsAdmin);
+            this.tabGameLauncher.Controls.Add(this.lblGameParameters);
+            this.tabGameLauncher.Controls.Add(this.edtGameParameters);
+            this.tabGameLauncher.Controls.Add(this.btnGameBrowse);
+            this.tabGameLauncher.Controls.Add(this.lblGameFilePath);
+            this.tabGameLauncher.Controls.Add(this.edtGamePath);
+            this.tabGameLauncher.Controls.Add(this.edtGamePrelaunchSteps);
+            this.tabGameLauncher.Controls.Add(this.btnGameAddStep);
+            this.tabGameLauncher.Controls.Add(this.lblGamePreLaunch);
+            this.tabGameLauncher.Controls.Add(this.label4);
+            this.tabGameLauncher.Controls.Add(this.edtGameName);
+            this.tabGameLauncher.Controls.Add(this.btnGameDelete);
+            this.tabGameLauncher.Controls.Add(this.btnGameClone);
+            this.tabGameLauncher.Controls.Add(this.btnGameSave);
+            this.tabGameLauncher.Controls.Add(this.btnGameAdd);
+            this.tabGameLauncher.Controls.Add(this.btnGameLaunch);
+            this.tabGameLauncher.Controls.Add(this.lvGamePresets);
+            this.tabGameLauncher.Location = new System.Drawing.Point(4, 24);
+            this.tabGameLauncher.Name = "tabGameLauncher";
+            this.tabGameLauncher.Padding = new System.Windows.Forms.Padding(3);
+            this.tabGameLauncher.Size = new System.Drawing.Size(1114, 525);
+            this.tabGameLauncher.TabIndex = 6;
+            this.tabGameLauncher.Text = "Game Launcher";
+            this.tabGameLauncher.UseVisualStyleBackColor = true;
+            // 
+            // chkGameQuickAccess
+            // 
+            this.chkGameQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkGameQuickAccess.AutoSize = true;
+            this.chkGameQuickAccess.Location = new System.Drawing.Point(353, 387);
+            this.chkGameQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkGameQuickAccess.Name = "chkGameQuickAccess";
+            this.chkGameQuickAccess.Size = new System.Drawing.Size(141, 19);
+            this.chkGameQuickAccess.TabIndex = 44;
+            this.chkGameQuickAccess.Text = "Show in Quick Access";
+            this.chkGameQuickAccess.UseVisualStyleBackColor = true;
+            // 
+            // btnGameSettings
+            // 
+            this.btnGameSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnGameSettings.ContextMenuStrip = this.mnuGameActions;
+            this.btnGameSettings.Location = new System.Drawing.Point(1018, 351);
+            this.btnGameSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameSettings.Name = "btnGameSettings";
+            this.btnGameSettings.Size = new System.Drawing.Size(88, 27);
+            this.btnGameSettings.TabIndex = 43;
+            this.btnGameSettings.Text = "Settings...";
+            this.btnGameSettings.UseVisualStyleBackColor = true;
+            this.btnGameSettings.Click += new System.EventHandler(this.btnGameActions_Click);
+            // 
+            // mnuGameActions
+            // 
+            this.mnuGameActions.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuGameActions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuGameNvInspector,
+            this.miGameSetQuickAccessShortcut});
+            this.mnuGameActions.Name = "mnuLgButtons";
+            this.mnuGameActions.Size = new System.Drawing.Size(212, 48);
+            this.mnuGameActions.Opening += new System.ComponentModel.CancelEventHandler(this.mnuGameActions_Opening);
+            // 
+            // mnuGameNvInspector
+            // 
+            this.mnuGameNvInspector.Name = "mnuGameNvInspector";
+            this.mnuGameNvInspector.Size = new System.Drawing.Size(211, 22);
+            this.mnuGameNvInspector.Text = "NVIDIA Profile Inspector";
+            this.mnuGameNvInspector.Click += new System.EventHandler(this.mnuGameNvInspector_Click);
+            // 
+            // miGameSetQuickAccessShortcut
+            // 
+            this.miGameSetQuickAccessShortcut.Name = "miGameSetQuickAccessShortcut";
+            this.miGameSetQuickAccessShortcut.Size = new System.Drawing.Size(211, 22);
+            this.miGameSetQuickAccessShortcut.Text = "Set Quick Access Shortcut";
+            this.miGameSetQuickAccessShortcut.Click += new System.EventHandler(this.miGameSetQuickAccessShortcut_Click);
+            // 
+            // chkGameRunAsAdmin
+            // 
+            this.chkGameRunAsAdmin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.chkGameRunAsAdmin.AutoSize = true;
+            this.chkGameRunAsAdmin.Location = new System.Drawing.Point(881, 415);
+            this.chkGameRunAsAdmin.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkGameRunAsAdmin.Name = "chkGameRunAsAdmin";
+            this.chkGameRunAsAdmin.Size = new System.Drawing.Size(135, 19);
+            this.chkGameRunAsAdmin.TabIndex = 42;
+            this.chkGameRunAsAdmin.Text = "Run as administrator";
+            this.chkGameRunAsAdmin.UseVisualStyleBackColor = true;
+            // 
+            // lblGameParameters
+            // 
+            this.lblGameParameters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblGameParameters.AutoSize = true;
+            this.lblGameParameters.Location = new System.Drawing.Point(8, 445);
+            this.lblGameParameters.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGameParameters.Name = "lblGameParameters";
+            this.lblGameParameters.Size = new System.Drawing.Size(69, 15);
+            this.lblGameParameters.TabIndex = 41;
+            this.lblGameParameters.Text = "Parameters:";
+            // 
+            // edtGameParameters
+            // 
+            this.edtGameParameters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtGameParameters.Enabled = false;
+            this.edtGameParameters.Location = new System.Drawing.Point(112, 442);
+            this.edtGameParameters.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtGameParameters.Name = "edtGameParameters";
+            this.edtGameParameters.Size = new System.Drawing.Size(665, 23);
+            this.edtGameParameters.TabIndex = 40;
+            // 
+            // btnGameBrowse
+            // 
+            this.btnGameBrowse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameBrowse.ContextMenuStrip = this.mnuLgButtons;
+            this.btnGameBrowse.Enabled = false;
+            this.btnGameBrowse.Location = new System.Drawing.Point(785, 410);
+            this.btnGameBrowse.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameBrowse.Name = "btnGameBrowse";
+            this.btnGameBrowse.Size = new System.Drawing.Size(88, 27);
+            this.btnGameBrowse.TabIndex = 39;
+            this.btnGameBrowse.Text = "Browse...";
+            this.btnGameBrowse.UseVisualStyleBackColor = true;
+            this.btnGameBrowse.Click += new System.EventHandler(this.btnGameBrowse_Click);
+            // 
+            // lblGameFilePath
+            // 
+            this.lblGameFilePath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblGameFilePath.AutoSize = true;
+            this.lblGameFilePath.Location = new System.Drawing.Point(8, 417);
+            this.lblGameFilePath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGameFilePath.Name = "lblGameFilePath";
+            this.lblGameFilePath.Size = new System.Drawing.Size(51, 15);
+            this.lblGameFilePath.TabIndex = 38;
+            this.lblGameFilePath.Text = "File/URI:";
+            // 
+            // edtGamePath
+            // 
+            this.edtGamePath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtGamePath.Enabled = false;
+            this.edtGamePath.Location = new System.Drawing.Point(112, 413);
+            this.edtGamePath.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtGamePath.Name = "edtGamePath";
+            this.edtGamePath.Size = new System.Drawing.Size(665, 23);
+            this.edtGamePath.TabIndex = 37;
+            // 
+            // edtGamePrelaunchSteps
+            // 
+            this.edtGamePrelaunchSteps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtGamePrelaunchSteps.Enabled = false;
+            this.edtGamePrelaunchSteps.Location = new System.Drawing.Point(112, 471);
+            this.edtGamePrelaunchSteps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtGamePrelaunchSteps.Multiline = true;
+            this.edtGamePrelaunchSteps.Name = "edtGamePrelaunchSteps";
+            this.edtGamePrelaunchSteps.Size = new System.Drawing.Size(665, 48);
+            this.edtGamePrelaunchSteps.TabIndex = 35;
+            // 
+            // btnGameAddStep
+            // 
+            this.btnGameAddStep.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameAddStep.ContextMenuStrip = this.mnuGameAddStep;
+            this.btnGameAddStep.Enabled = false;
+            this.btnGameAddStep.Location = new System.Drawing.Point(785, 470);
+            this.btnGameAddStep.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameAddStep.Name = "btnGameAddStep";
+            this.btnGameAddStep.Size = new System.Drawing.Size(88, 27);
+            this.btnGameAddStep.TabIndex = 36;
+            this.btnGameAddStep.Text = "Add step";
+            this.btnGameAddStep.UseVisualStyleBackColor = true;
+            this.btnGameAddStep.Click += new System.EventHandler(this.btnGameAddStep_Click);
+            // 
+            // mnuGameAddStep
+            // 
+            this.mnuGameAddStep.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuGameAddStep.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mnuGameNvidiaPresets,
+            this.mnuGameAmdPresets,
+            this.mnuGameLgPresets,
+            this.mnuGameStartProgram});
+            this.mnuGameAddStep.Name = "mnuLgButtons";
+            this.mnuGameAddStep.Size = new System.Drawing.Size(153, 92);
+            this.mnuGameAddStep.Opening += new System.ComponentModel.CancelEventHandler(this.mnuGameAddStep_Opening);
+            // 
+            // mnuGameNvidiaPresets
+            // 
+            this.mnuGameNvidiaPresets.Name = "mnuGameNvidiaPresets";
+            this.mnuGameNvidiaPresets.Size = new System.Drawing.Size(152, 22);
+            this.mnuGameNvidiaPresets.Text = "NVIDIA presets";
+            // 
+            // mnuGameAmdPresets
+            // 
+            this.mnuGameAmdPresets.Name = "mnuGameAmdPresets";
+            this.mnuGameAmdPresets.Size = new System.Drawing.Size(152, 22);
+            this.mnuGameAmdPresets.Text = "AMD presets";
+            // 
+            // mnuGameLgPresets
+            // 
+            this.mnuGameLgPresets.Name = "mnuGameLgPresets";
+            this.mnuGameLgPresets.Size = new System.Drawing.Size(152, 22);
+            this.mnuGameLgPresets.Text = "LG presets";
+            // 
+            // mnuGameStartProgram
+            // 
+            this.mnuGameStartProgram.Name = "mnuGameStartProgram";
+            this.mnuGameStartProgram.Size = new System.Drawing.Size(152, 22);
+            this.mnuGameStartProgram.Text = "Start Program";
+            this.mnuGameStartProgram.Click += new System.EventHandler(this.mnuGameStartProgram_Click);
+            // 
+            // lblGamePreLaunch
+            // 
+            this.lblGamePreLaunch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblGamePreLaunch.AutoSize = true;
+            this.lblGamePreLaunch.Location = new System.Drawing.Point(8, 477);
+            this.lblGamePreLaunch.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGamePreLaunch.Name = "lblGamePreLaunch";
+            this.lblGamePreLaunch.Size = new System.Drawing.Size(98, 15);
+            this.lblGamePreLaunch.TabIndex = 34;
+            this.lblGamePreLaunch.Text = "Pre-launch steps:";
+            // 
+            // label4
+            // 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(8, 388);
+            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(42, 15);
+            this.label4.TabIndex = 33;
+            this.label4.Text = "Name:";
+            // 
+            // edtGameName
+            // 
+            this.edtGameName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtGameName.Enabled = false;
+            this.edtGameName.Location = new System.Drawing.Point(112, 384);
+            this.edtGameName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtGameName.Name = "edtGameName";
+            this.edtGameName.Size = new System.Drawing.Size(233, 23);
+            this.edtGameName.TabIndex = 32;
+            // 
+            // btnGameDelete
+            // 
+            this.btnGameDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameDelete.Enabled = false;
+            this.btnGameDelete.Location = new System.Drawing.Point(291, 351);
+            this.btnGameDelete.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameDelete.Name = "btnGameDelete";
+            this.btnGameDelete.Size = new System.Drawing.Size(88, 27);
+            this.btnGameDelete.TabIndex = 30;
+            this.btnGameDelete.Text = "Delete";
+            this.btnGameDelete.UseVisualStyleBackColor = true;
+            this.btnGameDelete.Click += new System.EventHandler(this.btnGameDelete_Click);
+            // 
+            // btnGameClone
+            // 
+            this.btnGameClone.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameClone.Enabled = false;
+            this.btnGameClone.Location = new System.Drawing.Point(103, 351);
+            this.btnGameClone.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameClone.Name = "btnGameClone";
+            this.btnGameClone.Size = new System.Drawing.Size(88, 27);
+            this.btnGameClone.TabIndex = 29;
+            this.btnGameClone.Text = "Clone";
+            this.btnGameClone.UseVisualStyleBackColor = true;
+            this.btnGameClone.Click += new System.EventHandler(this.btnGameClone_Click);
+            // 
+            // btnGameSave
+            // 
+            this.btnGameSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameSave.Enabled = false;
+            this.btnGameSave.Location = new System.Drawing.Point(387, 351);
+            this.btnGameSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameSave.Name = "btnGameSave";
+            this.btnGameSave.Size = new System.Drawing.Size(88, 27);
+            this.btnGameSave.TabIndex = 28;
+            this.btnGameSave.Text = "Save";
+            this.btnGameSave.UseVisualStyleBackColor = true;
+            this.btnGameSave.Click += new System.EventHandler(this.btnGameSave_Click);
+            // 
+            // btnGameAdd
+            // 
+            this.btnGameAdd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameAdd.ContextMenuStrip = this.mnuNvPresets;
+            this.btnGameAdd.Location = new System.Drawing.Point(199, 351);
+            this.btnGameAdd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameAdd.Name = "btnGameAdd";
+            this.btnGameAdd.Size = new System.Drawing.Size(88, 27);
+            this.btnGameAdd.TabIndex = 25;
+            this.btnGameAdd.Text = "Add";
+            this.btnGameAdd.UseVisualStyleBackColor = true;
+            this.btnGameAdd.Click += new System.EventHandler(this.btnGameAdd_Click);
+            // 
+            // btnGameLaunch
+            // 
+            this.btnGameLaunch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameLaunch.Enabled = false;
+            this.btnGameLaunch.Location = new System.Drawing.Point(8, 351);
+            this.btnGameLaunch.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameLaunch.Name = "btnGameLaunch";
+            this.btnGameLaunch.Size = new System.Drawing.Size(88, 27);
+            this.btnGameLaunch.TabIndex = 24;
+            this.btnGameLaunch.Text = "Launch";
+            this.btnGameLaunch.UseVisualStyleBackColor = true;
+            this.btnGameLaunch.Click += new System.EventHandler(this.btnGameLaunch_Click);
+            // 
+            // lvGamePresets
+            // 
+            this.lvGamePresets.AllowDrop = true;
+            this.lvGamePresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvGamePresets.CheckBoxes = true;
+            this.lvGamePresets.FullRowSelect = true;
+            this.lvGamePresets.Location = new System.Drawing.Point(8, 8);
+            this.lvGamePresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.lvGamePresets.MultiSelect = false;
+            this.lvGamePresets.Name = "lvGamePresets";
+            this.lvGamePresets.ShowItemToolTips = true;
+            this.lvGamePresets.Size = new System.Drawing.Size(1098, 335);
+            this.lvGamePresets.TabIndex = 23;
+            this.lvGamePresets.UseCompatibleStateImageBehavior = false;
+            this.lvGamePresets.View = System.Windows.Forms.View.Details;
+            this.lvGamePresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
+            this.lvGamePresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvGamePresets_ItemChecked);
+            this.lvGamePresets.SelectedIndexChanged += new System.EventHandler(this.lvGamePresets_SelectedIndexChanged);
+            this.lvGamePresets.DragDrop += new System.Windows.Forms.DragEventHandler(this.lvGamePresets_DragDrop);
+            this.lvGamePresets.DragEnter += new System.Windows.Forms.DragEventHandler(this.lvGamePresets_DragEnter);
+            this.lvGamePresets.DoubleClick += new System.EventHandler(this.lvGamePresets_DoubleClick);
             // 
             // tabOptions
             // 
@@ -2290,6 +2744,41 @@
             this.lblInfo.TabIndex = 1;
             this.lblInfo.Text = "Info";
             // 
+            // mnuNvSettings
+            // 
+            this.mnuNvSettings.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuNvSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miNvProfileInspector,
+            this.miNvSettings});
+            this.mnuNvSettings.Name = "mnuLgButtons";
+            this.mnuNvSettings.Size = new System.Drawing.Size(202, 48);
+            // 
+            // miNvProfileInspector
+            // 
+            this.miNvProfileInspector.Name = "miNvProfileInspector";
+            this.miNvProfileInspector.Size = new System.Drawing.Size(201, 22);
+            this.miNvProfileInspector.Text = "NVIDIA Profile Inspector";
+            this.miNvProfileInspector.Click += new System.EventHandler(this.miNvProfileInspector_Click);
+            // 
+            // miNvSettings
+            // 
+            this.miNvSettings.Name = "miNvSettings";
+            this.miNvSettings.Size = new System.Drawing.Size(201, 22);
+            this.miNvSettings.Text = "Settings";
+            this.miNvSettings.Click += new System.EventHandler(this.miNvSettings_Click);
+            // 
+            // btnAmdSettings
+            // 
+            this.btnAmdSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAmdSettings.Location = new System.Drawing.Point(1017, 429);
+            this.btnAmdSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnAmdSettings.Name = "btnAmdSettings";
+            this.btnAmdSettings.Size = new System.Drawing.Size(88, 27);
+            this.btnAmdSettings.TabIndex = 60;
+            this.btnAmdSettings.Text = "Settings...";
+            this.btnAmdSettings.UseVisualStyleBackColor = true;
+            this.btnAmdSettings.Click += new System.EventHandler(this.btnAmdSettings_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -2324,6 +2813,10 @@
             this.scLgController.ResumeLayout(false);
             this.mnuLgExpert.ResumeLayout(false);
             this.mnuLgButtons.ResumeLayout(false);
+            this.tabGameLauncher.ResumeLayout(false);
+            this.tabGameLauncher.PerformLayout();
+            this.mnuGameActions.ResumeLayout(false);
+            this.mnuGameAddStep.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
             this.grpNvidiaOptions.ResumeLayout(false);
             this.grpNvidiaOptions.PerformLayout();
@@ -2345,6 +2838,7 @@
             this.grpNVIDIAInfo.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            this.mnuNvSettings.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -2530,6 +3024,44 @@
         private System.Windows.Forms.ToolStripMenuItem miNvResolutionIncluded;
         private System.Windows.Forms.ToolStripMenuItem mnuNvDriverSettings;
         private System.Windows.Forms.ToolStripMenuItem miNvDriverSettingsIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgProgram;
+        private System.Windows.Forms.TabPage tabGameLauncher;
+        private System.Windows.Forms.Label lblGameParameters;
+        private System.Windows.Forms.TextBox edtGameParameters;
+        private System.Windows.Forms.Button btnGameBrowse;
+        private System.Windows.Forms.Label lblGameFilePath;
+        private System.Windows.Forms.TextBox edtGamePath;
+        private System.Windows.Forms.TextBox edtGamePrelaunchSteps;
+        private System.Windows.Forms.Button btnGameAddStep;
+        private System.Windows.Forms.Label lblGamePreLaunch;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox edtGameName;
+        private System.Windows.Forms.Button btnGameDelete;
+        private System.Windows.Forms.Button btnGameClone;
+        private System.Windows.Forms.Button btnGameSave;
+        private System.Windows.Forms.Button btnGameAdd;
+        private System.Windows.Forms.Button btnGameLaunch;
+        private System.Windows.Forms.ListView lvGamePresets;
+        private System.Windows.Forms.ContextMenuStrip mnuGameAddStep;
+        private System.Windows.Forms.ToolStripMenuItem mnuGameNvidiaPresets;
+        private System.Windows.Forms.ToolStripMenuItem mnuGameAmdPresets;
+        private System.Windows.Forms.ToolStripMenuItem mnuGameLgPresets;
+        private System.Windows.Forms.CheckBox chkGameRunAsAdmin;
+        private System.Windows.Forms.ToolStripMenuItem mnuGameStartProgram;
+        private System.Windows.Forms.Button btnGameSettings;
+        private System.Windows.Forms.ContextMenuStrip mnuGameActions;
+        private System.Windows.Forms.ToolStripMenuItem mnuGameNvInspector;
+        private System.Windows.Forms.CheckBox chkGameQuickAccess;
+        private System.Windows.Forms.ToolStripMenuItem miGameSetQuickAccessShortcut;
+        private System.Windows.Forms.CheckBox chkNvShowInQuickAccess;
+        private System.Windows.Forms.Button btnNvSettings;
+        private System.Windows.Forms.CheckBox chkLgQuickAccess;
+        private System.Windows.Forms.Button btnLgSettings;
+        private System.Windows.Forms.ContextMenuStrip mnuNvSettings;
+        private System.Windows.Forms.ToolStripMenuItem miNvProfileInspector;
+        private System.Windows.Forms.ToolStripMenuItem miNvSettings;
+        private System.Windows.Forms.CheckBox chkAmdQuickAccess;
+        private System.Windows.Forms.Button btnAmdSettings;
     }
 }
 

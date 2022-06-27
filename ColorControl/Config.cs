@@ -25,6 +25,11 @@ namespace ColorControl
         public ListViewSortState NvPresetsSortState { get; set; }
         public ListViewSortState AmdPresetsSortState { get; set; }
         public ListViewSortState LgPresetsSortState { get; set; }
+        public ListViewSortState GamePresetsSortState { get; set; }
+        public string NvQuickAccessShortcut { get; set; }
+        public string AmdQuickAccessShortcut { get; set; }
+        public string LgQuickAccessShortcut { get; set; }
+        public string GameQuickAccessShortcut { get; set; }
 
         public Config()
         {
@@ -39,6 +44,7 @@ namespace ColorControl
             LgPresetsSortState = new ListViewSortState();
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();
+            GamePresetsSortState = new ListViewSortState();
         }
     }
 }

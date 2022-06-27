@@ -1,8 +1,15 @@
 ﻿using ATI.ADL;
+using ColorControl.Common;
+using ColorControl.Forms;
+using ColorControl.Services.AMD;
+using ColorControl.Services.Common;
+using ColorControl.Services.GameLauncher;
+using ColorControl.Services.LG;
+using ColorControl.Services.NVIDIA;
 using LgTv;
 using Newtonsoft.Json;
 using NLog;
-using NonInvasiveKeyboardHookLibrary;
+using nspector;
 using nspector.Common;
 using nspector.Common.Meta;
 using NStandard;
@@ -33,6 +40,10 @@ namespace ColorControl
         private static bool UserExit = false;
         private static int SHORTCUTID_SCREENSAVER = -100;
         private static int SHORTCUTID_GAMEBAR = -101;
+        private static int SHORTCUTID_NVQA = -200;
+        private static int SHORTCUTID_AMDQA = -201;
+        private static int SHORTCUTID_LGQA = -202;
+        private static int SHORTCUTID_GAMEQA = -203;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -52,6 +63,7 @@ namespace ColorControl
         private ToolStripMenuItem _nvTrayMenu;
         private ToolStripMenuItem _amdTrayMenu;
         private ToolStripMenuItem _lgTrayMenu;
+        private ToolStripMenuItem _gameTrayMenu;
 
         private StartUpParams StartUpParams { get; }
         public string _lgTabMessage { get; private set; }
@@ -64,9 +76,14 @@ namespace ColorControl
         private bool _updatingDitherSettings;
 
         private LgGameBar _gameBarForm;
+        private QuickAccessForm<GamePreset> _gameQuickAccessForm;
 
-        private KeyboardHookManager _keyboardHookManager;
+        private GameService _gameService;
+
+        //private KeyboardHookManager _keyboardHookManager;
         private IntPtr _screenStateNotify;
+
+        private Dictionary<int, Action> _shortcuts = new();
 
         public MainForm(AppContext appContext)
         {
@@ -83,6 +100,7 @@ namespace ColorControl
             _nvTrayMenu = new ToolStripMenuItem("NVIDIA presets");
             _amdTrayMenu = new ToolStripMenuItem("AMD presets");
             _lgTrayMenu = new ToolStripMenuItem("LG presets");
+            _gameTrayMenu = new ToolStripMenuItem("Game Launcher");
             _trayIcon = new NotifyIcon()
             {
                 Icon = Icon,
@@ -95,6 +113,7 @@ namespace ColorControl
                     _nvTrayMenu,
                     _amdTrayMenu,
                     _lgTrayMenu,
+                    _gameTrayMenu,
                     new ToolStripSeparator(),
                     new ToolStripMenuItem("Open", null, OpenForm),
                     new ToolStripSeparator(),
@@ -118,9 +137,12 @@ namespace ColorControl
                 chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
             }
 
+            _shortcuts.Add(SHORTCUTID_SCREENSAVER, StartScreenSaver);
+
             InitLgService();
             InitNvService();
             InitAmdService();
+            InitGameService();
 
             InitInfo();
 
@@ -146,6 +168,8 @@ namespace ColorControl
 
                 InitSortState(lvNvPresets, _config.NvPresetsSortState);
 
+                InitShortcut(SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _nvService.ToggleQuickAccessForm);
+
                 _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
             }
             catch (Exception ex)
@@ -170,6 +194,8 @@ namespace ColorControl
 
                 InitSortState(lvAmdPresets, _config.AmdPresetsSortState);
 
+                InitShortcut(SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _amdService.ToggleQuickAccessForm);
+
                 _amdService.AfterApplyPreset += AmdServiceAfterApplyPreset;
             }
             catch (Exception)
@@ -177,6 +203,34 @@ namespace ColorControl
                 //Logger.Error("Error initializing AmdService: " + e.ToLogString());
                 Logger.Debug("No AMD device detected");
                 tcMain.TabPages.Remove(tabAMD);
+            }
+        }
+
+        private void InitGameService()
+        {
+            try
+            {
+                _gameService = new GameService(_dataDir, HandleExternalServiceForLgDevice);
+                FillGamePresets();
+
+                InitSortState(lvGamePresets, _config.GamePresetsSortState);
+
+                InitShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error initializing GameService: " + e.ToLogString());
+                tcMain.TabPages.Remove(tabGameLauncher);
+            }
+        }
+
+        private void InitShortcut(int shortcutId, string shortcut, Action action)
+        {
+            _shortcuts.Add(shortcutId, action);
+
+            if (!string.IsNullOrEmpty(shortcut))
+            {
+                Utils.RegisterShortcut(Handle, shortcutId, shortcut);
             }
         }
 
@@ -218,10 +272,11 @@ namespace ColorControl
 
                 LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
 
+                InitShortcut(SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut, ToggleGameBar);
+                InitShortcut(SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, _lgService.ToggleQuickAccessForm);
+
                 if (!string.IsNullOrEmpty(_lgService.Config.GameBarShortcut))
                 {
-                    Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut);
-
                     // New shortcut manager, not working yet
                     //if (_keyboardHookManager == null)
                     //{
@@ -278,6 +333,13 @@ namespace ColorControl
                 return _amdService.ApplyPreset(parameters[0]);
             }
 
+            if (serviceName.Equals("StartProgram", StringComparison.OrdinalIgnoreCase))
+            {
+                Utils.StartProcess(parameters[0], parameters.Length > 1 ? string.Join(" ", parameters.Skip(1)) : null, setWorkingDir: true);
+
+                return true;
+            }
+
             return false;
         }
 
@@ -291,7 +353,7 @@ namespace ColorControl
             //}
             //else
             //{
-                Text = Application.ProductName + " " + Application.ProductVersion;
+            Text = Application.ProductName + " " + Application.ProductVersion;
             //}
 
             lblInfo.Text = Text + " - " + _currentVersionInfo.LegalCopyright;
@@ -334,7 +396,7 @@ namespace ColorControl
 
         private void FillNvPresets()
         {
-            Utils.InitListView(lvNvPresets, NvPreset.GetColumnNames());
+            FormUtils.InitListView(lvNvPresets, NvPreset.GetColumnNames());
 
             UpdateDisplayInfoItems();
 
@@ -347,13 +409,24 @@ namespace ColorControl
 
         private void FillAmdPresets()
         {
-            Utils.InitListView(lvAmdPresets, AmdPreset.GetColumnNames());
+            FormUtils.InitListView(lvAmdPresets, AmdPreset.GetColumnNames());
 
             UpdateDisplayInfoItemsAmd();
 
             foreach (var preset in _amdService.GetPresets())
             {
                 AddOrUpdateItemAmd(preset);
+                Utils.RegisterShortcut(Handle, preset.id, preset.shortcut);
+            }
+        }
+
+        private void FillGamePresets()
+        {
+            FormUtils.InitListView(lvGamePresets, GamePreset.GetColumnNames());
+
+            foreach (var preset in _gameService.GetPresets())
+            {
+                AddOrUpdateItemGame(preset);
                 Utils.RegisterShortcut(Handle, preset.id, preset.shortcut);
             }
         }
@@ -411,7 +484,7 @@ namespace ColorControl
                 text += "\n" + displayInfo.InfoLine;
             }
 
-            Utils.SetNotifyIconText(_trayIcon, text);
+            FormUtils.SetNotifyIconText(_trayIcon, text);
         }
 
         private void UpdateDisplayInfoItemsAmd()
@@ -467,17 +540,22 @@ namespace ColorControl
                 text += "\n" + displayInfo.InfoLine;
             }
 
-            Utils.SetNotifyIconText(_trayIcon, text);
+            FormUtils.SetNotifyIconText(_trayIcon, text);
         }
 
         private void AddOrUpdateItem(NvPreset preset = null)
         {
-            Utils.AddOrUpdateListItem(lvNvPresets, _nvService.GetPresets(), _config, preset);
+            FormUtils.AddOrUpdateListItem(lvNvPresets, _nvService.GetPresets(), _config, preset);
         }
 
         private void AddOrUpdateItemAmd(AmdPreset preset = null)
         {
-            Utils.AddOrUpdateListItem(lvAmdPresets, _amdService.GetPresets(), _config, preset);
+            FormUtils.AddOrUpdateListItem(lvAmdPresets, _amdService.GetPresets(), _config, preset);
+        }
+
+        private void AddOrUpdateItemGame(GamePreset preset = null)
+        {
+            FormUtils.AddOrUpdateListItem(lvGamePresets, _gameService.GetPresets(), _config, preset);
         }
 
         private void btnApply_Click(object sender, EventArgs e)
@@ -512,10 +590,12 @@ namespace ColorControl
             _nvService?.GlobalSave();
             _amdService?.GlobalSave();
             _lgService?.GlobalSave();
+            _gameService?.GlobalSave();
 
             SaveSortState(lvNvPresets.ListViewItemSorter, _config.NvPresetsSortState);
             SaveSortState(lvAmdPresets.ListViewItemSorter, _config.AmdPresetsSortState);
             SaveSortState(lvLgPresets.ListViewItemSorter, _config.LgPresetsSortState);
+            SaveSortState(lvGamePresets.ListViewItemSorter, _config.GamePresetsSortState);
 
             SaveConfig();
         }
@@ -536,23 +616,19 @@ namespace ColorControl
             var preset = GetSelectedNvPreset();
             var enabled = preset != null;
 
-            btnApply.Enabled = enabled;
-            btnChange.Enabled = enabled;
-            edtNvPresetName.Enabled = enabled;
-            edtShortcut.Enabled = enabled;
-            btnNvPresetSave.Enabled = enabled;
-            btnClone.Enabled = enabled;
-            btnNvPresetDelete.Enabled = enabled;
+            FormUtils.EnableControls(tabNVIDIA, enabled, new List<Control> { lvNvPresets, btnAddModesNv });
 
-            if (preset != null)
+            if (enabled)
             {
                 edtNvPresetName.Text = preset.name;
                 edtShortcut.Text = preset.shortcut;
+                chkNvShowInQuickAccess.Checked = preset.ShowInQuickAccess;
             }
             else
             {
                 edtNvPresetName.Text = string.Empty;
                 edtShortcut.Text = string.Empty;
+                chkNvShowInQuickAccess.Checked = false;
             }
         }
 
@@ -565,12 +641,16 @@ namespace ColorControl
                 control = container.ActiveControl;
                 container = control as ContainerControl;
             }
-            
+
             return control;
         }
 
         private bool IsShortcutControlFocused()
         {
+            if (Form.ActiveForm?.GetType().Name.Equals("MessageForm") == true)
+            {
+                return true;
+            }
             var control = FindFocusedControl();
             return control?.Name.Contains("Shortcut") ?? false;
         }
@@ -580,18 +660,13 @@ namespace ColorControl
             // 5. Catch when a HotKey is pressed !
             if (m.Msg == NativeConstants.WM_HOTKEY && !IsShortcutControlFocused())
             {
-                int id = m.WParam.ToInt32();
+                var id = m.WParam.ToInt32();
 
+                if (_shortcuts.TryGetValue(id, out var action))
+                {
+                    action();
+                }
                 // 6. Handle what will happen once a respective hotkey is pressed
-                if (id == SHORTCUTID_SCREENSAVER)
-                {
-                    var screenSaver = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
-                    Process.Start("explorer.exe", screenSaver);
-                }
-                else if (id == SHORTCUTID_GAMEBAR)
-                {
-                    ToggleGameBar();
-                }
                 else
                 {
                     var preset = _nvService?.GetPresets().FirstOrDefault(x => x.id == id);
@@ -650,6 +725,12 @@ namespace ColorControl
             base.WndProc(ref m);
         }
 
+        private void StartScreenSaver()
+        {
+            var screenSaver = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
+            Process.Start("explorer.exe", screenSaver);
+        }
+
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
             ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
@@ -674,10 +755,17 @@ namespace ColorControl
                 return;
             }
 
+            if (string.IsNullOrEmpty(name) && chkNvShowInQuickAccess.Checked)
+            {
+                MessageForms.WarningOk("A name must be entered before enabling Quick Access.");
+                return;
+            }
+
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.shortcut = shortcut;
             preset.name = name;
+            preset.ShowInQuickAccess = chkNvShowInQuickAccess.Checked;
 
             AddOrUpdateItem();
 
@@ -829,7 +917,8 @@ namespace ColorControl
                     WindowState = FormWindowState.Minimized;
                 }
             }
-            if (!IsDisposed) {
+            if (!IsDisposed)
+            {
                 base.SetVisibleCore(value);
             }
         }
@@ -874,6 +963,19 @@ namespace ColorControl
             {
                 var item = lvAmdPresets.SelectedItems[0];
                 return (AmdPreset)item.Tag;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private GamePreset GetSelectedGamePreset()
+        {
+            if (lvGamePresets.SelectedItems.Count > 0)
+            {
+                var item = lvGamePresets.SelectedItems[0];
+                return (GamePreset)item.Tag;
             }
             else
             {
@@ -968,10 +1070,10 @@ namespace ColorControl
                     }
                 }
 
-                Utils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Bit depth", typeof(ColorDataDepth), preset.colorData, "ColorDepth", nvPresetColorDataMenuItem_Click);
-                Utils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Format", typeof(ColorDataFormat), preset.colorData, "ColorFormat", nvPresetColorDataMenuItem_Click);
-                Utils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Dynamic range", typeof(ColorDataDynamicRange), preset.colorData, "DynamicRange", nvPresetColorDataMenuItem_Click);
-                Utils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Color space", typeof(ColorDataColorimetry), preset.colorData, "Colorimetry", nvPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Bit depth", typeof(ColorDataDepth), preset.colorData, "ColorDepth", nvPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Format", typeof(ColorDataFormat), preset.colorData, "ColorFormat", nvPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Dynamic range", typeof(ColorDataDynamicRange), preset.colorData, "DynamicRange", nvPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Color space", typeof(ColorDataColorimetry), preset.colorData, "Colorimetry", nvPresetColorDataMenuItem_Click);
 
                 if (preset.displayName != _lastDisplayRefreshRates)
                 {
@@ -1283,7 +1385,7 @@ namespace ColorControl
 
         private void FillLgPresets()
         {
-            Utils.InitListView(lvLgPresets, LgPreset.GetColumnNames());
+            FormUtils.InitListView(lvLgPresets, LgPreset.GetColumnNames());
 
             foreach (var preset in _lgService.GetPresets())
             {
@@ -1294,7 +1396,7 @@ namespace ColorControl
 
         private void AddOrUpdateItemLg(LgPreset preset = null, ListViewItem specItem = null)
         {
-            Utils.AddOrUpdateListItem(lvLgPresets, _lgService.GetPresets(), _config, preset, specItem);
+            FormUtils.AddOrUpdateListItem(lvLgPresets, _lgService.GetPresets(), _config, preset, specItem);
         }
 
         private void btnCloneLg_Click(object sender, EventArgs e)
@@ -1324,6 +1426,7 @@ namespace ColorControl
             btnApplyLg.Enabled = enabled;
             btnCloneLg.Enabled = enabled;
             edtNameLg.Enabled = enabled;
+            chkLgQuickAccess.Enabled = enabled;
             edtLgPresetDescription.Enabled = enabled;
             cbxLgPresetDevice.Enabled = enabled;
             edtShortcutLg.Enabled = enabled;
@@ -1343,6 +1446,7 @@ namespace ColorControl
             if (preset != null)
             {
                 edtNameLg.Text = preset.name;
+                chkLgQuickAccess.Checked = preset.ShowInQuickAccess;
                 edtLgPresetDescription.Text = preset.Description;
                 var lgApps = _lgService?.GetApps();
                 cbxLgApps.SelectedIndex = lgApps == null ? -1 : lgApps.FindIndex(x => x.appId.Equals(preset.appId));
@@ -1365,7 +1469,7 @@ namespace ColorControl
 
                 var trigger = preset.Triggers.FirstOrDefault();
 
-                Utils.SetComboBoxEnumIndex(cbxLgPresetTrigger, (int)(trigger?.Trigger ?? PresetTriggerType.None));
+                FormUtils.SetComboBoxEnumIndex(cbxLgPresetTrigger, (int)(trigger?.Trigger ?? PresetTriggerType.None));
 
                 edtLgPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>(trigger != null ? (int)trigger.Conditions : 0).Join(", ");
                 edtLgPresetTriggerConditions.Tag = trigger != null ? (int)trigger.Conditions : 0;
@@ -1376,6 +1480,7 @@ namespace ColorControl
             else
             {
                 edtNameLg.Text = string.Empty;
+                chkLgQuickAccess.Checked = false;
                 edtLgPresetDescription.Text = string.Empty;
                 cbxLgApps.SelectedIndex = -1;
                 edtShortcutLg.Text = string.Empty;
@@ -1417,6 +1522,7 @@ namespace ColorControl
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.name = name;
+            preset.ShowInQuickAccess = chkLgQuickAccess.Checked;
             preset.Description = edtLgPresetDescription.Text.Trim();
 
             if (cbxLgPresetDevice.SelectedIndex == -1)
@@ -1439,7 +1545,7 @@ namespace ColorControl
                 preset.appId = lgApp.appId;
             }
 
-            var triggerType = Utils.GetComboBoxEnumItem<PresetTriggerType>(cbxLgPresetTrigger);
+            var triggerType = FormUtils.GetComboBoxEnumItem<PresetTriggerType>(cbxLgPresetTrigger);
             preset.UpdateTrigger(triggerType,
                                  (PresetConditionType)edtLgPresetTriggerConditions.Tag,
                                  edtLgPresetIncludedProcesses.Text,
@@ -1557,7 +1663,7 @@ namespace ColorControl
             chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
             scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
 
-            Utils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
+            FormUtils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
 
             if (!string.IsNullOrEmpty(_lgTabMessage))
             {
@@ -1689,7 +1795,8 @@ namespace ColorControl
             InitLgApps();
         }
 
-        private void InitLgApps() {
+        private void InitLgApps()
+        {
             var lgApps = _lgService?.GetApps();
 
             cbxLgApps.Items.Clear();
@@ -1711,45 +1818,25 @@ namespace ColorControl
             }
         }
 
-        private void UpdateTrayMenuNv()
+        private void UpdateTrayMenu(ToolStripMenuItem menu, IEnumerable<PresetBase> presets, EventHandler eventHandler)
         {
-            var presets = _nvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
-
-            _nvTrayMenu.DropDownItems.Clear();
+            menu.DropDownItems.Clear();
 
             foreach (var preset in presets)
             {
                 var name = preset.GetTextForMenuItem();
+                var keys = Keys.None;
+
                 if (!string.IsNullOrEmpty(preset.shortcut))
                 {
-                    name += "\t" + preset.shortcut;
+                    name += "        " + preset.shortcut;
+                    //keys = Utils.ShortcutToKeys(preset.shortcut);
                 }
 
-                var item = new ToolStripMenuItem(name);
+                var item = new ToolStripMenuItem(name, null, null, keys);
                 item.Tag = preset;
-                item.Click += TrayMenuItemNv_Click;
-                _nvTrayMenu.DropDownItems.Add(item);
-            }
-        }
-
-        private void UpdateTrayMenuAmd()
-        {
-            var presets = _amdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
-
-            _amdTrayMenu.DropDownItems.Clear();
-
-            foreach (var preset in presets)
-            {
-                var name = preset.GetTextForMenuItem();
-                if (!string.IsNullOrEmpty(preset.shortcut))
-                {
-                    name += "\t" + preset.shortcut;
-                }
-
-                var item = new ToolStripMenuItem(name);
-                item.Tag = preset;
-                item.Click += TrayMenuItemAmd_Click;
-                _amdTrayMenu.DropDownItems.Add(item);
+                item.Click += eventHandler;
+                menu.DropDownItems.Add(item);
             }
         }
 
@@ -1769,45 +1856,50 @@ namespace ColorControl
             ApplyAmdPreset(preset);
         }
 
+        private void TrayMenuItemGame_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripMenuItem;
+            var preset = (GamePreset)item.Tag;
+
+            ApplyGamePreset(preset);
+        }
+
         private void trayIconContextMenu_Popup(object sender, EventArgs e)
         {
             _nvTrayMenu.Visible = _nvService != null;
             if (_nvTrayMenu.Visible)
             {
-                UpdateTrayMenuNv();
+                var presets = _nvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
+
+                UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
             }
 
             _amdTrayMenu.Visible = _amdService != null;
             if (_amdTrayMenu.Visible)
             {
-                UpdateTrayMenuAmd();
+                var presets = _amdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
+
+                UpdateTrayMenu(_amdTrayMenu, presets, TrayMenuItemAmd_Click);
             }
 
             _lgTrayMenu.Visible = _lgService != null;
             if (_lgTrayMenu.Visible)
             {
-                UpdateTrayMenuLg();
+                var presets = _lgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
+
+                _lgTrayMenu.DropDownItems.Clear();
+
+                UpdateTrayMenu(_lgTrayMenu, presets, TrayMenuItemLg_Click);
             }
-        }
 
-        private void UpdateTrayMenuLg()
-        {
-            var presets = _lgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
-
-            _lgTrayMenu.DropDownItems.Clear();
-
-            foreach (var preset in presets)
+            _gameTrayMenu.Visible = _gameService != null;
+            if (_gameTrayMenu.Visible)
             {
-                var name = preset.name;
-                if (!string.IsNullOrEmpty(preset.shortcut))
-                {
-                    name += "\t" + preset.shortcut;
-                }
+                var presets = _gameService.GetPresets();
 
-                var item = new ToolStripMenuItem(name);
-                item.Tag = preset;
-                item.Click += TrayMenuItemLg_Click;
-                _lgTrayMenu.DropDownItems.Add(item);
+                _gameTrayMenu.DropDownItems.Clear();
+
+                UpdateTrayMenu(_gameTrayMenu, presets, TrayMenuItemGame_Click);
             }
         }
 
@@ -1829,6 +1921,12 @@ namespace ColorControl
         {
             var preset = GetSelectedAmdPreset();
             ApplyAmdPreset(preset);
+        }
+
+        private void ApplySelectedGamePreset()
+        {
+            var preset = GetSelectedGamePreset();
+            ApplyGamePreset(preset);
         }
 
         private void btnDeleteLg_Click(object sender, EventArgs e)
@@ -1892,7 +1990,7 @@ namespace ColorControl
             }
             try
             {
-                var result = _amdService.ApplyPreset(preset, Program.AppContext);
+                var result = _amdService.ApplyPreset(preset);
                 if (!result)
                 {
                     throw new Exception("Error while applying AMD preset. At least one setting could not be applied. Check the log for details.");
@@ -1927,6 +2025,29 @@ namespace ColorControl
             if (!result)
             {
                 MessageForms.WarningOk("Could not apply the preset (entirely). Check the log for details.");
+            }
+        }
+
+        private bool ApplyGamePreset(GamePreset preset)
+        {
+            if (preset == null || _gameService == null)
+            {
+                return false;
+            }
+            try
+            {
+                var result = _gameService.ApplyPreset(preset, Program.AppContext);
+                if (!result)
+                {
+                    throw new Exception("Error while applying Game-preset. At least one setting could not be applied. Check the log for details.");
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                MessageForms.ErrorOk($"Error applying Game-preset ({e.TargetSite.Name}): {e.Message}");
+                return false;
             }
         }
 
@@ -2010,7 +2131,7 @@ namespace ColorControl
         {
             var item = sender as ToolStripItem;
 
-            AddToLgSteps(item.Text);
+            FormUtils.AddStepToTextBox(edtStepsLg, item.Text);
         }
 
         private void miLgAddAction_Click(object sender, EventArgs e)
@@ -2080,11 +2201,11 @@ namespace ColorControl
 
                 var values = MessageForms.ShowDialog("Choose value", new[] {
                     new MessageForms.FieldDefinition
-                    { 
-                        Label = "Choose desired " + title, 
-                        FieldType = MessageForms.FieldType.DropDown, 
-                        Values = dropDownValues 
-                    } 
+                    {
+                        Label = "Choose desired " + title,
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = dropDownValues
+                    }
                 });
 
                 if (!values.Any())
@@ -2105,7 +2226,7 @@ namespace ColorControl
                 text += $"({value})";
             }
 
-            AddToLgSteps(text);
+            FormUtils.AddStepToTextBox(edtStepsLg, text);
         }
 
         private void miLgAddNvPreset_Click(object sender, EventArgs e)
@@ -2115,7 +2236,7 @@ namespace ColorControl
 
             var text = $"NvPreset({preset.name})";
 
-            AddToLgSteps(text);
+            FormUtils.AddStepToTextBox(edtStepsLg, text);
         }
 
         private void miLgAddAmdPreset_Click(object sender, EventArgs e)
@@ -2125,33 +2246,7 @@ namespace ColorControl
 
             var text = $"AmdPreset({preset.name})";
 
-            AddToLgSteps(text);
-        }
-
-        private void AddToLgSteps(string step)
-        {
-            var text = edtStepsLg.Text;
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                text = step;
-            }
-            else
-            {
-                var pos = edtStepsLg.SelectionStart;
-                while (pos < text.Length && text.CharAt(pos) != ',')
-                {
-                    pos++;
-                }
-                if (pos == text.Length)
-                {
-                    text += ", " + step;
-                }
-                else
-                {
-                    text = text.Substring(0, pos + 1) + " " + step + ", " + text.Substring(pos + 1).Trim();
-                }
-            }
-            edtStepsLg.Text = text.Trim();
+            FormUtils.AddStepToTextBox(edtStepsLg, text);
         }
 
         private void clbLgPower_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -2413,7 +2508,8 @@ Do you want to continue?";
             }
         }
 
-        private void ApplyNvPresetOnStartup(int attempts = 5) {
+        private void ApplyNvPresetOnStartup(int attempts = 5)
+        {
 
             var presetIdOrName = !string.IsNullOrEmpty(StartUpParams.NvidiaPresetIdOrName) ? StartUpParams.NvidiaPresetIdOrName : _config.NvPresetId_ApplyOnStartup.ToString();
 
@@ -2567,10 +2663,17 @@ Do you want to continue?";
                 return;
             }
 
+            if (string.IsNullOrEmpty(name) && chkAmdQuickAccess.Checked)
+            {
+                MessageForms.WarningOk("A name must be entered before enabling Quick Access.");
+                return;
+            }
+
             var clear = !string.IsNullOrEmpty(preset.shortcut);
 
             preset.shortcut = shortcut;
             preset.name = name;
+            preset.ShowInQuickAccess = chkAmdQuickAccess.Checked;
 
             AddOrUpdateItemAmd();
 
@@ -2635,8 +2738,8 @@ Do you want to continue?";
                     }
                 }
 
-                Utils.BuildDropDownMenu(mnuAmdColorSettings, "Color depth", typeof(ADLColorDepth), preset, "colorDepth", amdPresetColorDataMenuItem_Click);
-                Utils.BuildDropDownMenu(mnuAmdColorSettings, "Pixel format", typeof(ADLPixelFormat), preset, "pixelFormat", amdPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuAmdColorSettings, "Color depth", typeof(ADLColorDepth), preset, "colorDepth", amdPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuAmdColorSettings, "Pixel format", typeof(ADLPixelFormat), preset, "pixelFormat", amdPresetColorDataMenuItem_Click);
 
                 if (preset.displayName != _lastDisplayRefreshRates)
                 {
@@ -2689,7 +2792,7 @@ Do you want to continue?";
 
                 miAmdDitheringIncluded.Checked = preset.applyDithering;
 
-                Utils.BuildDropDownMenu(mnuAmdDithering, "Mode", typeof(ADLDitherState), preset, "ditherState", amdPresetColorDataMenuItem_Click);
+                FormUtils.BuildDropDownMenu(mnuAmdDithering, "Mode", typeof(ADLDitherState), preset, "ditherState", amdPresetColorDataMenuItem_Click);
 
                 miAmdHDRIncluded.Checked = preset.applyHDR;
                 miAmdHDREnabled.Checked = preset.HDREnabled;
@@ -2710,23 +2813,19 @@ Do you want to continue?";
             var preset = GetSelectedAmdPreset();
             var enabled = preset != null;
 
-            btnApplyAmd.Enabled = enabled;
-            btnChangeAmd.Enabled = enabled;
-            edtAmdPresetName.Enabled = enabled;
-            edtAmdShortcut.Enabled = enabled;
-            btnAmdPresetSave.Enabled = enabled;
-            btnCloneAmd.Enabled = enabled;
-            btnDeleteAmd.Enabled = enabled;
+            FormUtils.EnableControls(tabAMD, enabled, new List<Control> { lvAmdPresets, btnAddAmd });
 
-            if (preset != null)
+            if (enabled)
             {
                 edtAmdPresetName.Text = preset.name;
                 edtAmdShortcut.Text = preset.shortcut;
+                chkAmdQuickAccess.Checked = preset.ShowInQuickAccess;
             }
             else
             {
                 edtAmdPresetName.Text = string.Empty;
                 edtAmdShortcut.Text = string.Empty;
+                chkAmdQuickAccess.Checked = false;
             }
         }
 
@@ -2903,7 +3002,7 @@ Do you want to continue?";
             {
                 return;
             }
-            
+
             var device = _lgService.SelectedDevice;
 
             if (device != null)
@@ -2937,45 +3036,8 @@ Do you want to continue?";
                 item.Click += miLgAddAction_Click;
             }
 
-            if (_nvService != null)
-            {
-                mnuLgNvPresets.DropDownItems.Clear();
-
-                foreach (var nvPreset in _nvService.GetPresets())
-                {
-                    var text = nvPreset.name;
-
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        var item = mnuLgNvPresets.DropDownItems.Add(text);
-                        item.Tag = nvPreset;
-                        item.Click += miLgAddNvPreset_Click;
-                    }
-                }
-            }
-
-            if (_amdService != null)
-            {
-                mnuLgAmdPresets.DropDownItems.Clear();
-
-                foreach (var amdPreset in _amdService.GetPresets())
-                {
-                    var text = amdPreset.name;
-
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        var item = mnuLgAmdPresets.DropDownItems.Add(text);
-                        item.Tag = amdPreset;
-                        item.Click += miLgAddAmdPreset_Click;
-                    }
-                }
-            }
-
-            mnuLgNvPresets.Visible = _nvService != null;
-            mnuLgAmdPresets.Visible = _amdService != null;
-
-            mnuLgNvPresets.Text = mnuLgNvPresets.DropDownItems.Count > 0 ? "NVIDIA presets" : "NVIDIA presets (no named presets found)";
-            mnuLgAmdPresets.Text = mnuLgAmdPresets.DropDownItems.Count > 0 ? "AMD presets" : "AMD presets (no named presets found)";
+            BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
+            BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
 
         private void btnLgDeviceConvertToCustom_Click(object sender, EventArgs e)
@@ -2992,6 +3054,27 @@ Do you want to continue?"
             _lgService.SelectedDevice.ConvertToCustom();
 
             FillLgDevices();
+        }
+
+        private static void BuildServicePresetsMenu<T>(ToolStripMenuItem menu, ServiceBase<T> service, string name, EventHandler eventHandler) where T : PresetBase, new()
+        {
+            menu.DropDownItems.Clear();
+
+            foreach (var nvPreset in service?.GetPresets() ?? new List<T>())
+            {
+                var text = nvPreset.name;
+
+                if (!string.IsNullOrEmpty(text))
+                {
+                    var item = menu.DropDownItems.Add(text);
+                    item.Tag = nvPreset;
+                    item.Click += eventHandler;
+                }
+            }
+
+            menu.Visible = service != null;
+
+            menu.Text = menu.DropDownItems.Count > 0 ? $"{name} presets" : $"{name} presets (no named presets found)";
         }
 
         private void btnLgRemoteControlShow_Click(object sender, EventArgs e)
@@ -3034,7 +3117,7 @@ Do you want to continue?"
                 !a.Name.Contains("hdmiPc", StringComparison.OrdinalIgnoreCase) &&
                 (a.EnumType != null || a.MinValue >= 0 && a.MaxValue > a.MinValue)))
             {
-                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue);
+                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue);
 
                 if (!gameBarActions.Contains(action))
                 {
@@ -3074,7 +3157,7 @@ Do you want to continue?"
 
             foreach (var presetAction in presetActions)
             {
-                var menu = Utils.BuildDropDownMenuEx(mnuLgExpert, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
+                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
             }
         }
 
@@ -3431,6 +3514,405 @@ The InStart and Software Update items are now visible under the Expert-button."
             preset.UpdateDriverSetting(settingItem, settingValue);
 
             AddOrUpdateItem();
+        }
+
+        private void mnuLgProgram_Click(object sender, EventArgs e)
+        {
+            var file = Utils.SelectFile();
+
+            if (file != null)
+            {
+                FormUtils.AddStepToTextBox(edtStepsLg, $"StartProgram({file.FullName})");
+            }
+        }
+
+        private void lvGamePresets_SelectedIndexChanged(object sender, EventArgs _)
+        {
+            var preset = GetSelectedGamePreset();
+            var enabled = preset != null;
+
+            FormUtils.EnableControls(tabGameLauncher, enabled, new List<Control> { lvGamePresets, btnGameAdd });
+
+            if (preset != null)
+            {
+                edtGameName.Text = preset.name;
+                edtGamePath.Text = preset.Path;
+                edtGameParameters.Text = preset.Parameters;
+                chkGameRunAsAdmin.Checked = preset.RunAsAdministrator;
+                chkGameQuickAccess.Checked = preset.ShowInQuickAccess;
+                edtGamePrelaunchSteps.Text = string.Join(", ", preset.PreLaunchSteps);
+            }
+            else
+            {
+                edtGameName.Text = string.Empty;
+                edtGamePath.Text = string.Empty;
+                edtGameParameters.Text = string.Empty;
+                chkGameRunAsAdmin.Checked = false;
+                chkGameQuickAccess.Checked = false;
+                edtGamePrelaunchSteps.Text = string.Empty;
+            }
+        }
+
+        private void lvGamePresets_DoubleClick(object sender, EventArgs e)
+        {
+            ApplySelectedGamePreset();
+        }
+
+        private void btnGameLaunch_Click(object sender, EventArgs e)
+        {
+            ApplySelectedGamePreset();
+        }
+
+        private void btnGameClone_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedGamePreset();
+
+            var newPreset = preset.Clone();
+
+            AddOrUpdateItemGame(newPreset);
+        }
+
+        private void btnGameAdd_Click(object sender, EventArgs e)
+        {
+            var file = Utils.SelectFile();
+
+            AddGamePreset(file);
+        }
+
+        private void AddGamePreset(FileInfo file)
+        {
+            var preset = _gameService.CreateNewPreset();
+
+            if (file != null)
+            {
+                var versionInfo = FileVersionInfo.GetVersionInfo(file.FullName);
+
+                preset.Path = file.FullName;
+
+                var fileName = Path.GetFileNameWithoutExtension(preset.Path);
+
+                preset.name = versionInfo.FileDescription ?? versionInfo.ProductName ?? fileName;
+            }
+
+            AddOrUpdateItemGame(preset);
+        }
+
+        private void btnGameSave_Click(object sender, EventArgs e)
+        {
+            var shortcut = string.Empty;
+            if (!Utils.ValidateShortcut(shortcut))
+            {
+                return;
+            }
+
+            var preset = GetSelectedGamePreset();
+
+            var name = edtGameName.Text.Trim();
+
+            if (name.Length == 0 || _gameService.GetPresets().Any(x => x.id != preset.id && x.name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageForms.WarningOk("The name can not be empty and must be unique.");
+                return;
+            }
+
+            preset.name = name;
+            preset.Path = edtGamePath.Text;
+            preset.Parameters = edtGameParameters.Text;
+            preset.RunAsAdministrator = chkGameRunAsAdmin.Checked;
+            preset.ShowInQuickAccess = chkGameQuickAccess.Checked;
+
+            var clear = !string.IsNullOrEmpty(preset.shortcut);
+
+            var shortcutChanged = !shortcut.Equals(preset.shortcut);
+            if (shortcutChanged)
+            {
+                preset.shortcut = shortcut;
+            }
+
+            var text = edtGamePrelaunchSteps.Text;
+
+            Utils.ParseWords(preset.PreLaunchSteps, text);
+
+            AddOrUpdateItemGame();
+
+            if (shortcutChanged)
+            {
+                Utils.RegisterShortcut(Handle, preset.id, preset.shortcut, clear);
+            }
+        }
+
+        private void btnGameBrowse_Click(object sender, EventArgs e)
+        {
+            var file = Utils.SelectFile();
+
+            if (file == null)
+            {
+                return;
+            }
+
+            var preset = GetSelectedGamePreset();
+
+            preset.Path = file.FullName;
+
+            edtGamePath.Text = preset.Path;
+
+            if (string.IsNullOrEmpty(preset.name) || preset.name.StartsWith("New preset", StringComparison.OrdinalIgnoreCase))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(preset.Path);
+
+                edtGameName.Text = fileName;
+                preset.name = fileName;
+            }
+
+            AddOrUpdateItemGame();
+        }
+
+        private void btnGameDelete_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedGamePreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(preset.shortcut))
+            {
+                Utils.UnregisterHotKey(Handle, preset.id);
+            }
+
+            _gameService.GetPresets().Remove(preset);
+
+            var item = lvGamePresets.SelectedItems[0];
+            lvGamePresets.Items.Remove(item);
+        }
+
+        private void mnuGameAddStep_Opening(object sender, CancelEventArgs e)
+        {
+            BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
+            BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
+            BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
+        }
+
+        private void miGameAddPreset_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripItem;
+            var preset = item.Tag as PresetBase;
+
+            var text = $"{preset.GetType().Name}({preset.name})";
+
+            FormUtils.AddStepToTextBox(edtGamePrelaunchSteps, text);
+        }
+
+        private void btnGameAddStep_Click(object sender, EventArgs e)
+        {
+            mnuGameAddStep.Show(btnGameAddStep, btnGameAddStep.PointToClient(Cursor.Position));
+        }
+
+        private void mnuGameStartProgram_Click(object sender, EventArgs e)
+        {
+            var file = Utils.SelectFile();
+
+            if (file != null)
+            {
+                FormUtils.AddStepToTextBox(edtGamePrelaunchSteps, $"StartProgram({file.FullName})");
+            }
+        }
+
+        private void lvGamePresets_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                var file = new FileInfo(files.First());
+
+                AddGamePreset(file);
+            }
+        }
+
+        private void lvGamePresets_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.All;
+        }
+
+        private void btnGameActions_Click(object sender, EventArgs e)
+        {
+            mnuGameActions.Show(btnGameSettings, btnGameSettings.PointToClient(Cursor.Position));
+        }
+
+        private void mnuGameNvInspector_Click(object sender, EventArgs e)
+        {
+            StartNvProfileInspector();
+        }
+
+        private string EditShortcut(string shortcut, string label = "Shortcut", string title = null)
+        {
+            var field = new MessageForms.FieldDefinition
+            {
+                Label = label,
+                FieldType = MessageForms.FieldType.Shortcut,
+                Value = shortcut
+            };
+            var values = MessageForms.ShowDialog(title ?? "Set shortcut", new[] { field });
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            return values.First().Value.ToString();
+        }
+
+
+        private void miGameSetQuickAccessShortcut_Click(object sender, EventArgs e)
+        {
+            var shortcut = EditShortcut(_config.GameQuickAccessShortcut);
+
+            if (shortcut == null)
+            {
+                return;
+            }
+
+            var clear = !string.IsNullOrEmpty(_config.GameQuickAccessShortcut);
+
+            _config.GameQuickAccessShortcut = shortcut;
+
+            Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, clear);
+        }
+
+        private void btnNvSetQuickAccessShortcut_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void btnLgSettings_Click(object sender, EventArgs e)
+        {
+            var shortcut = EditShortcut(_config.LgQuickAccessShortcut, "Quick Access shortcut", "LG controller settings");
+
+            if (shortcut == null)
+            {
+                return;
+            }
+
+            var clear = !string.IsNullOrEmpty(_config.LgQuickAccessShortcut);
+
+            _config.LgQuickAccessShortcut = shortcut;
+
+            Utils.RegisterShortcut(Handle, SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, clear);
+        }
+
+        private void mnuGameActions_Opening(object sender, CancelEventArgs e)
+        {
+            mnuGameNvInspector.Visible = _nvService != null;
+        }
+
+        private void miNvProfileInspector_Click(object sender, EventArgs e)
+        {
+            StartNvProfileInspector();
+        }
+
+        private void StartNvProfileInspector()
+        {
+            var form = new frmDrvSettings();
+            form.Show();
+        }
+
+        private void miNvSettings_Click(object sender, EventArgs e)
+        {
+            var shortcut = EditShortcut(_config.NvQuickAccessShortcut, "Quick Access shortcut", "NVIDIA controller settings");
+
+            if (shortcut == null)
+            {
+                return;
+            }
+
+            var clear = !string.IsNullOrEmpty(_config.NvQuickAccessShortcut);
+
+            _config.NvQuickAccessShortcut = shortcut;
+
+            Utils.RegisterShortcut(Handle, SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, clear);
+        }
+
+        private void btnNvSettings_Click(object sender, EventArgs e)
+        {
+            mnuNvSettings.Show(btnNvSettings, btnNvSettings.PointToClient(Cursor.Position));
+        }
+
+        private void lvGamePresets_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            ListViewItemChecked<GamePreset>(lvGamePresets, e);
+        }
+
+        private void ListViewItemChecked<T>(ListView listView, ItemCheckedEventArgs e) where T : PresetBase
+        {
+            var checkedPreset = (T)e.Item.Tag;
+
+            if (checkedPreset == null || checkedPreset.ShowInQuickAccess == e.Item.Checked)
+            {
+                return;
+            }
+
+            checkedPreset.ShowInQuickAccess = e.Item.Checked;
+
+            var preset = listView.GetSelectedItemTag<T>();
+
+            if (preset == checkedPreset)
+            {
+                listView.FireEvent("SelectedIndexChanged", listView, e);
+            }
+        }
+
+        private void lvNvPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            ListViewItemChecked<NvPreset>(lvNvPresets, e);
+        }
+
+        private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            ListViewItemChecked<LgPreset>(lvLgPresets, e);
+        }
+
+        private void lvNvPresets_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            var listView = sender as ListView;
+
+            if (!listView.Focused)
+            {
+                return;
+            }
+
+            var listItem = listView.Items[e.Index];
+
+            if (listItem.Tag == null)
+            {
+                MessageForms.WarningOk("Quick Access cannot be enabled for this item.");
+                e.NewValue = e.CurrentValue;
+            }
+
+            if (e.NewValue == CheckState.Checked && string.IsNullOrEmpty(listItem.Text))
+            {
+                MessageForms.WarningOk("A name must be entered before enabling Quick Access.");
+                e.NewValue = e.CurrentValue;
+            }
+        }
+
+        private void lvAmdPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
+        {
+            ListViewItemChecked<AmdPreset>(lvAmdPresets, e);
+        }
+
+        private void btnAmdSettings_Click(object sender, EventArgs e)
+        {
+            var shortcut = EditShortcut(_config.AmdQuickAccessShortcut, "Quick Access shortcut", "AMD controller settings");
+
+            if (shortcut == null)
+            {
+                return;
+            }
+
+            var clear = !string.IsNullOrEmpty(_config.AmdQuickAccessShortcut);
+
+            _config.AmdQuickAccessShortcut = shortcut;
+
+            Utils.RegisterShortcut(Handle, SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, clear);
         }
     }
 }

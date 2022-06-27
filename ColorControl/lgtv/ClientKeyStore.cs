@@ -1,4 +1,4 @@
-﻿using ColorControl;
+﻿using ColorControl.Common;
 using System.IO;
 
 namespace LgTv
