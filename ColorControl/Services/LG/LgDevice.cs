@@ -159,7 +159,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("arcPerApp", typeof(AspectRatio), title: "Aspect Ratio", category: "aspectRatio");
             AddGenericPictureAction("justScan", typeof(OffToAuto2), title: "Just Scan", category: "aspectRatio");
             AddGenericPictureAction("allDirZoomHRatio", minValue: 0, maxValue: 10, title: "All-Direction Zoom Horizontal Ratio", category: "aspectRatio");
-            AddGenericPictureAction("allDirZoomVRatio", minValue: 0, maxValue: 9, title: "All-Direction Zoom Verical Ratio", category: "aspectRatio");
+            AddGenericPictureAction("allDirZoomVRatio", minValue: 0, maxValue: 9, title: "All-Direction Zoom Vertical Ratio", category: "aspectRatio");
             AddGenericPictureAction("allDirZoomHPosition", minValue: -10, maxValue: 9, title: "All-Direction Zoom Horizontal Position", category: "aspectRatio");
             AddGenericPictureAction("allDirZoomVPosition", minValue: -9, maxValue: 9, title: "All-Direction Zoom Vertical Position", category: "aspectRatio");
             AddGenericPictureAction("vertZoomVPosition", minValue: -8, maxValue: 9, title: "Vertical Zoom Position", category: "aspectRatio");
