@@ -753,9 +753,12 @@ namespace ColorControl.Services.LG
 
             var isHDRActive = context.Devices.Any(d => d.IsUsingHDRPictureMode());
 
+            var isGsyncActive = LgDevice.ExternalServiceHandler("GsyncEnabled", new[] { "" });
+
             var triggerContext = new PresetTriggerContext
             {
                 IsHDRActive = isHDRActive,
+                IsGsyncActive = isGsyncActive,
                 ForegroundProcess = context.ForegroundProcess,
                 ForegroundProcessIsFullScreen = context.ForegroundProcessIsFullScreen,
                 ChangedProcesses = changedProcesses,

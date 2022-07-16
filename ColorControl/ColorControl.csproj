@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net6.0-windows10.0.20348.0</TargetFramework>
     <OutputType>WinExe</OutputType>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -18,8 +18,8 @@
     <PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>7.0.0.0</ApplicationVersion>
-	<Version>7.0.0.0</Version>
+    <ApplicationVersion>7.1.0.0</ApplicationVersion>
+	<Version>7.1.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>false</BootstrapperEnabled>
@@ -28,7 +28,7 @@
     <UseWPF>false</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 	<ApplicationIcon>pngbarn.ico</ApplicationIcon>
-	<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+	<SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
 	<Copyright>2020-2022 Maassoft</Copyright>
 	<Authors>Maassoft</Authors>
 	<ManifestCertificateThumbprint>CF0BC153EA664CD97AC6F234B91F45D34630958F</ManifestCertificateThumbprint>
@@ -89,11 +89,11 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="NLog" Version="4.7.13" />
-    <PackageReference Include="NStandard" Version="0.8.28" />
+    <PackageReference Include="NLog" Version="5.0.1" />
+    <PackageReference Include="NStandard" Version="0.9.13" />
     <PackageReference Include="NvAPIWrapper.Net" Version="0.8.1.101" />
-    <PackageReference Include="NWin32" Version="1.2.0" />
-    <PackageReference Include="TaskScheduler" Version="2.9.3" />
+    <PackageReference Include="NWin32" Version="1.2.3" />
+    <PackageReference Include="TaskScheduler" Version="2.10.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nspector\Nspector.csproj" />

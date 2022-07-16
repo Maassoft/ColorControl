@@ -13,6 +13,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ColorControl.Services.NVIDIA
@@ -90,6 +92,8 @@ namespace ColorControl.Services.NVIDIA
         private DrsSettingsService _drs;
         private DrsSettingsMetaService _meta;
         private List<SettingItem> _settings = new List<SettingItem>();
+
+        private Semaphore _semaphore = new Semaphore(1, 1);
 
         public const uint DRS_GSYNC_APPLICATION_MODE = 294973784;
         public const uint DRS_VSYNC_CONTROL = 11041231;
@@ -680,12 +684,44 @@ namespace ColorControl.Services.NVIDIA
 
         public List<SettingItem> GetVisibleSettings()
         {
-            return _settings.Where(s => _driverSettingIds.Contains(s.SettingId)).ToList();
+            return GetSettings().Where(s => _driverSettingIds.Contains(s.SettingId)).ToList();
         }
 
         public SettingMeta GetSettingMeta(uint settingId)
         {
             return _meta.GetSettingMeta(settingId);
+        }
+
+        public bool IsGsyncEnabled()
+        {
+            var setting = GetSettings().FirstOrDefault(s => s.SettingId == DRS_GSYNC_APPLICATION_MODE);
+            if (setting == null)
+            {
+                return false;
+            }
+
+            var settingMeta = GetSettingMeta(setting.SettingId);
+            var settingValue = settingMeta.DwordValues.FirstOrDefault(s => s.ValueName == setting.ValueText);
+
+            return settingValue.Value >= 1;
+        }
+
+        protected List<SettingItem> GetSettings()
+        {
+            _semaphore.WaitOne();
+            try
+            {
+                if (!_settings.Any())
+                {
+                    RefreshProfileSettings();
+                }
+
+                return _settings;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         protected override void Initialize()
@@ -698,16 +734,27 @@ namespace ColorControl.Services.NVIDIA
 
             _drs.GetProfileNames(ref _baseProfileName, false);
 
-            RefreshProfileSettings();
+            Task.Run(() =>
+            {
+                RefreshProfileSettings();
+            });
         }
 
         private void RefreshProfileSettings()
         {
-            var applications = new Dictionary<string, string>();
-            var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications);
+            _semaphore.WaitOne();
+            try
+            {
+                var applications = new Dictionary<string, string>();
+                var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications);
 
-            _settings = new List<SettingItem>();
-            _settings.AddRange(normalSettings);
+                _settings = new List<SettingItem>();
+                _settings.AddRange(normalSettings);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         protected override void Uninitialize()

@@ -1,5 +1,4 @@
-﻿using ColorControl;
-using ColorControl.Common;
+﻿using ColorControl.Common;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,7 @@ namespace LgTv
 
     public enum ControlButtons
     {
-        Back,Down,Left,Right,
+        Back, Down, Left, Right,
         OK,
         Exit
     }
@@ -22,9 +21,9 @@ namespace LgTv
     public enum PictureMode
     {
         cinema, eco, expert1, expert2, game, normal, photo, sports, technicolor, vivid, hdrEffect, filmMaker,
-        
-        hdrCinema, hdrCinemaBright, hdrExternal, hdrGame, hdrStandard, hdrTechnicolor, hdrVivid, hdrFilmMaker, 
-        
+
+        hdrCinema, hdrCinemaBright, hdrExternal, hdrGame, hdrStandard, hdrTechnicolor, hdrVivid, hdrFilmMaker,
+
         dolbyHdrCinema, dolbyHdrCinemaBright, dolbyHdrDarkAmazon, dolbyHdrGame, dolbyHdrStandard, dolbyHdrVivid, dolbyStandard
     }
 
@@ -143,6 +142,26 @@ namespace LgTv
         auto
     }
 
+    public enum AspectRatio
+    {
+        _21x9,
+        _16x9,
+        _4x3,
+        _14x9,
+        _32x9,
+        _32x12,
+        just_scan,
+        original,
+        full_wide,
+        limited,
+        zoom,
+        zoom2,
+        cinema_zoom,
+        vertZoom,
+        allDirZoom,
+        twinZoom
+    }
+
     public enum HdmiIcon
     {
         [Description("HDMI")]
@@ -225,7 +244,7 @@ namespace LgTv
         wisa_speaker,
     }
 
-    public class LgTvApi:IDisposable
+    public class LgTvApi : IDisposable
     {
         public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
 
@@ -289,7 +308,7 @@ namespace LgTv
             _keyStore.SaveClientKey(result.clientKey);
             _keyStore.SaveHandShake(registerJson);
         }
-    
+
 
         public async Task<bool> Connect()
         {
@@ -303,7 +322,7 @@ namespace LgTv
             var requestMessage = new RequestMessage("ssap://com.webos.service.networkinput/getPointerInputSocket", new { });
             var s = await _connection.SendCommandAsync(requestMessage);
             var socketPath = (string)s.socketPath;
-           
+
             _mouseConnection = new LgWebOsMouseService(new LgTvApiCore());
             await _mouseConnection.Connect(socketPath);
             return _mouseConnection;
@@ -337,10 +356,10 @@ namespace LgTv
         }
         public async Task ShowToast()
         {
-            var requestMessage = new RequestMessage("ssap://system.notifications/createToast",new {message = "Co tam u Ciebie?"});
+            var requestMessage = new RequestMessage("ssap://system.notifications/createToast", new { message = "Co tam u Ciebie?" });
             await _connection.SendCommandAsync(requestMessage);
         }
-       
+
         //public async Task<string> LaunchApp(string appId,Uri uri)
         //{
         //    var url = uri.ToString();
@@ -354,7 +373,7 @@ namespace LgTv
             var requestMessage = new RequestMessage("volumedown", "ssap://audio/volumeDown");
             await _connection.SendCommandAsync(requestMessage);
         }
-        public async Task  VolumeUp()
+        public async Task VolumeUp()
         {
             var requestMessage = new RequestMessage("volumeup", "ssap://audio/volumeUp");
             await _connection.SendCommandAsync(requestMessage);
@@ -365,12 +384,12 @@ namespace LgTv
             await _connection.SendCommandAsync(requestMessage);
         }
 
-        public async Task  SetChannel(string channelId)
+        public async Task SetChannel(string channelId)
         {
             var requestMessage = new RequestMessage("ssap://tv/openChannel", new { channelId });
             await _connection.SendCommandAsync(requestMessage);
         }
-        public async  Task  SetMute(bool value)
+        public async Task SetMute(bool value)
         {
             var requestMessage = new RequestMessage("ssap://audio/setMute", new { mute = value });
             await _connection.SendCommandAsync(requestMessage);
@@ -386,7 +405,7 @@ namespace LgTv
             return (bool)(await command).mute;
         }
 
-        public async Task  SetVolume(int value)
+        public async Task SetVolume(int value)
         {
             if (value >= 0 && value <= 100)
             {
@@ -394,11 +413,11 @@ namespace LgTv
                 await _connection.SendCommandAsync(requestMessage);
             }
         }
-        public async Task  TurnOff()
+        public async Task TurnOff()
         {
-            await _connection.SendCommandAsync(new RequestMessage("","ssap://system/turnOff"));
+            await _connection.SendCommandAsync(new RequestMessage("", "ssap://system/turnOff"));
         }
-        public async Task  Play()
+        public async Task Play()
         {
             await _connection.SendCommandAsync(new RequestMessage("play", "ssap://media.controls/play"));
         }
@@ -416,7 +435,7 @@ namespace LgTv
             await _connection.SendCommandAsync(new RequestMessage("channelDown", "ssap://tv/channelDown"));
         }
 
-        public async Task  Stop()
+        public async Task Stop()
         {
             await _connection.SendCommandAsync(new RequestMessage("stop", "ssap://media.controls/stop"));
         }
@@ -445,7 +464,7 @@ namespace LgTv
             //Response: { returnValue: true,  status3D: { status: true, pattern: ’2Dto3D’ } }
             var requestMessage = new RequestMessage("status3D", "ssap://com.webos.service.tv.display/get3DStatus");
             var o = await _connection.SendCommandAsync(requestMessage);
-           return (bool)o.status3D.status;
+            return (bool)o.status3D.status;
         }
 
         public async Task<int> GetVolume()
@@ -465,12 +484,12 @@ namespace LgTv
             // }
             var requestMessage = new RequestMessage("status", "ssap://audio/getVolume");
             var o = await _connection.SendCommandAsync(requestMessage);
-            return( (bool)o.muted) ? -1 :(int) o.volume;
+            return ((bool)o.muted) ? -1 : (int)o.volume;
         }
         public async Task<IEnumerable<ExternalInput>> GetInputList()
         {
-           var requestMessage = new RequestMessage("input","ssap://tv/getExternalInputList");
-           var results =  await _connection.SendCommandAsync(requestMessage);
+            var requestMessage = new RequestMessage("input", "ssap://tv/getExternalInputList");
+            var results = await _connection.SendCommandAsync(requestMessage);
             var l = new List<ExternalInput>();
             foreach (var result in results)
             {
@@ -482,7 +501,7 @@ namespace LgTv
             return l;
         }
 
-        public async Task  SetInput(string id)
+        public async Task SetInput(string id)
         {
             var requestMessage = new RequestMessage("ssap://tv/switchInput", new { inputId = id });
             await _connection.SendCommandAsync(requestMessage);
@@ -677,6 +696,11 @@ namespace LgTv
             }
             else
             {
+                if (key.Equals("arcPerApp") && value.ToString().StartsWith("_"))
+                {
+                    value = value.ToString().Substring(1);
+                }
+
                 jsonValue = $"\"{value}\"";
             }
 
@@ -718,7 +742,7 @@ namespace LgTv
                 label = label,
                 icon = iconPng
             };
-                
+
             await ExecuteRequest(lunauri, @params);
         }
 
@@ -819,7 +843,7 @@ namespace LgTv
         }
         public void Dispose()
         {
-           _connection?.Dispose();
+            _connection?.Dispose();
         }
     }
 }

@@ -93,8 +93,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "[Quick Access] Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)

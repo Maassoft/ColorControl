@@ -328,6 +328,10 @@ namespace ColorControl
             {
                 return _nvService.ApplyPreset(parameters[0]);
             }
+            if (_nvService != null && serviceName.Equals("GsyncEnabled", StringComparison.OrdinalIgnoreCase))
+            {
+                return _nvService.IsGsyncEnabled();
+            }
             if (_amdService != null && serviceName.Equals("AmdPreset", StringComparison.OrdinalIgnoreCase))
             {
                 return _amdService.ApplyPreset(parameters[0]);
@@ -2055,10 +2059,29 @@ namespace ColorControl
         {
             var filename = Path.Combine(_dataDir, "LogFile.txt");
 
-            var lines = new[] { "No log file found" };
-            if (File.Exists(filename))
+            var lines = new List<string> { "No log file found" };
+
+            try
             {
-                lines = File.ReadAllLines(filename);
+                if (File.Exists(filename))
+                {
+                    using var fs = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                    using var reader = new StreamReader(fs);
+
+                    String line;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        lines.Add(line);
+                    }
+
+                    //lines = File.ReadAllLines(filename);
+                }
+            }
+            catch (Exception ex)
+            {
+                lines = new List<string> { $"Cannot load log file: {ex.Message}" };
             }
             var reversedLines = lines.ToList();
             var builder = new StringBuilder();
@@ -2139,6 +2162,18 @@ namespace ColorControl
             var item = sender as ToolStripItem;
             var action = item.Tag as LgDevice.InvokableAction;
 
+            var value = ShowLgActionForm(action);
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                var text = $"{action.Name}({value})";
+
+                FormUtils.AddStepToTextBox(edtStepsLg, text);
+            }
+        }
+
+        private string ShowLgActionForm(LgDevice.InvokableAction action)
+        {
             var text = action.Name;
             var title = action.Title ?? action.Name;
 
@@ -2154,7 +2189,7 @@ namespace ColorControl
                     {
                         fields.Add(new MessageForms.FieldDefinition
                         {
-                            Label = "Enter desired " + item.Text,
+                            Label = "Enter desired " + title,
                             FieldType = MessageForms.FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
@@ -2173,11 +2208,11 @@ namespace ColorControl
                         }));
                     }
 
-                    var values = MessageForms.ShowDialog("Enter value", fields);
+                    var values = MessageForms.ShowDialog($"Enter value for {title}", fields);
 
                     if (!values.Any())
                     {
-                        return;
+                        return null;
                     }
 
                     if (values.Count > 1)
@@ -2210,7 +2245,7 @@ namespace ColorControl
 
                 if (!values.Any())
                 {
-                    return;
+                    return null;
                 }
 
                 value = values.First().Value.ToString();
@@ -2221,12 +2256,7 @@ namespace ColorControl
                 }
             }
 
-            if (!string.IsNullOrEmpty(value))
-            {
-                text += $"({value})";
-            }
-
-            FormUtils.AddStepToTextBox(edtStepsLg, text);
+            return value;
         }
 
         private void miLgAddNvPreset_Click(object sender, EventArgs e)
@@ -3112,31 +3142,40 @@ Do you want to continue?"
 
             const string gameBarName = "miGameBar";
 
-            foreach (var action in actions.Where(a => !a.Name.Contains("uhd", StringComparison.OrdinalIgnoreCase) &&
+            var expertActions = actions.Where(a => !a.Name.Contains("uhd", StringComparison.OrdinalIgnoreCase) &&
                 !a.Name.Contains("gameOpt", StringComparison.OrdinalIgnoreCase) &&
                 !a.Name.Contains("hdmiPc", StringComparison.OrdinalIgnoreCase) &&
-                (a.EnumType != null || a.MinValue >= 0 && a.MaxValue > a.MinValue)))
+                (a.EnumType != null || a.MaxValue > a.MinValue)).ToList();
+
+            var categories = expertActions.Select(a => a.Category ?? "misc").Where(c => !string.IsNullOrEmpty(c)).Distinct();
+
+            foreach (var category in categories)
             {
-                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue);
+                var catMenuItem = FormUtils.BuildDropDownMenuEx(mnuLgExpert.Items, mnuLgExpert.Name, Utils.FirstCharUpperCase(category), null, null, category);
 
-                if (!gameBarActions.Contains(action))
+                foreach (var action in expertActions.Where(a => (a.Category ?? "misc") == category))
                 {
-                    continue;
-                }
+                    var menu = FormUtils.BuildDropDownMenuEx(catMenuItem.DropDownItems, catMenuItem.Name, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue, action.NumberOfValues > 1);
 
-                var itemName = $"{menu.Name}_{gameBarName}";
-                var gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Find(itemName, false).FirstOrDefault();
+                    if (!gameBarActions.Contains(action))
+                    {
+                        continue;
+                    }
 
-                if (gameBarItem == null)
-                {
-                    var separator = new ToolStripSeparator();
-                    menu.DropDownItems.Add(separator);
+                    var itemName = $"{menu.Name}_{gameBarName}";
+                    var gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Find(itemName, false).FirstOrDefault();
 
-                    gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Add("Show in Game Bar", null, miLgGameBarToggle_Click);
-                    gameBarItem.CheckOnClick = true;
-                    gameBarItem.Checked = activatedGameBarActions.Contains(action);
-                    gameBarItem.Name = itemName;
-                    gameBarItem.Tag = action.Name;
+                    if (gameBarItem == null)
+                    {
+                        var separator = new ToolStripSeparator();
+                        menu.DropDownItems.Add(separator);
+
+                        gameBarItem = (ToolStripMenuItem)menu.DropDownItems.Add("Show in Game Bar", null, miLgGameBarToggle_Click);
+                        gameBarItem.CheckOnClick = true;
+                        gameBarItem.Checked = activatedGameBarActions.Contains(action);
+                        gameBarItem.Name = itemName;
+                        gameBarItem.Tag = action.Name;
+                    }
                 }
             }
 
@@ -3157,7 +3196,7 @@ Do you want to continue?"
 
             foreach (var presetAction in presetActions)
             {
-                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
+                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert.Items, mnuLgExpert.Name, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
             }
         }
 
@@ -3192,7 +3231,27 @@ Do you want to continue?"
             var action = item.Tag as LgDevice.InvokableAction;
             var value = item.AccessibleName ?? item.Text;
 
+            if (action.NumberOfValues > 1)
+            {
+                ApplyLgExpertValueRange(action);
+                return;
+            }
+
             _lgService.SelectedDevice?.ExecuteAction(action, new[] { value });
+        }
+
+        private void ApplyLgExpertValueRange(LgDevice.InvokableAction action)
+        {
+            var value = ShowLgActionForm(action);
+
+            if (value == null)
+            {
+                return;
+            }
+
+            var values = value.Split(";");
+
+            _lgService.SelectedDevice?.ExecuteAction(action, values);
         }
 
         private void btnLgExpertPresetAction_Click(object sender, EventArgs e)
@@ -3850,6 +3909,14 @@ The InStart and Software Update items are now visible under the Expert-button."
                 return;
             }
 
+            var point = listView.PointToClient(Cursor.Position);
+
+            if (point.X >= 20)
+            {
+                e.Item.Checked = !e.Item.Checked;
+                return;
+            }
+
             checkedPreset.ShowInQuickAccess = e.Item.Checked;
 
             var preset = listView.GetSelectedItemTag<T>();
@@ -3875,6 +3942,14 @@ The InStart and Software Update items are now visible under the Expert-button."
             var listView = sender as ListView;
 
             if (!listView.Focused)
+            {
+                return;
+            }
+
+
+            var point = listView.PointToClient(Cursor.Position);
+
+            if (point.X >= 20)
             {
                 return;
             }

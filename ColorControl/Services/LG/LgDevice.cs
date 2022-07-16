@@ -147,6 +147,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
             AddGenericPictureAction("gamma", typeof(GammaExp));
+            AddGenericPictureAction("colorTemperature", minValue: 0, maxValue: 50, title: "Color Temperature");
             AddGenericPictureAction("whiteBalanceColorTemperature", typeof(WhiteBalanceColorTemperature), title: "White Balance Color Temperature");
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
             //AddGenericPictureAction("superResolution", typeof(OffToAuto));
@@ -155,6 +156,14 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("energySaving", typeof(EnergySaving), title: "Energy Saving");
             AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping), title: "HDR Dynamic Tone Mapping");
             AddGenericPictureAction("blackLevel", typeof(BlackLevel), title: "HDMI Black Level");
+            AddGenericPictureAction("arcPerApp", typeof(AspectRatio), title: "Aspect Ratio", category: "aspectRatio");
+            AddGenericPictureAction("justScan", typeof(OffToAuto2), title: "Just Scan", category: "aspectRatio");
+            AddGenericPictureAction("allDirZoomHRatio", minValue: 0, maxValue: 10, title: "All-Direction Zoom Horizontal Ratio", category: "aspectRatio");
+            AddGenericPictureAction("allDirZoomVRatio", minValue: 0, maxValue: 9, title: "All-Direction Zoom Verical Ratio", category: "aspectRatio");
+            AddGenericPictureAction("allDirZoomHPosition", minValue: -10, maxValue: 9, title: "All-Direction Zoom Horizontal Position", category: "aspectRatio");
+            AddGenericPictureAction("allDirZoomVPosition", minValue: -9, maxValue: 9, title: "All-Direction Zoom Vertical Position", category: "aspectRatio");
+            AddGenericPictureAction("vertZoomVPosition", minValue: -8, maxValue: 9, title: "Vertical Zoom Position", category: "aspectRatio");
+            AddGenericPictureAction("vertZoomVRatio", minValue: 0, maxValue: 9, title: "Vertical Zoom Ratio", category: "aspectRatio");
             //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
             AddGenericPictureAction("truMotionMode", typeof(TruMotionMode), title: "TruMotion");
             AddGenericPictureAction("truMotionJudder", minValue: 0, maxValue: 10, title: "TruMotion Judder");
@@ -368,7 +377,7 @@ namespace ColorControl.Services.LG
         {
             Logger.Debug($"[{Name}] Power state change: {JsonConvert.SerializeObject(payload)}");
 
-            var state = ((string)payload.state).Replace(' ', '_');
+            var state = payload.state != null ? ((string)payload.state).Replace(' ', '_') : PowerState.Unknown.ToString();
 
             PowerState newState;
             if (Enum.TryParse(state, out newState))

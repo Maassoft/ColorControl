@@ -42,6 +42,10 @@ namespace ColorControl.Services.Common
         FullScreen = 4,
         [Description("Notifications Disabled")]
         NotificationsDisabled = 8,
+        [Description("G-SYNC Disabled")]
+        GsyncDisabled = 16,
+        [Description("G-SYNC Enabled")]
+        GsyncEnabled = 32
     }
 
     class PresetTrigger
@@ -59,7 +63,9 @@ namespace ColorControl.Services.Common
 
         public bool TriggerActive(PresetTriggerContext context)
         {
-            var active = Conditions == PresetConditionType.None || (Conditions.HasFlag(PresetConditionType.SDR) && !context.IsHDRActive) || (Conditions.HasFlag(PresetConditionType.HDR) && context.IsHDRActive);
+            var active = Conditions == PresetConditionType.None ||
+                 (Conditions.HasFlag(PresetConditionType.SDR) ? !context.IsHDRActive : true) && (Conditions.HasFlag(PresetConditionType.HDR) ? context.IsHDRActive : true) &&
+                 (Conditions.HasFlag(PresetConditionType.GsyncDisabled) ? !context.IsGsyncActive : true) && (Conditions.HasFlag(PresetConditionType.GsyncEnabled) ? context.IsGsyncActive : true);
             var allProcesses = IncludedProcesses.Contains("*");
 
             if (Trigger == PresetTriggerType.ProcessSwitch)
@@ -68,12 +74,12 @@ namespace ColorControl.Services.Common
 
                 if (active)
                 {
-                    var included = allProcesses || context.ChangedProcesses.Any(cp => IncludedProcesses.Any(ip => cp.ProcessName.Equals(ip, StringComparison.OrdinalIgnoreCase)));
-                    var excluded = context.ChangedProcesses.Any(cp => ExcludedProcesses.Any(ep => cp.ProcessName.Equals(ep, StringComparison.OrdinalIgnoreCase)));
+                    var included = allProcesses || context.ChangedProcesses.Any(cp => IncludedProcesses.Any(ip => cp.ProcessName.NormEquals(ip)));
+                    var excluded = context.ChangedProcesses.Any(cp => ExcludedProcesses.Any(ep => cp.ProcessName.NormEquals(ep)));
 
                     var screenSizeCheck = (!Conditions.HasFlag(PresetConditionType.FullScreen) && !context.ForegroundProcessIsFullScreen) ||
                         (context.ForegroundProcess != null && context.ForegroundProcessIsFullScreen &&
-                            (allProcesses || IncludedProcesses.Any(ip => context.ForegroundProcess.ProcessName.Equals(ip, StringComparison.OrdinalIgnoreCase))));
+                            (allProcesses || IncludedProcesses.Any(ip => context.ForegroundProcess.ProcessName.NormEquals(ip))));
 
                     var notificationsDisabledCheck = !Conditions.HasFlag(PresetConditionType.NotificationsDisabled) || context.IsNotificationDisabled;
 
@@ -103,6 +109,7 @@ namespace ColorControl.Services.Common
     class PresetTriggerContext
     {
         public bool IsHDRActive { get; set; }
+        public bool IsGsyncActive { get; set; }
         public Process ForegroundProcess { get; set; }
         public bool ForegroundProcessIsFullScreen { get; set; }
         public List<Process> ChangedProcesses { get; set; }

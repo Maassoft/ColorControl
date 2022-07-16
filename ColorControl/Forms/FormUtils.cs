@@ -51,10 +51,10 @@ namespace ColorControl.Forms
                 t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
         }
 
-        public static ToolStripMenuItem BuildDropDownMenuEx(ContextMenuStrip mnuParent, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0)
+        public static ToolStripMenuItem BuildDropDownMenuEx(ToolStripItemCollection items, string parentName, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0, bool noSubItems = false)
         {
-            var subMenuName = $"{mnuParent.Name}_{name}";
-            var subMenuItems = mnuParent.Items.Find(subMenuName, false);
+            var subMenuName = $"{parentName}_{name}";
+            var subMenuItems = items.Find(subMenuName, false);
 
             if (subMenuItems.Length > 0)
             {
@@ -62,8 +62,16 @@ namespace ColorControl.Forms
             }
 
             ToolStripMenuItem subMenuItem;
-            subMenuItem = (ToolStripMenuItem)mnuParent.Items.Add(name);
+            subMenuItem = (ToolStripMenuItem)items.Add(name);
             subMenuItem.Name = subMenuName;
+
+            if (noSubItems)
+            {
+                subMenuItem.Tag = tag;
+                subMenuItem.Click += clickEvent;
+
+                return subMenuItem;
+            }
 
             if (enumType != null)
             {
@@ -81,12 +89,25 @@ namespace ColorControl.Forms
                     item.Click += clickEvent;
                 }
             }
-            else if (min >= 0 && max > min)
+            else if (max > min)
             {
-                for (var i = 0; i <= 10; i++)
-                {
-                    var value = i * (max / 10);
+                List<int> range;
 
+                if (max - min <= 20)
+                {
+                    range = Enumerable.Range(min, (max - min) + 1).ToList();
+                }
+                else
+                {
+                    range = new List<int>();
+                    for (var i = 0; i <= 10; i++)
+                    {
+                        range.Add(i * (max / 10));
+                    }
+                }
+
+                foreach (var value in range)
+                {
                     var subSubItemName = $"{subMenuName}_{value}";
 
                     var item = subMenuItem.DropDownItems.Add(value.ToString());

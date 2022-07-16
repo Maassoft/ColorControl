@@ -814,5 +814,10 @@ namespace ColorControl.Common
 
             return null;
         }
+
+        public static bool NormEquals(this string str1, string str2)
+        {
+            return str1.Trim().Replace(" ", string.Empty).Equals(str2.Trim().Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
