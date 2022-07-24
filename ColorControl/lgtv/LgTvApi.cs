@@ -124,6 +124,14 @@ namespace LgTv
         true_
     }
 
+    public enum BoolFalseToTrue
+    {
+        [Description("Disabled")]
+        bool_false,
+        [Description("Enabled")]
+        bool_true
+    }
+
     public enum GammaExp
     {
         low,
@@ -417,6 +425,11 @@ namespace LgTv
         {
             await _connection.SendCommandAsync(new RequestMessage("", "ssap://system/turnOff"));
         }
+        public async Task Reboot()
+        {
+            await ExecuteRequest("luna://com.webos.service.tv.power/reboot", new { reason = "" });
+        }
+
         public async Task Play()
         {
             await _connection.SendCommandAsync(new RequestMessage("play", "ssap://media.controls/play"));
@@ -662,6 +675,11 @@ namespace LgTv
             string jsonValue;
             var valueType = value.GetType();
             var intType = typeof(int);
+            if (value.ToString().StartsWith("bool_"))
+            {
+                value = bool.Parse(value.ToString().Substring(5));
+            }
+
             if (valueType.IsArray && intType.IsAssignableFrom(valueType.GetElementType()))
             {
                 var values = ((Array)value).Cast<int>();
@@ -744,19 +762,6 @@ namespace LgTv
             };
 
             await ExecuteRequest(lunauri, @params);
-        }
-
-        public async Task Reboot()
-        {
-            //await ExecuteRequest("luna://com.webos.service.oledepl/setGlobalStressReduction", new { enable = true });
-
-            //var requestMessage = new RequestMessage("ssap://com.webos.service.devicereset/requestReboot", new { reason = "broadcastSystemChanged" });
-            //var response = await _connection.SendCommandAsync(requestMessage);
-
-            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "network", settings = new { wolwowlOnOff = "true" } });
-
-            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "general", settings = new { powerOffBySCA3SystemChanged = "true" } });
-            //await ExecuteRequest("luna://com.webos.service.devicereset/requestReboot", new { reason = "broadcastSystemChanged" });
         }
 
         private async Task ExecuteRequest(string lunauri, object @params)

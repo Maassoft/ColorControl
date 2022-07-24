@@ -23,6 +23,7 @@ namespace ColorControl.Services.LG
             public int CurrentValue { get; set; }
             public int NumberOfValues { get; set; }
             public LgPreset Preset { get; set; }
+            public bool Advanced { get; set; }
         }
 
         public class LgDevicePictureSettings
@@ -204,7 +205,11 @@ namespace ColorControl.Services.LG
 
             AddGenericPictureAction("soundMode", typeof(SoundMode), category: "sound", title: "Sound Mode");
             AddGenericPictureAction("soundOutput", typeof(SoundOutput), category: "sound", title: "Sound Output");
-            //await ExecuteRequest("luna://com.webos.settingsservice/setSystemSettings", new { category = "network", settings = new { wolwowlOnOff = "true" } });
+            AddGenericPictureAction("autoVolume", typeof(OffToOn), category: "sound", title: "Auto Volume");
+
+            //AddGenericPictureAction("enableToastPopup", typeof(OffToOn), category: "option", title: "enableToastPopup");
+            AddSetConfigAction("tv.conti.supportUsedTime", typeof(BoolFalseToTrue), title: "Total Power On Time");
+
             AddGenericPictureAction("wolwowlOnOff", typeof(FalseToTrue), category: "network", title: "Wake-On-LAN");
         }
 
@@ -260,6 +265,21 @@ namespace ColorControl.Services.LG
             _invokableActions.Add(action);
         }
 
+        private void AddSetConfigAction(string name, Type type, string title)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                Function = new Func<Dictionary<string, object>, bool>(GenericSetConfigAction),
+                EnumType = type,
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title,
+                Category = "Config",
+                Advanced = true
+            };
+
+            _invokableActions.Add(action);
+        }
+
         public void AddGameBarAction(string name)
         {
             if (!ActionsOnGameBar.Contains(name))
@@ -309,6 +329,8 @@ namespace ColorControl.Services.LG
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
                         await _lgTvApi.SubscribeForegroundApp(ForegroundAppChanged);
+
+                        //await _lgTvApi.SetConfig("tv.conti.supportUsedTime", true);
 
                         //await _lgTvApi.Reboot();
 
@@ -773,9 +795,9 @@ namespace ColorControl.Services.LG
             return result;
         }
 
-        public List<InvokableAction> GetInvokableActions()
+        public List<InvokableAction> GetInvokableActions(bool includedAdvanced = false)
         {
-            return _invokableActions;
+            return includedAdvanced ? _invokableActions : _invokableActions.Where(a => !a.Advanced).ToList();
         }
 
         public List<InvokableAction> GetInvokableActionsForGameBar()
@@ -915,6 +937,18 @@ namespace ColorControl.Services.LG
             var description = Utils.GetDescriptionByEnumName<HdmiIcon>(value);
 
             var task = _lgTvApi.SetDeviceConfig(id, value, description);
+            Utils.WaitForTask(task);
+
+            return true;
+        }
+
+        private bool GenericSetConfigAction(Dictionary<string, object> parameters)
+        {
+            var key = parameters["name"].ToString();
+            var values = parameters["value"] as object[];
+            var value = values[0];
+
+            var task = _lgTvApi.SetConfig(key, value);
             Utils.WaitForTask(task);
 
             return true;

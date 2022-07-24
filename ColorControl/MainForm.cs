@@ -3136,7 +3136,7 @@ Do you want to continue?"
                 return;
             }
 
-            var actions = device.GetInvokableActions();
+            var actions = device.GetInvokableActions(_lgService.Config.ShowAdvancedActions);
             var gameBarActions = device.GetInvokableActionsForGameBar();
             var activatedGameBarActions = device.GetActionsForGameBar();
 
