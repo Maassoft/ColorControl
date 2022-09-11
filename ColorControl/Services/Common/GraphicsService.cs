@@ -1,4 +1,4 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Native;
 using NWin32;
 using NWin32.NativeTypes;
 using System;
@@ -101,7 +101,7 @@ namespace ColorControl.Services.Common
         {
             DEVMODEA devMode;
             // NativeMethods defines modeNum as an 'uint' but we need to pass '-1'
-            if (Utils.EnumDisplaySettingsA(displayName, Utils.ENUM_CURRENT_SETTINGS, out devMode))
+            if (WinApi.EnumDisplaySettingsA(displayName, WinApi.ENUM_CURRENT_SETTINGS, out devMode))
             {
                 return devMode.dmDisplayFrequency;
             }

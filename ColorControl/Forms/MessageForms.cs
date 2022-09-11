@@ -177,7 +177,7 @@ namespace ColorControl.Forms
                         if (field.Values != null && field.Values.Any())
                         {
                             comboBox.Items.AddRange(field.Values.ToArray());
-                            comboBox.SelectedIndex = 0;
+                            comboBox.SelectedIndex = field.Value is string strValue ? comboBox.Items.IndexOf(strValue) : 0;
                         }
 
                         control = comboBox;
@@ -188,8 +188,9 @@ namespace ColorControl.Forms
                         {
                             Left = 40,
                             Top = top,
-                            Width = 200,
-                            Height = 100
+                            Width = 400,
+                            Height = 100,
+                            MultiColumn = true
                         };
 
                         top += 80;
@@ -197,7 +198,7 @@ namespace ColorControl.Forms
 
                         if (field.Values != null && field.Values.Any())
                         {
-                            var compoundValue = (int)field.Value;
+                            var compoundValue = field.Value is int ? (int)field.Value : (int)((uint)field.Value);
                             var enumValue = 1;
                             foreach (var value in field.Values)
                             {

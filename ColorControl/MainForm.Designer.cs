@@ -79,6 +79,7 @@
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
             this.tabAMD = new System.Windows.Forms.TabPage();
+            this.btnAmdSettings = new System.Windows.Forms.Button();
             this.chkAmdQuickAccess = new System.Windows.Forms.CheckBox();
             this.lblAmdPresetName = new System.Windows.Forms.Label();
             this.edtAmdPresetName = new System.Windows.Forms.TextBox();
@@ -170,6 +171,10 @@
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.lblLgError = new System.Windows.Forms.Label();
             this.tabGameLauncher = new System.Windows.Forms.TabPage();
+            this.btnGameOptions = new System.Windows.Forms.Button();
+            this.mnuGameOptions = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miGameProcessorAffinity = new System.Windows.Forms.ToolStripMenuItem();
+            this.miGameProcessPriority = new System.Windows.Forms.ToolStripMenuItem();
             this.chkGameQuickAccess = new System.Windows.Forms.CheckBox();
             this.btnGameSettings = new System.Windows.Forms.Button();
             this.mnuGameActions = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -246,7 +251,7 @@
             this.mnuNvSettings = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miNvProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
-            this.btnAmdSettings = new System.Windows.Forms.Button();
+            this.chkOptionsDedicatedElevatedProcess = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -259,6 +264,7 @@
             this.mnuLgExpert.SuspendLayout();
             this.mnuLgButtons.SuspendLayout();
             this.tabGameLauncher.SuspendLayout();
+            this.mnuGameOptions.SuspendLayout();
             this.mnuGameActions.SuspendLayout();
             this.mnuGameAddStep.SuspendLayout();
             this.tabOptions.SuspendLayout();
@@ -793,6 +799,18 @@
             this.tabAMD.TabIndex = 5;
             this.tabAMD.Text = "AMD controller";
             this.tabAMD.UseVisualStyleBackColor = true;
+            // 
+            // btnAmdSettings
+            // 
+            this.btnAmdSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAmdSettings.Location = new System.Drawing.Point(1017, 429);
+            this.btnAmdSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnAmdSettings.Name = "btnAmdSettings";
+            this.btnAmdSettings.Size = new System.Drawing.Size(88, 27);
+            this.btnAmdSettings.TabIndex = 60;
+            this.btnAmdSettings.Text = "Settings...";
+            this.btnAmdSettings.UseVisualStyleBackColor = true;
+            this.btnAmdSettings.Click += new System.EventHandler(this.btnAmdSettings_Click);
             // 
             // chkAmdQuickAccess
             // 
@@ -1827,6 +1845,7 @@
             // 
             // tabGameLauncher
             // 
+            this.tabGameLauncher.Controls.Add(this.btnGameOptions);
             this.tabGameLauncher.Controls.Add(this.chkGameQuickAccess);
             this.tabGameLauncher.Controls.Add(this.btnGameSettings);
             this.tabGameLauncher.Controls.Add(this.chkGameRunAsAdmin);
@@ -1853,6 +1872,43 @@
             this.tabGameLauncher.TabIndex = 6;
             this.tabGameLauncher.Text = "Game Launcher";
             this.tabGameLauncher.UseVisualStyleBackColor = true;
+            // 
+            // btnGameOptions
+            // 
+            this.btnGameOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnGameOptions.ContextMenuStrip = this.mnuGameOptions;
+            this.btnGameOptions.Enabled = false;
+            this.btnGameOptions.Location = new System.Drawing.Point(785, 439);
+            this.btnGameOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnGameOptions.Name = "btnGameOptions";
+            this.btnGameOptions.Size = new System.Drawing.Size(88, 27);
+            this.btnGameOptions.TabIndex = 45;
+            this.btnGameOptions.Text = "Options...";
+            this.btnGameOptions.UseVisualStyleBackColor = true;
+            this.btnGameOptions.Click += new System.EventHandler(this.btnGameOptions_Click);
+            // 
+            // mnuGameOptions
+            // 
+            this.mnuGameOptions.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuGameOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miGameProcessorAffinity,
+            this.miGameProcessPriority});
+            this.mnuGameOptions.Name = "mnuLgButtons";
+            this.mnuGameOptions.Size = new System.Drawing.Size(166, 48);
+            // 
+            // miGameProcessorAffinity
+            // 
+            this.miGameProcessorAffinity.Name = "miGameProcessorAffinity";
+            this.miGameProcessorAffinity.Size = new System.Drawing.Size(165, 22);
+            this.miGameProcessorAffinity.Text = "Processor affinity";
+            this.miGameProcessorAffinity.Click += new System.EventHandler(this.btnGameProcessAffinity_Click);
+            // 
+            // miGameProcessPriority
+            // 
+            this.miGameProcessPriority.Name = "miGameProcessPriority";
+            this.miGameProcessPriority.Size = new System.Drawing.Size(165, 22);
+            this.miGameProcessPriority.Text = "Process priority";
+            this.miGameProcessPriority.Click += new System.EventHandler(this.miGameProcessPriority_Click);
             // 
             // chkGameQuickAccess
             // 
@@ -2522,6 +2578,7 @@
             // 
             // grpGeneralOptions
             // 
+            this.grpGeneralOptions.Controls.Add(this.chkOptionsDedicatedElevatedProcess);
             this.grpGeneralOptions.Controls.Add(this.chkGdiScaling);
             this.grpGeneralOptions.Controls.Add(this.chkCheckForUpdates);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeToSystemTray);
@@ -2540,7 +2597,7 @@
             // chkGdiScaling
             // 
             this.chkGdiScaling.AutoSize = true;
-            this.chkGdiScaling.Location = new System.Drawing.Point(238, 75);
+            this.chkGdiScaling.Location = new System.Drawing.Point(238, 72);
             this.chkGdiScaling.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkGdiScaling.Name = "chkGdiScaling";
             this.chkGdiScaling.Size = new System.Drawing.Size(197, 19);
@@ -2552,7 +2609,7 @@
             // chkCheckForUpdates
             // 
             this.chkCheckForUpdates.AutoSize = true;
-            this.chkCheckForUpdates.Location = new System.Drawing.Point(238, 48);
+            this.chkCheckForUpdates.Location = new System.Drawing.Point(238, 47);
             this.chkCheckForUpdates.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkCheckForUpdates.Name = "chkCheckForUpdates";
             this.chkCheckForUpdates.Size = new System.Drawing.Size(197, 19);
@@ -2576,7 +2633,7 @@
             // chkMinimizeOnClose
             // 
             this.chkMinimizeOnClose.AutoSize = true;
-            this.chkMinimizeOnClose.Location = new System.Drawing.Point(7, 75);
+            this.chkMinimizeOnClose.Location = new System.Drawing.Point(7, 72);
             this.chkMinimizeOnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkMinimizeOnClose.Name = "chkMinimizeOnClose";
             this.chkMinimizeOnClose.Size = new System.Drawing.Size(122, 19);
@@ -2588,7 +2645,7 @@
             // chkStartMinimized
             // 
             this.chkStartMinimized.AutoSize = true;
-            this.chkStartMinimized.Location = new System.Drawing.Point(7, 48);
+            this.chkStartMinimized.Location = new System.Drawing.Point(7, 47);
             this.chkStartMinimized.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkStartMinimized.Name = "chkStartMinimized";
             this.chkStartMinimized.Size = new System.Drawing.Size(109, 19);
@@ -2767,17 +2824,17 @@
             this.miNvSettings.Text = "Settings";
             this.miNvSettings.Click += new System.EventHandler(this.miNvSettings_Click);
             // 
-            // btnAmdSettings
+            // chkOptionsDedicatedElevatedProcess
             // 
-            this.btnAmdSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnAmdSettings.Location = new System.Drawing.Point(1017, 429);
-            this.btnAmdSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnAmdSettings.Name = "btnAmdSettings";
-            this.btnAmdSettings.Size = new System.Drawing.Size(88, 27);
-            this.btnAmdSettings.TabIndex = 60;
-            this.btnAmdSettings.Text = "Settings...";
-            this.btnAmdSettings.UseVisualStyleBackColor = true;
-            this.btnAmdSettings.Click += new System.EventHandler(this.btnAmdSettings_Click);
+            this.chkOptionsDedicatedElevatedProcess.AutoSize = true;
+            this.chkOptionsDedicatedElevatedProcess.Location = new System.Drawing.Point(7, 97);
+            this.chkOptionsDedicatedElevatedProcess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.chkOptionsDedicatedElevatedProcess.Name = "chkOptionsDedicatedElevatedProcess";
+            this.chkOptionsDedicatedElevatedProcess.Size = new System.Drawing.Size(190, 19);
+            this.chkOptionsDedicatedElevatedProcess.TabIndex = 8;
+            this.chkOptionsDedicatedElevatedProcess.Text = "Use dedicated elevated process";
+            this.chkOptionsDedicatedElevatedProcess.UseVisualStyleBackColor = true;
+            this.chkOptionsDedicatedElevatedProcess.CheckedChanged += new System.EventHandler(this.chkOptionsDedicatedElevatedProcess_CheckedChanged);
             // 
             // MainForm
             // 
@@ -2815,6 +2872,7 @@
             this.mnuLgButtons.ResumeLayout(false);
             this.tabGameLauncher.ResumeLayout(false);
             this.tabGameLauncher.PerformLayout();
+            this.mnuGameOptions.ResumeLayout(false);
             this.mnuGameActions.ResumeLayout(false);
             this.mnuGameAddStep.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
@@ -3062,6 +3120,11 @@
         private System.Windows.Forms.ToolStripMenuItem miNvSettings;
         private System.Windows.Forms.CheckBox chkAmdQuickAccess;
         private System.Windows.Forms.Button btnAmdSettings;
+        private System.Windows.Forms.Button btnGameOptions;
+        private System.Windows.Forms.ContextMenuStrip mnuGameOptions;
+        private System.Windows.Forms.ToolStripMenuItem miGameProcessorAffinity;
+        private System.Windows.Forms.ToolStripMenuItem miGameProcessPriority;
+        private System.Windows.Forms.CheckBox chkOptionsDedicatedElevatedProcess;
     }
 }
 

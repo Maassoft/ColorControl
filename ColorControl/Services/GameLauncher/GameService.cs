@@ -133,7 +133,7 @@ namespace ColorControl.Services.GameLauncher
 
             if (!string.IsNullOrEmpty(preset.Path))
             {
-                Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator);
+                Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
             }
 
             _lastAppliedPreset = preset;

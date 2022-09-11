@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using ColorControl.Forms;
 using ColorControl.Services.AMD;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
@@ -21,6 +22,8 @@ namespace ColorControl
         public static Config Config { get; private set; }
         public static AppContext AppContext { get; private set; }
 
+        public static string MutexId { get; private set; }
+
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
@@ -29,6 +32,8 @@ namespace ColorControl
         [STAThread]
         static void Main(string[] args)
         {
+            MutexId = $"Global\\{typeof(MainForm).GUID}";
+
             var currentDomain = AppDomain.CurrentDomain;
             // Handler for unhandled exceptions.
             currentDomain.UnhandledException += GlobalUnhandledExceptionHandler;
@@ -63,8 +68,7 @@ namespace ColorControl
                 Utils.CloseConsole();
             }
 
-            string mutexId = $"Global\\{typeof(MainForm).GUID}";
-            var mutex = new Mutex(true, mutexId, out var mutexCreated);
+            var mutex = new Mutex(true, MutexId, out var mutexCreated);
             try
             {
                 if (!mutexCreated)
@@ -81,11 +85,13 @@ namespace ColorControl
                 }
                 else
                 {
+                    mutex.WaitOne();
                     try
                     {
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
                         Application.Run(new MainForm(AppContext));
+
                     }
                     catch (Exception ex)
                     {
@@ -135,9 +141,11 @@ namespace ColorControl
                 Logger.Error($"LoadConfig: {ex.Message}");
             }
             Config ??= new Config();
+
+            Utils.UseDedicatedElevatedProcess = Config.UseDedicatedElevatedProcess;
         }
 
-        private static bool HandleStartupParams(StartUpParams startUpParams, Process existingProcess)
+        public static bool HandleStartupParams(StartUpParams startUpParams, Process existingProcess)
         {
             if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
             {
@@ -147,6 +155,21 @@ namespace ColorControl
             if (startUpParams.EnableAutoStart || startUpParams.DisableAutoStart)
             {
                 Utils.RegisterTask(TS_TASKNAME, startUpParams.EnableAutoStart);
+                return true;
+            }
+            if (startUpParams.SetProcessAffinity)
+            {
+                Utils.SetProcessAffinity(startUpParams.ProcessId, startUpParams.AffinityMask);
+                return true;
+            }
+            if (startUpParams.SetProcessPriority)
+            {
+                Utils.SetProcessPriority(startUpParams.ProcessId, startUpParams.PriorityClass);
+                return true;
+            }
+            if (startUpParams.StartElevated)
+            {
+                StartElevated();
                 return true;
             }
 
@@ -226,6 +249,18 @@ namespace ColorControl
             }
 
             return result;
+        }
+
+        private static void StartElevated()
+        {
+            try
+            {
+                Application.Run(new ElevatedForm());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error while initializing elevated application: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

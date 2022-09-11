@@ -30,6 +30,7 @@ namespace ColorControl
         public string AmdQuickAccessShortcut { get; set; }
         public string LgQuickAccessShortcut { get; set; }
         public string GameQuickAccessShortcut { get; set; }
+        public bool UseDedicatedElevatedProcess { get; set; }
 
         public Config()
         {
@@ -41,6 +42,7 @@ namespace ColorControl
             CheckForUpdates = true;
             FixChromeFonts = false;
             UseGdiScaling = true;
+            UseDedicatedElevatedProcess = false;
             LgPresetsSortState = new ListViewSortState();
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();

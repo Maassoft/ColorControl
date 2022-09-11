@@ -654,7 +654,7 @@ namespace ColorControl.Services.LG
                         Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
                         try
                         {
-                            _poweredOffByScreenSaver = await device.PowerOff().WaitAsync(TimeSpan.FromSeconds(5));
+                            _poweredOffByScreenSaver = await device.PowerOff(true).WaitAsync(TimeSpan.FromSeconds(5));
                         }
                         catch (TimeoutException)
                         {

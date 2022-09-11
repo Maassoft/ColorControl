@@ -1,10 +1,10 @@
 ﻿using ColorControl.Forms;
+using ColorControl.Native;
 using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NWin32;
-using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -36,52 +36,14 @@ namespace ColorControl.Common
             Win = 8
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
-        internal struct POWERBROADCAST_SETTING
-        {
-            public Guid PowerSetting;
-            public uint DataLength;
-            public byte Data;
-        }
-
         public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
-
-        public const int ENUM_CURRENT_SETTINGS = -1;
-        public const int ENUM_REGISTRY_SETTINGS = -2;
 
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
         public static Guid GUID_CONSOLE_DISPLAY_STATE = Guid.Parse("6FE69556-704A-47A0-8F24-C28D936FDA47");
-        public static int PBT_POWERSETTINGCHANGE = 32787;
-
-        public delegate void PCREATE_PROCESS_NOTIFY_ROUTINE(IntPtr ParentId, IntPtr ProcessId, bool Create);
 
         public static bool ConsoleOpened { get; private set; }
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
-        [DllImport("user32.dll")]
-        public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-        [DllImport("user32.dll")]
-        public static extern bool EnumDisplaySettingsA(string deviceName, int modeNum, out DEVMODEA devMode);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool AllocConsole();
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        private static extern bool AttachConsole(int processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool FreeConsole();
-
-        [DllImport(@"User32", SetLastError = true)]
-        public static extern IntPtr RegisterPowerSettingNotification(IntPtr hRecipient, ref Guid PowerSettingGuid, Int32 Flags);
-
-        [DllImport("User32.dll", SetLastError = true)]
-        public static extern bool UnregisterPowerSettingNotification(IntPtr hWnd);
+        public static bool UseDedicatedElevatedProcess = false;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static bool WinKeyDown = false;
@@ -208,8 +170,24 @@ namespace ColorControl.Common
             return keys;
         }
 
-        internal static bool ExecuteElevated(string args)
+        static bool IsAdministrator()
         {
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        internal static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false)
+        {
+            if (UseDedicatedElevatedProcess && !skipDedicated)
+            {
+                CheckElevatedProcess();
+
+                WinApi.CopyData.Send(ElevatedProcessWindowHandle, 1, args);
+
+                return 0;
+            }
+
             var info = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, args)
             {
                 Verb = "runas", // indicates to elevate privileges
@@ -224,14 +202,35 @@ namespace ColorControl.Common
             try
             {
                 process.Start();
-                process.WaitForExit(); // sleep calling process thread until evoked process exit
-                return true;
+
+                if (wait)
+                {
+                    process.WaitForExit(); // sleep calling process thread until evoked process exit
+                }
+
+                return process.Id;
             }
             catch (Exception e)
             {
                 Logger.Error("ExecuteElevated: " + e.Message);
             }
-            return false;
+            return 0;
+        }
+
+        private static IntPtr ElevatedProcessWindowHandle = IntPtr.Zero;
+
+        internal static void CheckElevatedProcess()
+        {
+            ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
+
+            if (ElevatedProcessWindowHandle == IntPtr.Zero)
+            {
+                ExecuteElevated(StartUpParams.StartElevatedParam, false, true);
+
+                Thread.Sleep(500);
+
+                ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
+            }
         }
 
         internal static bool IsChromeFixInstalled()
@@ -271,21 +270,6 @@ namespace ColorControl.Common
         {
             var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
             return key != null;
-        }
-
-        internal static void GetRegistryKeyValue(string keyname, string valueName, bool deepSearch = false)
-        {
-            var key = Registry.LocalMachine.OpenSubKey(keyname);
-
-            foreach (var subKeyName in key.GetSubKeyNames())
-            {
-                var subKey = key.OpenSubKey(subKeyName);
-                if (subKey.GetValueNames().Contains(valueName))
-                {
-                    Thread.Sleep(0);
-                }
-            }
-
         }
 
         internal static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
@@ -468,6 +452,8 @@ namespace ColorControl.Common
                 {
                     return descriptionAttribute.Description;
                 }
+
+                return enumName;
             }
 
             return null; // could also return string.Empty
@@ -510,6 +496,12 @@ namespace ColorControl.Common
 
         public static void RegisterTask(string taskName, bool enabled)
         {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated(enabled ? StartUpParams.EnableAutoStartParam : StartUpParams.DisableAutoStartParam);
+                return;
+            }
+
             var file = Process.GetCurrentProcess().MainModule.FileName;
             var directory = Path.GetDirectoryName(file);
 
@@ -569,13 +561,13 @@ namespace ColorControl.Common
         {
             if (clear)
             {
-                UnregisterHotKey(handle, id);
+                WinApi.UnregisterHotKey(handle, id);
             }
 
             if (!string.IsNullOrEmpty(shortcut))
             {
                 var (mods, key) = ParseShortcut(shortcut);
-                var result = RegisterHotKey(handle, id, mods, key);
+                var result = WinApi.RegisterHotKey(handle, id, mods, key);
                 if (!result)
                 {
                     var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
@@ -586,6 +578,13 @@ namespace ColorControl.Common
             }
 
             return true;
+        }
+
+        public static void CheckWin32Error(string message)
+        {
+            var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
+
+            throw new Exception($"{message}: {errorMessage}");
         }
 
         public static string FormatKeyboardShortcut(KeyEventArgs keyEvent)
@@ -655,9 +654,9 @@ namespace ColorControl.Common
                 return true;
             }
 
-            if (!AttachConsole(-1))
+            if (!WinApi.AttachConsole(-1))
             {
-                AllocConsole();
+                WinApi.AllocConsole();
                 return true;
             }
             ConsoleOpened = true;
@@ -673,7 +672,7 @@ namespace ColorControl.Common
             }
 
             SendKeys.SendWait("{ENTER}");
-            var result = FreeConsole();
+            var result = WinApi.FreeConsole();
 
             return result;
         }
@@ -692,7 +691,7 @@ namespace ColorControl.Common
             return null;
         }
 
-        public static void StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false)
+        public static void StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0)
         {
             var process = Process.Start(new ProcessStartInfo(fileName, arguments)
             {
@@ -701,10 +700,63 @@ namespace ColorControl.Common
                 WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
                 WorkingDirectory = setWorkingDir ? Path.GetDirectoryName(fileName) : null
             });
+
+            if (affinityMask > 0)
+            {
+                SetProcessAffinity(process.Id, affinityMask);
+            }
+
+            if (priorityClass > 0 && priorityClass != NativeConstants.NORMAL_PRIORITY_CLASS)
+            {
+                SetProcessPriority(process.Id, priorityClass);
+            }
+
             if (wait)
             {
                 process.WaitForExit();
             }
+        }
+
+        internal static void SetProcessAffinity(int processId, uint affinityMask)
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated($"{StartUpParams.SetProcessAffinityParam} {processId} {affinityMask}");
+
+                return;
+            }
+
+            var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
+
+            if (hProcess == IntPtr.Zero)
+            {
+                CheckWin32Error($"Unable to set processor affinity on process {processId}");
+            }
+
+            NativeMethods.SetProcessAffinityMask(hProcess, affinityMask);
+
+            //var AffinityMask = (long)process.ProcessorAffinity;
+            //AffinityMask &= 0x000F; // use only any of the first 4 available processors
+            //process.ProcessorAffinity = (IntPtr)AffinityMask;
+        }
+
+        internal static void SetProcessPriority(int processId, uint priorityClass)
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated($"{StartUpParams.SetProcessPriorityParam} {processId} {priorityClass}");
+
+                return;
+            }
+
+            var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
+
+            if (hProcess == IntPtr.Zero)
+            {
+                CheckWin32Error($"Unable to set process priority on process {processId}");
+            }
+
+            NativeMethods.SetPriorityClass(hProcess, priorityClass);
         }
 
         public static string GetResourceFile(string resourceName)

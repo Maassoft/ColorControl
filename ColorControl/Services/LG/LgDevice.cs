@@ -150,6 +150,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("gamma", typeof(GammaExp));
             AddGenericPictureAction("colorTemperature", minValue: 0, maxValue: 50, title: "Color Temperature");
             AddGenericPictureAction("whiteBalanceColorTemperature", typeof(WhiteBalanceColorTemperature), title: "White Balance Color Temperature");
+            AddGenericPictureAction("eyeComfortMode", typeof(OffToOn), title: "Eye Comfort Mode");
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
             //AddGenericPictureAction("superResolution", typeof(OffToAuto));
             AddGenericPictureAction("peakBrightness", typeof(OffToHigh), title: "Peak Brightness");

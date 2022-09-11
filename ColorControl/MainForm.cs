@@ -1,6 +1,7 @@
 ﻿using ATI.ADL;
 using ColorControl.Common;
 using ColorControl.Forms;
+using ColorControl.Native;
 using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.GameLauncher;
@@ -147,7 +148,7 @@ namespace ColorControl
             InitInfo();
 
             UserSessionInfo.Install();
-            _screenStateNotify = Utils.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
+            _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
             //Scale(new SizeF(1.25F, 1.25F));
 
@@ -716,9 +717,9 @@ namespace ColorControl
             }
             else if (m.Msg == NativeConstants.WM_POWERBROADCAST)
             {
-                if (m.WParam.ToInt32() == Utils.PBT_POWERSETTINGCHANGE)
+                if (m.WParam.ToInt32() == WinApi.PBT_POWERSETTINGCHANGE)
                 {
-                    var ps = Marshal.PtrToStructure<Utils.POWERBROADCAST_SETTING>(m.LParam);
+                    var ps = Marshal.PtrToStructure<WinApi.POWERBROADCAST_SETTING>(m.LParam);
 
                     Logger.Debug($"PBT_POWERSETTINGCHANGE: {ps.Data}");
 
@@ -783,7 +784,7 @@ namespace ColorControl
 
             if (_screenStateNotify != IntPtr.Zero)
             {
-                Utils.UnregisterPowerSettingNotification(_screenStateNotify);
+                WinApi.UnregisterPowerSettingNotification(_screenStateNotify);
                 _screenStateNotify = IntPtr.Zero;
             }
         }
@@ -816,7 +817,7 @@ namespace ColorControl
                 return;
             }
             var enabled = chkStartAfterLogin.Checked;
-            Utils.ExecuteElevated(enabled ? StartUpParams.EnableAutoStartParam : StartUpParams.DisableAutoStartParam);
+            Utils.RegisterTask(Program.TS_TASKNAME, enabled);
         }
 
         private void LoadConfig()
@@ -828,6 +829,7 @@ namespace ColorControl
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
             chkGdiScaling.Checked = _config.UseGdiScaling;
+            chkOptionsDedicatedElevatedProcess.Checked = _config.UseDedicatedElevatedProcess;
 
             if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
             {
@@ -1589,7 +1591,7 @@ namespace ColorControl
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                Utils.UnregisterHotKey(Handle, preset.id);
+                WinApi.UnregisterHotKey(Handle, preset.id);
             }
 
             _nvService.GetPresets().Remove(preset);
@@ -1944,7 +1946,7 @@ namespace ColorControl
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                Utils.UnregisterHotKey(Handle, preset.id);
+                WinApi.UnregisterHotKey(Handle, preset.id);
             }
 
             _lgService.GetPresets().Remove(preset);
@@ -2729,7 +2731,7 @@ Do you want to continue?";
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                Utils.UnregisterHotKey(Handle, preset.id);
+                WinApi.UnregisterHotKey(Handle, preset.id);
             }
 
             _amdService.GetPresets().Remove(preset);
@@ -3408,7 +3410,7 @@ The InStart and Software Update items are now visible under the Expert-button."
 
                 if (string.IsNullOrEmpty(text))
                 {
-                    Utils.UnregisterHotKey(Handle, SHORTCUTID_GAMEBAR);
+                    WinApi.UnregisterHotKey(Handle, SHORTCUTID_GAMEBAR);
                 }
                 else
                 {
@@ -3737,7 +3739,7 @@ The InStart and Software Update items are now visible under the Expert-button."
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                Utils.UnregisterHotKey(Handle, preset.id);
+                WinApi.UnregisterHotKey(Handle, preset.id);
             }
 
             _gameService.GetPresets().Remove(preset);
@@ -3988,6 +3990,89 @@ The InStart and Software Update items are now visible under the Expert-button."
             _config.AmdQuickAccessShortcut = shortcut;
 
             Utils.RegisterShortcut(Handle, SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, clear);
+        }
+
+        private void btnGameProcessAffinity_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedGamePreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            var numberOfProcessors = Environment.ProcessorCount;
+
+            var options = Enumerable.Range(0, numberOfProcessors).Select(i => $"CPU #{i}");
+
+            var values = MessageForms.ShowDialog("Set processor affinity", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Set desired processors which are allowed to run program",
+                        FieldType = MessageForms.FieldType.Flags,
+                        Values = options,
+                        Value = preset.ProcessAffinityMask
+                    }
+                });
+
+            if (!values.Any())
+            {
+                return;
+            }
+
+            var value = values.First().Value;
+
+            preset.ProcessAffinityMask = (uint)(int)value;
+        }
+
+        private void btnGameOptions_Click(object sender, EventArgs e)
+        {
+            mnuGameOptions.Show(btnGameOptions, btnGameOptions.PointToClient(Cursor.Position));
+        }
+
+        private void miGameProcessPriority_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedGamePreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            var dropDownValues = Utils.GetDescriptions<GamePriorityClass>();
+
+            var values = MessageForms.ShowDialog("Set process priority", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Set desired process priority",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = dropDownValues,
+                        Value = preset.ProcessPriorityClass > 0 ? ((GamePriorityClass)preset.ProcessPriorityClass).GetDescription() : GamePriorityClass.Normal.GetDescription()
+                    }
+                });
+
+            if (!values.Any())
+            {
+                return;
+            }
+
+            var value = values.First().Value.ToString();
+            var enumName = Utils.GetEnumNameByDescription(typeof(GamePriorityClass), value);
+            if (enumName != null)
+            {
+                value = enumName;
+            }
+
+            var enumValue = Enum.Parse(typeof(GamePriorityClass), value);
+
+            preset.ProcessPriorityClass = (uint)(int)enumValue;
+
+        }
+
+        private void chkOptionsDedicatedElevatedProcess_CheckedChanged(object sender, EventArgs e)
+        {
+            _config.UseDedicatedElevatedProcess = chkOptionsDedicatedElevatedProcess.Checked;
+            Utils.UseDedicatedElevatedProcess = _config.UseDedicatedElevatedProcess;
         }
     }
 }

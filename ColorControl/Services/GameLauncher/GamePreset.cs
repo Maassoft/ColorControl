@@ -1,8 +1,19 @@
 ﻿using ColorControl.Services.Common;
+using NWin32;
 using System.Collections.Generic;
 
 namespace ColorControl.Services.GameLauncher
 {
+    public enum GamePriorityClass
+    {
+        Idle = NativeConstants.IDLE_PRIORITY_CLASS,
+        BelowNormal = NativeConstants.BELOW_NORMAL_PRIORITY_CLASS,
+        Normal = NativeConstants.NORMAL_PRIORITY_CLASS,
+        AboveNormal = NativeConstants.ABOVE_NORMAL_PRIORITY_CLASS,
+        High = NativeConstants.HIGH_PRIORITY_CLASS,
+        RealTime = NativeConstants.REALTIME_PRIORITY_CLASS
+    }
+
     class GamePreset : PresetBase
     {
         public string Path { get; set; }
@@ -10,6 +21,8 @@ namespace ColorControl.Services.GameLauncher
         public bool RunAsAdministrator { get; set; }
         public List<string> PreLaunchSteps { get; set; }
         public List<string> PostLaunchSteps { get; set; }
+        public uint ProcessAffinityMask { get; set; }
+        public uint ProcessPriorityClass { get; set; }
 
         public GamePreset() : base()
         {

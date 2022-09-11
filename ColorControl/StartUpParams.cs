@@ -14,6 +14,9 @@ namespace ColorControl
         public const string NoGuiParam = "--nogui";
         public const string EnableAutoStartParam = "--enable-auto-start";
         public const string DisableAutoStartParam = "--disable-auto-start";
+        public const string SetProcessAffinityParam = "--set-process-affinity";
+        public const string SetProcessPriorityParam = "--set-process-priority";
+        public const string StartElevatedParam = "--elevated";
 
         public bool RunningFromScheduledTask { get; private set; }
         public bool ActivateChromeFontFix { get; private set; }
@@ -28,6 +31,12 @@ namespace ColorControl
         public bool NoGui { get; set; }
         public bool EnableAutoStart { get; private set; }
         public bool DisableAutoStart { get; private set; }
+        public bool SetProcessAffinity { get; private set; }
+        public int ProcessId { get; private set; }
+        public uint AffinityMask { get; private set; }
+        public bool SetProcessPriority { get; private set; }
+        public uint PriorityClass { get; private set; }
+        public bool StartElevated { get; private set; }
 
         public static StartUpParams Parse(IEnumerable<string> args)
         {
@@ -52,6 +61,28 @@ namespace ColorControl
                         case ExecuteLgPresetParam:
                             {
                                 settings.LgPresetName = arg;
+                                break;
+                            }
+                        case SetProcessAffinityParam:
+                            {
+                                if (settings.ProcessId == 0)
+                                {
+                                    settings.ProcessId = int.Parse(arg);
+                                    continue;
+                                }
+
+                                settings.AffinityMask = uint.Parse(arg);
+                                break;
+                            }
+                        case SetProcessPriorityParam:
+                            {
+                                if (settings.ProcessId == 0)
+                                {
+                                    settings.ProcessId = int.Parse(arg);
+                                    continue;
+                                }
+
+                                settings.PriorityClass = uint.Parse(arg);
                                 break;
                             }
                     }
@@ -114,6 +145,23 @@ namespace ColorControl
                     case DisableAutoStartParam:
                         {
                             settings.DisableAutoStart = true;
+                            break;
+                        }
+                    case SetProcessAffinityParam:
+                        {
+                            settings.SetProcessAffinity = true;
+                            parseNameParam = SetProcessAffinityParam;
+                            break;
+                        }
+                    case SetProcessPriorityParam:
+                        {
+                            settings.SetProcessPriority = true;
+                            parseNameParam = SetProcessPriorityParam;
+                            break;
+                        }
+                    case StartElevatedParam:
+                        {
+                            settings.StartElevated = true;
                             break;
                         }
                 }
