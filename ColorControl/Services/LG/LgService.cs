@@ -1,6 +1,7 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
 using ColorControl.Services.Common;
+using ColorControl.Svc;
 using LgTv;
 using Microsoft.Win32;
 using Newtonsoft.Json;
@@ -127,6 +128,8 @@ namespace ColorControl.Services.LG
             SaveConfig();
             SavePresets();
             SaveRemoteControlButtons();
+
+            SendConfigToService();
         }
 
         protected override List<LgPreset> GetDefaultPresets()
@@ -257,29 +260,19 @@ namespace ColorControl.Services.LG
 
         private void SavePresets()
         {
-            try
-            {
-                var json = JsonConvert.SerializeObject(_presets);
-                File.WriteAllText(_presetsFilename, json);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e.ToLogString());
-            }
+            Utils.WriteObject(_presetsFilename, _presets);
         }
 
         private void SaveConfig()
         {
             Config.PowerOnAfterStartup = Devices?.Any(d => d.PowerOnAfterStartup) ?? false;
 
-            var json = JsonConvert.SerializeObject(Config);
-            File.WriteAllText(_configFilename, json);
+            Utils.WriteObject(_configFilename, Config);
         }
 
         private void SaveRemoteControlButtons()
         {
-            var json = JsonConvert.SerializeObject(_remoteControlButtons);
-            File.WriteAllText(_rcButtonsFilename, json);
+            Utils.WriteObject(_rcButtonsFilename, _remoteControlButtons);
         }
 
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
@@ -936,6 +929,24 @@ namespace ColorControl.Services.LG
 
                 Utils.StartProcess(resumeScript, hidden: true);
             }
+        }
+
+        private void SendConfigToService()
+        {
+            if (!Utils.IsServiceRunning())
+            {
+                return;
+            }
+
+            var json = JsonConvert.SerializeObject(Config);
+
+            var message = new SvcMessage
+            {
+                MessageType = SvcMessageType.SetLgConfig,
+                Data = json
+            };
+
+            PipeUtils.SendMessage(message);
         }
     }
 }

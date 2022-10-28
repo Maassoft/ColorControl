@@ -1,10 +1,8 @@
 ﻿using ATI.ADL;
 using ColorControl.Common;
 using ColorControl.Services.Common;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -52,15 +50,7 @@ namespace ColorControl.Services.AMD
 
         private void SavePresets()
         {
-            try
-            {
-                var json = JsonConvert.SerializeObject(_presets);
-                File.WriteAllText(_presetsFilename, json);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e.ToLogString());
-            }
+            Utils.WriteObject(_presetsFilename, _presets);
         }
 
         public void GlobalSave()

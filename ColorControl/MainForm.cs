@@ -7,8 +7,8 @@ using ColorControl.Services.Common;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Svc;
 using LgTv;
-using Newtonsoft.Json;
 using NLog;
 using nspector;
 using nspector.Common;
@@ -28,7 +28,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -77,7 +76,6 @@ namespace ColorControl
         private bool _updatingDitherSettings;
 
         private LgGameBar _gameBarForm;
-        private QuickAccessForm<GamePreset> _gameQuickAccessForm;
 
         private GameService _gameService;
 
@@ -125,7 +123,7 @@ namespace ColorControl
             _trayIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
             _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
 
-            chkStartAfterLogin.Checked = Utils.TaskExists(Program.TS_TASKNAME, true);
+            chkStartAfterLogin.Checked = Utils.TaskExists(Program.TS_TASKNAME);
 
             chkFixChromeFonts.Enabled = Utils.IsChromeInstalled();
             if (chkFixChromeFonts.Enabled)
@@ -140,12 +138,15 @@ namespace ColorControl
 
             _shortcuts.Add(SHORTCUTID_SCREENSAVER, StartScreenSaver);
 
+            //Utils.StartService();
+
             InitLgService();
             InitNvService();
             InitAmdService();
             InitGameService();
 
             InitInfo();
+            UpdateServiceInfo();
 
             UserSessionInfo.Install();
             _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
@@ -154,7 +155,34 @@ namespace ColorControl
 
             _initialized = true;
 
+            //Task.Run(() => Utils.StartPipeAsync());
+
             AfterInitialized();
+        }
+
+        private void UpdateServiceInfo()
+        {
+            var text = "Use Windows Service";
+            btnStartStopService.Enabled = true;
+
+            if (Utils.IsServiceRunning())
+            {
+                text += " (running)";
+                btnStartStopService.Text = "Stop";
+            }
+            else if (Utils.IsServiceInstalled())
+            {
+                text += " (installed, not running)";
+                btnStartStopService.Text = "Start";
+            }
+            else
+            {
+                text += " (not installed)";
+                btnStartStopService.Text = "Start";
+                btnStartStopService.Enabled = false;
+            }
+
+            rbElevationService.Text = text;
         }
 
         private void InitNvService()
@@ -360,6 +388,11 @@ namespace ColorControl
             //{
             Text = Application.ProductName + " " + Application.ProductVersion;
             //}
+
+            if (Utils.IsAdministrator())
+            {
+                Text += " (administrator)";
+            }
 
             lblInfo.Text = Text + " - " + _currentVersionInfo.LegalCopyright;
 
@@ -817,7 +850,13 @@ namespace ColorControl
                 return;
             }
             var enabled = chkStartAfterLogin.Checked;
-            Utils.RegisterTask(Program.TS_TASKNAME, enabled);
+            RegisterScheduledTask(enabled);
+
+            rbElevationAdmin.Enabled = enabled;
+            if (!enabled && rbElevationAdmin.Checked)
+            {
+                rbElevationNone.Checked = true;
+            }
         }
 
         private void LoadConfig()
@@ -829,7 +868,6 @@ namespace ColorControl
             edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
             chkGdiScaling.Checked = _config.UseGdiScaling;
-            chkOptionsDedicatedElevatedProcess.Checked = _config.UseDedicatedElevatedProcess;
 
             if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
             {
@@ -857,15 +895,7 @@ namespace ColorControl
                 _config.FormHeight = Height;
             }
 
-            try
-            {
-                var data = JsonConvert.SerializeObject(_config);
-                File.WriteAllText(Program.ConfigFilename, data);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e.ToLogString());
-            }
+            Utils.WriteObject(Program.ConfigFilename, _config);
         }
 
         private void ShowControls(Control parent, bool show = true, Control exclude = null)
@@ -907,6 +937,44 @@ namespace ColorControl
 
             InitSelectedTab();
             CheckForUpdates();
+
+            CheckElevationMethod();
+        }
+
+        private void CheckElevationMethod()
+        {
+            if (Utils.IsAdministrator())
+            {
+                return;
+            }
+
+            if (_config.ElevationMethodAsked)
+            {
+                if (_config.ElevationMethod == ElevationMethod.UseService && !Utils.IsServiceInstalled() &&
+                    (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not installed. Do you want to install it now?") == DialogResult.Yes))
+                {
+                    Utils.InstallService();
+                }
+                else if (_config.ElevationMethod == ElevationMethod.UseService && !Utils.IsServiceRunning() &&
+                    (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not running. Do you want to start it now?") == DialogResult.Yes))
+                {
+                    Utils.StartService();
+                }
+
+                return;
+            }
+
+            var result = MessageForms.QuestionYesNo(Utils.ELEVATION_MSG + @"
+
+Do you want to install and start the Windows Service now? You can always change this on the Options-tab page.
+
+NOTE: installing the service may cause a User Account Control popup.");
+            if (result == DialogResult.Yes)
+            {
+                SetElevationMethod(ElevationMethod.UseService);
+            }
+
+            _config.ElevationMethodAsked = true;
         }
 
         protected override void SetVisibleCore(bool value)
@@ -1692,6 +1760,24 @@ namespace ColorControl
 
                 UpdateDitherSettings();
             }
+
+            _initialized = false;
+            try
+            {
+                var _ = _config.ElevationMethod switch
+                {
+                    ElevationMethod.None => rbElevationNone.Checked = true,
+                    ElevationMethod.RunAsAdmin => rbElevationAdmin.Checked = true,
+                    ElevationMethod.UseService => rbElevationService.Checked = true,
+                    ElevationMethod.UseElevatedProcess => rbElevationProcess.Checked = true
+                };
+            }
+            finally
+            {
+                _initialized = true;
+            }
+
+            UpdateServiceInfo();
         }
 
         private void UpdateDitherSettings()
@@ -2059,36 +2145,44 @@ namespace ColorControl
 
         private void LoadLog()
         {
-            var filename = Path.Combine(_dataDir, "LogFile.txt");
+            var logType = cbxLogType.SelectedIndex;
 
-            var lines = new List<string> { "No log file found" };
-
-            try
+            if (logType == -1)
             {
-                if (File.Exists(filename))
+                cbxLogType.SelectedIndex = 0;
+                return;
+            }
+
+            string text;
+
+            if (logType == 0)
+            {
+                var filename = Path.Combine(_dataDir, "LogFile.txt");
+
+                text = Utils.ReadText(filename);
+
+                text ??= "No log file found";
+            }
+            else
+            {
+                if (Utils.IsServiceRunning())
                 {
-                    using var fs = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
 
-                    using var reader = new StreamReader(fs);
+                    var result = PipeUtils.SendMessage(message);
 
-                    String line;
-
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        lines.Add(line);
-                    }
-
-                    //lines = File.ReadAllLines(filename);
+                    text = result?.Data ?? "Cannot get log from service";
+                }
+                else
+                {
+                    text = "The service is not installed or not running";
                 }
             }
-            catch (Exception ex)
-            {
-                lines = new List<string> { $"Cannot load log file: {ex.Message}" };
-            }
-            var reversedLines = lines.ToList();
-            var builder = new StringBuilder();
-            reversedLines.ForEach(line => builder.AppendLine(line));
-            edtLog.Text = builder.ToString();
+
+            edtLog.Text = text;
+
+            edtLog.SelectionStart = text.Length;
+            edtLog.ScrollToCaret();
         }
 
         private void LoadInfo()
@@ -2401,12 +2495,26 @@ Do you want to continue?";
 
         private void btnClearLog_Click(object sender, EventArgs e)
         {
-            var filename = Path.Combine(_dataDir, "LogFile.txt");
-            if (File.Exists(filename))
+            var logType = cbxLogType.SelectedIndex;
+
+            if (logType == -1)
             {
-                File.Delete(filename);
-                edtLog.Clear();
+                return;
             }
+
+            if (logType == 0)
+            {
+                var filename = Program.LogFilename;
+                if (File.Exists(filename))
+                {
+                    File.Delete(filename);
+                }
+            }
+            else
+            {
+                PipeUtils.SendMessage(SvcMessageType.ClearLog);
+            }
+            edtLog.Clear();
         }
 
         private void edtLgDeviceFilter_TextChanged(object sender, EventArgs e)
@@ -3652,7 +3760,8 @@ The InStart and Software Update items are now visible under the Expert-button."
 
                 var fileName = Path.GetFileNameWithoutExtension(preset.Path);
 
-                preset.name = versionInfo.FileDescription ?? versionInfo.ProductName ?? fileName;
+                preset.name = !string.IsNullOrEmpty(versionInfo.FileDescription) ? versionInfo.FileDescription :
+                    !string.IsNullOrEmpty(versionInfo.ProductName) ? versionInfo.ProductName : fileName;
             }
 
             AddOrUpdateItemGame(preset);
@@ -4066,13 +4175,150 @@ The InStart and Software Update items are now visible under the Expert-button."
             var enumValue = Enum.Parse(typeof(GamePriorityClass), value);
 
             preset.ProcessPriorityClass = (uint)(int)enumValue;
-
         }
 
-        private void chkOptionsDedicatedElevatedProcess_CheckedChanged(object sender, EventArgs e)
+        private void rbElevationNone_CheckedChanged(object sender, EventArgs e)
         {
-            _config.UseDedicatedElevatedProcess = chkOptionsDedicatedElevatedProcess.Checked;
-            Utils.UseDedicatedElevatedProcess = _config.UseDedicatedElevatedProcess;
+            if (!_initialized)
+            {
+                return;
+            }
+
+
+            if (sender is not RadioButton button || !button.Checked)
+            {
+                return;
+            }
+
+            SetElevationMethod((ElevationMethod)Utils.ParseInt((string)button.Tag));
+        }
+
+        private void SetElevationMethod(ElevationMethod elevationMethod)
+        {
+            _config.ElevationMethod = elevationMethod;
+
+            Utils.UseDedicatedElevatedProcess = _config.ElevationMethod == ElevationMethod.UseElevatedProcess;
+
+            var _ = _config.ElevationMethod switch
+            {
+                ElevationMethod.None => SetElevationMethodNone(),
+                ElevationMethod.RunAsAdmin => SetElevationMethodRunAsAdmin(),
+                ElevationMethod.UseService => SetElevationMethodUseService(),
+                ElevationMethod.UseElevatedProcess => SetElevationMethodUseElevatedProcess(),
+                _ => true
+            };
+
+            UpdateServiceInfo();
+        }
+
+        private bool SetElevationMethodNone()
+        {
+            if (chkStartAfterLogin.Enabled)
+            {
+                RegisterScheduledTask();
+            }
+
+            Utils.UninstallService();
+
+            return true;
+        }
+
+        private bool SetElevationMethodRunAsAdmin()
+        {
+            if (chkStartAfterLogin.Enabled)
+            {
+                RegisterScheduledTask(false);
+                RegisterScheduledTask();
+            }
+
+            Utils.UninstallService();
+
+            return true;
+        }
+
+        private bool SetElevationMethodUseService()
+        {
+            Utils.InstallService();
+
+            if (Utils.IsServiceInstalled())
+            {
+                MessageForms.InfoOk("Service installed successfully.");
+                return true;
+            }
+
+            MessageForms.ErrorOk("Service could not be installed. Check the logs.");
+
+            return false;
+        }
+
+        private bool SetElevationMethodUseElevatedProcess()
+        {
+            if (chkStartAfterLogin.Enabled)
+            {
+                RegisterScheduledTask();
+            }
+
+            Utils.UninstallService();
+
+            return true;
+        }
+
+        private void RegisterScheduledTask(bool enabled = true)
+        {
+            Utils.RegisterTask(Program.TS_TASKNAME, enabled, _config.ElevationMethod == ElevationMethod.RunAsAdmin ? Microsoft.Win32.TaskScheduler.TaskRunLevel.Highest : Microsoft.Win32.TaskScheduler.TaskRunLevel.LUA);
+        }
+
+        private void btnElevationInfo_Click(object sender, EventArgs e)
+        {
+            MessageForms.InfoOk(Utils.ELEVATION_MSG + @$"
+
+NOTE: if ColorControl itself already runs as administrator this is indicated in the title: ColorControl {Application.ProductVersion} (administrator).
+
+Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as administrator.
+");
+        }
+
+        private void btnStartStopService_Click(object sender, EventArgs e)
+        {
+            btnStartStopService.Enabled = false;
+            try
+            {
+                var start = btnStartStopService.Text == "Start";
+
+                if (start)
+                {
+                    Utils.StartService();
+                }
+                else
+                {
+                    Utils.StopService();
+                }
+
+                var wait = 1000;
+
+                while (wait > 0)
+                {
+                    Utils.WaitForTask(Task.Delay(100));
+
+                    if (start == Utils.IsServiceRunning())
+                    {
+                        break;
+                    }
+
+                    wait -= 100;
+                }
+            }
+            finally
+            {
+                btnStartStopService.Enabled = true;
+            }
+
+            UpdateServiceInfo();
+        }
+
+        private void cbxLogType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadLog();
         }
     }
 }

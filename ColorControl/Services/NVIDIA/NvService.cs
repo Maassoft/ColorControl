@@ -1,6 +1,5 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.Common;
-using Newtonsoft.Json;
 using nspector.Common;
 using nspector.Common.Meta;
 using NvAPIWrapper.Display;
@@ -10,7 +9,6 @@ using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -187,15 +185,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void SavePresets()
         {
-            try
-            {
-                var json = JsonConvert.SerializeObject(_presets);
-                File.WriteAllText(_presetsFilename, json);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e.ToLogString());
-            }
+            Utils.WriteObject(_presetsFilename, _presets);
         }
 
         private void SetCurrentDisplay(NvPreset preset)
@@ -509,11 +499,11 @@ namespace ColorControl.Services.NVIDIA
                 return false;
             }
 
-            var timing = display.DisplayDevice.CurrentTiming;
             var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
 
             if (refreshRate == 0)
             {
+                var timing = display.DisplayDevice.CurrentTiming;
                 refreshRate = (uint)timing.Extra.RefreshRate;
             }
 
@@ -521,11 +511,6 @@ namespace ColorControl.Services.NVIDIA
             {
                 resolutionWidth = (uint)desktopRect.Width;
                 resolutionHeight = (uint)desktopRect.Height;
-            }
-
-            if (timing.Extra.RefreshRate == refreshRate && desktopRect.Width == resolutionWidth && desktopRect.Height == resolutionHeight)
-            {
-                return true;
             }
 
             var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);

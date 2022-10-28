@@ -2,6 +2,14 @@
 
 namespace ColorControl
 {
+    public enum ElevationMethod
+    {
+        None = 0,
+        RunAsAdmin = 1,
+        UseService = 2,
+        UseElevatedProcess = 3
+    }
+
     public class ListViewSortState
     {
         public SortOrder SortOrder { get; set; }
@@ -31,6 +39,8 @@ namespace ColorControl
         public string LgQuickAccessShortcut { get; set; }
         public string GameQuickAccessShortcut { get; set; }
         public bool UseDedicatedElevatedProcess { get; set; }
+        public ElevationMethod ElevationMethod { get; set; }
+        public bool ElevationMethodAsked { get; set; }
 
         public Config()
         {
@@ -43,6 +53,8 @@ namespace ColorControl
             FixChromeFonts = false;
             UseGdiScaling = true;
             UseDedicatedElevatedProcess = false;
+            ElevationMethod = ElevationMethod.None;
+            ElevationMethodAsked = false;
             LgPresetsSortState = new ListViewSortState();
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();

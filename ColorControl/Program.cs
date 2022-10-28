@@ -3,13 +3,18 @@ using ColorControl.Forms;
 using ColorControl.Services.AMD;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Svc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using NLog;
 using NWin32;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ColorControl
@@ -19,6 +24,7 @@ namespace ColorControl
         public const string TS_TASKNAME = "ColorControl";
         public static string DataDir { get; private set; }
         public static string ConfigFilename { get; private set; }
+        public static string LogFilename { get; private set; }
         public static Config Config { get; private set; }
         public static AppContext AppContext { get; private set; }
 
@@ -32,6 +38,20 @@ namespace ColorControl
         [STAThread]
         static void Main(string[] args)
         {
+            DataDir = Utils.GetDataPath();
+
+            var runAsService = args.Contains("--service") || Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
+
+            InitLogger(runAsService);
+
+            Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
+
+            if (runAsService)
+            {
+                Utils.WaitForTask(RunService(args));
+                return;
+            }
+
             MutexId = $"Global\\{typeof(MainForm).GUID}";
 
             var currentDomain = AppDomain.CurrentDomain;
@@ -39,9 +59,6 @@ namespace ColorControl
             currentDomain.UnhandledException += GlobalUnhandledExceptionHandler;
             // Handler for exceptions in threads behind forms.
             Application.ThreadException += GlobalThreadExceptionHandler;
-
-            DataDir = Utils.GetDataPath();
-            InitLogger();
 
             LoadConfig();
 
@@ -88,10 +105,19 @@ namespace ColorControl
                     mutex.WaitOne();
                     try
                     {
+                        if (Debugger.IsAttached)
+                        {
+                            Utils.StartService();
+                        }
+
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
                         Application.Run(new MainForm(AppContext));
 
+                        if (Debugger.IsAttached)
+                        {
+                            Utils.StopService();
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -108,12 +134,17 @@ namespace ColorControl
             }
         }
 
-        private static void InitLogger()
+        private static void InitLogger(bool runAsService)
         {
             var config = new NLog.Config.LoggingConfiguration();
 
             // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = Path.Combine(DataDir, "LogFile.txt") };
+            var logFileAppendix = runAsService ? "_svc" : "";
+
+            LogFilename = Path.Combine(DataDir, $"LogFile{logFileAppendix}.txt");
+
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = LogFilename };
+
             //var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
 
             // Rules for mapping loggers to targets            
@@ -154,7 +185,7 @@ namespace ColorControl
             }
             if (startUpParams.EnableAutoStart || startUpParams.DisableAutoStart)
             {
-                Utils.RegisterTask(TS_TASKNAME, startUpParams.EnableAutoStart);
+                Utils.RegisterTask(TS_TASKNAME, startUpParams.EnableAutoStart, startUpParams.AutoStartRunLevel);
                 return true;
             }
             if (startUpParams.SetProcessAffinity)
@@ -170,6 +201,30 @@ namespace ColorControl
             if (startUpParams.StartElevated)
             {
                 StartElevated();
+                return true;
+            }
+            if (startUpParams.SendWol)
+            {
+                return WOL.WakeFunction(startUpParams.WolMacAddress, startUpParams.WolIpAddress);
+            }
+            if (startUpParams.InstallService)
+            {
+                Utils.InstallService();
+                return true;
+            }
+            if (startUpParams.UninstallService)
+            {
+                Utils.UninstallService();
+                return true;
+            }
+            if (startUpParams.StartService)
+            {
+                Utils.StartService();
+                return true;
+            }
+            if (startUpParams.StopService)
+            {
+                Utils.StopService();
                 return true;
             }
 
@@ -261,6 +316,24 @@ namespace ColorControl
             {
                 MessageBox.Show("Error while initializing elevated application: " + ex.ToLogString(Environment.StackTrace), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static async Task RunService(string[] args)
+        {
+            Logger.Debug("RUNNING SERVICE");
+
+            using IHost host = Host.CreateDefaultBuilder(args)
+                .UseWindowsService(options =>
+                {
+                    options.ServiceName = "ColorControl Service";
+                })
+                .ConfigureServices(services =>
+                {
+                    services.AddHostedService<ColorControlBackgroundService>();
+                })
+                .Build();
+
+            await host.RunAsync();
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

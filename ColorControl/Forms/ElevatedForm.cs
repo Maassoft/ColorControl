@@ -49,7 +49,7 @@ namespace ColorControl.Forms
                 var container = (WinApi.COPYDATASTRUCT)m.GetLParam(typeof(WinApi.COPYDATASTRUCT));
                 var message = Marshal.PtrToStringAnsi(container.lpData);
 
-                File.AppendAllLines("d:\\Msg.txt", new[] { "Message received: " + message });
+                //File.AppendAllLines("d:\\Msg.txt", new[] { "Message received: " + message });
 
                 HandleMessage(message);
 
@@ -69,7 +69,14 @@ namespace ColorControl.Forms
 
             var startUpParams = StartUpParams.Parse(args);
 
-            Program.HandleStartupParams(startUpParams, null);
+            try
+            {
+                Program.HandleStartupParams(startUpParams, null);
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         private void CheckMutexAsync()

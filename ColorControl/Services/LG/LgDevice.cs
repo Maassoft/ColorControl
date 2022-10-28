@@ -759,7 +759,7 @@ namespace ColorControl.Services.LG
 
             if (MacAddress != null)
             {
-                result = WOL.WakeFunction(MacAddress);
+                result = WOL.WakeFunctionCheckAdmin(MacAddress, IpAddress);
                 _justWokeUp = true;
             }
             else

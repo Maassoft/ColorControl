@@ -231,6 +231,13 @@
             this.edtDelayDisplaySettings = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            this.btnStartStopService = new System.Windows.Forms.Button();
+            this.btnElevationInfo = new System.Windows.Forms.Button();
+            this.rbElevationService = new System.Windows.Forms.RadioButton();
+            this.rbElevationProcess = new System.Windows.Forms.RadioButton();
+            this.rbElevationAdmin = new System.Windows.Forms.RadioButton();
+            this.label8 = new System.Windows.Forms.Label();
+            this.rbElevationNone = new System.Windows.Forms.RadioButton();
             this.chkGdiScaling = new System.Windows.Forms.CheckBox();
             this.chkCheckForUpdates = new System.Windows.Forms.CheckBox();
             this.chkMinimizeToSystemTray = new System.Windows.Forms.CheckBox();
@@ -238,6 +245,8 @@
             this.chkStartMinimized = new System.Windows.Forms.CheckBox();
             this.chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             this.tabLog = new System.Windows.Forms.TabPage();
+            this.lblShowLog = new System.Windows.Forms.Label();
+            this.cbxLogType = new System.Windows.Forms.ComboBox();
             this.btnClearLog = new System.Windows.Forms.Button();
             this.edtLog = new System.Windows.Forms.TextBox();
             this.tabInfo = new System.Windows.Forms.TabPage();
@@ -251,7 +260,6 @@
             this.mnuNvSettings = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miNvProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
-            this.chkOptionsDedicatedElevatedProcess = new System.Windows.Forms.CheckBox();
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -2237,11 +2245,11 @@
             this.grpNvidiaOptions.Controls.Add(this.cbxDitheringBitDepth);
             this.grpNvidiaOptions.Controls.Add(this.chkDitheringEnabled);
             this.grpNvidiaOptions.Controls.Add(this.pbGradient);
-            this.grpNvidiaOptions.Location = new System.Drawing.Point(481, 7);
+            this.grpNvidiaOptions.Location = new System.Drawing.Point(537, 7);
             this.grpNvidiaOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpNvidiaOptions.Name = "grpNvidiaOptions";
             this.grpNvidiaOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(625, 351);
+            this.grpNvidiaOptions.Size = new System.Drawing.Size(569, 351);
             this.grpNvidiaOptions.TabIndex = 6;
             this.grpNvidiaOptions.TabStop = false;
             this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
@@ -2312,7 +2320,7 @@
             this.pbGradient.Location = new System.Drawing.Point(7, 106);
             this.pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(611, 236);
+            this.pbGradient.Size = new System.Drawing.Size(555, 236);
             this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbGradient.TabIndex = 0;
             this.pbGradient.TabStop = false;
@@ -2324,11 +2332,11 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 332);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 365);
             this.grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             this.grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpMiscellaneousOptions.Size = new System.Drawing.Size(467, 150);
+            this.grpMiscellaneousOptions.Size = new System.Drawing.Size(522, 150);
             this.grpMiscellaneousOptions.TabIndex = 5;
             this.grpMiscellaneousOptions.TabStop = false;
             this.grpMiscellaneousOptions.Text = "Miscellaneous";
@@ -2399,11 +2407,11 @@
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
             this.grpLGOptions.Controls.Add(this.edtLgMaxPowerOnRetries);
             this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetries);
-            this.grpLGOptions.Location = new System.Drawing.Point(7, 136);
+            this.grpLGOptions.Location = new System.Drawing.Point(7, 169);
             this.grpLGOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpLGOptions.Name = "grpLGOptions";
             this.grpLGOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpLGOptions.Size = new System.Drawing.Size(470, 190);
+            this.grpLGOptions.Size = new System.Drawing.Size(522, 190);
             this.grpLGOptions.TabIndex = 4;
             this.grpLGOptions.TabStop = false;
             this.grpLGOptions.Text = "LG controller";
@@ -2411,7 +2419,7 @@
             // lblGameBarShortcut
             // 
             this.lblGameBarShortcut.AutoSize = true;
-            this.lblGameBarShortcut.Location = new System.Drawing.Point(201, 127);
+            this.lblGameBarShortcut.Location = new System.Drawing.Point(266, 127);
             this.lblGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblGameBarShortcut.Name = "lblGameBarShortcut";
             this.lblGameBarShortcut.Size = new System.Drawing.Size(108, 15);
@@ -2420,7 +2428,7 @@
             // 
             // edtLgGameBarShortcut
             // 
-            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(307, 121);
+            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(386, 121);
             this.edtLgGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgGameBarShortcut.Name = "edtLgGameBarShortcut";
             this.edtLgGameBarShortcut.ReadOnly = true;
@@ -2447,7 +2455,7 @@
             0,
             0,
             0});
-            this.edtLgOptionShutdownDelay.Location = new System.Drawing.Point(349, 68);
+            this.edtLgOptionShutdownDelay.Location = new System.Drawing.Point(428, 68);
             this.edtLgOptionShutdownDelay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgOptionShutdownDelay.Maximum = new decimal(new int[] {
             5000,
@@ -2507,7 +2515,7 @@
             // 
             // edtLgMaxPowerOnRetries
             // 
-            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(349, 20);
+            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(428, 20);
             this.edtLgMaxPowerOnRetries.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgMaxPowerOnRetries.Maximum = new decimal(new int[] {
             25,
@@ -2535,11 +2543,11 @@
             // 
             this.grpHDROptions.Controls.Add(this.edtDelayDisplaySettings);
             this.grpHDROptions.Controls.Add(this.label6);
-            this.grpHDROptions.Location = new System.Drawing.Point(481, 365);
+            this.grpHDROptions.Location = new System.Drawing.Point(537, 365);
             this.grpHDROptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpHDROptions.Name = "grpHDROptions";
             this.grpHDROptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpHDROptions.Size = new System.Drawing.Size(467, 83);
+            this.grpHDROptions.Size = new System.Drawing.Size(569, 83);
             this.grpHDROptions.TabIndex = 3;
             this.grpHDROptions.TabStop = false;
             this.grpHDROptions.Text = "HDR";
@@ -2578,7 +2586,13 @@
             // 
             // grpGeneralOptions
             // 
-            this.grpGeneralOptions.Controls.Add(this.chkOptionsDedicatedElevatedProcess);
+            this.grpGeneralOptions.Controls.Add(this.btnStartStopService);
+            this.grpGeneralOptions.Controls.Add(this.btnElevationInfo);
+            this.grpGeneralOptions.Controls.Add(this.rbElevationService);
+            this.grpGeneralOptions.Controls.Add(this.rbElevationProcess);
+            this.grpGeneralOptions.Controls.Add(this.rbElevationAdmin);
+            this.grpGeneralOptions.Controls.Add(this.label8);
+            this.grpGeneralOptions.Controls.Add(this.rbElevationNone);
             this.grpGeneralOptions.Controls.Add(this.chkGdiScaling);
             this.grpGeneralOptions.Controls.Add(this.chkCheckForUpdates);
             this.grpGeneralOptions.Controls.Add(this.chkMinimizeToSystemTray);
@@ -2589,15 +2603,101 @@
             this.grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpGeneralOptions.Name = "grpGeneralOptions";
             this.grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpGeneralOptions.Size = new System.Drawing.Size(467, 122);
+            this.grpGeneralOptions.Size = new System.Drawing.Size(522, 156);
             this.grpGeneralOptions.TabIndex = 2;
             this.grpGeneralOptions.TabStop = false;
             this.grpGeneralOptions.Text = "General";
             // 
+            // btnStartStopService
+            // 
+            this.btnStartStopService.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnStartStopService.Location = new System.Drawing.Point(474, 103);
+            this.btnStartStopService.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnStartStopService.Name = "btnStartStopService";
+            this.btnStartStopService.Size = new System.Drawing.Size(40, 27);
+            this.btnStartStopService.TabIndex = 65;
+            this.btnStartStopService.Text = "Start";
+            this.btnStartStopService.UseVisualStyleBackColor = true;
+            this.btnStartStopService.Click += new System.EventHandler(this.btnStartStopService_Click);
+            // 
+            // btnElevationInfo
+            // 
+            this.btnElevationInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnElevationInfo.Location = new System.Drawing.Point(329, 41);
+            this.btnElevationInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnElevationInfo.Name = "btnElevationInfo";
+            this.btnElevationInfo.Size = new System.Drawing.Size(22, 27);
+            this.btnElevationInfo.TabIndex = 64;
+            this.btnElevationInfo.Text = "?";
+            this.btnElevationInfo.UseVisualStyleBackColor = true;
+            this.btnElevationInfo.Click += new System.EventHandler(this.btnElevationInfo_Click);
+            // 
+            // rbElevationService
+            // 
+            this.rbElevationService.AutoSize = true;
+            this.rbElevationService.Location = new System.Drawing.Point(216, 107);
+            this.rbElevationService.Name = "rbElevationService";
+            this.rbElevationService.Size = new System.Drawing.Size(136, 19);
+            this.rbElevationService.TabIndex = 63;
+            this.rbElevationService.TabStop = true;
+            this.rbElevationService.Tag = "2";
+            this.rbElevationService.Text = "Use Windows Service";
+            this.rbElevationService.UseVisualStyleBackColor = true;
+            this.rbElevationService.CheckedChanged += new System.EventHandler(this.rbElevationNone_CheckedChanged);
+            // 
+            // rbElevationProcess
+            // 
+            this.rbElevationProcess.AutoSize = true;
+            this.rbElevationProcess.Location = new System.Drawing.Point(216, 128);
+            this.rbElevationProcess.Name = "rbElevationProcess";
+            this.rbElevationProcess.Size = new System.Drawing.Size(189, 19);
+            this.rbElevationProcess.TabIndex = 62;
+            this.rbElevationProcess.TabStop = true;
+            this.rbElevationProcess.Tag = "3";
+            this.rbElevationProcess.Text = "Use dedicated elevated process";
+            this.rbElevationProcess.UseVisualStyleBackColor = true;
+            this.rbElevationProcess.CheckedChanged += new System.EventHandler(this.rbElevationNone_CheckedChanged);
+            // 
+            // rbElevationAdmin
+            // 
+            this.rbElevationAdmin.AutoSize = true;
+            this.rbElevationAdmin.Location = new System.Drawing.Point(216, 86);
+            this.rbElevationAdmin.Name = "rbElevationAdmin";
+            this.rbElevationAdmin.Size = new System.Drawing.Size(97, 19);
+            this.rbElevationAdmin.TabIndex = 61;
+            this.rbElevationAdmin.TabStop = true;
+            this.rbElevationAdmin.Tag = "1";
+            this.rbElevationAdmin.Text = "Run as admin";
+            this.rbElevationAdmin.UseVisualStyleBackColor = true;
+            this.rbElevationAdmin.CheckedChanged += new System.EventHandler(this.rbElevationNone_CheckedChanged);
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(216, 47);
+            this.label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(105, 15);
+            this.label8.TabIndex = 60;
+            this.label8.Text = "Elevation-method:";
+            // 
+            // rbElevationNone
+            // 
+            this.rbElevationNone.AutoSize = true;
+            this.rbElevationNone.Location = new System.Drawing.Point(216, 65);
+            this.rbElevationNone.Name = "rbElevationNone";
+            this.rbElevationNone.Size = new System.Drawing.Size(54, 19);
+            this.rbElevationNone.TabIndex = 10;
+            this.rbElevationNone.TabStop = true;
+            this.rbElevationNone.Tag = "0";
+            this.rbElevationNone.Text = "None";
+            this.rbElevationNone.UseVisualStyleBackColor = true;
+            this.rbElevationNone.CheckedChanged += new System.EventHandler(this.rbElevationNone_CheckedChanged);
+            // 
             // chkGdiScaling
             // 
             this.chkGdiScaling.AutoSize = true;
-            this.chkGdiScaling.Location = new System.Drawing.Point(238, 72);
+            this.chkGdiScaling.Location = new System.Drawing.Point(216, 22);
             this.chkGdiScaling.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkGdiScaling.Name = "chkGdiScaling";
             this.chkGdiScaling.Size = new System.Drawing.Size(197, 19);
@@ -2609,7 +2709,7 @@
             // chkCheckForUpdates
             // 
             this.chkCheckForUpdates.AutoSize = true;
-            this.chkCheckForUpdates.Location = new System.Drawing.Point(238, 47);
+            this.chkCheckForUpdates.Location = new System.Drawing.Point(7, 122);
             this.chkCheckForUpdates.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkCheckForUpdates.Name = "chkCheckForUpdates";
             this.chkCheckForUpdates.Size = new System.Drawing.Size(197, 19);
@@ -2621,7 +2721,7 @@
             // chkMinimizeToSystemTray
             // 
             this.chkMinimizeToSystemTray.AutoSize = true;
-            this.chkMinimizeToSystemTray.Location = new System.Drawing.Point(238, 22);
+            this.chkMinimizeToSystemTray.Location = new System.Drawing.Point(7, 97);
             this.chkMinimizeToSystemTray.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkMinimizeToSystemTray.Name = "chkMinimizeToSystemTray";
             this.chkMinimizeToSystemTray.Size = new System.Drawing.Size(152, 19);
@@ -2667,6 +2767,8 @@
             // 
             // tabLog
             // 
+            this.tabLog.Controls.Add(this.lblShowLog);
+            this.tabLog.Controls.Add(this.cbxLogType);
             this.tabLog.Controls.Add(this.btnClearLog);
             this.tabLog.Controls.Add(this.edtLog);
             this.tabLog.Location = new System.Drawing.Point(4, 24);
@@ -2678,9 +2780,33 @@
             this.tabLog.Text = "Log";
             this.tabLog.UseVisualStyleBackColor = true;
             // 
+            // lblShowLog
+            // 
+            this.lblShowLog.AutoSize = true;
+            this.lblShowLog.Location = new System.Drawing.Point(8, 14);
+            this.lblShowLog.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblShowLog.Name = "lblShowLog";
+            this.lblShowLog.Size = new System.Drawing.Size(88, 15);
+            this.lblShowLog.TabIndex = 33;
+            this.lblShowLog.Text = "Show log from:";
+            // 
+            // cbxLogType
+            // 
+            this.cbxLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxLogType.FormattingEnabled = true;
+            this.cbxLogType.Items.AddRange(new object[] {
+            "Main application",
+            "Service"});
+            this.cbxLogType.Location = new System.Drawing.Point(102, 9);
+            this.cbxLogType.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cbxLogType.Name = "cbxLogType";
+            this.cbxLogType.Size = new System.Drawing.Size(189, 23);
+            this.cbxLogType.TabIndex = 32;
+            this.cbxLogType.SelectedIndexChanged += new System.EventHandler(this.cbxLogType_SelectedIndexChanged);
+            // 
             // btnClearLog
             // 
-            this.btnClearLog.Location = new System.Drawing.Point(7, 7);
+            this.btnClearLog.Location = new System.Drawing.Point(299, 6);
             this.btnClearLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnClearLog.Name = "btnClearLog";
             this.btnClearLog.Size = new System.Drawing.Size(88, 27);
@@ -2823,18 +2949,6 @@
             this.miNvSettings.Size = new System.Drawing.Size(201, 22);
             this.miNvSettings.Text = "Settings";
             this.miNvSettings.Click += new System.EventHandler(this.miNvSettings_Click);
-            // 
-            // chkOptionsDedicatedElevatedProcess
-            // 
-            this.chkOptionsDedicatedElevatedProcess.AutoSize = true;
-            this.chkOptionsDedicatedElevatedProcess.Location = new System.Drawing.Point(7, 97);
-            this.chkOptionsDedicatedElevatedProcess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkOptionsDedicatedElevatedProcess.Name = "chkOptionsDedicatedElevatedProcess";
-            this.chkOptionsDedicatedElevatedProcess.Size = new System.Drawing.Size(190, 19);
-            this.chkOptionsDedicatedElevatedProcess.TabIndex = 8;
-            this.chkOptionsDedicatedElevatedProcess.Text = "Use dedicated elevated process";
-            this.chkOptionsDedicatedElevatedProcess.UseVisualStyleBackColor = true;
-            this.chkOptionsDedicatedElevatedProcess.CheckedChanged += new System.EventHandler(this.chkOptionsDedicatedElevatedProcess_CheckedChanged);
             // 
             // MainForm
             // 
@@ -3124,7 +3238,15 @@
         private System.Windows.Forms.ContextMenuStrip mnuGameOptions;
         private System.Windows.Forms.ToolStripMenuItem miGameProcessorAffinity;
         private System.Windows.Forms.ToolStripMenuItem miGameProcessPriority;
-        private System.Windows.Forms.CheckBox chkOptionsDedicatedElevatedProcess;
+        private System.Windows.Forms.RadioButton rbElevationService;
+        private System.Windows.Forms.RadioButton rbElevationProcess;
+        private System.Windows.Forms.RadioButton rbElevationAdmin;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.RadioButton rbElevationNone;
+        private System.Windows.Forms.Button btnElevationInfo;
+        private System.Windows.Forms.Button btnStartStopService;
+        private System.Windows.Forms.Label lblShowLog;
+        private System.Windows.Forms.ComboBox cbxLogType;
     }
 }
 

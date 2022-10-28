@@ -14,9 +14,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.ServiceProcess;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -48,6 +51,23 @@ namespace ColorControl.Common
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static bool WinKeyDown = false;
         private static Keys[] KeysWithoutModifiers = new[] { Keys.F13, Keys.F14, Keys.F15, Keys.F16, Keys.F17, Keys.F18, Keys.F19, Keys.F20, Keys.F21, Keys.F22, Keys.F23, Keys.F24 };
+
+        private static string SERVICE_NAME = "Color Control Service";
+
+        public static string ELEVATION_MSG = @"Elevation is needed in some cases where ColorControl needs administrator rights.
+Some operations like installing a service, changing the priority of a process or creating a temporary IP-route for improved WOL-functionality will not work without those rights.
+
+These methods are available:
+
+- None: no administrator operations can be executed (unless program already manually is started as admin)
+
+- Run as admin: only available when starting automatically after login (configures scheduled task with highest privileges)
+
+- Use Windows Service: this will install a Windows Service that handles the operations which need admin rights. This is the preferred method.
+
+- Use dedicated elevated process: a second ColorControl-process will be spawned that is run as administrator.
+
+The best and suggested method to provide this is via a Windows Service. Only when installing the service a User Account Control window may popup.";
 
         public static Bitmap SubPixelShift(Bitmap bitmap)
         {
@@ -170,15 +190,34 @@ namespace ColorControl.Common
             return keys;
         }
 
-        static bool IsAdministrator()
+        private static bool? _IsAdministrator;
+
+        public static bool IsAdministrator()
         {
+            if (_IsAdministrator.HasValue)
+            {
+                return _IsAdministrator.Value;
+            }
+
             var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            _IsAdministrator = principal.IsInRole(WindowsBuiltInRole.Administrator);
+
+            return _IsAdministrator.Value;
         }
 
-        internal static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false)
+        internal static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false, bool skipService = false)
         {
+            if (!skipService && IsServiceRunning())
+            {
+                var result = PipeUtils.SendRpcMessage(args);
+
+                if (result.HasValue)
+                {
+                    return 0;
+                }
+            }
+
             if (UseDedicatedElevatedProcess && !skipDedicated)
             {
                 CheckElevatedProcess();
@@ -188,7 +227,9 @@ namespace ColorControl.Common
                 return 0;
             }
 
-            var info = new ProcessStartInfo(Process.GetCurrentProcess().MainModule.FileName, args)
+            var fileName = Process.GetCurrentProcess().MainModule.FileName;
+
+            var info = new ProcessStartInfo(fileName, args)
             {
                 Verb = "runas", // indicates to elevate privileges
                 UseShellExecute = true,
@@ -225,11 +266,24 @@ namespace ColorControl.Common
 
             if (ElevatedProcessWindowHandle == IntPtr.Zero)
             {
-                ExecuteElevated(StartUpParams.StartElevatedParam, false, true);
+                ExecuteElevated(StartUpParams.StartElevatedParam, false, true, true);
 
-                Thread.Sleep(500);
+                var delay = 1000;
 
-                ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
+                while (delay >= 0)
+                {
+                    Thread.Sleep(100);
+
+                    ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
+
+                    if (ElevatedProcessWindowHandle != IntPtr.Zero)
+                    {
+                        Thread.Sleep(100);
+                        break;
+                    }
+
+                    delay -= 100;
+                }
             }
         }
 
@@ -494,11 +548,11 @@ namespace ColorControl.Common
             return list;
         }
 
-        public static void RegisterTask(string taskName, bool enabled)
+        public static void RegisterTask(string taskName, bool enabled, TaskRunLevel runLevel = TaskRunLevel.LUA)
         {
             if (!IsAdministrator())
             {
-                ExecuteElevated(enabled ? StartUpParams.EnableAutoStartParam : StartUpParams.DisableAutoStartParam);
+                ExecuteElevated(enabled ? $"{StartUpParams.EnableAutoStartParam} {(int)runLevel}" : StartUpParams.DisableAutoStartParam, skipService: true);
                 return;
             }
 
@@ -511,8 +565,10 @@ namespace ColorControl.Common
                 {
                     if (enabled)
                     {
-                        TaskDefinition td = ts.NewTask();
+                        var td = ts.NewTask();
+
                         td.RegistrationInfo.Description = "Start ColorControl";
+                        td.Principal.RunLevel = runLevel;
 
                         td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
 
@@ -528,32 +584,18 @@ namespace ColorControl.Common
             }
             catch (Exception e)
             {
-                //MessageForms.ErrorOk("Could not create/delete task: " + e.Message);
+                Logger.Error($"Could not create/delete task: {e.Message}");
             }
         }
 
-        public static bool TaskExists(string taskName, bool update)
+        public static bool TaskExists(string taskName)
         {
             var file = Assembly.GetExecutingAssembly().Location;
             using (TaskService ts = new TaskService())
             {
                 var task = ts.RootFolder.Tasks.FirstOrDefault(x => x.Name.Equals(taskName));
 
-                if (task != null)
-                {
-                    //var action = task.Definition.Actions.FirstOrDefault(x => x.ActionType == TaskActionType.Execute);
-                    //if (action != null)
-                    //{
-                    //    var execAction = action as ExecAction;
-                    //    if (!execAction.Path.Equals(file))
-                    //    {
-                    //        RegisterTask(taskName, false);
-                    //        RegisterTask(taskName, true);
-                    //    }
-                    //}
-                    return true;
-                }
-                return false;
+                return task != null;
             }
         }
 
@@ -870,6 +912,217 @@ namespace ColorControl.Common
         public static bool NormEquals(this string str1, string str2)
         {
             return str1.Trim().Replace(" ", string.Empty).Equals(str2.Trim().Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static void StartService()
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated(StartUpParams.StartServiceParam);
+                return;
+            }
+
+            var controller = new ServiceController(SERVICE_NAME);
+
+            if (controller.Status == ServiceControllerStatus.Stopped)
+            {
+                controller.Start();
+            }
+        }
+
+        public static void StopService()
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated(StartUpParams.StopServiceParam);
+                return;
+            }
+
+            var controller = new ServiceController(SERVICE_NAME);
+
+            if (controller.Status == ServiceControllerStatus.Running)
+            {
+                controller.Stop();
+            }
+        }
+
+        public static bool IsServiceInstalled()
+        {
+            return GetServiceStatus() != 0;
+        }
+
+        public static bool IsServiceRunning()
+        {
+            return GetServiceStatus() == ServiceControllerStatus.Running;
+        }
+
+        public static ServiceControllerStatus GetServiceStatus()
+        {
+            var controller = new ServiceController(SERVICE_NAME);
+
+            try
+            {
+                return controller.Status;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        internal static void InstallService()
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated(StartUpParams.InstallServiceParam, skipService: true);
+
+                return;
+            }
+
+
+            if (!IsServiceInstalled())
+            {
+                StartProcess("sc.exe", @$"create ""{SERVICE_NAME}"" binpath=""{Process.GetCurrentProcess().MainModule.FileName}"" start=auto", wait: true);
+                StartProcess("sc.exe", @$"description ""{SERVICE_NAME}"" ""Executes tasks for Color Control that require elevation. If this service is stopped, functions like WOL might be impacted.""", wait: true);
+            }
+
+            StartService();
+        }
+
+        internal static void UninstallService()
+        {
+            if (!IsAdministrator())
+            {
+                ExecuteElevated(StartUpParams.UninstallServiceParam, skipService: true);
+
+                return;
+            }
+
+            if (!IsServiceInstalled())
+            {
+                return;
+            }
+
+            StopService();
+
+            StartProcess("sc.exe", @$"delete ""{SERVICE_NAME}""", wait: true);
+        }
+
+        public static bool PingHost(string nameOrAddress)
+        {
+            try
+            {
+                using var pinger = new Ping();
+                var reply = pinger.Send(nameOrAddress);
+                return reply.Status == IPStatus.Success;
+            }
+            catch (PingException)
+            {
+                // Discard PingExceptions and return false;
+                return false;
+            }
+        }
+
+        public static bool WriteText(string fileName, string data)
+        {
+            var doWrite = !File.Exists(fileName);
+
+            if (!doWrite)
+            {
+                var writtenData = File.ReadAllText(fileName);
+
+                doWrite = !writtenData.Equals(data);
+            }
+
+            if (doWrite)
+            {
+                try
+                {
+                    File.WriteAllText(fileName, data);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e.ToLogString());
+                }
+            }
+
+            return doWrite;
+        }
+
+        public static string ReadText(string fileName, bool reverse = false)
+        {
+            var exists = File.Exists(fileName);
+
+            if (!exists)
+            {
+                return null;
+            }
+
+            try
+            {
+                var lines = new StringBuilder();
+
+                using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                using var reader = new StreamReader(fs);
+
+                string line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (reverse)
+                    {
+                        lines.Insert(0, line + "\r\n");
+                        continue;
+                    }
+
+                    lines.AppendLine(line);
+                }
+
+                return lines.ToString();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
+
+            return null;
+        }
+
+        public static bool WriteObject(string fileName, object value)
+        {
+            var data = JsonConvert.SerializeObject(value);
+
+            return WriteText(fileName, data);
+        }
+
+        public static T DeserializeJson<T>(string fileName)
+        {
+            try
+            {
+                var json = File.ReadAllText(fileName);
+                var data = JsonConvert.DeserializeObject<T>(json);
+
+                return data;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+
+                return default;
+            }
+        }
+
+        public static string Base64Encode(string plainText)
+        {
+            var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
+            return Convert.ToBase64String(plainTextBytes);
+        }
+
+        public static string Base64Decode(string base64EncodedData)
+        {
+            var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
+            return Encoding.UTF8.GetString(base64EncodedBytes);
         }
     }
 }

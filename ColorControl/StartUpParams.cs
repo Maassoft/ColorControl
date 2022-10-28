@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using ColorControl.Common;
+using Microsoft.Win32.TaskScheduler;
+using System.Collections.Generic;
 
 namespace ColorControl
 {
@@ -17,6 +19,11 @@ namespace ColorControl
         public const string SetProcessAffinityParam = "--set-process-affinity";
         public const string SetProcessPriorityParam = "--set-process-priority";
         public const string StartElevatedParam = "--elevated";
+        public const string SendWakeOnLanParam = "--send-wol";
+        public const string InstallServiceParam = "--install-service";
+        public const string UninstallServiceParam = "--uninstall-service";
+        public const string StartServiceParam = "--start-service";
+        public const string StopServiceParam = "--stop-service";
 
         public bool RunningFromScheduledTask { get; private set; }
         public bool ActivateChromeFontFix { get; private set; }
@@ -30,6 +37,7 @@ namespace ColorControl
         public string LgPresetName { get; private set; }
         public bool NoGui { get; set; }
         public bool EnableAutoStart { get; private set; }
+        public TaskRunLevel AutoStartRunLevel { get; private set; } = TaskRunLevel.LUA;
         public bool DisableAutoStart { get; private set; }
         public bool SetProcessAffinity { get; private set; }
         public int ProcessId { get; private set; }
@@ -37,6 +45,13 @@ namespace ColorControl
         public bool SetProcessPriority { get; private set; }
         public uint PriorityClass { get; private set; }
         public bool StartElevated { get; private set; }
+        public bool SendWol { get; private set; }
+        public string WolMacAddress { get; private set; }
+        public string WolIpAddress { get; private set; }
+        public bool InstallService { get; private set; }
+        public bool UninstallService { get; private set; }
+        public bool StartService { get; private set; }
+        public bool StopService { get; private set; }
 
         public static StartUpParams Parse(IEnumerable<string> args)
         {
@@ -83,6 +98,22 @@ namespace ColorControl
                                 }
 
                                 settings.PriorityClass = uint.Parse(arg);
+                                break;
+                            }
+                        case SendWakeOnLanParam:
+                            {
+                                if (settings.WolMacAddress == null)
+                                {
+                                    settings.WolMacAddress = arg;
+                                    continue;
+                                }
+
+                                settings.WolIpAddress = arg;
+                                break;
+                            }
+                        case EnableAutoStartParam:
+                            {
+                                settings.AutoStartRunLevel = (TaskRunLevel)Utils.ParseInt(arg, 0);
                                 break;
                             }
                     }
@@ -140,6 +171,7 @@ namespace ColorControl
                     case EnableAutoStartParam:
                         {
                             settings.EnableAutoStart = true;
+                            parseNameParam = EnableAutoStartParam;
                             break;
                         }
                     case DisableAutoStartParam:
@@ -162,6 +194,32 @@ namespace ColorControl
                     case StartElevatedParam:
                         {
                             settings.StartElevated = true;
+                            break;
+                        }
+                    case SendWakeOnLanParam:
+                        {
+                            settings.SendWol = true;
+                            parseNameParam = SendWakeOnLanParam;
+                            break;
+                        }
+                    case InstallServiceParam:
+                        {
+                            settings.InstallService = true;
+                            break;
+                        }
+                    case UninstallServiceParam:
+                        {
+                            settings.UninstallService = true;
+                            break;
+                        }
+                    case StartServiceParam:
+                        {
+                            settings.StartService = true;
+                            break;
+                        }
+                    case StopServiceParam:
+                        {
+                            settings.StopService = true;
                             break;
                         }
                 }
