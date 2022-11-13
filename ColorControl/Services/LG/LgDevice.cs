@@ -24,6 +24,8 @@ namespace ColorControl.Services.LG
             public int NumberOfValues { get; set; }
             public LgPreset Preset { get; set; }
             public bool Advanced { get; set; }
+            public ModelYear FromModelYear { get; set; } = ModelYear.None;
+            public ModelYear ToModelYear { get; set; } = ModelYear.None;
         }
 
         public class LgDevicePictureSettings
@@ -51,6 +53,17 @@ namespace ColorControl.Services.LG
             Manually
         }
 
+        public enum ModelYear
+        {
+            None = 0,
+            SeriesPre2018,
+            Series2018,
+            Series2019,
+            Series2020,
+            Series2021,
+            Series2022
+        }
+
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public static Func<string, string[], bool> ExternalServiceHandler;
         public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
@@ -66,9 +79,11 @@ namespace ColorControl.Services.LG
         public bool PowerOnAfterResume { get; set; }
         public bool PowerOffOnShutdown { get; set; }
         public bool PowerOffOnStandby { get; set; }
-        public bool PowerSwitchOnScreenSaver { get; set; }
+        public bool PowerOffOnScreenSaver { get; set; }
+        public bool PowerOnAfterScreenSaver { get; set; }
         public bool PowerOnAfterManualPowerOff { get; set; }
-        public bool PowerByWindows { get; set; }
+        public bool PowerOnByWindows { get; set; }
+        public bool PowerOffByWindows { get; set; }
         public bool TriggersEnabled { get; set; }
         public int HDMIPortNumber { get; set; }
 
@@ -114,6 +129,8 @@ namespace ColorControl.Services.LG
 
         [JsonIgnore]
         public string ModelName { get; private set; }
+        [JsonIgnore]
+        public ModelYear Year { get; private set; }
 
         [JsonIgnore]
         public LgDevicePictureSettings PictureSettings { get; private set; }
@@ -153,8 +170,8 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("eyeComfortMode", typeof(OffToOn), title: "Eye Comfort Mode");
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
             //AddGenericPictureAction("superResolution", typeof(OffToAuto));
-            AddGenericPictureAction("peakBrightness", typeof(OffToHigh), title: "Peak Brightness");
-            AddGenericPictureAction("smoothGradation", typeof(OffToAuto), title: "Smooth Gradation");
+            AddGenericPictureAction("peakBrightness", typeof(OffToHigh), title: "Peak Brightness", fromModelYear: ModelYear.Series2019);
+            AddGenericPictureAction("smoothGradation", typeof(OffToAuto), title: "Smooth Gradation", fromModelYear: ModelYear.Series2019);
             AddGenericPictureAction("energySaving", typeof(EnergySaving), title: "Energy Saving");
             AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping), title: "HDR Dynamic Tone Mapping");
             AddGenericPictureAction("blackLevel", typeof(BlackLevel), title: "HDMI Black Level");
@@ -170,7 +187,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("truMotionMode", typeof(TruMotionMode), title: "TruMotion");
             AddGenericPictureAction("truMotionJudder", minValue: 0, maxValue: 10, title: "TruMotion Judder");
             AddGenericPictureAction("truMotionBlur", minValue: 0, maxValue: 10, title: "TruMotion Blur");
-            AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro");
+            AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro", fromModelYear: ModelYear.Series2019);
             AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
@@ -180,7 +197,10 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
             AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
-            //AddGenericPictureAction("freesyncOLEDHDMI4", typeof(OffToOn), category: "other");
+            AddGenericPictureAction("freesyncOLEDHDMI1", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+            AddGenericPictureAction("freesyncOLEDHDMI2", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+            AddGenericPictureAction("freesyncOLEDHDMI3", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+            AddGenericPictureAction("freesyncOLEDHDMI4", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
             //AddGenericPictureAction("freesyncSupport", typeof(OffToOn), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi1", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi2", typeof(FalseToTrue), category: "other");
@@ -236,7 +256,7 @@ namespace ColorControl.Services.LG
             _invokableActions.Add(action);
         }
 
-        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1)
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1, ModelYear fromModelYear = ModelYear.None)
         {
             var action = new InvokableAction
             {
@@ -247,7 +267,8 @@ namespace ColorControl.Services.LG
                 MaxValue = maxValue,
                 NumberOfValues = numberOfValues,
                 Category = category,
-                Title = title == null ? Utils.FirstCharUpperCase(name) : title
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title,
+                FromModelYear = fromModelYear
             };
 
             _invokableActions.Add(action);
@@ -318,12 +339,13 @@ namespace ColorControl.Services.LG
 
                     //Test();
                     //_lgTvApi.Test3();
-                    if (_lgTvApi != null)
+                    if (_lgTvApi != null && !Utils.ConsoleOpened)
                     {
                         var info = await _lgTvApi.GetSystemInfo("modelName");
                         if (info != null)
                         {
                             ModelName = info.modelName;
+                            SetModelYear();
                         }
 
                         //await _lgTvApi.SubscribeVolume(VolumeChanged);
@@ -358,6 +380,38 @@ namespace ColorControl.Services.LG
             {
                 _connectSemaphore.Release();
             }
+        }
+
+        private void SetModelYear()
+        {
+            if (ModelName == null || ModelName.Contains("OLED") != true)
+            {
+                Year = ModelYear.None;
+                return;
+            }
+
+            var normalized = ModelName.Replace("OLED", "").Replace(" ", "");
+
+            if (normalized.Length > 3)
+            {
+                normalized = normalized.Substring(3);
+            }
+
+            var suffix = normalized.First();
+
+            Year = suffix switch
+            {
+                '6' => ModelYear.SeriesPre2018,
+                '7' => ModelYear.SeriesPre2018,
+                '8' => ModelYear.Series2018,
+                '9' => ModelYear.Series2019,
+                'X' => ModelYear.Series2020,
+                '1' => ModelYear.Series2021,
+                '2' => ModelYear.Series2022,
+                _ => ModelYear.None
+            };
+
+            _invokableActions = _invokableActions.Where(a => Year == ModelYear.None || a.FromModelYear == ModelYear.None || Year >= a.FromModelYear).ToList();
         }
 
         public bool VolumeChanged(dynamic payload)
@@ -798,7 +852,7 @@ namespace ColorControl.Services.LG
 
         public List<InvokableAction> GetInvokableActions(bool includedAdvanced = false)
         {
-            return includedAdvanced ? _invokableActions : _invokableActions.Where(a => !a.Advanced).ToList();
+            return _invokableActions.Where(a => includedAdvanced || !a.Advanced).ToList();
         }
 
         public List<InvokableAction> GetInvokableActionsForGameBar()

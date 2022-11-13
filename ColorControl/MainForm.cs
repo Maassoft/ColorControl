@@ -1719,6 +1719,19 @@ NOTE: installing the service may cause a User Account Control popup.");
             {
                 UpdateDisplayInfoItems();
             }
+            else if (tcMain.SelectedTab == tabGameLauncher)
+            {
+                UpdateGameLauncherTab();
+            }
+        }
+
+        private void UpdateGameLauncherTab()
+        {
+            if (cbxGameStepType.Items.Count == 0)
+            {
+                cbxGameStepType.Items.AddRange(Utils.GetDescriptions<GameStepType>().ToArray());
+                cbxGameStepType.SelectedIndex = 0;
+            }
         }
 
         private void InitLgTab()
@@ -1769,7 +1782,8 @@ NOTE: installing the service may cause a User Account Control popup.");
                     ElevationMethod.None => rbElevationNone.Checked = true,
                     ElevationMethod.RunAsAdmin => rbElevationAdmin.Checked = true,
                     ElevationMethod.UseService => rbElevationService.Checked = true,
-                    ElevationMethod.UseElevatedProcess => rbElevationProcess.Checked = true
+                    ElevationMethod.UseElevatedProcess => rbElevationProcess.Checked = true,
+                    _ => false
                 };
             }
             finally
@@ -1865,10 +1879,12 @@ NOTE: installing the service may cause a User Account Control popup.");
                 clbLgPower.SetItemChecked(1, device?.PowerOnAfterResume ?? false);
                 clbLgPower.SetItemChecked(2, device?.PowerOffOnShutdown ?? false);
                 clbLgPower.SetItemChecked(3, device?.PowerOffOnStandby ?? false);
-                clbLgPower.SetItemChecked(4, device?.PowerSwitchOnScreenSaver ?? false);
-                clbLgPower.SetItemChecked(5, device?.PowerOnAfterManualPowerOff ?? false);
-                clbLgPower.SetItemChecked(6, device?.TriggersEnabled ?? true);
-                clbLgPower.SetItemChecked(7, device?.PowerByWindows ?? false);
+                clbLgPower.SetItemChecked(4, device?.PowerOffOnScreenSaver ?? false);
+                clbLgPower.SetItemChecked(5, device?.PowerOnAfterScreenSaver ?? false);
+                clbLgPower.SetItemChecked(6, device?.PowerOnAfterManualPowerOff ?? false);
+                clbLgPower.SetItemChecked(7, device?.TriggersEnabled ?? true);
+                clbLgPower.SetItemChecked(8, device?.PowerOffByWindows ?? false);
+                clbLgPower.SetItemChecked(8, device?.PowerOnByWindows ?? false);
             }
             finally
             {
@@ -2388,7 +2404,7 @@ NOTE: installing the service may cause a User Account Control popup.");
                 return;
             }
 
-            if (e.Index is 0 or 1 or 4 or 7 && !(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerSwitchOnScreenSaver || device.PowerByWindows))
+            if (e.Index is 0 or 1 or 4 or 7 && !(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerOnAfterScreenSaver || device.PowerOnByWindows))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
@@ -2406,10 +2422,12 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 device.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
                 device.PowerOffOnShutdown = clbLgPower.GetItemChecked(2);
                 device.PowerOffOnStandby = clbLgPower.GetItemChecked(3);
-                device.PowerSwitchOnScreenSaver = clbLgPower.GetItemChecked(4);
-                device.PowerOnAfterManualPowerOff = clbLgPower.GetItemChecked(5);
-                device.TriggersEnabled = clbLgPower.GetItemChecked(6);
-                device.PowerByWindows = clbLgPower.GetItemChecked(7);
+                device.PowerOffOnScreenSaver = clbLgPower.GetItemChecked(4);
+                device.PowerOnAfterScreenSaver = clbLgPower.GetItemChecked(5);
+                device.PowerOnAfterManualPowerOff = clbLgPower.GetItemChecked(6);
+                device.TriggersEnabled = clbLgPower.GetItemChecked(7);
+                device.PowerOffByWindows = clbLgPower.GetItemChecked(8);
+                device.PowerOnByWindows = clbLgPower.GetItemChecked(9);
 
                 _lgService.InstallEventHandlers();
             });
@@ -3166,16 +3184,7 @@ Do you want to continue?";
 
             var device = _lgService.GetPresetDevice(preset);
 
-            var actions = device?.GetInvokableActions();
-            foreach (var action in actions.Where(a => a.Function != null))
-            {
-                var text = action.Title ?? action.Name;
-
-                var item = mnuLgActions.DropDownItems.Add(text);
-                item.Tag = action;
-                item.Click += miLgAddAction_Click;
-            }
-
+            BuildLgActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
             BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
             BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
@@ -3232,40 +3241,51 @@ Do you want to continue?"
             var device = _lgService.SelectedDevice;
 
             var eligibleModels = new[] { "B9", "C9", "E9", "W9", "C2", "G2" };
+            var eligibleModelsEnable = new[] { "B9", "C9", "E9", "W9" };
 
-            var visible = device?.ModelName != null ? eligibleModels.Any(m => device.ModelName.Contains(m)) : false;
+            var visible = eligibleModels.Any(m => device?.ModelName?.Contains(m) == true);
+            var enableVisible = eligibleModelsEnable.Any(m => device?.ModelName?.Contains(m) == true);
             mnuLgOLEDMotionPro.Visible = visible;
+            miLgEnableMotionPro.Visible = enableVisible;
             miLgExpertSeparator1.Visible = visible;
 
-            // Does not work yet, getting a "401 no permissions" error
-            //var task = device?.GetPictureSettings();
-            //var settings = Utils.WaitForTask<dynamic>(task);
+            BuildLgActionMenu(device, mnuLgExpert.Items, mnuLgExpert.Name, btnLgExpertColorGamut_Click, _lgService.Config.ShowAdvancedActions, true);
+        }
 
+        private void BuildLgActionMenu(LgDevice device, ToolStripItemCollection parent, string parentName, EventHandler clickEvent, bool showAdvanced = false, bool showGameBar = false)
+        {
             if (device == null)
             {
                 return;
             }
 
-            var actions = device.GetInvokableActions(_lgService.Config.ShowAdvancedActions);
+            var actions = device.GetInvokableActions(showAdvanced);
             var gameBarActions = device.GetInvokableActionsForGameBar();
             var activatedGameBarActions = device.GetActionsForGameBar();
 
             const string gameBarName = "miGameBar";
 
-            var expertActions = actions.Where(a => !a.Name.Contains("uhd", StringComparison.OrdinalIgnoreCase) &&
-                !a.Name.Contains("gameOpt", StringComparison.OrdinalIgnoreCase) &&
-                !a.Name.Contains("hdmiPc", StringComparison.OrdinalIgnoreCase) &&
-                (a.EnumType != null || a.MaxValue > a.MinValue)).ToList();
+            var expertActions = actions.Where(a => a.EnumType != null || a.MaxValue > a.MinValue).ToList();
 
             var categories = expertActions.Select(a => a.Category ?? "misc").Where(c => !string.IsNullOrEmpty(c)).Distinct();
 
             foreach (var category in categories)
             {
-                var catMenuItem = FormUtils.BuildDropDownMenuEx(mnuLgExpert.Items, mnuLgExpert.Name, Utils.FirstCharUpperCase(category), null, null, category);
+                var catMenuItem = FormUtils.BuildDropDownMenuEx(parent, parentName, Utils.FirstCharUpperCase(category), null, null, category);
 
                 foreach (var action in expertActions.Where(a => (a.Category ?? "misc") == category))
                 {
-                    var menu = FormUtils.BuildDropDownMenuEx(catMenuItem.DropDownItems, catMenuItem.Name, action.Title, action.EnumType, btnLgExpertColorGamut_Click, action, (int)action.MinValue, (int)action.MaxValue, action.NumberOfValues > 1);
+                    if (!showGameBar)
+                    {
+                        var text = action.Title ?? action.Name;
+
+                        var item = catMenuItem.DropDownItems.Add(text);
+                        item.Tag = action;
+                        item.Click += clickEvent;
+                        continue;
+                    }
+
+                    var menu = FormUtils.BuildDropDownMenuEx(catMenuItem.DropDownItems, catMenuItem.Name, action.Title, action.EnumType, clickEvent, action, (int)action.MinValue, (int)action.MaxValue, action.NumberOfValues > 1);
 
                     if (!gameBarActions.Contains(action))
                     {
@@ -3289,16 +3309,16 @@ Do you want to continue?"
                 }
             }
 
-            if (!_lgService.Config.ShowAdvancedActions)
+            if (!showAdvanced)
             {
                 return;
             }
 
             var presetActions = actions.Where(a => a.Preset != null);
 
-            if (presetActions.Any() && mnuLgExpert.Items.Find("miLgExpertActionsSeparator", false).Length == 0)
+            if (presetActions.Any() && parent.Find("miLgExpertActionsSeparator", false).Length == 0)
             {
-                mnuLgExpert.Items.Add(new ToolStripSeparator
+                parent.Add(new ToolStripSeparator
                 {
                     Name = "miLgExpertActionsSeparator"
                 });
@@ -3306,7 +3326,7 @@ Do you want to continue?"
 
             foreach (var presetAction in presetActions)
             {
-                var menu = FormUtils.BuildDropDownMenuEx(mnuLgExpert.Items, mnuLgExpert.Name, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
+                var menu = FormUtils.BuildDropDownMenuEx(parent, parentName, presetAction.Name, null, btnLgExpertPresetAction_Click, presetAction.Preset);
             }
         }
 
@@ -3709,7 +3729,7 @@ The InStart and Software Update items are now visible under the Expert-button."
                 edtGameParameters.Text = preset.Parameters;
                 chkGameRunAsAdmin.Checked = preset.RunAsAdministrator;
                 chkGameQuickAccess.Checked = preset.ShowInQuickAccess;
-                edtGamePrelaunchSteps.Text = string.Join(", ", preset.PreLaunchSteps);
+                ShowGameSteps();
             }
             else
             {
@@ -3769,6 +3789,11 @@ The InStart and Software Update items are now visible under the Expert-button."
 
         private void btnGameSave_Click(object sender, EventArgs e)
         {
+            SaveGamePreset();
+        }
+
+        private void SaveGamePreset()
+        {
             var shortcut = string.Empty;
             if (!Utils.ValidateShortcut(shortcut))
             {
@@ -3801,7 +3826,15 @@ The InStart and Software Update items are now visible under the Expert-button."
 
             var text = edtGamePrelaunchSteps.Text;
 
-            Utils.ParseWords(preset.PreLaunchSteps, text);
+            var stepsList = (GameStepType)cbxGameStepType.SelectedIndex switch
+            {
+                GameStepType.PreLaunch => preset.PreLaunchSteps,
+                GameStepType.PostLaunch => preset.PostLaunchSteps,
+                GameStepType.Finalize => preset.FinalizeSteps,
+                _ => throw new InvalidOperationException("Invalid game step type")
+            };
+
+            Utils.ParseWords(stepsList, text);
 
             AddOrUpdateItemGame();
 
@@ -4319,6 +4352,39 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
         private void cbxLogType_SelectedIndexChanged(object sender, EventArgs e)
         {
             LoadLog();
+        }
+
+        private void cbxGameStepType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ShowGameSteps();
+        }
+
+        private void ShowGameSteps()
+        {
+            var preset = GetSelectedGamePreset();
+
+            if (preset == null)
+            {
+                return;
+            }
+
+            switch ((GameStepType)cbxGameStepType.SelectedIndex)
+            {
+                case GameStepType.PreLaunch:
+                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.PreLaunchSteps);
+                    break;
+                case GameStepType.PostLaunch:
+                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.PostLaunchSteps);
+                    break;
+                case GameStepType.Finalize:
+                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.FinalizeSteps);
+                    break;
+            }
+        }
+
+        private void edtGamePrelaunchSteps_Leave(object sender, EventArgs e)
+        {
+            SaveGamePreset();
         }
     }
 }

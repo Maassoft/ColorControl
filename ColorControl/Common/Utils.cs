@@ -426,6 +426,12 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
         public static T WaitForTask<T>(Task<T> task)
         {
+            if (ConsoleOpened)
+            {
+                task.Wait();
+                return task.Result;
+            }
+
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
                 Thread.Sleep(10);
@@ -436,6 +442,12 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
         public static void WaitForTask(System.Threading.Tasks.Task task)
         {
+            if (ConsoleOpened)
+            {
+                task.Wait();
+                return;
+            }
+
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
                 Thread.Sleep(10);
@@ -733,7 +745,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return null;
         }
 
-        public static void StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0)
+        public static Process StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0)
         {
             var process = Process.Start(new ProcessStartInfo(fileName, arguments)
             {
@@ -757,6 +769,8 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             {
                 process.WaitForExit();
             }
+
+            return process;
         }
 
         internal static void SetProcessAffinity(int processId, uint affinityMask)

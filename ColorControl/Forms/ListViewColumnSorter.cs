@@ -64,7 +64,9 @@ namespace ColorControl
             else
             {
                 // Compare the two items
-                compareResult = ObjectCompare.Compare(listviewX.SubItems[ColumnToSort].Text, listviewY.SubItems[ColumnToSort].Text);
+                var subItemTextX = listviewX.SubItems.Count > ColumnToSort ? listviewX.SubItems[ColumnToSort].Text : string.Empty;
+                var subItemTextY = listviewY.SubItems.Count > ColumnToSort ? listviewY.SubItems[ColumnToSort].Text : string.Empty;
+                compareResult = ObjectCompare.Compare(subItemTextX, subItemTextY);
             }
 
             // Calculate correct return value based on object comparison

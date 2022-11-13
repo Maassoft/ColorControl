@@ -171,6 +171,7 @@
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.lblLgError = new System.Windows.Forms.Label();
             this.tabGameLauncher = new System.Windows.Forms.TabPage();
+            this.cbxGameStepType = new System.Windows.Forms.ComboBox();
             this.btnGameOptions = new System.Windows.Forms.Button();
             this.mnuGameOptions = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miGameProcessorAffinity = new System.Windows.Forms.ToolStripMenuItem();
@@ -193,7 +194,6 @@
             this.mnuGameAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuGameLgPresets = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuGameStartProgram = new System.Windows.Forms.ToolStripMenuItem();
-            this.lblGamePreLaunch = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.edtGameName = new System.Windows.Forms.TextBox();
             this.btnGameDelete = new System.Windows.Forms.Button();
@@ -1821,17 +1821,19 @@
             this.clbLgPower.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.clbLgPower.CheckOnClick = true;
-            this.clbLgPower.ColumnWidth = 380;
+            this.clbLgPower.ColumnWidth = 240;
             this.clbLgPower.FormattingEnabled = true;
             this.clbLgPower.Items.AddRange(new object[] {
-            "Automatically power on after startup",
-            "Automatically power on after resume from standby",
-            "Automatically power off on shutdown",
-            "Automatically power off on standby",
-            "Automatically power off/on when screensaver activates/deactivates",
+            "Power on after startup",
+            "Power on after resume from standby",
+            "Power off on shutdown",
+            "Power off on standby",
+            "Power off when screensaver activates",
+            "Power on when screensaver deactivates",
             "Power on even after manual power off",
             "Allow triggers to be fired for this device",
-            "Use Windows power settings"});
+            "Use Windows power settings to power on",
+            "Use Windows power settings to power off"});
             this.clbLgPower.Location = new System.Drawing.Point(6, 70);
             this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.clbLgPower.MultiColumn = true;
@@ -1853,6 +1855,7 @@
             // 
             // tabGameLauncher
             // 
+            this.tabGameLauncher.Controls.Add(this.cbxGameStepType);
             this.tabGameLauncher.Controls.Add(this.btnGameOptions);
             this.tabGameLauncher.Controls.Add(this.chkGameQuickAccess);
             this.tabGameLauncher.Controls.Add(this.btnGameSettings);
@@ -1864,7 +1867,6 @@
             this.tabGameLauncher.Controls.Add(this.edtGamePath);
             this.tabGameLauncher.Controls.Add(this.edtGamePrelaunchSteps);
             this.tabGameLauncher.Controls.Add(this.btnGameAddStep);
-            this.tabGameLauncher.Controls.Add(this.lblGamePreLaunch);
             this.tabGameLauncher.Controls.Add(this.label4);
             this.tabGameLauncher.Controls.Add(this.edtGameName);
             this.tabGameLauncher.Controls.Add(this.btnGameDelete);
@@ -1880,6 +1882,19 @@
             this.tabGameLauncher.TabIndex = 6;
             this.tabGameLauncher.Text = "Game Launcher";
             this.tabGameLauncher.UseVisualStyleBackColor = true;
+            // 
+            // cbxGameStepType
+            // 
+            this.cbxGameStepType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbxGameStepType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxGameStepType.Enabled = false;
+            this.cbxGameStepType.FormattingEnabled = true;
+            this.cbxGameStepType.Location = new System.Drawing.Point(10, 474);
+            this.cbxGameStepType.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cbxGameStepType.Name = "cbxGameStepType";
+            this.cbxGameStepType.Size = new System.Drawing.Size(136, 23);
+            this.cbxGameStepType.TabIndex = 46;
+            this.cbxGameStepType.SelectedIndexChanged += new System.EventHandler(this.cbxGameStepType_SelectedIndexChanged);
             // 
             // btnGameOptions
             // 
@@ -1994,10 +2009,10 @@
             // 
             this.edtGameParameters.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtGameParameters.Enabled = false;
-            this.edtGameParameters.Location = new System.Drawing.Point(112, 442);
+            this.edtGameParameters.Location = new System.Drawing.Point(154, 442);
             this.edtGameParameters.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtGameParameters.Name = "edtGameParameters";
-            this.edtGameParameters.Size = new System.Drawing.Size(665, 23);
+            this.edtGameParameters.Size = new System.Drawing.Size(623, 23);
             this.edtGameParameters.TabIndex = 40;
             // 
             // btnGameBrowse
@@ -2029,22 +2044,23 @@
             // 
             this.edtGamePath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtGamePath.Enabled = false;
-            this.edtGamePath.Location = new System.Drawing.Point(112, 413);
+            this.edtGamePath.Location = new System.Drawing.Point(154, 413);
             this.edtGamePath.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtGamePath.Name = "edtGamePath";
-            this.edtGamePath.Size = new System.Drawing.Size(665, 23);
+            this.edtGamePath.Size = new System.Drawing.Size(623, 23);
             this.edtGamePath.TabIndex = 37;
             // 
             // edtGamePrelaunchSteps
             // 
             this.edtGamePrelaunchSteps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtGamePrelaunchSteps.Enabled = false;
-            this.edtGamePrelaunchSteps.Location = new System.Drawing.Point(112, 471);
+            this.edtGamePrelaunchSteps.Location = new System.Drawing.Point(154, 471);
             this.edtGamePrelaunchSteps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtGamePrelaunchSteps.Multiline = true;
             this.edtGamePrelaunchSteps.Name = "edtGamePrelaunchSteps";
-            this.edtGamePrelaunchSteps.Size = new System.Drawing.Size(665, 48);
+            this.edtGamePrelaunchSteps.Size = new System.Drawing.Size(623, 48);
             this.edtGamePrelaunchSteps.TabIndex = 35;
+            this.edtGamePrelaunchSteps.Leave += new System.EventHandler(this.edtGamePrelaunchSteps_Leave);
             // 
             // btnGameAddStep
             // 
@@ -2097,17 +2113,6 @@
             this.mnuGameStartProgram.Text = "Start Program";
             this.mnuGameStartProgram.Click += new System.EventHandler(this.mnuGameStartProgram_Click);
             // 
-            // lblGamePreLaunch
-            // 
-            this.lblGamePreLaunch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblGamePreLaunch.AutoSize = true;
-            this.lblGamePreLaunch.Location = new System.Drawing.Point(8, 477);
-            this.lblGamePreLaunch.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblGamePreLaunch.Name = "lblGamePreLaunch";
-            this.lblGamePreLaunch.Size = new System.Drawing.Size(98, 15);
-            this.lblGamePreLaunch.TabIndex = 34;
-            this.lblGamePreLaunch.Text = "Pre-launch steps:";
-            // 
             // label4
             // 
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
@@ -2123,10 +2128,10 @@
             // 
             this.edtGameName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.edtGameName.Enabled = false;
-            this.edtGameName.Location = new System.Drawing.Point(112, 384);
+            this.edtGameName.Location = new System.Drawing.Point(154, 384);
             this.edtGameName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtGameName.Name = "edtGameName";
-            this.edtGameName.Size = new System.Drawing.Size(233, 23);
+            this.edtGameName.Size = new System.Drawing.Size(191, 23);
             this.edtGameName.TabIndex = 32;
             // 
             // btnGameDelete
@@ -3205,7 +3210,6 @@
         private System.Windows.Forms.TextBox edtGamePath;
         private System.Windows.Forms.TextBox edtGamePrelaunchSteps;
         private System.Windows.Forms.Button btnGameAddStep;
-        private System.Windows.Forms.Label lblGamePreLaunch;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox edtGameName;
         private System.Windows.Forms.Button btnGameDelete;
@@ -3247,6 +3251,7 @@
         private System.Windows.Forms.Button btnStartStopService;
         private System.Windows.Forms.Label lblShowLog;
         private System.Windows.Forms.ComboBox cbxLogType;
+        private System.Windows.Forms.ComboBox cbxGameStepType;
     }
 }
 

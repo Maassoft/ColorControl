@@ -1,14 +1,13 @@
-﻿using System;
+﻿using ColorControl.Common;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
-using Newtonsoft.Json.Serialization;
-using Newtonsoft.Json.Linq;
-using ColorControl;
-using ColorControl.Common;
 
 namespace LgTv
 {
@@ -19,7 +18,7 @@ namespace LgTv
 
         }
     }
-   
+
     public class LgTvApiCore : IDisposable
     {
         public bool ConnectionClosed { get; private set; }
@@ -58,30 +57,6 @@ namespace LgTv
                 {
                     return false;
                 }
-
-                //using (var cancellationTokenSource = new CancellationTokenSource(5000))
-                //{
-                //    var connectTask = _connection.ConnectAsync(uri).AsTask(cancellationTokenSource.Token);
-                //    var result = await connectTask.ContinueWith((antecedent) =>
-                //    {
-                //        if (antecedent.Status == TaskStatus.RanToCompletion)
-                //        {
-                //            // connectTask ran to completion, so we know that the MessageWebSocket is connected.
-                //            // Add additional code here to use the MessageWebSocket.
-                //            IsConnected?.Invoke(true);
-
-                //            _messageWriter = new DataWriter(_connection.OutputStream);
-                //            return true;
-                //        }
-                //        else
-                //        {
-                //            // connectTask timed out, or faulted.
-                //            return false;
-                //        }
-                //    });
-
-                //    return result;
-                //}
             }
             catch (Exception e)
             {
@@ -145,9 +120,8 @@ namespace LgTv
                 {
                     throw new Exception("Connection closed");
                 }
-                var result = await taskSource.Task.ConfigureAwait(false);
 
-                return result;
+                return await taskSource.Task;
             }
             catch (Exception e)
             {

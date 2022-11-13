@@ -420,7 +420,7 @@ namespace ColorControl.Services.LG
         {
             var wakeDevices = Devices.Where(d => state == PowerOnOffState.StartUp && d.PowerOnAfterStartup ||
                                                  state == PowerOnOffState.Resume && d.PowerOnAfterResume ||
-                                                 state == PowerOnOffState.ScreenSaver && d.PowerSwitchOnScreenSaver);
+                                                 state == PowerOnOffState.ScreenSaver && d.PowerOnAfterScreenSaver);
 
             PowerOnDevices(wakeDevices, state, checkUserSession);
         }
@@ -514,12 +514,12 @@ namespace ColorControl.Services.LG
 
         public bool ShouldMonitorProcesses()
         {
-            return Devices.Any(d => d.PowerSwitchOnScreenSaver) || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None));
+            return Devices.Any(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None));
         }
 
         public async Task CheckProcesses()
         {
-            var wasConnected = Devices.Any(d => d.PowerSwitchOnScreenSaver && d.IsConnected());
+            var wasConnected = Devices.Any(d => (d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) && d.IsConnected());
             _monitorTaskCounter++;
             var validCounter = _monitorTaskCounter;
             var lastProcessId = 0;
@@ -535,7 +535,7 @@ namespace ColorControl.Services.LG
 
                 try
                 {
-                    var applicableDevices = Devices.Where(d => d.PowerSwitchOnScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
+                    var applicableDevices = Devices.Where(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
                         ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
 
                     if (!applicableDevices.Any())
@@ -601,7 +601,7 @@ namespace ColorControl.Services.LG
                         wasConnected = true;
                     }
 
-                    if (connectedDevices.Any(d => d.PowerSwitchOnScreenSaver))
+                    if (connectedDevices.Any(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver))
                     {
                         lastProcessId = await HandleScreenSaverProcessAsync(lastProcessId, processes, connectedDevices);
                     }
@@ -634,7 +634,7 @@ namespace ColorControl.Services.LG
                 Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
                 try
                 {
-                    foreach (var device in connectedDevices)
+                    foreach (var device in connectedDevices.Where(d => d.PowerOffOnScreenSaver))
                     {
                         Logger.Debug($"Screensaver check: test connection with {device.Name}...");
                         var test = await device.TestConnection();
@@ -815,14 +815,15 @@ namespace ColorControl.Services.LG
 
         public void PowerSettingChanged(WindowsPowerSetting setting)
         {
-            var devices = Devices.Where(d => d.PowerByWindows).ToList();
 
             if (setting == WindowsPowerSetting.Off)
             {
+                var devices = Devices.Where(d => d.PowerOffByWindows).ToList();
                 PowerOffDevices(devices, PowerOnOffState.StandBy);
             }
             else if (setting == WindowsPowerSetting.On)
             {
+                var devices = Devices.Where(d => d.PowerOnByWindows).ToList();
                 PowerOnDevices(devices);
             }
         }

@@ -198,7 +198,7 @@ namespace ColorControl.Forms
 
                         if (field.Values != null && field.Values.Any())
                         {
-                            var compoundValue = field.Value is int ? (int)field.Value : (int)((uint)field.Value);
+                            var compoundValue = field.Value is uint ? (int)(uint)field.Value : (int)field.Value;
                             var enumValue = 1;
                             foreach (var value in field.Values)
                             {

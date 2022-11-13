@@ -1,9 +1,20 @@
 ﻿using ColorControl.Services.Common;
 using NWin32;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace ColorControl.Services.GameLauncher
 {
+    public enum GameStepType
+    {
+        [Description("Pre-launch steps")]
+        PreLaunch = 0,
+        [Description("Post-launch steps")]
+        PostLaunch = 1,
+        [Description("Finalize steps")]
+        Finalize = 2,
+    }
+
     public enum GamePriorityClass
     {
         Idle = NativeConstants.IDLE_PRIORITY_CLASS,
@@ -21,6 +32,7 @@ namespace ColorControl.Services.GameLauncher
         public bool RunAsAdministrator { get; set; }
         public List<string> PreLaunchSteps { get; set; }
         public List<string> PostLaunchSteps { get; set; }
+        public List<string> FinalizeSteps { get; set; }
         public uint ProcessAffinityMask { get; set; }
         public uint ProcessPriorityClass { get; set; }
 
@@ -28,6 +40,7 @@ namespace ColorControl.Services.GameLauncher
         {
             PreLaunchSteps = new List<string>();
             PostLaunchSteps = new List<string>();
+            FinalizeSteps = new List<string>();
         }
 
         public GamePreset(GamePreset preset) : this()
@@ -40,6 +53,7 @@ namespace ColorControl.Services.GameLauncher
             RunAsAdministrator = preset.RunAsAdministrator;
             PreLaunchSteps.AddRange(preset.PreLaunchSteps);
             PostLaunchSteps.AddRange(preset.PostLaunchSteps);
+            FinalizeSteps.AddRange(preset.FinalizeSteps);
         }
 
         public GamePreset Clone()
@@ -53,7 +67,7 @@ namespace ColorControl.Services.GameLauncher
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name|160", "File/URI|400", "Parameters|200", "Pre-launch steps|300" };
+            return new[] { "Name|160", "File/URI|400", "Parameters|200", "Pre-launch steps|300", "Post-launch steps|300", "Finalize steps|300" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -66,6 +80,7 @@ namespace ColorControl.Services.GameLauncher
 
             values.Add(string.Join(", ", PreLaunchSteps));
             values.Add(string.Join(", ", PostLaunchSteps));
+            values.Add(string.Join(", ", FinalizeSteps));
 
             return values;
         }

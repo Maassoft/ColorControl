@@ -2,6 +2,8 @@
 using ColorControl.Services.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ColorControl.Services.GameLauncher
@@ -79,7 +81,44 @@ namespace ColorControl.Services.GameLauncher
         {
             var result = true;
 
-            foreach (var step in preset.PreLaunchSteps)
+            ExecuteSteps(preset.PreLaunchSteps);
+
+            Process process = null;
+
+            if (!string.IsNullOrEmpty(preset.Path))
+            {
+                process = Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
+            }
+
+            ExecuteSteps(preset.PostLaunchSteps);
+
+            if (process != null && preset.FinalizeSteps?.Any() == true)
+            {
+                var _ = ExecuteFinalizationStepsAsync(process, preset.FinalizeSteps);
+            }
+
+            _lastAppliedPreset = preset;
+
+            PresetApplied();
+
+            return result;
+        }
+
+        private async Task ExecuteFinalizationStepsAsync(Process process, List<string> finalizeSteps)
+        {
+            await process.WaitForExitAsync();
+
+            ExecuteSteps(finalizeSteps);
+        }
+
+        private void ExecuteSteps(List<string> steps)
+        {
+            if (steps?.Any() != true)
+            {
+                return;
+            }
+
+            foreach (var step in steps)
             {
                 var keySpec = step.Split(':');
 
@@ -120,17 +159,6 @@ namespace ColorControl.Services.GameLauncher
                 }
 
             }
-
-            if (!string.IsNullOrEmpty(preset.Path))
-            {
-                Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
-            }
-
-            _lastAppliedPreset = preset;
-
-            PresetApplied();
-
-            return result;
         }
     }
 }

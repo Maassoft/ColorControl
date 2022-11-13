@@ -63,7 +63,7 @@ namespace ColorControl.Svc
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error($"While handling message: {message}");
+                        Logger.Error(ex, $"Error while handling message: {message}");
 
                         var result = SvcResultMessage.FromResult(false, ex.Message);
                         var resultJson = JsonConvert.SerializeObject(result);
@@ -104,7 +104,8 @@ namespace ColorControl.Svc
                 SvcMessageType.SetLgConfig => HandleSetLgConfigMessage(message),
                 SvcMessageType.GetLog => HandleGetLogMessage(message),
                 SvcMessageType.ClearLog => HandleClearLogMessage(message),
-                SvcMessageType.ExecuteRpc => HandleExecuteRpcCommand(message)
+                SvcMessageType.ExecuteRpc => HandleExecuteRpcCommand(message),
+                _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
             return result;
