@@ -4,7 +4,7 @@ LG TV WebOS API for .NET
 For now, there is only API, example app will be added in the future.
 
 ## inspiration: 
-* https://github.com/msloth/lgtv.js/blob/master/index.js
+* https://github.com/msloth/lgtv.js/blob/master/lgtv.js
 
 ## references:
 * https://github.com/ConnectSDK/Connect-SDK-Android-Core
