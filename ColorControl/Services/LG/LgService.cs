@@ -62,8 +62,11 @@ namespace ColorControl.Services.LG
             {
                 _selectedDevice = value;
                 Config.PreferredMacAddress = _selectedDevice != null ? _selectedDevice.MacAddress : null;
+
+                SelectedDeviceChangedEvent?.Invoke(_selectedDevice, EventArgs.Empty);
             }
         }
+        public event EventHandler SelectedDeviceChangedEvent;
 
         public LgServiceConfig Config { get; private set; }
         public ProcessMonitorContext MonitorContext { get; private set; }
@@ -492,11 +495,13 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            //if (device.CurrentState == LgDevice.PowerState.Active)
-            //{
-            //    _monitorTask = null;
-            //    MonitorProcesses();
-            //}
+            if (device.CurrentState == LgDevice.PowerState.Active)
+            {
+                if (Config.SetSelectedDeviceByPowerOn)
+                {
+                    SelectedDevice = device;
+                }
+            }
         }
 
         private void MonitorProcesses()

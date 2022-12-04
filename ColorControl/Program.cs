@@ -30,7 +30,10 @@ namespace ColorControl
 
         public static string MutexId { get; private set; }
 
+        public static bool IsRestarting { get; private set; }
+
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static Mutex _mutex;
 
         /// <summary>
         /// The main entry point for the application.
@@ -40,10 +43,13 @@ namespace ColorControl
         {
             DataDir = Utils.GetDataPath();
 
+            //Utils.UpdateFiles(@"H:\temp\ColorControl\ColorControl", @"C:\Users\vinni\source\repos\ColorControl\ColorControl\bin\Debug\net6.0-windows10.0.20348.0");
+
             var runAsService = args.Contains("--service") || Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
 
             InitLogger(runAsService);
 
+            Logger.Debug($"Using data path: {DataDir}");
             Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
 
             if (runAsService)
@@ -85,7 +91,7 @@ namespace ColorControl
                 Utils.CloseConsole();
             }
 
-            var mutex = new Mutex(true, MutexId, out var mutexCreated);
+            _mutex = new Mutex(true, MutexId, out var mutexCreated);
             try
             {
                 if (!mutexCreated)
@@ -102,7 +108,7 @@ namespace ColorControl
                 }
                 else
                 {
-                    mutex.WaitOne();
+                    _mutex.WaitOne();
                     try
                     {
                         if (Debugger.IsAttached)
@@ -114,7 +120,7 @@ namespace ColorControl
                         Application.SetCompatibleTextRenderingDefault(false);
                         Application.Run(new MainForm(AppContext));
 
-                        if (Debugger.IsAttached)
+                        if (Debugger.IsAttached && !IsRestarting)
                         {
                             Utils.StopService();
                         }
@@ -129,9 +135,24 @@ namespace ColorControl
             {
                 if (mutexCreated)
                 {
-                    mutex.Dispose();
+                    _mutex?.Close();
                 }
             }
+        }
+
+        public static void Restart()
+        {
+            IsRestarting = true;
+
+            _mutex?.Close();
+            _mutex = null;
+
+            Thread.Sleep(1000);
+
+            Application.Restart();
+
+            Thread.Sleep(1000);
+            Environment.Exit(0);
         }
 
         private static void InitLogger(bool runAsService)

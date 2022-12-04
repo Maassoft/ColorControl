@@ -100,7 +100,7 @@ namespace ColorControl.Forms
                 else
                 {
                     range = new List<int>();
-                    for (var i = 0; i <= 10; i++)
+                    for (var i = min < 0 ? -10 : 0; i <= 10; i++)
                     {
                         range.Add(i * (max / 10));
                     }

@@ -74,6 +74,7 @@ namespace ColorControl
         private bool _checkedForUpdates = false;
         private string _updateHtmlUrl;
         private bool _updatingDitherSettings;
+        private string _downloadUrl;
 
         private LgGameBar _gameBarForm;
 
@@ -274,6 +275,7 @@ namespace ColorControl
             {
                 _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
                 _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
+                _lgService.SelectedDeviceChangedEvent += _lgService_SelectedDeviceChangedEvent;
 
                 FillLgPresets();
 
@@ -281,6 +283,7 @@ namespace ColorControl
                 edtLgOptionShutdownDelay.Value = _lgService.Config.ShutdownDelay;
                 edtLgDeviceFilter.Text = _lgService.Config.DeviceSearchKey;
                 chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
+                chkLgSetSelectedDeviceByPowerOn.Checked = _lgService.Config.SetSelectedDeviceByPowerOn;
 
                 InitSortState(lvLgPresets, _config.LgPresetsSortState);
 
@@ -321,6 +324,22 @@ namespace ColorControl
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
+        }
+
+        private void _lgService_SelectedDeviceChangedEvent(object sender, EventArgs e)
+        {
+            BeginInvoke(() => SetLgDevicesSelectedIndex(sender));
+        }
+
+        private void SetLgDevicesSelectedIndex(object sender)
+        {
+            if (sender == null)
+            {
+                cbxLgDevices.SelectedIndex = -1;
+                return;
+            }
+
+            cbxLgDevices.SelectedIndex = cbxLgDevices.Items.IndexOf(sender);
         }
 
         private void InitSortState(ListView listView, ListViewSortState sortState)
@@ -472,7 +491,7 @@ namespace ColorControl
         private void UpdateDisplayInfoItems()
         {
             var displays = _nvService?.GetDisplayInfos();
-            if (displays == null)
+            if (displays == null || Program.IsRestarting)
             {
                 return;
             }
@@ -865,7 +884,8 @@ namespace ColorControl
             chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
             chkMinimizeToSystemTray.Checked = _config.MinimizeToTray;
             chkCheckForUpdates.Checked = _config.CheckForUpdates;
-            edtDelayDisplaySettings.Value = _config.DisplaySettingsDelay;
+            chkAutoInstallUpdates.Checked = _config.AutoInstallUpdates;
+            chkAutoInstallUpdates.Enabled = _config.CheckForUpdates && _config.ElevationMethod == ElevationMethod.UseService;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
             chkGdiScaling.Checked = _config.UseGdiScaling;
 
@@ -2064,7 +2084,6 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void edtDelayDisplaySettings_ValueChanged(object sender, EventArgs e)
         {
-            _config.DisplaySettingsDelay = (int)edtDelayDisplaySettings.Value;
         }
 
         private bool ApplyNvPreset(NvPreset preset)
@@ -2655,14 +2674,70 @@ Do you want to continue?";
             {
                 _updateHtmlUrl = latest.html_url.Value;
 
+                if (latest.assets != null && Utils.IsServiceRunning())
+                {
+                    var asset = latest.assets[0];
+                    _downloadUrl = asset.browser_download_url.Value;
+
+                    if (_config.AutoInstallUpdates)
+                    {
+                        InstallUpdate(_downloadUrl);
+
+                        return;
+                    }
+
+                    btnUpdate.Visible = true;
+
+                    if (_trayIcon.Visible)
+                    {
+                        _trayIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click on the Update-button to update", ToolTipIcon.Info);
+                    }
+                    else
+                    {
+                        MessageForms.InfoOk($"New version {newVersion} is available. Click on the Update-button to update", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
+                    }
+
+                    return;
+                }
+
                 if (_trayIcon.Visible)
                 {
                     _trayIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
                 }
                 else
                 {
-                    MessageForms.InfoOk($"New version {newVersion} is available. Click on the Help-button to open the GitHub page.", "Update available", "https://github.com/Maassoft/ColorControl/releases/tag/v4.0.0.0");
+                    MessageForms.InfoOk($"New version {newVersion} is available. Click on the Help-button to open the GitHub page.", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
                 }
+            }
+        }
+
+        private void InstallUpdate(string downloadUrl)
+        {
+            var message = new SvcInstallUpdateMessage
+            {
+                DownloadUrl = downloadUrl,
+                ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
+            };
+
+            var result = PipeUtils.SendMessage(message);
+
+            if (!result.Result)
+            {
+                MessageForms.ErrorOk($"Error while updating: {result.ErrorMessage}");
+
+                return;
+            }
+
+            PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
+
+            if (MessageForms.QuestionYesNo("Update installed successfully. Do you want to restart the application?") == DialogResult.Yes)
+            {
+                Program.Restart();
+            }
+            else
+            {
+                _downloadUrl = null;
+                btnUpdate.Visible = true;
             }
         }
 
@@ -3453,6 +3528,7 @@ Do you want to continue?"
             if (_initialized)
             {
                 _config.CheckForUpdates = chkCheckForUpdates.Checked;
+                chkAutoInstallUpdates.Enabled = _config.CheckForUpdates && _config.ElevationMethod == ElevationMethod.UseService;
             }
         }
 
@@ -3469,6 +3545,7 @@ Do you want to continue?"
 @"Are you sure you want to enable the advanced actions under the Expert-button?
 These actions include:
 - InStart service menu
+- EzAdjust service menu
 - Software Update-app with firmware downgrade functionality enabled
 
 These features may cause irreversible damage to your tv and will void your warranty.
@@ -4385,6 +4462,44 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
         private void edtGamePrelaunchSteps_Leave(object sender, EventArgs e)
         {
             SaveGamePreset();
+        }
+
+        private void MainForm_Click(object sender, EventArgs e)
+        {
+            //PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
+            //Program.Restart();
+            //Environment.Exit(0);
+            //InstallUpdate("");
+        }
+
+        private void chkAutoInstallUpdates_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_initialized)
+            {
+                _config.AutoInstallUpdates = chkAutoInstallUpdates.Checked;
+            }
+        }
+
+        private void chkLgSetSelectedDeviceByWol_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            _lgService.Config.SetSelectedDeviceByPowerOn = chkLgSetSelectedDeviceByPowerOn.Checked;
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (_downloadUrl != null)
+            {
+                InstallUpdate(_downloadUrl);
+
+                return;
+            }
+
+            Program.Restart();
         }
     }
 }

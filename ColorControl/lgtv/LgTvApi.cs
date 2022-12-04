@@ -170,6 +170,21 @@ namespace LgTv
         twinZoom
     }
 
+    public enum InputOptimization
+    {
+        auto,
+        on,
+        standard,
+        boost
+    }
+
+    public enum BlueLight
+    {
+        off,
+        level1,
+        level2
+    }
+
     public enum HdmiIcon
     {
         [Description("HDMI")]
@@ -690,6 +705,11 @@ namespace LgTv
                 var keys = key.Split('_');
                 key = keys[0];
                 var childKey = keys[1];
+
+                if (value is string strValue && strValue != "false" && strValue != "true" && Utils.ParseInt(strValue, int.MinValue) == int.MinValue)
+                {
+                    value = $"\"{value}\"";
+                }
 
                 jsonValue = @"{ """ + childKey + @""": " + value + " }";
             }

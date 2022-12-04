@@ -16,6 +16,7 @@ namespace ColorControl.Services.LG
         public int GameBarTop { get; set; }
         public int GameBarLeft { get; set; }
         public int ShutdownDelay { get; set; }
+        public bool SetSelectedDeviceByPowerOn { get; set; }
 
         public LgServiceConfig()
         {

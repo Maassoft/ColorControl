@@ -6,6 +6,8 @@
         GetLog = 2,
         ClearLog = 3,
         ExecuteRpc = 10,
+        ExecuteUpdate = 20,
+        RestartAfterUpdate = 21,
     }
 
     public class SvcMessage
@@ -14,4 +16,16 @@
 
         public string Data { get; set; }
     }
+
+    public class SvcInstallUpdateMessage : SvcMessage
+    {
+        public SvcInstallUpdateMessage()
+        {
+            MessageType = SvcMessageType.ExecuteUpdate;
+        }
+
+        public string DownloadUrl { get; set; }
+        public string ClientPath { get; set; }
+    }
+
 }

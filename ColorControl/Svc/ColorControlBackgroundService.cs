@@ -53,7 +53,7 @@ namespace ColorControl.Svc
 
                     try
                     {
-                        var result = HandleMessage(message);
+                        var result = await HandleMessageAsync(message);
 
                         var resultJson = JsonConvert.SerializeObject(result);
 
@@ -95,7 +95,7 @@ namespace ColorControl.Svc
             }
         }
 
-        private SvcResultMessage HandleMessage(string json)
+        private async Task<SvcResultMessage> HandleMessageAsync(string json)
         {
             var message = JsonConvert.DeserializeObject<SvcMessage>(json);
 
@@ -105,6 +105,8 @@ namespace ColorControl.Svc
                 SvcMessageType.GetLog => HandleGetLogMessage(message),
                 SvcMessageType.ClearLog => HandleClearLogMessage(message),
                 SvcMessageType.ExecuteRpc => HandleExecuteRpcCommand(message),
+                SvcMessageType.ExecuteUpdate => await HandleExecuteUpdateCommandAsync(JsonConvert.DeserializeObject<SvcInstallUpdateMessage>(json)),
+                SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
                 _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
@@ -146,6 +148,34 @@ namespace ColorControl.Svc
             {
                 File.Delete(logFile);
             }
+
+            return SvcResultMessage.FromResult(true);
+        }
+
+        private async Task<SvcResultMessage> HandleExecuteUpdateCommandAsync(SvcInstallUpdateMessage message)
+        {
+            var localFile = Path.Combine(Program.DataDir, "update.zip");
+
+            await Utils.DownloadFileAsync(message.DownloadUrl, localFile);
+
+            var updatePath = Path.Combine(Program.DataDir, "ColorControl");
+
+            var directory = new DirectoryInfo(updatePath);
+            if (directory.Exists)
+            {
+                directory.Delete(true);
+            }
+
+            Utils.UnZipFile(localFile, Program.DataDir);
+
+            Utils.UpdateFiles(message.ClientPath, updatePath);
+
+            return SvcResultMessage.FromResult(true);
+        }
+
+        private SvcResultMessage HandleRestartAfterUpdateMessage()
+        {
+            Utils.StartProcess("cmd.exe", $@"/C net stop ""{Utils.SERVICE_NAME}"" && net start ""{Utils.SERVICE_NAME}""", true);
 
             return SvcResultMessage.FromResult(true);
         }

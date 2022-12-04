@@ -12,11 +12,13 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
@@ -25,6 +27,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
+using Task = System.Threading.Tasks.Task;
 
 namespace ColorControl.Common
 {
@@ -52,7 +55,7 @@ namespace ColorControl.Common
         private static bool WinKeyDown = false;
         private static Keys[] KeysWithoutModifiers = new[] { Keys.F13, Keys.F14, Keys.F15, Keys.F16, Keys.F17, Keys.F18, Keys.F19, Keys.F20, Keys.F21, Keys.F22, Keys.F23, Keys.F24 };
 
-        private static string SERVICE_NAME = "Color Control Service";
+        public static string SERVICE_NAME = "Color Control Service";
 
         public static string ELEVATION_MSG = @"Elevation is needed in some cases where ColorControl needs administrator rights.
 Some operations like installing a service, changing the priority of a process or creating a temporary IP-route for improved WOL-functionality will not work without those rights.
@@ -1137,6 +1140,103 @@ The best and suggested method to provide this is via a Windows Service. Only whe
         {
             var base64EncodedBytes = Convert.FromBase64String(base64EncodedData);
             return Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        public static async Task DownloadFileAsync(string url, string filePath)
+        {
+            var httpClient = new HttpClient();
+            using var stream = await httpClient.GetStreamAsync(url);
+
+            using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate);
+
+            await stream.CopyToAsync(fileStream);
+        }
+
+        public static void UnZipFile(string zipFile, string filePath)
+        {
+            ZipFile.ExtractToDirectory(zipFile, filePath);
+        }
+
+        public static void UpdateFiles(string clientPath, string updatePath)
+        {
+            var infos = new List<FileSystemInfo>();
+
+            GetFileSystemInfos(updatePath, infos);
+
+            foreach (var info in infos)
+            {
+                var subPath = info.FullName.Replace(updatePath, "");
+
+                if (subPath[0] == '\\')
+                {
+                    subPath = subPath.Substring(1);
+                }
+
+                var targetPath = Path.Combine(clientPath, subPath);
+
+                //Logger.Debug($"Path: {updatePath}, info: {info.FullName}, target: {targetPath}");
+
+                if (info is DirectoryInfo)
+                {
+                    if (!Directory.Exists(targetPath))
+                    {
+                        Directory.CreateDirectory(targetPath);
+                    }
+
+                    continue;
+                }
+
+                var fileInfo = info as FileInfo;
+
+                var oldPath = targetPath + ".old";
+
+                if (File.Exists(oldPath))
+                {
+                    File.Delete(oldPath);
+                }
+
+                if (File.Exists(targetPath))
+                {
+                    if (CompareFiles(fileInfo.FullName, targetPath))
+                    {
+                        continue;
+                    }
+
+                    File.Move(targetPath, targetPath + ".old");
+                }
+
+                fileInfo.CopyTo(targetPath);
+            }
+        }
+
+        public static void GetFileSystemInfos(string path, List<FileSystemInfo> infos)
+        {
+            var directory = new DirectoryInfo(path);
+
+            foreach (var dir in directory.GetDirectories())
+            {
+                infos.Add(dir);
+                GetFileSystemInfos(dir.FullName, infos);
+            }
+
+            foreach (var file in directory.GetFiles())
+            {
+                infos.Add(file);
+            }
+        }
+
+        public static string SHA256CheckSum(string filePath)
+        {
+            using (SHA256 SHA256 = SHA256.Create())
+            {
+                using (FileStream fileStream = File.OpenRead(filePath))
+                    return Convert.ToBase64String(SHA256.ComputeHash(fileStream));
+            }
+        }
+
+        public static bool CompareFiles(string filePath1, string filePath2)
+        {
+            return SHA256CheckSum(filePath1) == SHA256CheckSum(filePath2);
         }
     }
 }
