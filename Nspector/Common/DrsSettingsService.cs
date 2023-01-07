@@ -300,6 +300,8 @@ namespace nspector.Common
 
         public int StoreSettingsToProfile(string profileName, List<KeyValuePair<uint, string>> settings)
         {
+            DrsSessionScope.DestroyGlobalSession();
+
             DrsSession((hSession) =>
             {
                 var hProfile = GetProfileHandle(hSession, profileName);

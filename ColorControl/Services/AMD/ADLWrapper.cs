@@ -1,6 +1,7 @@
 ﻿using ATI.ADL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -10,6 +11,7 @@ namespace ColorControl.Services.AMD
 {
     enum ADLPixelFormat
     {
+        [Description("Unknown/unsupported")]
         UNKNOWN = 0,
         RGB_FULL_RANGE = 1,
         YCRCB444 = 2,
@@ -20,6 +22,7 @@ namespace ColorControl.Services.AMD
 
     enum ADLColorDepth
     {
+        [Description("Unknown/unsupported")]
         UNKNOWN = 0,
         BPC6 = 1,
         BPC8 = 2,
@@ -46,7 +49,7 @@ namespace ColorControl.Services.AMD
         TRUN8 = 12,
         TRUN10 = 13,
         TRUN8_DITH8 = 14,
-        TRUN10_DUTH6 = 15,
+        TRUN10_DITH6 = 15,
         TRUN10_FM8 = 16,
         TRUN10_FM6 = 17,
         TRUN10_DITH8_FM6 = 18,
@@ -61,7 +64,7 @@ namespace ColorControl.Services.AMD
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private static ADL_CONTEXT_HANDLE context = IntPtr.Zero;
-        
+
         public static bool Initialize()
         {
             int ADLRet = -1;
@@ -116,11 +119,11 @@ namespace ColorControl.Services.AMD
             int ADLRet = -1;
             int NumberOfAdapters = 0;
 
-            var delNumberOfAdapters = ADL.GetDelegate<ADL.ADL_Adapter_NumberOfAdapters_Get>();
+            var delNumberOfAdapters = ADL.GetDelegate<ADL.ADL2_Adapter_NumberOfAdapters_Get>();
 
             if (null != delNumberOfAdapters)
             {
-                delNumberOfAdapters(ref NumberOfAdapters);
+                delNumberOfAdapters(context, ref NumberOfAdapters);
             }
             Logger.Debug("Number Of Adapters: " + NumberOfAdapters.ToString() + "\n");
 
@@ -130,7 +133,7 @@ namespace ColorControl.Services.AMD
                 ADLAdapterInfoArray OSAdapterInfoData;
                 OSAdapterInfoData = new ADLAdapterInfoArray();
 
-                var delAdapterInfo = ADL.GetDelegate<ADL.ADL_Adapter_AdapterInfo_Get>();
+                var delAdapterInfo = ADL.GetDelegate<ADL.ADL2_Adapter_AdapterInfo_Get>();
 
                 if (null != delAdapterInfo)
                 {
@@ -139,19 +142,19 @@ namespace ColorControl.Services.AMD
                     AdapterBuffer = Marshal.AllocCoTaskMem((int)size);
                     Marshal.StructureToPtr(OSAdapterInfoData, AdapterBuffer, false);
 
-                    ADLRet = delAdapterInfo(AdapterBuffer, size);
+                    ADLRet = delAdapterInfo(context, AdapterBuffer, size);
                     if (ADL.ADL_SUCCESS == ADLRet)
                     {
                         OSAdapterInfoData = (ADLAdapterInfoArray)Marshal.PtrToStructure(AdapterBuffer, OSAdapterInfoData.GetType());
                         int IsActive = 0;
 
-                        var delActive = ADL.GetDelegate<ADL.ADL_Adapter_Active_Get>();
+                        var delActive = ADL.GetDelegate<ADL.ADL2_Adapter_Active_Get>();
 
                         for (int i = 0; i < NumberOfAdapters; i++)
                         {
                             // Check if the adapter is active
                             if (null != delActive)
-                                ADLRet = delActive(OSAdapterInfoData.ADLAdapterInfo[i].AdapterIndex, ref IsActive);
+                                ADLRet = delActive(context, OSAdapterInfoData.ADLAdapterInfo[i].AdapterIndex, ref IsActive);
 
                             if (ADL.ADL_SUCCESS == ADLRet)
                             {
@@ -190,7 +193,7 @@ namespace ColorControl.Services.AMD
 
             ADLDisplayInfo oneDisplayInfo = new ADLDisplayInfo();
 
-            var del = ADL.GetDelegate<ADL.ADL_Display_DisplayInfo_Get>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_DisplayInfo_Get>();
 
             if (null != del)
             {
@@ -198,13 +201,14 @@ namespace ColorControl.Services.AMD
                 int j = 0;
 
                 // Force the display detection and get the Display Info. Use 0 as last parameter to NOT force detection
-                ADLRet = del(primaryAdapter.AdapterIndex, ref NumberOfDisplays, out DisplayBuffer, 1);
+                ADLRet = del(context, primaryAdapter.AdapterIndex, ref NumberOfDisplays, out DisplayBuffer, 1);
                 if (ADL.ADL_SUCCESS == ADLRet)
                 {
                     for (j = 0; j < NumberOfDisplays; j++)
                     {
                         oneDisplayInfo = (ADLDisplayInfo)Marshal.PtrToStructure(new IntPtr(DisplayBuffer.ToInt64() + j * Marshal.SizeOf(oneDisplayInfo)), oneDisplayInfo.GetType());
-                        if (!connected || (1 == (oneDisplayInfo.DisplayInfoValue & 1))) {
+                        if (!connected || (1 == (oneDisplayInfo.DisplayInfoValue & 1)))
+                        {
                             DisplayInfoData.Add(oneDisplayInfo);
                         }
                     }
@@ -261,105 +265,105 @@ namespace ColorControl.Services.AMD
 
             horizontal = bounds.Width;
             vertical = bounds.Height;
-            
+
             Logger.Debug($"GetDisplayResolution: {horizontal}x{vertical}");
 
-            //var del = ADL.GetDelegate<ADL.ADL_Display_Size_Get>();
+            //var del = ADL.GetDelegate<ADL.ADL2_Display_Size_Get>();
 
             //if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             //{
             //    int lpDefaultWidth, lpDefaultHeight, lpMinWidth, lpMinHeight, lpMaxWidth, lpMaxHeight, lpStepWidth, lpStepHeight;
             //    lpDefaultWidth = lpDefaultHeight = lpMinWidth = lpMinHeight = lpMaxWidth = lpMaxHeight = lpStepWidth = lpStepHeight = 0;
-            //    var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref horizontal, ref vertical, ref lpDefaultWidth, ref lpDefaultHeight, ref lpMinWidth, ref lpMinHeight, ref lpMaxWidth, ref lpMaxHeight, ref lpStepWidth, ref lpStepHeight);
+            //    var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref horizontal, ref vertical, ref lpDefaultWidth, ref lpDefaultHeight, ref lpMinWidth, ref lpMinHeight, ref lpMaxWidth, ref lpMaxHeight, ref lpStepWidth, ref lpStepHeight);
 
-            //    return CheckError(ADLRet, nameof(ADL.ADL_Display_Size_Get));
+            //    return CheckError(ADLRet, nameof(ADL.ADL2_Display_Size_Get));
             //}
             return true;
         }
 
         public static bool GetDisplayPixelFormat(ADLDisplayInfo display, ref ADLPixelFormat pixelFormat)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_PixelFormat_Get>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_PixelFormat_Get>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
                 int pixelFormatInt = 0;
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref pixelFormatInt);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref pixelFormatInt);
 
                 pixelFormat = (ADLPixelFormat)pixelFormatInt;
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_PixelFormat_Get));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_PixelFormat_Get));
             }
             return false;
         }
 
         public static bool SetDisplayPixelFormat(ADLDisplayInfo display, ADLPixelFormat pixelFormat)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_PixelFormat_Set>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_PixelFormat_Set>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)pixelFormat);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)pixelFormat);
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_PixelFormat_Set));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_PixelFormat_Set));
             }
             return false;
         }
 
         public static bool GetDisplayColorDepth(ADLDisplayInfo display, ref ADLColorDepth colorDepth)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_ColorDepth_Get>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_ColorDepth_Get>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
                 int colorDepthInt = 0;
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref colorDepthInt);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref colorDepthInt);
 
                 colorDepth = (ADLColorDepth)colorDepthInt;
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_ColorDepth_Get));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_ColorDepth_Get));
             }
             return false;
         }
 
         public static bool SetDisplayColorDepth(ADLDisplayInfo display, ADLColorDepth colorDepth)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_ColorDepth_Set>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_ColorDepth_Set>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)colorDepth);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)colorDepth);
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_ColorDepth_Set));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_ColorDepth_Set));
             }
             return false;
         }
 
         public static bool GetDisplayDitherState(ADLDisplayInfo display, ref ADLDitherState ditherState)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_DitherState_Get>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_DitherState_Get>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
                 var ditherStateInt = 0;
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref ditherStateInt);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, ref ditherStateInt);
 
                 ditherState = (ADLDitherState)ditherStateInt;
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_DitherState_Get));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_DitherState_Get));
             }
             return false;
         }
 
         public static bool SetDisplayDitherState(ADLDisplayInfo display, ADLDitherState ditherState)
         {
-            var del = ADL.GetDelegate<ADL.ADL_Display_DitherState_Set>();
+            var del = ADL.GetDelegate<ADL.ADL2_Display_DitherState_Set>();
 
             if (display.DisplayID.DisplayPhysicalIndex >= 0 && del != null)
             {
-                var ADLRet = del(display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)ditherState);
+                var ADLRet = del(context, display.DisplayID.DisplayLogicalAdapterIndex, display.DisplayID.DisplayLogicalIndex, (int)ditherState);
 
-                return CheckError(ADLRet, nameof(ADL.ADL_Display_DitherState_Set));
+                return CheckError(ADLRet, nameof(ADL.ADL2_Display_DitherState_Set));
             }
             return false;
         }

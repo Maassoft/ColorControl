@@ -24,9 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using ADL_CONTEXT_HANDLE = System.IntPtr;
 using FARPROC = System.IntPtr;
 using HMODULE = System.IntPtr;
-using ADL_CONTEXT_HANDLE = System.IntPtr;
 
 #endregion Using
 
@@ -90,7 +90,7 @@ namespace ATI.ADL
     }
     #endregion ADLAdapterInfo
 
-        
+
     #region ADLDisplayInfo
     /// <summary> ADLDisplayID Structure</summary>
     [StructLayout(LayoutKind.Sequential)]
@@ -188,20 +188,20 @@ namespace ATI.ADL
         /// <summary> ADL Function to get the number of adapters</summary>
         /// <param name="numAdapters">return number of adapters</param>
         /// <returns> retrun ADL Error Code</returns>
-        internal delegate int ADL_Adapter_NumberOfAdapters_Get(ref int numAdapters);
+        internal delegate int ADL2_Adapter_NumberOfAdapters_Get(ADL_CONTEXT_HANDLE context, ref int numAdapters);
 
         /// <summary> ADL Function to get the GPU adapter information</summary>
         /// <param name="info">return GPU adapter information</param>
         /// <param name="inputSize">the size of the GPU adapter struct</param>
         /// <returns> retrun ADL Error Code</returns>
-        internal delegate int ADL_Adapter_AdapterInfo_Get(IntPtr info, int inputSize);
+        internal delegate int ADL2_Adapter_AdapterInfo_Get(ADL_CONTEXT_HANDLE context, IntPtr info, int inputSize);
 
         /// <summary> Function to determine if the adapter is active or not.</summary>
         /// <remarks>The function is used to check if the adapter associated with iAdapterIndex is active</remarks>  
         /// <param name="adapterIndex"> Adapter Index.</param>
         /// <param name="status"> Status of the adapter. True: Active; False: Dsiabled</param>
         /// <returns>Non zero is successfull</returns> 
-        internal delegate int ADL_Adapter_Active_Get(int adapterIndex, ref int status);
+        internal delegate int ADL2_Adapter_Active_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, ref int status);
 
         /// <summary>Get display information based on adapter index</summary>
         /// <param name="adapterIndex">Adapter Index</param>
@@ -209,18 +209,18 @@ namespace ATI.ADL
         /// <param name="displayInfoArray">return ADLDisplayInfo Array for supported displays' information</param>
         /// <param name="forceDetect">force detect or not</param>
         /// <returns>return ADL Error Code</returns>
-        internal delegate int ADL_Display_DisplayInfo_Get(int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
+        internal delegate int ADL2_Display_DisplayInfo_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, ref int numDisplays, out IntPtr displayInfoArray, int forceDetect);
 
-        internal delegate int ADL_Display_Size_Get(int adapterIndex, int displayIndex, ref int lpWidth, ref int lpHeight, ref int lpDefaultWidth, ref int lpDefaultHeight, ref int lpMinWidth, ref int lpMinHeight, ref int lpMaxWidth, ref int lpMaxHeight, ref int lpStepWidth, ref int lpStepHeight);
+        internal delegate int ADL2_Display_Size_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, ref int lpWidth, ref int lpHeight, ref int lpDefaultWidth, ref int lpDefaultHeight, ref int lpMinWidth, ref int lpMinHeight, ref int lpMaxWidth, ref int lpMaxHeight, ref int lpStepWidth, ref int lpStepHeight);
 
-        internal delegate int ADL_Display_PixelFormat_Get(int adapterIndex, int displayIndex, ref int pixelFormat);
-        internal delegate int ADL_Display_PixelFormat_Set(int adapterIndex, int displayIndex, int pixelFormat);
+        internal delegate int ADL2_Display_PixelFormat_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, ref int pixelFormat);
+        internal delegate int ADL2_Display_PixelFormat_Set(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, int pixelFormat);
 
-        internal delegate int ADL_Display_ColorDepth_Get(int adapterIndex, int displayIndex, ref int colorDepth);
-        internal delegate int ADL_Display_ColorDepth_Set(int adapterIndex, int displayIndex, int colorDepth);
+        internal delegate int ADL2_Display_ColorDepth_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, ref int colorDepth);
+        internal delegate int ADL2_Display_ColorDepth_Set(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, int colorDepth);
 
-        internal delegate int ADL_Display_DitherState_Get(int adapterIndex, int displayIndex, ref int ditherState);
-        internal delegate int ADL_Display_DitherState_Set(int adapterIndex, int displayIndex, int ditherState);
+        internal delegate int ADL2_Display_DitherState_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, ref int ditherState);
+        internal delegate int ADL2_Display_DitherState_Set(ADL_CONTEXT_HANDLE context, int adapterIndex, int displayIndex, int ditherState);
 
         internal delegate int ADL2_Display_HDRState_Get(ADL_CONTEXT_HANDLE context, int adapterIndex, ADLDisplayID displayID, ref int support, ref int enable);
         internal delegate int ADL2_Display_HDRState_Set(ADL_CONTEXT_HANDLE context, int adapterIndex, ADLDisplayID displayID, int enable);
@@ -240,7 +240,7 @@ namespace ATI.ADL
 
             #region DLLImport
             [DllImport(Kernel32_FileName)]
-            internal static extern HMODULE GetModuleHandle (string moduleName);
+            internal static extern HMODULE GetModuleHandle(string moduleName);
 
             [DllImport(Atiadlxx_FileName)]
             internal static extern int ADL_Main_Control_IsFunctionValid(HMODULE module, string procName);
@@ -267,7 +267,7 @@ namespace ATI.ADL
 
             #region Constructor
             /// <summary> Constructor</summary>
-            private ADLCheckLibrary ()
+            private ADLCheckLibrary()
             {
                 try
                 {
@@ -284,7 +284,7 @@ namespace ATI.ADL
 
             #region Destructor
             /// <summary> Destructor to force calling ADL Destroy function before free up the ADL library</summary>
-            ~ADLCheckLibrary ()
+            ~ADLCheckLibrary()
             {
                 if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
                 {
@@ -301,7 +301,7 @@ namespace ATI.ADL
             /// <summary> Check the import function to see it exists or not</summary>
             /// <param name="functionName"> function name</param>
             /// <returns>return true, if function exists</returns>
-            internal static bool IsFunctionValid (string functionName)
+            internal static bool IsFunctionValid(string functionName)
             {
                 var result = false;
                 if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
@@ -319,7 +319,7 @@ namespace ATI.ADL
             /// <summary> Get the unmanaged function pointer </summary>
             /// <param name="functionName"> function name</param>
             /// <returns>return function pointer, if function exists</returns>
-            internal static FARPROC GetProcAddress (string functionName)
+            internal static FARPROC GetProcAddress(string functionName)
             {
                 var result = IntPtr.Zero;
                 if (IntPtr.Zero != ADLCheckLibrary_.ADLLibrary)
@@ -340,7 +340,7 @@ namespace ATI.ADL
         /// <summary> Build in memory allocation function</summary>
         /// <param name="size">input size</param>
         /// <returns>return the memory buffer</returns>
-        private static IntPtr ADL_Main_Memory_Alloc_ (int size)
+        private static IntPtr ADL_Main_Memory_Alloc_(int size)
         {
             IntPtr result = Marshal.AllocCoTaskMem(size);
             return result;
@@ -350,7 +350,7 @@ namespace ATI.ADL
         #region ADL_Main_Memory_Free
         /// <summary> Build in memory free function</summary>
         /// <param name="buffer">input buffer</param>
-        internal static void ADL_Main_Memory_Free (IntPtr buffer)
+        internal static void ADL_Main_Memory_Free(IntPtr buffer)
         {
             if (IntPtr.Zero != buffer)
             {

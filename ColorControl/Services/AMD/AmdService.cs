@@ -317,14 +317,14 @@ namespace ColorControl.Services.AMD
                 var pixelFormat = ADLPixelFormat.UNKNOWN;
                 ADLWrapper.GetDisplayPixelFormat(display, ref pixelFormat);
 
-                var colorSettings = $"{colorDepth}, {pixelFormat}";
+                var colorSettings = $"{colorDepth.GetDescription()}, {pixelFormat.GetDescription()}";
                 values.Add(colorSettings);
 
                 var refreshRate = GetCurrentRefreshRate(screen?.DeviceName);
                 values.Add($"{refreshRate}Hz");
 
                 var ditherState = GetDithering(display);
-                values.Add(ditherState.ToString());
+                values.Add(ditherState.GetDescription());
 
                 var hdrEnabled = IsHDREnabled();
                 values.Add(hdrEnabled ? "Yes" : "No");

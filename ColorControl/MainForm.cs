@@ -117,6 +117,7 @@ namespace ColorControl
                     new ToolStripSeparator(),
                     new ToolStripMenuItem("Open", null, OpenForm),
                     new ToolStripSeparator(),
+                    new ToolStripMenuItem("Restart", null, Restart),
                     new ToolStripMenuItem("Exit", null, Exit)
                 });
 
@@ -315,7 +316,7 @@ namespace ColorControl
                     //    _keyboardHookManager = new KeyboardHookManager();
                     //    _keyboardHookManager.Start();
                     //}
-                    //_keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control | NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt, 0x47, new Action(Invoke));
+                    //_keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control | NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt, (int)Keys.F9, new Action(TestKey));
 
                     edtLgGameBarShortcut.Text = _lgService.Config.GameBarShortcut;
                 }
@@ -324,6 +325,16 @@ namespace ColorControl
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
             }
+        }
+
+        private void TestKey()
+        {
+            BeginInvoke(async () =>
+            {
+                var preset = _lgService.GetPresets().FirstOrDefault(p => p.name == "Backlight 20");
+
+                await _lgService.ApplyPreset(preset);
+            });
         }
 
         private void _lgService_SelectedDeviceChangedEvent(object sender, EventArgs e)
@@ -435,6 +446,11 @@ namespace ColorControl
         {
             UserExit = true;
             Close();
+        }
+
+        void Restart(object sender, EventArgs e)
+        {
+            Program.Restart();
         }
 
         private void trayIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -970,6 +986,11 @@ namespace ColorControl
 
             if (_config.ElevationMethodAsked)
             {
+                if (Debugger.IsAttached)
+                {
+                    return;
+                }
+
                 if (_config.ElevationMethod == ElevationMethod.UseService && !Utils.IsServiceInstalled() &&
                     (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not installed. Do you want to install it now?") == DialogResult.Yes))
                 {
@@ -1151,12 +1172,7 @@ NOTE: installing the service may cause a User Account Control popup.");
                     for (var i = 0; i < displays.Length; i++)
                     {
                         var display = displays[i];
-                        var name = display.Name;
-                        var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
-                        if (screen != null)
-                        {
-                            name += " (" + screen.DeviceFriendlyName() + ")";
-                        }
+                        var name = FormUtils.ExtendedDisplayName(display.Name);
 
                         var item = mnuNvDisplay.DropDownItems.Add(name);
                         item.Tag = display;
@@ -1791,6 +1807,18 @@ NOTE: installing the service may cause a User Account Control popup.");
                     FillGradient();
                 }
 
+                if (cbxDitheringDisplay.Items.Count == 0)
+                {
+                    var displays = _nvService.GetDisplayInfos();
+                    var primaryDisplay = _nvService.GetPrimaryDisplay();
+                    var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
+                    var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
+
+                    cbxDitheringDisplay.Items.AddRange(displays.ToArray());
+
+                    cbxDitheringDisplay.SelectedIndex = index;
+                }
+
                 UpdateDitherSettings();
             }
 
@@ -1816,7 +1844,8 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void UpdateDitherSettings()
         {
-            var ditherInfo = _nvService.GetDithering();
+            var display = ((NvDisplayInfo)cbxDitheringDisplay.SelectedItem)?.Display;
+            var ditherInfo = _nvService.GetDithering(display);
 
             if (ditherInfo.state == -1)
             {
@@ -2590,8 +2619,9 @@ Do you want to continue?";
             var state = chkDitheringEnabled.CheckState switch { CheckState.Checked => NvDitherState.Enabled, CheckState.Unchecked => NvDitherState.Disabled, _ => NvDitherState.Auto };
             var bitDepth = cbxDitheringBitDepth.SelectedIndex;
             var mode = cbxDitheringMode.SelectedIndex;
+            var display = ((NvDisplayInfo)cbxDitheringDisplay.SelectedItem)?.Display;
 
-            if (_nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal)) && state == NvDitherState.Auto)
+            if (_nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal), currentDisplay: display) && state == NvDitherState.Auto)
             {
                 UpdateDitherSettings();
             }
@@ -2627,10 +2657,6 @@ Do you want to continue?";
             preset.ditheringMode = uint.Parse(item.Tag.ToString());
 
             AddOrUpdateItem();
-        }
-
-        private void btnLGRemoteControl_Click(object sender, EventArgs e)
-        {
         }
 
         private void AfterInitialized()
@@ -3442,7 +3468,16 @@ Do you want to continue?"
                 return;
             }
 
-            _lgService.SelectedDevice?.ExecuteAction(action, new[] { value });
+            try
+            {
+                _lgService.SelectedDevice?.ExecuteAction(action, new[] { value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.Error(ex);
+
+                MessageForms.ErrorOk("Error exectuting action: " + ex.Message);
+            }
         }
 
         private void ApplyLgExpertValueRange(LgDevice.InvokableAction action)
@@ -4500,6 +4535,83 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
 
             Program.Restart();
+        }
+
+        internal void CloseForRestart()
+        {
+            Hide();
+            _trayIcon.Visible = false;
+        }
+
+        private void cbxDitheringDisplay_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            UpdateDitherSettings();
+        }
+
+        private ListViewItem _lastItem;
+        private int _lastSubItemIndex;
+
+        private void lvNvPresets_MouseMove(object sender, MouseEventArgs e)
+        {
+            var item = lvNvPresets.GetItemAt(e.X, e.Y);
+            var subItem = item?.GetSubItemAt(e.X, e.Y);
+
+            if (item == null || subItem == null || subItem?.Text?.Length < 20)
+            {
+                lvNvPresetsToolTip.Active = false;
+                _lastItem = null;
+
+                return;
+            }
+
+            var index = item.SubItems.IndexOf(subItem);
+
+            lvNvPresets.ShowItemToolTips = false;
+
+            if (item == _lastItem && index == _lastSubItemIndex)
+            {
+                return;
+            }
+
+            _lastItem = item;
+            _lastSubItemIndex = index;
+
+            var text = subItem.Text;
+
+            if (index == 7)
+            {
+                text = text.Replace(", ", "\r\n");
+            }
+
+            var point = lvNvPresets.PointToClient(Cursor.Position);
+            point.X += 10;
+            point.Y += 0;
+
+            if (index >= 0)
+            {
+                if (lvNvPresetsToolTip.Active)
+                {
+                    lvNvPresetsToolTip.Active = false;
+                }
+
+                lvNvPresetsToolTip.Active = true;
+                lvNvPresetsToolTip.Show("", lvNvPresets, point);
+                lvNvPresetsToolTip.Show(text, lvNvPresets, point);
+            }
+            else
+            {
+                lvNvPresetsToolTip.Active = false;
+            }
+        }
+
+        private void lvNvPresets_MouseLeave(object sender, EventArgs e)
+        {
+            lvNvPresetsToolTip.Active = false;
         }
     }
 }

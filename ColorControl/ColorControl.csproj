@@ -19,8 +19,8 @@
 	<PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-	<ApplicationVersion>8.2.0.0</ApplicationVersion>
-	<Version>8.2.0.0</Version>
+	<ApplicationVersion>8.3.0.0</ApplicationVersion>
+	<Version>8.3.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
 	<PublishWizardCompleted>true</PublishWizardCompleted>
 	<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -30,7 +30,7 @@
 	<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 	<ApplicationIcon>pngbarn.ico</ApplicationIcon>
 	<SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
-	<Copyright>2020-2022 Maassoft</Copyright>
+	<Copyright>2020-2023 Maassoft</Copyright>
 	<Authors>Maassoft</Authors>
 	<ManifestCertificateThumbprint>CF0BC153EA664CD97AC6F234B91F45D34630958F</ManifestCertificateThumbprint>
 	<ManifestKeyFile>ColorControl_1_TemporaryKey.pfx</ManifestKeyFile>

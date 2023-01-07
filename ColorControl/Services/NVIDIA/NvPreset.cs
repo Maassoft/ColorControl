@@ -133,7 +133,7 @@ namespace ColorControl.Services.NVIDIA
             return values;
         }
 
-        public string GetDriverSettingsDescription()
+        public string GetDriverSettingsDescription(bool useNewLines = false)
         {
             if (driverSettings.Count == 0)
             {
@@ -151,7 +151,7 @@ namespace ColorControl.Services.NVIDIA
                 values.Add($"{settingMeta.SettingName}: {settingValue?.ValueName ?? "Unknown"}");
             }
 
-            return string.Join(", ", values);
+            return string.Join(useNewLines ? "\r\n" : ", ", values);
         }
 
         public string GetDitheringDescription(string disabledText = "Disabled")

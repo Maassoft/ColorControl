@@ -204,6 +204,8 @@
             this.lvGamePresets = new System.Windows.Forms.ListView();
             this.tabOptions = new System.Windows.Forms.TabPage();
             this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
+            this.lblDitheringDisplay = new System.Windows.Forms.Label();
+            this.cbxDitheringDisplay = new System.Windows.Forms.ComboBox();
             this.lblDitheringMode = new System.Windows.Forms.Label();
             this.cbxDitheringMode = new System.Windows.Forms.ComboBox();
             this.lblDitheringBitDepth = new System.Windows.Forms.Label();
@@ -260,6 +262,7 @@
             this.miNvProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.btnUpdate = new System.Windows.Forms.Button();
+            this.lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.tcMain.SuspendLayout();
             this.tabNVIDIA.SuspendLayout();
             this.mnuNvPresets.SuspendLayout();
@@ -780,6 +783,8 @@
             this.lvNvPresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvNvPresets_ItemChecked);
             this.lvNvPresets.SelectedIndexChanged += new System.EventHandler(this.lvNvPresets_SelectedIndexChanged);
             this.lvNvPresets.DoubleClick += new System.EventHandler(this.btnApply_Click);
+            this.lvNvPresets.MouseLeave += new System.EventHandler(this.lvNvPresets_MouseLeave);
+            this.lvNvPresets.MouseMove += new System.Windows.Forms.MouseEventHandler(this.lvNvPresets_MouseMove);
             // 
             // tabAMD
             // 
@@ -2241,6 +2246,8 @@
             this.grpNvidiaOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.grpNvidiaOptions.Controls.Add(this.lblDitheringDisplay);
+            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringDisplay);
             this.grpNvidiaOptions.Controls.Add(this.lblDitheringMode);
             this.grpNvidiaOptions.Controls.Add(this.cbxDitheringMode);
             this.grpNvidiaOptions.Controls.Add(this.lblDitheringBitDepth);
@@ -2256,10 +2263,31 @@
             this.grpNvidiaOptions.TabStop = false;
             this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
             // 
+            // lblDitheringDisplay
+            // 
+            this.lblDitheringDisplay.AutoSize = true;
+            this.lblDitheringDisplay.Location = new System.Drawing.Point(7, 23);
+            this.lblDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblDitheringDisplay.Name = "lblDitheringDisplay";
+            this.lblDitheringDisplay.Size = new System.Drawing.Size(48, 15);
+            this.lblDitheringDisplay.TabIndex = 9;
+            this.lblDitheringDisplay.Text = "Display:";
+            // 
+            // cbxDitheringDisplay
+            // 
+            this.cbxDitheringDisplay.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxDitheringDisplay.FormattingEnabled = true;
+            this.cbxDitheringDisplay.Location = new System.Drawing.Point(75, 17);
+            this.cbxDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cbxDitheringDisplay.Name = "cbxDitheringDisplay";
+            this.cbxDitheringDisplay.Size = new System.Drawing.Size(212, 23);
+            this.cbxDitheringDisplay.TabIndex = 8;
+            this.cbxDitheringDisplay.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringDisplay_SelectedIndexChanged);
+            // 
             // lblDitheringMode
             // 
             this.lblDitheringMode.AutoSize = true;
-            this.lblDitheringMode.Location = new System.Drawing.Point(7, 81);
+            this.lblDitheringMode.Location = new System.Drawing.Point(7, 105);
             this.lblDitheringMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDitheringMode.Name = "lblDitheringMode";
             this.lblDitheringMode.Size = new System.Drawing.Size(41, 15);
@@ -2270,7 +2298,7 @@
             // 
             this.cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxDitheringMode.FormattingEnabled = true;
-            this.cbxDitheringMode.Location = new System.Drawing.Point(75, 75);
+            this.cbxDitheringMode.Location = new System.Drawing.Point(75, 99);
             this.cbxDitheringMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxDitheringMode.Name = "cbxDitheringMode";
             this.cbxDitheringMode.Size = new System.Drawing.Size(136, 23);
@@ -2280,7 +2308,7 @@
             // lblDitheringBitDepth
             // 
             this.lblDitheringBitDepth.AutoSize = true;
-            this.lblDitheringBitDepth.Location = new System.Drawing.Point(7, 50);
+            this.lblDitheringBitDepth.Location = new System.Drawing.Point(7, 74);
             this.lblDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDitheringBitDepth.Name = "lblDitheringBitDepth";
             this.lblDitheringBitDepth.Size = new System.Drawing.Size(60, 15);
@@ -2291,7 +2319,7 @@
             // 
             this.cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbxDitheringBitDepth.FormattingEnabled = true;
-            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 44);
+            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 68);
             this.cbxDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
             this.cbxDitheringBitDepth.Size = new System.Drawing.Size(136, 23);
@@ -2303,7 +2331,7 @@
             this.chkDitheringEnabled.AutoSize = true;
             this.chkDitheringEnabled.Checked = true;
             this.chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkDitheringEnabled.Location = new System.Drawing.Point(7, 22);
+            this.chkDitheringEnabled.Location = new System.Drawing.Point(7, 46);
             this.chkDitheringEnabled.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkDitheringEnabled.Name = "chkDitheringEnabled";
             this.chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
@@ -2319,10 +2347,10 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pbGradient.Location = new System.Drawing.Point(7, 106);
+            this.pbGradient.Location = new System.Drawing.Point(7, 128);
             this.pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(555, 250);
+            this.pbGradient.Size = new System.Drawing.Size(555, 228);
             this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pbGradient.TabIndex = 0;
             this.pbGradient.TabStop = false;
@@ -3244,6 +3272,9 @@
         private System.Windows.Forms.CheckBox chkAutoInstallUpdates;
         private System.Windows.Forms.CheckBox chkLgSetSelectedDeviceByPowerOn;
         private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.Label lblDitheringDisplay;
+        private System.Windows.Forms.ComboBox cbxDitheringDisplay;
+        private System.Windows.Forms.ToolTip lvNvPresetsToolTip;
     }
 }
 

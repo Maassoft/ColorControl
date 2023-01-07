@@ -281,7 +281,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
                     if (ElevatedProcessWindowHandle != IntPtr.Zero)
                     {
-                        Thread.Sleep(100);
+                        Thread.Sleep(500);
                         break;
                     }
 

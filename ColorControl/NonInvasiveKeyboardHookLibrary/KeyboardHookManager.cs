@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace NonInvasiveKeyboardHookLibrary
 {
@@ -182,7 +181,7 @@ namespace NonInvasiveKeyboardHookLibrary
             if (keybindToRemove == null || !this._registeredCallbacks.Remove(keybindToRemove))
             {
                 throw new HotkeyNotRegisteredException();
-            }   
+            }
         }
         #endregion
 
@@ -220,7 +219,7 @@ namespace NonInvasiveKeyboardHookLibrary
             return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
                 userLibrary, 0);
         }
-        
+
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0)
@@ -229,8 +228,12 @@ namespace NonInvasiveKeyboardHookLibrary
 
                 // Debug.WriteLine("Starting");
                 // To prevent slowing keyboard input down, we use handle keyboard inputs in a separate thread
-                ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
+                //ThreadPool.QueueUserWorkItem(this.HandleSingleKeyboardInput, new KeyboardParams(wParam, vkCode));
                 // Debug.WriteLine("Ending");
+
+                HandleSingleKeyboardInput(new KeyboardParams(wParam, vkCode));
+
+                //return IntPtr.Zero;
             }
 
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
@@ -247,6 +250,8 @@ namespace NonInvasiveKeyboardHookLibrary
             var vkCode = keyboardParams.vkCode;
 
             var modifierKey = ModifierKeysUtilities.GetModifierKeyFromCode(vkCode);
+
+            Debug.WriteLine("Modifiers: " + string.Join("+", _downModifierKeys) + ", ModKey: " + modifierKey + ", Key: " + vkCode);
 
             // If the keyboard event is a KeyDown event (i.e. key pressed)
             if (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
@@ -298,7 +303,7 @@ namespace NonInvasiveKeyboardHookLibrary
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode,
             IntPtr wParam, IntPtr lParam);
-        
+
         /// <summary>
         /// Loads the library.
         /// </summary>

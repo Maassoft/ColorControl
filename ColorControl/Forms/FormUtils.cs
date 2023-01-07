@@ -281,6 +281,8 @@ namespace ColorControl.Forms
                 if (!presets.Any(x => x.id == preset.id))
                 {
                     presets.Add(preset);
+                    listView.SelectedIndices.Clear();
+                    listView.SelectedIndices.Add(item.Index);
                 }
             }
             else
@@ -472,6 +474,17 @@ namespace ColorControl.Forms
             }
         }
 
+        public static string ExtendedDisplayName(string displayName)
+        {
+            var name = displayName;
+            var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
+            if (screen != null)
+            {
+                name += " (" + screen.DeviceFriendlyName() + ")";
+            }
+
+            return name;
+        }
     }
 
     public class EnumComboBoxItem

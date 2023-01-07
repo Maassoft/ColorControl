@@ -320,6 +320,7 @@ namespace ColorControl.Services.LG
             foreach (var device in Devices)
             {
                 device.PowerStateChangedEvent += LgDevice_PowerStateChangedEvent;
+                device.PictureSettingsChangedEvent += Device_PictureSettingsChangedEvent;
             }
 
             if (connect && SelectedDevice != null)
@@ -333,6 +334,11 @@ namespace ColorControl.Services.LG
                     var _ = SelectedDevice.Connect();
                 }
             }
+        }
+
+        private void Device_PictureSettingsChangedEvent(object sender, EventArgs e)
+        {
+            //
         }
 
         public async Task<bool> ApplyPreset(string presetName)

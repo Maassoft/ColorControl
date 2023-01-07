@@ -11,11 +11,19 @@ namespace ColorControl.Services.NVIDIA
 
         public string InfoLine { get; }
 
-        public NvDisplayInfo(Display display, List<string> values, string infoLine)
+        public string Name { get; }
+
+        public NvDisplayInfo(Display display, List<string> values, string infoLine, string name)
         {
             Display = display;
             Values = values;
             InfoLine = infoLine;
+            Name = name;
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

@@ -77,7 +77,7 @@ namespace ColorControl.Common
 
                             Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}, destination IP-address: {ipAddressString ?? "broadcast"}");
 
-                            if (ipAddress != null)
+                            if (ipAddress != null && Utils.IsAdministrator())
                             {
                                 var localEP = new IPEndPoint(uip.Address, 0);
 

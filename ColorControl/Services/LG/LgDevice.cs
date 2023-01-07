@@ -145,7 +145,7 @@ namespace ColorControl.Services.LG
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
             PictureSettings = new LgDevicePictureSettings();
-            ActionsOnGameBar = new List<string> { "backlight", "contrast", "brightness", "color" };
+            ActionsOnGameBar = new List<string>(DefaultActionsOnGameBar);
 
             Name = name;
             IpAddress = ipAddress;
@@ -189,6 +189,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("truMotionBlur", minValue: 0, maxValue: 10, title: "TruMotion Blur");
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro", fromModelYear: ModelYear.Series2019);
             AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
+            AddGenericPictureAction("realCinema", typeof(OffToOn), title: "Real Cinema");
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
@@ -719,7 +720,27 @@ namespace ColorControl.Services.LG
 
         public async Task<LgWebOsMouseService> GetMouseAsync()
         {
+            await CheckConnectionAsync();
+
             return await _lgTvApi.GetMouse();
+        }
+
+        private async Task CheckConnectionAsync()
+        {
+            if (!await Connected())
+            {
+                throw new InvalidOperationException("Not connected");
+            }
+        }
+
+        private void CheckConnection()
+        {
+            var task = CheckConnectionAsync();
+
+            if (task.Status != TaskStatus.RanToCompletion)
+            {
+                throw new InvalidOperationException("Not connected");
+            }
         }
 
         public async Task<IEnumerable<LgApp>> GetApps(bool force = false)
@@ -789,15 +810,6 @@ namespace ColorControl.Services.LG
         {
             try
             {
-                //if (wakeDelay == 0)
-                //{
-                //    if (await ConnectToSelectedDevice())
-                //    {
-                //        Logger.Debug("Already connected, no wake needed?");
-                //        return;
-                //    };
-                //}
-
                 await Task.Delay(wakeDelay);
                 var result = Wake();
                 if (!result)
@@ -878,12 +890,6 @@ namespace ColorControl.Services.LG
             return actions.Where(a => ActionsOnGameBar.Contains(a.Name)).ToList();
         }
 
-        public async Task PowerOn()
-        {
-            var mouse = await _lgTvApi.GetMouse();
-            mouse.SendButton(ButtonType.POWER);
-        }
-
         public void Test()
         {
             try
@@ -918,30 +924,40 @@ namespace ColorControl.Services.LG
         public bool IsUsingHDRPictureMode()
         {
             // Temporary workaround because I cannot read the picture mode at this time
-            return PictureSettings.Backlight == 100 && PictureSettings.Contrast == 100;
+            return PictureSettings.Contrast == 100;
         }
 
         internal async Task SetBacklight(int backlight)
         {
+            await CheckConnectionAsync();
+
             await _lgTvApi.SetSystemSettings("backlight", backlight.ToString());
         }
 
         internal async Task SetContrast(int contrast)
         {
+            await CheckConnectionAsync();
+
             await _lgTvApi.SetSystemSettings("contrast", contrast.ToString());
         }
 
         public async Task SetOLEDMotionPro(string mode)
         {
+            await CheckConnectionAsync();
+
             await _lgTvApi.SetConfig("tv.model.motionProMode", mode);
         }
 
         internal async Task SetConfig(string key, object value)
         {
+            await CheckConnectionAsync();
+
             await _lgTvApi.SetConfig(key, value);
         }
         internal async Task SetSystemSettings(string name, string value)
         {
+            await CheckConnectionAsync();
+
             await _lgTvApi.SetSystemSettings(name, value);
 
             UpdateCurrentValueOfAction(name, value);
@@ -951,6 +967,8 @@ namespace ColorControl.Services.LG
         {
             //var keys = new[] { "backlight", "brightness", "contrast", "color", "pictureMode", "colorGamut", "dynamicContrast", "peakBrightness", "smoothGradation", "energySaving", "motionProOLED" };
             //var keys = new[] { "backlight", "brightness", "contrast", "color" };
+
+            await CheckConnectionAsync();
 
             return await _lgTvApi.GetSystemSettings2("picture");
         }
@@ -962,6 +980,8 @@ namespace ColorControl.Services.LG
 
         private bool TurnScreenOffAction(Dictionary<string, object> parameters)
         {
+            CheckConnection();
+
             var task = _lgTvApi.TurnScreenOff();
             Utils.WaitForTask(task);
 
@@ -970,6 +990,8 @@ namespace ColorControl.Services.LG
 
         private bool TurnScreenOnAction(Dictionary<string, object> parameters)
         {
+            CheckConnection();
+
             var task = _lgTvApi.TurnScreenOn();
             Utils.WaitForTask(task);
 
@@ -978,6 +1000,8 @@ namespace ColorControl.Services.LG
 
         private bool GenericPictureAction(Dictionary<string, object> parameters)
         {
+            CheckConnection();
+
             var settingName = parameters["name"].ToString();
             var stringValues = parameters["value"] as string[];
             var category = parameters["category"].ToString();
@@ -996,6 +1020,8 @@ namespace ColorControl.Services.LG
 
         private bool GenericDeviceConfigAction(Dictionary<string, object> parameters)
         {
+            CheckConnection();
+
             var id = parameters["name"].ToString().Replace("_icon", string.Empty);
             var stringValues = parameters["value"] as string[];
             var value = stringValues[0];
@@ -1010,6 +1036,8 @@ namespace ColorControl.Services.LG
 
         private bool GenericSetConfigAction(Dictionary<string, object> parameters)
         {
+            CheckConnection();
+
             var key = parameters["name"].ToString();
             var values = parameters["value"] as object[];
             var value = values[0];
@@ -1022,25 +1050,26 @@ namespace ColorControl.Services.LG
 
         private void UpdateCurrentValueOfAction(string settingName, string value)
         {
-            if (settingName != "backlight" && settingName != "contrast" && settingName != "brightness" && settingName != "color")
+            if (settingName == "backlight" || settingName == "contrast" || settingName == "brightness" || settingName == "color")
             {
-                var action = _invokableActions.FirstOrDefault(a => a.Name == settingName);
-                if (action != null)
+                return;
+            }
+            var action = _invokableActions.FirstOrDefault(a => a.Name == settingName);
+            if (action != null)
+            {
+                if (action.EnumType != null)
                 {
-                    if (action.EnumType != null)
+                    try
                     {
-                        try
-                        {
-                            var enumValue = Enum.Parse(action.EnumType, value);
-                            var intEnum = (int)enumValue;
-                            action.CurrentValue = intEnum;
-                        }
-                        catch (Exception) { }
+                        var enumValue = Enum.Parse(action.EnumType, value);
+                        var intEnum = (int)enumValue;
+                        action.CurrentValue = intEnum;
                     }
-                    else
-                    {
-                        action.CurrentValue = 0;
-                    }
+                    catch (Exception) { }
+                }
+                else
+                {
+                    action.CurrentValue = 0;
                 }
             }
         }

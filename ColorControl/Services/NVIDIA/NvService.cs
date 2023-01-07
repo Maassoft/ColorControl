@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using ColorControl.Forms;
 using ColorControl.Services.Common;
 using nspector.Common;
 using nspector.Common.Meta;
@@ -12,8 +13,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace ColorControl.Services.NVIDIA
 {
@@ -99,7 +98,13 @@ namespace ColorControl.Services.NVIDIA
         public const uint DRS_PRERENDERED_FRAMES = 8102046;
         public const uint DRS_FRAME_RATE_LIMITER_V3 = 277041154;
 
-        private static readonly List<uint> _driverSettingIds = new() { DRS_GSYNC_APPLICATION_MODE, DRS_VSYNC_CONTROL, DRS_PRERENDERED_FRAMES, DRS_FRAME_RATE_LIMITER_V3 };
+        public const uint DRS_ANISOTROPIC_FILTERING_SETTING = 0x101E61A9;
+        public const uint DRS_ANISOTROPIC_FILTER_OPTIMIZATION = 0x0084CD70;
+        public const uint DRS_ANISOTROPIC_FILTER_SAMPLE_OPTIMIZATION = 0x00E73211;
+        public const uint DRS_TEXTURE_FILTERING_QUALITY = 0x00CE2691;
+        public const uint DRS_TEXTURE_FILTERING_NEGATIVE_LOD_BIAS = 0x0019BB68;
+
+        private static readonly List<uint> _driverSettingIds = new() { DRS_GSYNC_APPLICATION_MODE, DRS_VSYNC_CONTROL, DRS_PRERENDERED_FRAMES, DRS_FRAME_RATE_LIMITER_V3, DRS_ANISOTROPIC_FILTERING_SETTING, DRS_ANISOTROPIC_FILTER_OPTIMIZATION, DRS_TEXTURE_FILTERING_QUALITY, DRS_TEXTURE_FILTERING_NEGATIVE_LOD_BIAS, DRS_ANISOTROPIC_FILTER_SAMPLE_OPTIMIZATION };
 
         public NvService(string dataPath) : base(dataPath, "NvPresets.json")
         {
@@ -192,8 +197,7 @@ namespace ColorControl.Services.NVIDIA
         {
             if (preset.primaryDisplay)
             {
-                var displayId = DisplayDevice.GetGDIPrimaryDisplayDevice().DisplayId;
-                _currentDisplay = Display.GetDisplays().FirstOrDefault(x => x.DisplayDevice.DisplayId == displayId);
+                _currentDisplay = GetPrimaryDisplay();
             }
             else
             {
@@ -201,6 +205,11 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
+        public Display GetPrimaryDisplay()
+        {
+            var displayId = DisplayDevice.GetGDIPrimaryDisplayDevice().DisplayId;
+            return Display.GetDisplays().FirstOrDefault(x => x.DisplayDevice.DisplayId == displayId);
+        }
 
         public bool ApplyPreset(string idOrName)
         {
@@ -245,13 +254,6 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyColorData && (ColorDataDiffers(preset.colorData) || (!newHdrEnabled && preset.applyColorData && preset.colorData.Colorimetry != ColorDataColorimetry.Auto)))
             {
-                //if (hdrEnabled)
-                //{
-                //    SetHDRState(display, false);
-
-                //    applyHdr = false;
-                //}
-
                 if (preset.applyRefreshRate || preset.applyResolution)
                 {
                     var timing = display.DisplayDevice.CurrentTiming;
@@ -260,15 +262,6 @@ namespace ColorControl.Services.NVIDIA
                         SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true);
                     }
                 }
-
-                //if (preset.applyRefreshRate)
-                //{
-                //    var timing = display.DisplayDevice.CurrentTiming;
-                //    if (preset.refreshRate < timing.Extra.RefreshRate)
-                //    {
-                //        SetRefreshRate(preset.refreshRate, true);
-                //    }
-                //}
 
                 try
                 {
@@ -279,13 +272,6 @@ namespace ColorControl.Services.NVIDIA
                     Logger.Error($"SetColorData threw an exception: {ex.Message}");
                     result = false;
                 }
-
-                //if (hdrEnabled && newHdrEnabled)
-                //{
-                //    SetHDRState(display, true, useSwitch: appContext.StartUpParams.NoGui);
-
-                //    applyHdr = false;
-                //}
             }
 
             if (applyHdr)
@@ -301,13 +287,6 @@ namespace ColorControl.Services.NVIDIA
                 {
                     result = false;
                 }
-
-                //var timing = display.DisplayDevice.CurrentTiming;
-
-                //if (preset.refreshRate != timing.Extra.RefreshRate && !SetRefreshRate(preset.refreshRate, true))
-                //{
-                //    result = false;
-                //}
             }
 
             if (preset.applyDithering)
@@ -381,7 +360,7 @@ namespace ColorControl.Services.NVIDIA
         {
             if (useSwitch)
             {
-                if (enabled != IsHDREnabled())
+                if (enabled != IsHDREnabled(display))
                 {
                     CCD.SetHDRState(enabled, display.Name);
                     //ToggleHDR();
@@ -390,26 +369,9 @@ namespace ColorControl.Services.NVIDIA
             }
 
             CCD.SetHDRState(enabled, display.Name);
-
-            //var newMaster = new MasteringDisplayColorData();
-            //var hdr = new HDRColorData(enabled ? ColorDataHDRMode.UHDA : ColorDataHDRMode.Off, newMaster, colorData?.ColorFormat, colorData?.DynamicRange, colorData?.ColorDepth);
-
-            //display.DisplayDevice.SetHDRColorData(hdr);
-
-            // HDR will not always be disabled this way, then we can only disable it through the display settings
-            //if (!enabled && IsHDREnabled())
-            //{
-            //    CCD.SetHDRState(enabled);
-            //    //ToggleHDR();
-            //}
-            //else if (enabled)
-            //{
-            //    // Currectly there seems to be a bug that after enabling HDR via NVAPI, some settings are only applied upon opening the Display Settings...
-            //    ////OpenDisplaySettings();
-            //}
         }
 
-        public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null)
+        public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null)
         {
             var result = true;
 
@@ -418,7 +380,7 @@ namespace ColorControl.Services.NVIDIA
             {
                 var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_SetDitherControl)) as NvAPI_Disp_SetDitherControl;
 
-                var display = GetCurrentDisplay();
+                var display = currentDisplay ?? GetCurrentDisplay();
                 if (display == null)
                 {
                     return false;
@@ -457,7 +419,7 @@ namespace ColorControl.Services.NVIDIA
             return result;
         }
 
-        public NV_GPU_DITHER_CONTROL_V1 GetDithering()
+        public NV_GPU_DITHER_CONTROL_V1 GetDithering(Display currentDisplay = null)
         {
             var dither = new NV_GPU_DITHER_CONTROL_V1 { version = 0x10018 };
 
@@ -466,7 +428,7 @@ namespace ColorControl.Services.NVIDIA
             {
                 var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetDitherControl)) as NvAPI_Disp_GetDitherControl;
 
-                var display = GetCurrentDisplay();
+                var display = currentDisplay ?? GetCurrentDisplay();
                 if (display == null)
                 {
                     dither.state = -1;
@@ -556,9 +518,9 @@ namespace ColorControl.Services.NVIDIA
             return GetAvailableResolutionsInternal(display.Name, portrait, (uint)(timing.Extra.RefreshRate));
         }
 
-        public bool IsHDREnabled()
+        public bool IsHDREnabled(Display currentDisplay = null)
         {
-            var display = GetCurrentDisplay();
+            var display = currentDisplay ?? GetCurrentDisplay();
             if (display == null)
             {
                 return false;
@@ -585,17 +547,12 @@ namespace ColorControl.Services.NVIDIA
 
                 foreach (var display in displays)
                 {
-                    var values = new List<string>();
-
-                    values.Add("Current settings");
-
-                    var name = display.Name;
-
-                    var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
-                    if (screen != null)
+                    var values = new List<string>
                     {
-                        name += " (" + screen.DeviceFriendlyName() + ")";
-                    }
+                        "Current settings"
+                    };
+
+                    var name = FormUtils.ExtendedDisplayName(display.Name);
 
                     values.Add(name);
 
@@ -613,7 +570,7 @@ namespace ColorControl.Services.NVIDIA
 
                     values.Add($"{desktopRect.Width}x{desktopRect.Height}");
 
-                    var ditherInfo = GetDithering();
+                    var ditherInfo = GetDithering(display);
 
                     string dithering;
                     if (ditherInfo.state == -1)
@@ -634,7 +591,7 @@ namespace ColorControl.Services.NVIDIA
 
                     values.Add(dithering);
 
-                    var hdrEnabled = IsHDREnabled();
+                    var hdrEnabled = IsHDREnabled(display);
                     values.Add(hdrEnabled ? "Yes" : "No");
 
                     var settings = GetVisibleSettings();
@@ -653,7 +610,7 @@ namespace ColorControl.Services.NVIDIA
 
                     var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
 
-                    var displayInfo = new NvDisplayInfo(display, values, infoLine);
+                    var displayInfo = new NvDisplayInfo(display, values, infoLine, name);
 
                     list.Add(displayInfo);
                 }
@@ -719,10 +676,10 @@ namespace ColorControl.Services.NVIDIA
 
             _drs.GetProfileNames(ref _baseProfileName, false);
 
-            Task.Run(() =>
-            {
-                RefreshProfileSettings();
-            });
+            //Task.Run(() =>
+            //{
+            //    RefreshProfileSettings();
+            //});
         }
 
         private void RefreshProfileSettings()
@@ -730,6 +687,8 @@ namespace ColorControl.Services.NVIDIA
             _semaphore.WaitOne();
             try
             {
+                DrsSessionScope.DestroyGlobalSession();
+
                 var applications = new Dictionary<string, string>();
                 var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications);
 

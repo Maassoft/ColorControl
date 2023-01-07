@@ -34,6 +34,7 @@ namespace ColorControl
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static Mutex _mutex;
+        private static MainForm _mainForm;
 
         /// <summary>
         /// The main entry point for the application.
@@ -45,12 +46,12 @@ namespace ColorControl
 
             //Utils.UpdateFiles(@"H:\temp\ColorControl\ColorControl", @"C:\Users\vinni\source\repos\ColorControl\ColorControl\bin\Debug\net6.0-windows10.0.20348.0");
 
-            var runAsService = args.Contains("--service") || Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
+            var runAsService = args.Contains("--service") || Utils.IsAdministrator() && Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
 
             InitLogger(runAsService);
 
             Logger.Debug($"Using data path: {DataDir}");
-            Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
+            //Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
 
             if (runAsService)
             {
@@ -111,19 +112,20 @@ namespace ColorControl
                     _mutex.WaitOne();
                     try
                     {
-                        if (Debugger.IsAttached)
-                        {
-                            Utils.StartService();
-                        }
+                        //if (Debugger.IsAttached)
+                        //{
+                        //    Utils.StartService();
+                        //}
 
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
-                        Application.Run(new MainForm(AppContext));
+                        _mainForm = new MainForm(AppContext);
+                        Application.Run(_mainForm);
 
-                        if (Debugger.IsAttached && !IsRestarting)
-                        {
-                            Utils.StopService();
-                        }
+                        //if (Debugger.IsAttached && !IsRestarting)
+                        //{
+                        //    Utils.StopService();
+                        //}
                     }
                     catch (Exception ex)
                     {
@@ -144,14 +146,12 @@ namespace ColorControl
         {
             IsRestarting = true;
 
+            _mainForm?.CloseForRestart();
+
             _mutex?.Close();
             _mutex = null;
 
-            Thread.Sleep(1000);
-
             Application.Restart();
-
-            Thread.Sleep(1000);
             Environment.Exit(0);
         }
 
