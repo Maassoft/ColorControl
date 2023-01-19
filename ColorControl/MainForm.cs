@@ -9,6 +9,7 @@ using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Svc;
 using LgTv;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using nspector;
 using nspector.Common;
@@ -193,7 +194,8 @@ namespace ColorControl
             {
                 //throw new Exception("bla");
                 Logger.Debug("Initializing NVIDIA...");
-                _nvService = new NvService(_dataDir);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                _nvService = new NvService(appContextProvider);
                 FillNvPresets();
                 Logger.Debug("Initializing NVIDIA...Done.");
 
@@ -220,7 +222,8 @@ namespace ColorControl
         {
             try
             {
-                _amdService = new AmdService(_dataDir);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                _amdService = new AmdService(appContextProvider);
                 FillAmdPresets();
 
                 InitSortState(lvAmdPresets, _config.AmdPresetsSortState);
@@ -241,7 +244,8 @@ namespace ColorControl
         {
             try
             {
-                _gameService = new GameService(_dataDir, HandleExternalServiceForLgDevice);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                _gameService = new GameService(appContextProvider, HandleExternalServiceForLgDevice);
                 FillGamePresets();
 
                 InitSortState(lvGamePresets, _config.GamePresetsSortState);
@@ -274,7 +278,9 @@ namespace ColorControl
         {
             try
             {
-                _lgService = new LgService(_dataDir, StartUpParams.RunningFromScheduledTask);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+
+                _lgService = new LgService(appContextProvider, StartUpParams.RunningFromScheduledTask);
                 _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
                 _lgService.SelectedDeviceChangedEvent += _lgService_SelectedDeviceChangedEvent;
 
@@ -1933,7 +1939,8 @@ NOTE: installing the service may cause a User Account Control popup.");
                 clbLgPower.SetItemChecked(6, device?.PowerOnAfterManualPowerOff ?? false);
                 clbLgPower.SetItemChecked(7, device?.TriggersEnabled ?? true);
                 clbLgPower.SetItemChecked(8, device?.PowerOffByWindows ?? false);
-                clbLgPower.SetItemChecked(8, device?.PowerOnByWindows ?? false);
+                clbLgPower.SetItemChecked(9, device?.PowerOnByWindows ?? false);
+                clbLgPower.SetItemChecked(10, device?.UseSecureConnection ?? false);
             }
             finally
             {
@@ -2123,7 +2130,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
             try
             {
-                var result = _nvService.ApplyPreset(preset, Program.AppContext);
+                var result = _nvService.ApplyPreset(preset);
                 if (!result)
                 {
                     throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
@@ -2476,8 +2483,14 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 device.TriggersEnabled = clbLgPower.GetItemChecked(7);
                 device.PowerOffByWindows = clbLgPower.GetItemChecked(8);
                 device.PowerOnByWindows = clbLgPower.GetItemChecked(9);
+                device.UseSecureConnection = clbLgPower.GetItemChecked(10);
 
                 _lgService.InstallEventHandlers();
+
+                if (e.Index == 10)
+                {
+                    _lgService.RefreshDevices().ContinueWith((_) => BeginInvoke(() => FillLgDevices()));
+                }
             });
         }
 
@@ -2550,10 +2563,15 @@ Do you want to continue?";
 
         private void MainForm_Activated(object sender, EventArgs e)
         {
-            UpdateDisplayInfoItems();
-            UpdateDisplayInfoItemsAmd();
-
-            if (tcMain.SelectedTab == tabLog)
+            if (tcMain.SelectedTab == tabNVIDIA)
+            {
+                UpdateDisplayInfoItems();
+            }
+            else if (tcMain.SelectedTab == tabAMD)
+            {
+                UpdateDisplayInfoItemsAmd();
+            }
+            else if (tcMain.SelectedTab == tabLog)
             {
                 LoadLog();
             }
@@ -4592,26 +4610,17 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             point.X += 10;
             point.Y += 0;
 
+            lvNvPresetsToolTip.Active = false;
             if (index >= 0)
             {
-                if (lvNvPresetsToolTip.Active)
-                {
-                    lvNvPresetsToolTip.Active = false;
-                }
-
                 lvNvPresetsToolTip.Active = true;
                 lvNvPresetsToolTip.Show("", lvNvPresets, point);
                 lvNvPresetsToolTip.Show(text, lvNvPresets, point);
-            }
-            else
-            {
-                lvNvPresetsToolTip.Active = false;
             }
         }
 
         private void lvNvPresets_MouseLeave(object sender, EventArgs e)
         {
-            lvNvPresetsToolTip.Active = false;
         }
     }
 }

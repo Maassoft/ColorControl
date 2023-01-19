@@ -1,4 +1,6 @@
-﻿namespace ColorControl.Svc
+﻿using System.Collections.Generic;
+
+namespace ColorControl.Svc
 {
     public enum SvcMessageType
     {
@@ -8,6 +10,7 @@
         ExecuteRpc = 10,
         ExecuteUpdate = 20,
         RestartAfterUpdate = 21,
+        ApplyNvidiaDriverSettings = 101,
     }
 
     public class SvcMessage
@@ -28,4 +31,13 @@
         public string ClientPath { get; set; }
     }
 
+    public class SvcNvDriverSettingsMessage : SvcMessage
+    {
+        public SvcNvDriverSettingsMessage()
+        {
+            MessageType = SvcMessageType.ApplyNvidiaDriverSettings;
+        }
+
+        public List<KeyValuePair<uint, string>> DriverSettings { get; set; }
+    }
 }

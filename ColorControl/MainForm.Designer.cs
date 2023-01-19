@@ -773,7 +773,6 @@
             this.lvNvPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.lvNvPresets.MultiSelect = false;
             this.lvNvPresets.Name = "lvNvPresets";
-            this.lvNvPresets.ShowItemToolTips = true;
             this.lvNvPresets.Size = new System.Drawing.Size(1098, 415);
             this.lvNvPresets.TabIndex = 0;
             this.lvNvPresets.UseCompatibleStateImageBehavior = false;
@@ -1836,7 +1835,8 @@
             "Power on even after manual power off",
             "Allow triggers to be fired for this device",
             "Use Windows power settings to power on",
-            "Use Windows power settings to power off"});
+            "Use Windows power settings to power off",
+            "Use secure connection"});
             this.clbLgPower.Location = new System.Drawing.Point(6, 70);
             this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.clbLgPower.MultiColumn = true;

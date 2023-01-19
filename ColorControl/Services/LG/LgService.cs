@@ -3,6 +3,7 @@ using ColorControl.Forms;
 using ColorControl.Services.Common;
 using ColorControl.Svc;
 using LgTv;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using NWin32;
@@ -71,6 +72,8 @@ namespace ColorControl.Services.LG
         public LgServiceConfig Config { get; private set; }
         public ProcessMonitorContext MonitorContext { get; private set; }
 
+        protected override string PresetsBaseFilename => "LgPresets.json";
+
         private string _configFilename;
         private bool _allowPowerOn;
         private LgDevice _selectedDevice;
@@ -85,7 +88,7 @@ namespace ColorControl.Services.LG
         private LgPreset _lastTriggeredPreset;
         private RestartDetector _restartDetector;
 
-        public LgService(string dataPath, bool allowPowerOn) : base(dataPath, "LgPresets.json")
+        public LgService(AppContextProvider appContextProvider, bool allowPowerOn) : base(appContextProvider)
         {
             _allowPowerOn = allowPowerOn;
 
@@ -107,7 +110,9 @@ namespace ColorControl.Services.LG
         {
             try
             {
-                var lgService = new LgService(Program.DataDir, true);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+
+                var lgService = new LgService(appContextProvider, true);
                 await lgService.RefreshDevices(afterStartUp: true);
 
                 var result = await lgService.ApplyPreset(presetName);

@@ -1,6 +1,7 @@
 ﻿using ATI.ADL;
 using ColorControl.Common;
 using ColorControl.Services.Common;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +15,11 @@ namespace ColorControl.Services.AMD
 
         public override string ServiceName => "AMD";
 
+        protected override string PresetsBaseFilename => "AmdPresets.json";
+
         private ADLDisplayInfo _currentDisplay;
 
-        public AmdService(string dataPath) : base(dataPath, "AmdPresets.json")
+        public AmdService(AppContextProvider appContextProvider) : base(appContextProvider)
         {
             LoadPresets();
         }
@@ -25,7 +28,9 @@ namespace ColorControl.Services.AMD
         {
             try
             {
-                var service = new AmdService(Program.DataDir);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+
+                var service = new AmdService(appContextProvider);
 
                 var result = service.ApplyPreset(idOrName);
 

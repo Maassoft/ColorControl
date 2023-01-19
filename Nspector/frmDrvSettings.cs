@@ -540,7 +540,7 @@ namespace nspector
 
         private void frmDrvSettings_Load(object sender, EventArgs e)
         {
-            _highlightUnexposedSettings = !IsAdministrator();
+            _highlightUnexposedSettings = !IsAdministrator() && !_drs.ExternalApplySettings;
 
             SetupLayout();
             SetTitleVersion();

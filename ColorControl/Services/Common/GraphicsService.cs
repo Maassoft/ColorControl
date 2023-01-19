@@ -14,7 +14,7 @@ namespace ColorControl.Services.Common
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public GraphicsService(string dataPath, string presetsBaseFilename) : base(dataPath, presetsBaseFilename)
+        public GraphicsService(AppContextProvider appContextProvider) : base(appContextProvider)
         {
         }
 

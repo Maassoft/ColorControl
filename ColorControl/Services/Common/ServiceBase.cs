@@ -16,9 +16,9 @@ namespace ColorControl.Services.Common
         {
             get;
         }
+        protected abstract string PresetsBaseFilename { get; }
 
         protected string _dataPath;
-        protected string _presetsBaseFilename;
         protected string _presetsFilename;
         protected string _presetsBackupFilename;
         protected bool _initialized = false;
@@ -26,12 +26,14 @@ namespace ColorControl.Services.Common
         protected T _lastAppliedPreset;
         protected string _loadPresetsError;
 
+        protected AppContextProvider _appContextProvider;
+
         private List<JsonConverter> _jsonConverters;
 
-        public ServiceBase(string dataPath, string presetsBaseFilename)
+        public ServiceBase(AppContextProvider appContextProvider)
         {
-            _dataPath = dataPath;
-            _presetsBaseFilename = presetsBaseFilename;
+            _appContextProvider = appContextProvider;
+            _dataPath = appContextProvider.GetAppContext().DataPath;
             _jsonConverters = new List<JsonConverter>();
 
             Initialize();
@@ -99,8 +101,8 @@ namespace ColorControl.Services.Common
 
         protected void LoadPresets()
         {
-            _presetsFilename = Path.Combine(_dataPath, _presetsBaseFilename);
-            _presetsBackupFilename = Path.Combine(_dataPath, $"{_presetsBaseFilename}.backup");
+            _presetsFilename = Path.Combine(_dataPath, PresetsBaseFilename);
+            _presetsBackupFilename = Path.Combine(_dataPath, $"{PresetsBaseFilename}.backup");
 
             try
             {

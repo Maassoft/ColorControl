@@ -7,8 +7,16 @@ using nvw = nspector.Native.NVAPI2.NvapiDrsWrapper;
 
 namespace nspector.Common
 {
+    public class DrsEvent : EventArgs
+    {
+        public List<KeyValuePair<uint, string>>? Settings { get; set; }
+        public bool Handled { get; set; }
+    }
+
     public class DrsSettingsService : DrsSettingsServiceBase
     {
+        public event EventHandler<DrsEvent>? ApplySettings;
+        public bool ExternalApplySettings => ApplySettings != null;
 
         public DrsSettingsService(DrsSettingsMetaService metaService, DrsDecrypterService decrpterService)
             : base(metaService, decrpterService)
@@ -300,6 +308,19 @@ namespace nspector.Common
 
         public int StoreSettingsToProfile(string profileName, List<KeyValuePair<uint, string>> settings)
         {
+            var drsEvent = new DrsEvent
+            {
+                Settings = settings,
+                Handled = false
+            };
+
+            ApplySettings?.Invoke(this, drsEvent);
+
+            if (drsEvent.Handled)
+            {
+                return 0;
+            }
+
             DrsSessionScope.DestroyGlobalSession();
 
             DrsSession((hSession) =>

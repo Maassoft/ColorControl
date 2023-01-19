@@ -139,6 +139,8 @@ namespace ATI.ADL
     /// <summary> ADL Class</summary>
     internal static class ADL
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         #region Internal Constant
         /// <summary> Define the maximum path</summary>
         internal const int ADL_MAX_PATH = 256;
@@ -380,7 +382,10 @@ namespace ATI.ADL
                 }
             }
 
-            throw new InvalidProgramException("ADL-function not supported");
+            Logger.Error($"ADL-function not supported: {type.Name}");
+
+            return null;
+            //throw new InvalidProgramException("ADL-function not supported");
         }
 
         #endregion Export Functions

@@ -1,5 +1,6 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.Common;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,9 +15,11 @@ namespace ColorControl.Services.GameLauncher
 
         public override string ServiceName => "Game";
 
+        protected override string PresetsBaseFilename => "GamePresets.json";
+
         private Func<string, string[], bool> _externalServiceHandler;
 
-        public GameService(string dataPath, Func<string, string[], bool> externalServiceHandler = null) : base(dataPath, "GamePresets.json")
+        public GameService(AppContextProvider appContextProvider, Func<string, string[], bool> externalServiceHandler = null) : base(appContextProvider)
         {
             LoadPresets();
             _externalServiceHandler = externalServiceHandler;
@@ -26,7 +29,9 @@ namespace ColorControl.Services.GameLauncher
         {
             try
             {
-                var service = new GameService(Program.DataDir);
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+
+                var service = new GameService(appContextProvider);
 
                 var result = service.ApplyPreset(idOrName);
 

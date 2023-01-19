@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Networking.Sockets;
+using Windows.Security.Cryptography.Certificates;
 using Windows.Storage.Streams;
 
 namespace LgTv
@@ -40,6 +41,8 @@ namespace LgTv
                 ConnectionClosed = false;
                 _commandCount = 0;
                 _connection = new MessageWebSocket();
+                _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
+                _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.InvalidName);
                 _connection.Control.MessageType = SocketMessageType.Utf8;
                 _connection.MessageReceived += Connection_MessageReceived;
                 _connection.Closed += Connection_Closed;
@@ -53,8 +56,9 @@ namespace LgTv
                     IsConnected?.Invoke(true);
                     return true;
                 }
-                catch (TimeoutException)
+                catch (TimeoutException te)
                 {
+                    Logger.Error($"Connect to {uri}: {te.Message}");
                     return false;
                 }
             }
@@ -69,6 +73,8 @@ namespace LgTv
                         // Handle Unknown Error
                         break;
                 }
+
+                Logger.Error($"Connect to {uri}: {e.Message}");
                 return false;
             }
         }

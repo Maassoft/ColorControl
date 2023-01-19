@@ -25,7 +25,7 @@ namespace nspector.Common
             _customSettings = customSettings;
             _referenceSettings = referenceSettings;
 
-            ResetMetaCache(true);
+            ResetMetaCache(false);
         }
 
         public void ResetMetaCache(bool initOnly = false)

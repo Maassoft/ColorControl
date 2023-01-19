@@ -282,9 +282,14 @@ namespace LgTv
         private string _currentPairKey;
         private string webSocketUri;
 
-        public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1)
+        protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
+        public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1, bool useSecureWs = true)
         {
-            var instance = new LgTvApi(ip, new LgTvApiCore(), new ClientKeyStore(ip));
+            var instance = new LgTvApi(ip, new LgTvApiCore(), new ClientKeyStore(ip), useSecureWs);
+
+            Logger.Debug($"Trying to connect with websocket uri: {instance.webSocketUri}");
+
             while (retries > 0)
             {
                 var connected = await instance.Connect();
@@ -300,9 +305,9 @@ namespace LgTv
             return null;
         }
 
-        private LgTvApi(string ip, LgTvApiCore connection, ClientKeyStore keyStore)
+        private LgTvApi(string ip, LgTvApiCore connection, ClientKeyStore keyStore, bool useSecureWs)
         {
-            webSocketUri = "ws://" + ip + ":3000";
+            webSocketUri = useSecureWs ? $"wss://{ip}:3001" : $"ws://{ip}:3000";
             _ip = ip;
             _connection = connection;
             _keyStore = keyStore;

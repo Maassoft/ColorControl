@@ -1,6 +1,7 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
 using ColorControl.Services.AMD;
+using ColorControl.Services.Common;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Svc;
@@ -53,8 +54,13 @@ namespace ColorControl
             Logger.Debug($"Using data path: {DataDir}");
             //Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
 
+            var host = CreateHostBuilder().Build();
+            ServiceProvider = host.Services;
+
             if (runAsService)
             {
+                AppContext = new AppContext(null, new StartUpParams(), DataDir);
+
                 Utils.WaitForTask(RunService(args));
                 return;
             }
@@ -76,7 +82,7 @@ namespace ColorControl
 
             var startUpParams = StartUpParams.Parse(args);
 
-            AppContext = new AppContext(Config, startUpParams);
+            AppContext = new AppContext(Config, startUpParams, DataDir);
 
             var existingProcess = Utils.GetProcessByName("ColorControl");
 
@@ -122,10 +128,10 @@ namespace ColorControl
                         _mainForm = new MainForm(AppContext);
                         Application.Run(_mainForm);
 
-                        //if (Debugger.IsAttached && !IsRestarting)
-                        //{
-                        //    Utils.StopService();
-                        //}
+                        if (Debugger.IsAttached && !IsRestarting)
+                        {
+                            Utils.StopService();
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -339,6 +345,16 @@ namespace ColorControl
             }
         }
 
+        public static IServiceProvider ServiceProvider { get; private set; }
+        private static IHostBuilder CreateHostBuilder()
+        {
+            return Host.CreateDefaultBuilder()
+                .ConfigureServices((context, services) =>
+                {
+                    //services.AddSingleton<NvService>();
+                    services.RegisterSharedServices();
+                });
+        }
         private static async Task RunService(string[] args)
         {
             Logger.Debug("RUNNING SERVICE");
@@ -350,11 +366,17 @@ namespace ColorControl
                 })
                 .ConfigureServices(services =>
                 {
+                    services.RegisterSharedServices();
                     services.AddHostedService<ColorControlBackgroundService>();
                 })
                 .Build();
 
             await host.RunAsync();
+        }
+
+        private static void RegisterSharedServices(this IServiceCollection services)
+        {
+            services.AddSingleton<AppContextProvider>();
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

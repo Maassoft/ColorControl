@@ -87,6 +87,8 @@ namespace ColorControl.Services.LG
         public bool TriggersEnabled { get; set; }
         public int HDMIPortNumber { get; set; }
 
+        public bool UseSecureConnection { get; set; } = true;
+
         private List<string> _actionsForGameBar;
 
         public List<string> ActionsOnGameBar
@@ -165,7 +167,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
             AddGenericPictureAction("gamma", typeof(GammaExp));
-            AddGenericPictureAction("colorTemperature", minValue: 0, maxValue: 50, title: "Color Temperature");
+            AddGenericPictureAction("colorTemperature", minValue: -50, maxValue: 50, title: "Color Temperature");
             AddGenericPictureAction("whiteBalanceColorTemperature", typeof(WhiteBalanceColorTemperature), title: "White Balance Color Temperature");
             AddGenericPictureAction("eyeComfortMode", typeof(OffToOn), title: "Eye Comfort Mode");
             //AddGenericPictureAction("dynamicColor", typeof(OffToAuto));
@@ -347,7 +349,7 @@ namespace ColorControl.Services.LG
                 try
                 {
                     DisposeConnection();
-                    _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries);
+                    _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries, UseSecureConnection);
 
                     //Test();
                     //_lgTvApi.Test3();

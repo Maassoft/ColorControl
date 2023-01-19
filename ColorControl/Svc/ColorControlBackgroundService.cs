@@ -1,5 +1,6 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.LG;
+using ColorControl.Services.NVIDIA;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using NLog;
@@ -107,6 +108,7 @@ namespace ColorControl.Svc
                 SvcMessageType.ExecuteRpc => HandleExecuteRpcCommand(message),
                 SvcMessageType.ExecuteUpdate => await HandleExecuteUpdateCommandAsync(JsonConvert.DeserializeObject<SvcInstallUpdateMessage>(json)),
                 SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
+                SvcMessageType.ApplyNvidiaDriverSettings => HandleNvDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
                 _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
@@ -176,6 +178,13 @@ namespace ColorControl.Svc
         private SvcResultMessage HandleRestartAfterUpdateMessage()
         {
             Utils.StartProcess("cmd.exe", $@"/C net stop ""{Utils.SERVICE_NAME}"" && net start ""{Utils.SERVICE_NAME}""", true);
+
+            return SvcResultMessage.FromResult(true);
+        }
+
+        private SvcResultMessage HandleNvDriverSettingsMessage(SvcNvDriverSettingsMessage message)
+        {
+            NvService.ApplyDriverSettings(message.DriverSettings);
 
             return SvcResultMessage.FromResult(true);
         }
