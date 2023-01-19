@@ -54,3 +54,29 @@ WinPcap is no longer used by default, but if you receive WinPcap errors, downloa
 On the Options-tabpage you can finetune some parameters and/or enable some settings:
 
 ![Screenshot3](https://github.com/Maassoft/ColorControl/blob/master/images/Options.png)
+
+### Command line interface
+It is possible to execute presets from the command line. It doesn't matter whether the user interface of Color Control is already running or not.
+This is the syntax:
+```
+Syntax  : ColorControl.exe command options
+Commands:
+--nvpreset  <preset name or id>: execute NVIDIA-preset
+--amdpreset <preset name or id>: execute AMD-preset
+--lgpreset  <preset name>      : execute LG-preset
+--help                         : displays this help info
+Options:
+--nogui: starts command from the command line and will not open GUI (is forced when GUI is already running)
+```
+Note: use double quotes if your preset has spaces in it, like this:
+`ColorControl.exe --nvpreset "HDR GSYNC"`
+
+### Uninstallation
+
+If you have installed the Windows Service, you'll first have to set the Elevation-method to "None". This will stop and uninstall the service.
+If you have "Automatically start after login" enabled you'll have to uncheck that so the scheduled task is removed.
+After that you can close the main application and delete the program's files.
+If you want to fully remove all settings you can remove these folders:
+`C:\Users\username\AppData\Roaming\Maassoft\ColorControl`
+and
+`C:\Windows\System32\config\systemprofile\AppData\Roaming\Maassoft`
