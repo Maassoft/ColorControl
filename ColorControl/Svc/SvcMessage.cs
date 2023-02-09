@@ -11,6 +11,7 @@ namespace ColorControl.Svc
         ExecuteUpdate = 20,
         RestartAfterUpdate = 21,
         ApplyNvidiaDriverSettings = 101,
+        RestoreNvidiaDriverSetting = 102,
     }
 
     public class SvcMessage
@@ -33,10 +34,12 @@ namespace ColorControl.Svc
 
     public class SvcNvDriverSettingsMessage : SvcMessage
     {
-        public SvcNvDriverSettingsMessage()
+        public SvcNvDriverSettingsMessage(SvcMessageType messageType = SvcMessageType.ApplyNvidiaDriverSettings)
         {
-            MessageType = SvcMessageType.ApplyNvidiaDriverSettings;
+            MessageType = messageType;
         }
+
+        public string ProfileName { get; set; }
 
         public List<KeyValuePair<uint, string>> DriverSettings { get; set; }
     }

@@ -251,9 +251,9 @@ namespace nspector.Common
             return profileHandles;
         }
 
-        protected List<NVDRS_SETTING> GetProfileSettings(IntPtr hSession, IntPtr hProfile)
+        protected List<NVDRS_SETTING> GetProfileSettings(IntPtr hSession, IntPtr hProfile, NVDRS_PROFILE profile = default(NVDRS_PROFILE))
         {
-            uint settingCount = 512;
+            uint settingCount = 40;
             var settings = new NVDRS_SETTING[settingCount];
             settings[0].version = NvapiDrsWrapper.NVDRS_SETTING_VER;
 
@@ -267,7 +267,10 @@ namespace nspector.Common
 
             if (decrypter != null)
             {
-                var profile = GetProfileInfo(hSession, hProfile);
+                if (profile.profileName == null)
+                {
+                    profile = GetProfileInfo(hSession, hProfile);
+                }
                 for (int i = 0; i < settingCount; i++)
                 {
                     decrypter.DecryptSettingIfNeeded(profile.profileName, ref settings[i]);

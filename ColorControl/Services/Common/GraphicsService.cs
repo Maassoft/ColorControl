@@ -108,6 +108,17 @@ namespace ColorControl.Services.Common
             return 0;
         }
 
+        protected DEVMODEA GetCurrentMode(string displayName)
+        {
+            DEVMODEA devMode;
+            // NativeMethods defines modeNum as an 'uint' but we need to pass '-1'
+            if (WinApi.EnumDisplaySettingsA(displayName, WinApi.ENUM_CURRENT_SETTINGS, out devMode))
+            {
+                return devMode;
+            }
+            return devMode;
+        }
+
         protected List<DEVMODEA> GetAvailableResolutionsInternal(string displayName, bool portrait, uint refreshRate = 0)
         {
             var list = new List<DEVMODEA>();

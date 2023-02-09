@@ -177,6 +177,12 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("energySaving", typeof(EnergySaving), title: "Energy Saving");
             AddGenericPictureAction("hdrDynamicToneMapping", typeof(DynamicTonemapping), title: "HDR Dynamic Tone Mapping");
             AddGenericPictureAction("blackLevel", typeof(BlackLevel), title: "HDMI Black Level");
+            AddGenericPictureAction("dolbyPrecisionDetail", typeof(OffToOn), title: "Dolby Precision Detail", fromModelYear: ModelYear.Series2022);
+
+            AddGenericPictureAction("ai_Brightness", typeof(OffToOn), title: "AI Brightness", fromModelYear: ModelYear.Series2021, category: "aiPicture");
+            AddGenericPictureAction("ai_Genre", typeof(OffToOn), title: "AI Genre Selection", fromModelYear: ModelYear.Series2021, category: "aiPicture");
+            AddGenericPictureAction("ai_Picture", typeof(OffToOn), title: "AI Picture Pro", fromModelYear: ModelYear.Series2021, category: "aiPicture");
+
             AddGenericPictureAction("arcPerApp", typeof(AspectRatio), title: "Aspect Ratio", category: "aspectRatio");
             AddGenericPictureAction("justScan", typeof(OffToAuto2), title: "Just Scan", category: "aspectRatio");
             AddGenericPictureAction("allDirZoomHRatio", minValue: 0, maxValue: 10, title: "All-Direction Zoom Horizontal Ratio", category: "aspectRatio");
@@ -186,12 +192,14 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("vertZoomVPosition", minValue: -8, maxValue: 9, title: "Vertical Zoom Position", category: "aspectRatio");
             AddGenericPictureAction("vertZoomVRatio", minValue: 0, maxValue: 9, title: "Vertical Zoom Ratio", category: "aspectRatio");
             //AddGenericPictureAction("ambientLightCompensation", typeof(OffToAuto2));
+
             AddGenericPictureAction("truMotionMode", typeof(TruMotionMode), title: "TruMotion");
             AddGenericPictureAction("truMotionJudder", minValue: 0, maxValue: 10, title: "TruMotion Judder");
             AddGenericPictureAction("truMotionBlur", minValue: 0, maxValue: 10, title: "TruMotion Blur");
             AddGenericPictureAction("motionProOLED", typeof(OffToHigh), title: "OLED Motion Pro", fromModelYear: ModelYear.Series2019);
             AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
             AddGenericPictureAction("realCinema", typeof(OffToOn), title: "Real Cinema");
+
             AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
             AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");

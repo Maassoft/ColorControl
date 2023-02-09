@@ -32,6 +32,13 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tcMain = new System.Windows.Forms.TabControl();
             this.tabNVIDIA = new System.Windows.Forms.TabPage();
+            this.lblNvOverclock = new System.Windows.Forms.Label();
+            this.edtNvOverclock = new System.Windows.Forms.TextBox();
+            this.btnNvSetClocks = new System.Windows.Forms.Button();
+            this.lblNvGpuInfo = new System.Windows.Forms.Label();
+            this.edtNvGpuInfo = new System.Windows.Forms.TextBox();
+            this.lblNvGPU = new System.Windows.Forms.Label();
+            this.cbxNvGPU = new System.Windows.Forms.ComboBox();
             this.btnNvSettings = new System.Windows.Forms.Button();
             this.chkNvShowInQuickAccess = new System.Windows.Forms.CheckBox();
             this.lblNvPresetName = new System.Windows.Forms.Label();
@@ -47,7 +54,7 @@
             this.mnuNvPresets = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.miNvApply = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.tssNvPresetMenu = new System.Windows.Forms.ToolStripSeparator();
             this.mnuNvDisplay = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuNvPresetsColorSettings = new System.Windows.Forms.ToolStripMenuItem();
@@ -315,6 +322,13 @@
             // 
             // tabNVIDIA
             // 
+            this.tabNVIDIA.Controls.Add(this.lblNvOverclock);
+            this.tabNVIDIA.Controls.Add(this.edtNvOverclock);
+            this.tabNVIDIA.Controls.Add(this.btnNvSetClocks);
+            this.tabNVIDIA.Controls.Add(this.lblNvGpuInfo);
+            this.tabNVIDIA.Controls.Add(this.edtNvGpuInfo);
+            this.tabNVIDIA.Controls.Add(this.lblNvGPU);
+            this.tabNVIDIA.Controls.Add(this.cbxNvGPU);
             this.tabNVIDIA.Controls.Add(this.btnNvSettings);
             this.tabNVIDIA.Controls.Add(this.chkNvShowInQuickAccess);
             this.tabNVIDIA.Controls.Add(this.lblNvPresetName);
@@ -338,6 +352,89 @@
             this.tabNVIDIA.Text = "NVIDIA controller";
             this.tabNVIDIA.UseVisualStyleBackColor = true;
             // 
+            // lblNvOverclock
+            // 
+            this.lblNvOverclock.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblNvOverclock.AutoSize = true;
+            this.lblNvOverclock.Location = new System.Drawing.Point(578, 496);
+            this.lblNvOverclock.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblNvOverclock.Name = "lblNvOverclock";
+            this.lblNvOverclock.Size = new System.Drawing.Size(62, 15);
+            this.lblNvOverclock.TabIndex = 66;
+            this.lblNvOverclock.Text = "Set clocks:";
+            this.lblNvOverclock.Visible = false;
+            // 
+            // edtNvOverclock
+            // 
+            this.edtNvOverclock.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNvOverclock.Enabled = false;
+            this.edtNvOverclock.Location = new System.Drawing.Point(648, 493);
+            this.edtNvOverclock.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtNvOverclock.Name = "edtNvOverclock";
+            this.edtNvOverclock.Size = new System.Drawing.Size(212, 23);
+            this.edtNvOverclock.TabIndex = 65;
+            this.edtNvOverclock.Visible = false;
+            // 
+            // btnNvSetClocks
+            // 
+            this.btnNvSetClocks.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnNvSetClocks.Location = new System.Drawing.Point(866, 490);
+            this.btnNvSetClocks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnNvSetClocks.Name = "btnNvSetClocks";
+            this.btnNvSetClocks.Size = new System.Drawing.Size(88, 27);
+            this.btnNvSetClocks.TabIndex = 64;
+            this.btnNvSetClocks.Text = "Change...";
+            this.btnNvSetClocks.UseVisualStyleBackColor = true;
+            this.btnNvSetClocks.Visible = false;
+            this.btnNvSetClocks.Click += new System.EventHandler(this.btnNvSetClocks_Click);
+            // 
+            // lblNvGpuInfo
+            // 
+            this.lblNvGpuInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblNvGpuInfo.AutoSize = true;
+            this.lblNvGpuInfo.Location = new System.Drawing.Point(578, 469);
+            this.lblNvGpuInfo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblNvGpuInfo.Name = "lblNvGpuInfo";
+            this.lblNvGpuInfo.Size = new System.Drawing.Size(31, 15);
+            this.lblNvGpuInfo.TabIndex = 63;
+            this.lblNvGpuInfo.Text = "Info:";
+            this.lblNvGpuInfo.Visible = false;
+            // 
+            // edtNvGpuInfo
+            // 
+            this.edtNvGpuInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNvGpuInfo.Enabled = false;
+            this.edtNvGpuInfo.Location = new System.Drawing.Point(648, 466);
+            this.edtNvGpuInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.edtNvGpuInfo.Name = "edtNvGpuInfo";
+            this.edtNvGpuInfo.Size = new System.Drawing.Size(212, 23);
+            this.edtNvGpuInfo.TabIndex = 62;
+            this.edtNvGpuInfo.Visible = false;
+            // 
+            // lblNvGPU
+            // 
+            this.lblNvGPU.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblNvGPU.AutoSize = true;
+            this.lblNvGPU.Location = new System.Drawing.Point(578, 439);
+            this.lblNvGPU.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblNvGPU.Name = "lblNvGPU";
+            this.lblNvGPU.Size = new System.Drawing.Size(33, 15);
+            this.lblNvGPU.TabIndex = 61;
+            this.lblNvGPU.Text = "GPU:";
+            this.lblNvGPU.Visible = false;
+            // 
+            // cbxNvGPU
+            // 
+            this.cbxNvGPU.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbxNvGPU.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxNvGPU.FormattingEnabled = true;
+            this.cbxNvGPU.Location = new System.Drawing.Point(648, 436);
+            this.cbxNvGPU.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.cbxNvGPU.Name = "cbxNvGPU";
+            this.cbxNvGPU.Size = new System.Drawing.Size(212, 23);
+            this.cbxNvGPU.TabIndex = 60;
+            this.cbxNvGPU.Visible = false;
+            // 
             // btnNvSettings
             // 
             this.btnNvSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -354,6 +451,7 @@
             // 
             this.chkNvShowInQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkNvShowInQuickAccess.AutoSize = true;
+            this.chkNvShowInQuickAccess.Enabled = false;
             this.chkNvShowInQuickAccess.Location = new System.Drawing.Point(343, 465);
             this.chkNvShowInQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkNvShowInQuickAccess.Name = "chkNvShowInQuickAccess";
@@ -474,7 +572,6 @@
             // 
             this.btnChange.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnChange.ContextMenuStrip = this.mnuNvPresets;
-            this.btnChange.Enabled = false;
             this.btnChange.Location = new System.Drawing.Point(102, 429);
             this.btnChange.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnChange.Name = "btnChange";
@@ -490,7 +587,7 @@
             this.mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miNvApply,
             this.miNvPresetApplyOnStartup,
-            this.toolStripSeparator1,
+            this.tssNvPresetMenu,
             this.mnuNvDisplay,
             this.mnuNvPresetsColorSettings,
             this.mnuRefreshRate,
@@ -518,10 +615,10 @@
             this.miNvPresetApplyOnStartup.Text = "Apply on startup";
             this.miNvPresetApplyOnStartup.Click += new System.EventHandler(this.miNvPresetApplyOnStartup_Click);
             // 
-            // toolStripSeparator1
+            // tssNvPresetMenu
             // 
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(181, 6);
+            this.tssNvPresetMenu.Name = "tssNvPresetMenu";
+            this.tssNvPresetMenu.Size = new System.Drawing.Size(181, 6);
             // 
             // mnuNvDisplay
             // 
@@ -1218,6 +1315,7 @@
             // 
             this.chkLgQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkLgQuickAccess.AutoSize = true;
+            this.chkLgQuickAccess.Enabled = false;
             this.chkLgQuickAccess.Location = new System.Drawing.Point(341, 314);
             this.chkLgQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkLgQuickAccess.Name = "chkLgQuickAccess";
@@ -1302,6 +1400,7 @@
             // btnLgPresetEditTriggerConditions
             // 
             this.btnLgPresetEditTriggerConditions.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLgPresetEditTriggerConditions.Enabled = false;
             this.btnLgPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 341);
             this.btnLgPresetEditTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgPresetEditTriggerConditions.Name = "btnLgPresetEditTriggerConditions";
@@ -1648,6 +1747,7 @@
             // btnLgRefreshApps
             // 
             this.btnLgRefreshApps.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnLgRefreshApps.Enabled = false;
             this.btnLgRefreshApps.Location = new System.Drawing.Point(341, 372);
             this.btnLgRefreshApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgRefreshApps.Name = "btnLgRefreshApps";
@@ -1940,6 +2040,7 @@
             // 
             this.chkGameQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkGameQuickAccess.AutoSize = true;
+            this.chkGameQuickAccess.Enabled = false;
             this.chkGameQuickAccess.Location = new System.Drawing.Point(353, 387);
             this.chkGameQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkGameQuickAccess.Name = "chkGameQuickAccess";
@@ -1989,6 +2090,7 @@
             // 
             this.chkGameRunAsAdmin.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.chkGameRunAsAdmin.AutoSize = true;
+            this.chkGameRunAsAdmin.Enabled = false;
             this.chkGameRunAsAdmin.Location = new System.Drawing.Point(881, 415);
             this.chkGameRunAsAdmin.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkGameRunAsAdmin.Name = "chkGameRunAsAdmin";
@@ -3275,6 +3377,14 @@
         private System.Windows.Forms.Label lblDitheringDisplay;
         private System.Windows.Forms.ComboBox cbxDitheringDisplay;
         private System.Windows.Forms.ToolTip lvNvPresetsToolTip;
+        private System.Windows.Forms.ToolStripSeparator tssNvPresetMenu;
+        private System.Windows.Forms.Label lblNvGPU;
+        private System.Windows.Forms.ComboBox cbxNvGPU;
+        private System.Windows.Forms.Label lblNvGpuInfo;
+        private System.Windows.Forms.TextBox edtNvGpuInfo;
+        private System.Windows.Forms.Button btnNvSetClocks;
+        private System.Windows.Forms.Label lblNvOverclock;
+        private System.Windows.Forms.TextBox edtNvOverclock;
     }
 }
 

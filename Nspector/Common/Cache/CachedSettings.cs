@@ -1,6 +1,4 @@
 ﻿using nspector.Native.NVAPI2;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace nspector.Common
 {
@@ -31,7 +29,8 @@ namespace nspector.Common
             }
             else
             {
-                setting.ProfileNames.Append(", " + Profile);
+                setting.ProfileNames.Append(", ");
+                setting.ProfileNames.Append(Profile);
                 setting.ValueProfileCount++;
             }
             ProfileCount++;
@@ -47,7 +46,8 @@ namespace nspector.Common
             }
             else
             {
-                setting.ProfileNames.Append(", " + Profile);
+                setting.ProfileNames.Append(", ");
+                setting.ProfileNames.Append(Profile);
                 setting.ValueProfileCount++;
             }
             ProfileCount++;
@@ -63,7 +63,8 @@ namespace nspector.Common
             }
             else
             {
-                setting.ProfileNames.Append(", " + Profile);
+                setting.ProfileNames.Append(", ");
+                setting.ProfileNames.Append(Profile);
                 setting.ValueProfileCount++;
             }
             ProfileCount++;

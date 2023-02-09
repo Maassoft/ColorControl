@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace nspector.Native
 {
@@ -13,7 +11,7 @@ namespace nspector.Native
 
         public static T[] GetArrayData<T>(IntPtr sourcePointer, int itemCount)
         {
-            var lstResult = new List<T>();
+            var lstResult = new List<T>(itemCount);
             if (sourcePointer != IntPtr.Zero && itemCount > 0)
             {
                 var sizeOfItem = Marshal.SizeOf(typeof(T));
@@ -40,7 +38,21 @@ namespace nspector.Native
             {
                 targetPointer = IntPtr.Zero;
             }
+        }
 
+        public static unsafe void SetArrayDataNative<T>(T[] items, out IntPtr targetPointer)
+        {
+            if (items != null && items.Length > 0)
+            {
+                var sizeOfItem = Marshal.SizeOf(typeof(T));
+                targetPointer = Marshal.AllocHGlobal(sizeOfItem * items.Length);
+
+                new Span<T>(items, 0, items.Length).CopyTo(new Span<T>((void*)targetPointer, items.Length));
+            }
+            else
+            {
+                targetPointer = IntPtr.Zero;
+            }
         }
 
         public static void SetArrayItemData<T>(T item, out IntPtr targetPointer)

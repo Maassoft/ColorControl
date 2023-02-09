@@ -443,7 +443,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return task.Result;
         }
 
-        public static void WaitForTask(System.Threading.Tasks.Task task)
+        public static void WaitForTask(Task task, bool doEvents = true)
         {
             if (ConsoleOpened)
             {
@@ -454,7 +454,11 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
             {
                 Thread.Sleep(10);
-                Application.DoEvents();
+
+                if (doEvents)
+                {
+                    Application.DoEvents();
+                }
             }
         }
 

@@ -9,13 +9,16 @@ namespace nspector.Common
 {
     public class DrsEvent : EventArgs
     {
+        public string ProfileName { get; set; }
         public List<KeyValuePair<uint, string>>? Settings { get; set; }
         public bool Handled { get; set; }
+        public bool Result { get; set; }
     }
 
     public class DrsSettingsService : DrsSettingsServiceBase
     {
         public event EventHandler<DrsEvent>? ApplySettings;
+        public event EventHandler<DrsEvent>? RestoreSetting;
         public bool ExternalApplySettings => ApplySettings != null;
 
         public DrsSettingsService(DrsSettingsMetaService metaService, DrsDecrypterService decrpterService)
@@ -248,6 +251,20 @@ namespace nspector.Common
 
         public void ResetValue(string profileName, uint settingId, out bool removeFromModified)
         {
+            var drsEvent = new DrsEvent
+            {
+                ProfileName = profileName,
+                Settings = new List<KeyValuePair<uint, string>> { new(settingId, string.Empty) }
+            };
+
+            RestoreSetting?.Invoke(this, drsEvent);
+
+            if (drsEvent.Handled)
+            {
+                removeFromModified = drsEvent.Result;
+                return;
+            }
+
             var tmpRemoveFromModified = false;
 
             DrsSession((hSession) =>
@@ -310,8 +327,8 @@ namespace nspector.Common
         {
             var drsEvent = new DrsEvent
             {
-                Settings = settings,
-                Handled = false
+                ProfileName = profileName,
+                Settings = settings
             };
 
             ApplySettings?.Invoke(this, drsEvent);
@@ -469,7 +486,7 @@ namespace nspector.Common
         }
 
 
-        public List<SettingItem> GetSettingsForProfile(string profileName, SettingViewMode viewMode, ref Dictionary<string, string> applications)
+        public List<SettingItem> GetSettingsForProfile(string profileName, SettingViewMode viewMode, ref Dictionary<string, string>? applications, bool skipApplications = false)
         {
             var result = new List<SettingItem>();
             var settingIds = meta.GetSettingIds(viewMode);
@@ -499,6 +516,11 @@ namespace nspector.Common
                         var dummySetting = new NVDRS_SETTING() { settingId = settingId };
                         result.Add(CreateSettingItem(dummySetting, true));
                     }
+                }
+
+                if (skipApplications)
+                {
+                    return null;
                 }
 
                 return GetProfileApplications(hSession, hProfile)

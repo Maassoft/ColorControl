@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -125,7 +126,7 @@ namespace ColorControl.Forms
             return subMenuItem;
         }
 
-        public static void BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent)
+        public static void BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent, Font font = null)
         {
             PropertyInfo property = null;
             var subMenuItems = mnuParent.DropDownItems.Find("miColorSettings_" + name, false);
@@ -134,6 +135,10 @@ namespace ColorControl.Forms
             {
                 subMenuItem = (ToolStripMenuItem)mnuParent.DropDownItems.Add(name);
                 subMenuItem.Name = "miColorSettings_" + name;
+                if (font != null)
+                {
+                    subMenuItem.Font = font;
+                }
 
                 if (colorData != null)
                 {
@@ -146,6 +151,11 @@ namespace ColorControl.Forms
                     var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
                     item.Tag = enumValue;
                     item.Click += clickEvent;
+
+                    if (font != null)
+                    {
+                        item.Font = font;
+                    }
                 }
             }
             else
@@ -171,6 +181,29 @@ namespace ColorControl.Forms
                     }
                 }
             }
+        }
+
+        public static ToolStripMenuItem BuildMenuItem(ToolStripItemCollection itemCollection, string name, string text, object tag = null, EventHandler onClick = null)
+        {
+            var items = itemCollection.Find(name, false);
+            var item = (ToolStripMenuItem)items.FirstOrDefault();
+
+            if (item == null)
+            {
+                item = new ToolStripMenuItem(text) { Name = name, Tag = tag };
+                itemCollection.Add(item);
+
+                if (onClick != null)
+                {
+                    item.Click += onClick;
+                }
+            }
+            //else if (onClick != null)
+            //{
+            //    RemoveEvents(item, "Click");
+            //}
+
+            return item;
         }
 
         public static void BuildComboBox<T>(ComboBox comboBox, params T[] skip) where T : IConvertible
@@ -472,6 +505,14 @@ namespace ColorControl.Forms
             {
                 item.Method.Invoke(item.Target, eventParams);
             }
+        }
+
+        public static void RemoveEvents(object ctrl, string eventName)
+        {
+            var propertyInfo = ctrl.GetType().GetProperty("Events", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            var eventHandlerList = propertyInfo.GetValue(ctrl) as EventHandlerList;
+
+            eventHandlerList.Dispose();
         }
 
         public static string ExtendedDisplayName(string displayName)

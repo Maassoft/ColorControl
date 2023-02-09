@@ -1,11 +1,11 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.Common;
+using Newtonsoft.Json;
 using nspector.Common;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace ColorControl.Services.NVIDIA
@@ -32,6 +32,9 @@ namespace ColorControl.Services.NVIDIA
         public uint ditheringMode { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
+        [JsonIgnore]
+        public bool IsDisplayPreset => Display != null;
+        public Display Display { get; set; }
 
         public NvPreset() : base()
         {
@@ -146,9 +149,14 @@ namespace ColorControl.Services.NVIDIA
             {
                 var settingMeta = NvService.GetSettingMeta(driverSetting.Key);
 
-                var settingValue = settingMeta.DwordValues.FirstOrDefault(s => s.Value == driverSetting.Value);
+                var value = settingMeta.ToFriendlyName(intValue: driverSetting.Value, displayDefault: true);
 
-                values.Add($"{settingMeta.SettingName}: {settingValue?.ValueName ?? "Unknown"}");
+                if (value == null)
+                {
+                    continue;
+                }
+
+                values.Add($"{settingMeta.SettingName}: {value}");
             }
 
             return string.Join(useNewLines ? "\r\n" : ", ", values);

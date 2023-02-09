@@ -27,6 +27,8 @@ namespace ColorControl.Forms
             public decimal MaxValue { get; set; }
             public int NumberOfValues { get; set; }
             public object Value { get; set; }
+
+            public int ValueAsInt => int.Parse(Value.ToString());
         }
 
         public class MessageForm : Form

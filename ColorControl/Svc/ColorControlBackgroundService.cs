@@ -109,6 +109,7 @@ namespace ColorControl.Svc
                 SvcMessageType.ExecuteUpdate => await HandleExecuteUpdateCommandAsync(JsonConvert.DeserializeObject<SvcInstallUpdateMessage>(json)),
                 SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
                 SvcMessageType.ApplyNvidiaDriverSettings => HandleNvDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
+                SvcMessageType.RestoreNvidiaDriverSetting => HandleNvRestoreDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
                 _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
@@ -184,9 +185,16 @@ namespace ColorControl.Svc
 
         private SvcResultMessage HandleNvDriverSettingsMessage(SvcNvDriverSettingsMessage message)
         {
-            NvService.ApplyDriverSettings(message.DriverSettings);
+            NvService.ApplyDriverSettings(message.ProfileName, message.DriverSettings);
 
             return SvcResultMessage.FromResult(true);
+        }
+
+        private SvcResultMessage HandleNvRestoreDriverSettingsMessage(SvcNvDriverSettingsMessage message)
+        {
+            var result = NvService.RestoreDriverSettings(message.ProfileName, message.DriverSettings);
+
+            return SvcResultMessage.FromResult(result);
         }
 
         private async Task WakeDevicesAsync()

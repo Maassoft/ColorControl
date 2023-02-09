@@ -104,6 +104,8 @@ namespace LgTv
         smooth,
         clear,
         clearPlus,
+        cinemaClear,
+        natural,
         user
     }
 

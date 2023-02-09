@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using nspector.Native.NVAPI2;
 using System.Text;
-using nspector.Native.NVAPI2;
 using nvw = nspector.Native.NVAPI2.NvapiDrsWrapper;
 
 namespace nspector.Common.Meta

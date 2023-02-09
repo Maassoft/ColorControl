@@ -1,4 +1,6 @@
-﻿namespace ColorControl
+﻿using ColorControl.Common;
+
+namespace ColorControl
 {
     public class AppContext
     {
@@ -16,6 +18,11 @@
             DataPath = dataPath;
 
             CurrentContext = this;
+        }
+
+        public bool IsServiceRunning()
+        {
+            return Utils.IsServiceRunning();
         }
     }
 }

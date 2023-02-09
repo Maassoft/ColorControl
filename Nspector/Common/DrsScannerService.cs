@@ -1,7 +1,6 @@
 ﻿using nspector.Common.Helper;
 using nspector.Native.NVAPI2;
 using System.Text.RegularExpressions;
-using nvw = nspector.Native.NVAPI2.NvapiDrsWrapper;
 
 namespace nspector.Common
 {
@@ -18,6 +17,7 @@ namespace nspector.Common
         internal List<CachedSettings> CachedSettings = new List<CachedSettings>();
         internal List<string> ModifiedProfiles = new List<string>();
         internal HashSet<string> UserProfiles = new HashSet<string>();
+        private bool _scannedPredefinedSettings = false;
 
         // most common setting ids as start pattern for the heuristic scan
         private readonly uint[] _commonSettingIds = new uint[] { 0x1095DEF8, 0x1033DCD2, 0x1033CEC1,
@@ -25,20 +25,22 @@ namespace nspector.Common
                             0x1033DCD3, 0x1033CEC2, 0x2072F036, 0x00664339, 0x002C7F45, 0x209746C1,
                             0x0076E164, 0x20FF7493, 0x204CFF7B };
 
-
         private bool CheckCommonSetting(IntPtr hSession, IntPtr hProfile, NVDRS_PROFILE profile,
             ref int checkedSettingsCount, uint checkSettingId, bool addToScanResult,
-            ref List<uint> alreadyCheckedSettingIds)
+            ref List<uint> alreadyCheckedSettingIds, ref NVDRS_SETTING providedSetting)
         {
 
             if (checkedSettingsCount >= profile.numOfSettings)
                 return false;
 
-            var setting = new NVDRS_SETTING();
-            setting.version = nvw.NVDRS_SETTING_VER;
+            //var setting = new NVDRS_SETTING
+            //{
+            //    version = nvw.NVDRS_SETTING_VER
+            //};
 
-            if (nvw.DRS_GetSetting(hSession, hProfile, checkSettingId, ref setting) != NvAPI_Status.NVAPI_OK)
-                return false;
+            var setting = providedSetting;
+            //if (nvw.DRS_GetSetting(hSession, hProfile, checkSettingId, ref setting) != NvAPI_Status.NVAPI_OK)
+            //    return false;
 
             if (setting.settingLocation != NVDRS_SETTING_LOCATION.NVDRS_CURRENT_PROFILE_LOCATION)
                 return false;
@@ -73,83 +75,104 @@ namespace nspector.Common
             return (current > 0) ? (int)Math.Round((current * 100f) / max) : 0; ;
         }
 
-        public async Task ScanProfileSettingsAsync(bool justModified, IProgress<int> progress, CancellationToken token = default(CancellationToken))
+        public void ScanProfileSettings(bool justModified, IProgress<int> progress, CancellationToken token = default(CancellationToken))
         {
-            await Task.Run(() =>
+            if (!justModified && _scannedPredefinedSettings)
             {
-                ModifiedProfiles = new List<string>();
-                UserProfiles = new HashSet<string>();
-                var knownPredefines = new List<uint>(_commonSettingIds);
+                justModified = true;
+            }
 
-                DrsSession((hSession) =>
+            ModifiedProfiles = new List<string>();
+            UserProfiles = new HashSet<string>();
+
+            DrsSession((hSession) =>
+            {
+                IntPtr hBaseProfile = GetProfileHandle(hSession, "");
+                var profileHandles = EnumProfileHandles(hSession);
+
+                var maxProfileCount = profileHandles.Count;
+                int curProfilePos = 0;
+
+                var knownPredefines = new HashSet<uint>(600);
+                knownPredefines.UnionWith(_commonSettingIds);
+                var alreadyChecked = new List<uint>();
+                var doubles = new List<uint>();
+
+                foreach (IntPtr hProfile in profileHandles)
                 {
-                    IntPtr hBaseProfile = GetProfileHandle(hSession, "");
-                    var profileHandles = EnumProfileHandles(hSession);
+                    if (token.IsCancellationRequested) break;
 
-                    var maxProfileCount = profileHandles.Count;
-                    int curProfilePos = 0;
+                    progress?.Report(CalcPercent(curProfilePos++, maxProfileCount));
 
-                    foreach (IntPtr hProfile in profileHandles)
+                    var profile = GetProfileInfo(hSession, hProfile);
+
+                    int checkedSettingsCount = 0;
+
+                    bool foundModifiedProfile = false;
+                    if (profile.isPredefined == 0)
                     {
-                        if (token.IsCancellationRequested) break;
+                        ModifiedProfiles.Add(profile.profileName);
+                        UserProfiles.Add(profile.profileName);
+                        foundModifiedProfile = true;
+                        if (justModified) continue;
+                    }
 
-                        progress?.Report(CalcPercent(curProfilePos++, maxProfileCount));
+                    alreadyChecked.Clear();
 
-                        var profile = GetProfileInfo(hSession, hProfile);
+                    var settings = GetProfileSettings(hSession, hProfile, profile);
+                    foreach (var setting in settings.Where(s => knownPredefines.Contains(s.settingId)))
+                    {
+                        var outSetting = setting;
 
-                        int checkedSettingsCount = 0;
-                        var alreadyChecked = new List<uint>();
-
-                        bool foundModifiedProfile = false;
-                        if (profile.isPredefined == 0)
+                        if (CheckCommonSetting(hSession, hProfile, profile,
+                           ref checkedSettingsCount, setting.settingId, !justModified, ref alreadyChecked, ref outSetting))
                         {
-                            ModifiedProfiles.Add(profile.profileName);
-                            UserProfiles.Add(profile.profileName);
-                            foundModifiedProfile = true;
-                            if (justModified) continue;
-                        }
-
-
-                        foreach (uint kpd in knownPredefines)
-                        {
-                            if (CheckCommonSetting(hSession, hProfile, profile,
-                               ref checkedSettingsCount, kpd, !justModified, ref alreadyChecked))
+                            if (!foundModifiedProfile)
                             {
-                                if (!foundModifiedProfile)
-                                {
-                                    foundModifiedProfile = true;
-                                    ModifiedProfiles.Add(profile.profileName);
-                                    if (justModified) break;
-                                }
-                            }
-                        }
-
-                        if ((foundModifiedProfile && justModified) || checkedSettingsCount >= profile.numOfSettings)
-                            continue;
-
-                        var settings = GetProfileSettings(hSession, hProfile);
-                        foreach (var setting in settings)
-                        {
-                            if (knownPredefines.IndexOf(setting.settingId) < 0)
-                                knownPredefines.Add(setting.settingId);
-
-                            if (!justModified && alreadyChecked.IndexOf(setting.settingId) < 0)
-                                AddScannedSettingToCache(profile, setting);
-
-                            if (setting.isCurrentPredefined != 1)
-                            {
-                                if (!foundModifiedProfile)
-                                {
-                                    foundModifiedProfile = true;
-                                    ModifiedProfiles.Add(profile.profileName);
-                                    if (justModified) break;
-                                }
+                                foundModifiedProfile = true;
+                                ModifiedProfiles.Add(profile.profileName);
+                                if (justModified) break;
                             }
                         }
                     }
-                });
 
+                    if ((foundModifiedProfile && justModified) || checkedSettingsCount >= profile.numOfSettings)
+                        continue;
+
+
+                    foreach (var setting in settings)
+                    {
+                        if (!knownPredefines.Contains(setting.settingId))
+                        {
+                            knownPredefines.Add(setting.settingId);
+                        }
+
+                        if (!justModified && alreadyChecked.IndexOf(setting.settingId) < 0)
+                            AddScannedSettingToCache(profile, setting);
+
+                        if (setting.isCurrentPredefined != 1)
+                        {
+                            if (!foundModifiedProfile)
+                            {
+                                foundModifiedProfile = true;
+                                ModifiedProfiles.Add(profile.profileName);
+                                if (justModified) break;
+                            }
+                        }
+                    }
+                }
             });
+
+
+            if (!justModified)
+            {
+                _scannedPredefinedSettings = true;
+            }
+        }
+
+        public async Task ScanProfileSettingsAsync(bool justModified, IProgress<int> progress, CancellationToken token = default(CancellationToken))
+        {
+            await Task.Run(() => ScanProfileSettings(justModified, progress, token));
         }
 
 

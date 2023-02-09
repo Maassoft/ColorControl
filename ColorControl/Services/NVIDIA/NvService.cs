@@ -288,24 +288,12 @@ namespace ColorControl.Services.NVIDIA
                     }
                 }
 
-                try
-                {
-                    display.DisplayDevice.SetColorData(preset.colorData);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"SetColorData threw an exception: {ex.Message}");
-                    result = false;
-                }
+                SetColorData(display, preset.colorData);
             }
 
             if (applyHdr)
             {
-                var colorData = preset.applyColorData ? preset.colorData : display.DisplayDevice.CurrentColorData;
-
-                var appContext = _appContextProvider.GetAppContext();
-
-                SetHDRState(display, newHdrEnabled, colorData, appContext.StartUpParams.NoGui);
+                SetHDRState(display, newHdrEnabled);
             }
 
             if (preset.applyRefreshRate || preset.applyResolution)
@@ -326,7 +314,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyDriverSettings)
             {
-                SetDriverSettings(preset);
+                SetDriverSettings(preset.driverSettings);
             }
 
             _lastAppliedPreset = preset;
@@ -336,38 +324,105 @@ namespace ColorControl.Services.NVIDIA
             return result;
         }
 
-        public static void ApplyDriverSettings(List<KeyValuePair<uint, string>> settings)
+        public bool SetColorData(Display display, ColorData colorData)
         {
-            var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-
-            if (ServiceInstance == null)
+            try
             {
-                ServiceInstance = new NvService(appContextProvider);
-                ServiceInstance.Initialize();
-            }
+                display.DisplayDevice.SetColorData(colorData);
 
-            ServiceInstance._drs.StoreSettingsToProfile(ServiceInstance._baseProfileName, settings);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"SetColorData threw an exception: {ex.Message}");
+                return false;
+            }
         }
 
-        private void SetDriverSettings(NvPreset preset)
+        public static void ApplyDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
         {
-            var settings = new List<KeyValuePair<uint, string>>();
+            CheckServiceInstance();
 
-            foreach (var keyValue in preset.driverSettings)
+            ServiceInstance._drs.StoreSettingsToProfile(profileName, settings);
+        }
+
+        public static bool RestoreDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
+        {
+            CheckServiceInstance();
+
+            var result = false;
+
+            foreach (var keyValuePair in settings)
             {
-                var settingMeta = _meta.GetSettingMeta(keyValue.Key);
-
-                var value = settingMeta.DwordValues.FirstOrDefault(v => v.Value == keyValue.Value);
-
-                if (value == null)
-                {
-                    continue;
-                }
-
-                settings.Add(new KeyValuePair<uint, string>(keyValue.Key, value.ValueName));
+                var settingId = keyValuePair.Key;
+                ServiceInstance._drs.ResetValue(profileName, settingId, out result);
             }
 
-            _drs.StoreSettingsToProfile(_baseProfileName, settings);
+            return result;
+        }
+
+        private static void CheckServiceInstance()
+        {
+            if (ServiceInstance == null)
+            {
+                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+
+                ServiceInstance = new NvService(appContextProvider);
+                ServiceInstance.Initialize();
+                ServiceInstance.RefreshProfileSettings();
+            }
+        }
+
+        private void SetDriverSettings(Dictionary<uint, uint> settings)
+        {
+            var convertedSettings = new List<KeyValuePair<uint, string>>();
+
+            foreach (var keyValue in settings)
+            {
+                var setting = ConvertDriverSetting(keyValue.Key, keyValue.Value);
+
+                if (setting.Key == keyValue.Key)
+                {
+                    convertedSettings.Add(setting);
+                }
+            }
+
+            _drs.StoreSettingsToProfile(_baseProfileName, convertedSettings);
+        }
+
+        public void SetDriverSetting(uint settingId, uint value)
+        {
+            SetDriverSettings(new Dictionary<uint, uint> { { settingId, value } });
+        }
+
+        private KeyValuePair<uint, string> ConvertDriverSetting(uint settingId, uint settingValue)
+        {
+            var convertedSetting = new KeyValuePair<uint, string>(0, string.Empty);
+
+            var settingMeta = _meta.GetSettingMeta(settingId);
+
+            if (settingMeta == null)
+            {
+                return convertedSetting;
+            }
+
+            if (settingMeta.SettingType == nspector.Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE)
+            {
+                var value = settingMeta.DwordValues?.FirstOrDefault(v => v.Value == settingValue);
+
+                if (value != null)
+                {
+                    return new KeyValuePair<uint, string>(settingId, value.ValueName);
+                }
+            }
+            else if (settingMeta.SettingType == nspector.Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE)
+            {
+                var value = "0x" + settingValue.ToString("x16");
+
+                return new KeyValuePair<uint, string>(settingId, value);
+            }
+
+            return convertedSetting;
         }
 
         private ColorData GetCurrentColorData(Display display)
@@ -396,18 +451,8 @@ namespace ColorControl.Services.NVIDIA
             return colorData.ColorFormat != currentColorData.ColorFormat || colorData.ColorDepth != currentColorData.ColorDepth || settingRange != currentColorData.DynamicRange || settingSpace != currentColorData.Colorimetry;
         }
 
-        private void SetHDRState(Display display, bool enabled, ColorData colorData = null, bool useSwitch = false)
+        public void SetHDRState(Display display, bool enabled)
         {
-            if (useSwitch)
-            {
-                if (enabled != IsHDREnabled(display))
-                {
-                    CCD.SetHDRState(enabled, display.Name);
-                    //ToggleHDR();
-                }
-                return;
-            }
-
             CCD.SetHDRState(enabled, display.Name);
         }
 
@@ -584,6 +629,7 @@ namespace ColorControl.Services.NVIDIA
                 var list = new List<NvDisplayInfo>();
 
                 RefreshProfileSettings();
+                var settings = GetVisibleSettings();
 
                 foreach (var display in displays)
                 {
@@ -593,25 +639,19 @@ namespace ColorControl.Services.NVIDIA
                     };
 
                     var name = FormUtils.ExtendedDisplayName(display.Name);
-
                     values.Add(name);
 
                     var colorData = GetCurrentColorData(display);
-
                     var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
-
                     values.Add(colorSettings);
 
                     var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
-
                     values.Add($"{refreshRate}Hz");
 
-                    var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
-
-                    values.Add($"{desktopRect.Width}x{desktopRect.Height}");
+                    var mode = GetCurrentMode(display.Name);
+                    values.Add($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
 
                     var ditherInfo = GetDithering(display);
-
                     string dithering;
                     if (ditherInfo.state == -1)
                     {
@@ -634,16 +674,25 @@ namespace ColorControl.Services.NVIDIA
                     var hdrEnabled = IsHDREnabled(display);
                     values.Add(hdrEnabled ? "Yes" : "No");
 
-                    var settings = GetVisibleSettings();
                     var drsValues = new List<string>();
 
                     foreach (var setting in settings)
                     {
                         var settingMeta = GetSettingMeta(setting.SettingId);
 
-                        var settingValue = settingMeta.DwordValues?.FirstOrDefault(s => s.ValueName == setting.ValueText);
+                        if (settingMeta == null)
+                        {
+                            continue;
+                        }
 
-                        drsValues.Add($"{settingMeta.SettingName}: {settingValue?.ValueName ?? "Unknown"}");
+                        var value = settingMeta.ToFriendlyName(setting.ValueText);
+
+                        if (value == null)
+                        {
+                            continue;
+                        }
+
+                        drsValues.Add($"{settingMeta.SettingName}: {value}");
                     }
 
                     values.Add(string.Join(", ", drsValues));
@@ -662,6 +711,49 @@ namespace ColorControl.Services.NVIDIA
                 Logger.Error("Error while getting displays: " + e.ToLogString());
                 return null;
             }
+        }
+
+        public NvPreset GetPresetForDisplay(string displayName)
+        {
+            var displays = GetDisplays();
+
+            var display = displays.FirstOrDefault(d => displayName.StartsWith(d.Name));
+
+            if (display == null)
+            {
+                return null;
+            }
+
+            var isPrimaryDisplay = displays.Count() == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
+            var preset = new NvPreset { Display = display, applyColorData = false, primaryDisplay = isPrimaryDisplay };
+
+            preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
+            preset.colorData = GetCurrentColorData(display);
+
+            var mode = GetCurrentMode(display.Name);
+
+            preset.refreshRate = mode.dmDisplayFrequency;
+            preset.resolutionHeight = mode.dmPelsHeight;
+            preset.resolutionWidth = mode.dmPelsWidth;
+
+            var ditherInfo = GetDithering(display);
+
+            if (ditherInfo.state == -1)
+            {
+                preset.ditheringEnabled = true;
+                preset.ditheringBits = (uint)NvDitherBits.Bits8;
+                preset.ditheringMode = (uint)NvDitherMode.Temporal;
+            }
+            else
+            {
+                preset.ditheringEnabled = ditherInfo.state != (int)NvDitherState.Disabled;
+                preset.ditheringBits = (uint)ditherInfo.bits;
+                preset.ditheringMode = (uint)ditherInfo.mode;
+            }
+
+            preset.HDREnabled = IsHDREnabled(display);
+
+            return preset;
         }
 
         public List<SettingItem> GetVisibleSettings()
@@ -683,7 +775,7 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var settingMeta = GetSettingMeta(setting.SettingId);
-            var settingValue = settingMeta.DwordValues.FirstOrDefault(s => s.ValueName == setting.ValueText);
+            var settingValue = settingMeta.DwordValues?.FirstOrDefault(s => s.ValueName == setting.ValueText);
 
             return settingValue.Value >= 1;
         }
@@ -719,6 +811,7 @@ namespace ColorControl.Services.NVIDIA
             if (!Utils.IsAdministrator())
             {
                 _drs.ApplySettings += HandleDrsApplySettings;
+                _drs.RestoreSetting += HandleDrsRestoreSetting;
             }
 
             //SetGpuClocks();
@@ -729,18 +822,29 @@ namespace ColorControl.Services.NVIDIA
             //});
         }
 
-        private void RefreshProfileSettings()
+        public void RefreshProfileSettings()
         {
             _semaphore.WaitOne();
             try
             {
+                var firstTime = _settings?.Any() != true;
+
                 DrsSessionScope.DestroyGlobalSession();
 
-                var applications = new Dictionary<string, string>();
-                var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications);
+                var applications = default(Dictionary<string, string>);
+                var normalSettings = _drs.GetSettingsForProfile(_baseProfileName, SettingViewMode.Normal, ref applications, true);
 
                 _settings = new List<SettingItem>();
                 _settings.AddRange(normalSettings);
+
+                _driverSettingIds.Clear();
+                _driverSettingIds.AddRange(_settings.Where(s => !s.IsStringValue && !s.SettingText.Contains("SLI")).Select(s => s.SettingId));
+
+                if (firstTime)
+                {
+                    DrsServiceLocator.ScannerService.ScanProfileSettings(false, null);
+                    _meta.ResetMetaCache();
+                }
             }
             finally
             {
@@ -748,14 +852,32 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
+        private bool HasPrivilegesForUnexposedApis()
+        {
+            return Utils.IsAdministrator() || _appContextProvider.GetAppContext()?.Config.ElevationMethod != ElevationMethod.UseService || _appContextProvider.GetAppContext()?.IsServiceRunning() != true;
+        }
+
+
         private void HandleDrsApplySettings(object sender, DrsEvent drsEvent)
         {
-            if (Utils.IsAdministrator() || _appContextProvider.GetAppContext()?.Config.ElevationMethod != ElevationMethod.UseService)
+            if (HasPrivilegesForUnexposedApis())
             {
                 return;
             }
 
-            PipeUtils.SendMessage(new SvcNvDriverSettingsMessage { DriverSettings = drsEvent.Settings });
+            PipeUtils.SendMessage(new SvcNvDriverSettingsMessage { ProfileName = drsEvent.ProfileName, DriverSettings = drsEvent.Settings });
+
+            drsEvent.Handled = true;
+        }
+
+        private void HandleDrsRestoreSetting(object sender, DrsEvent drsEvent)
+        {
+            if (HasPrivilegesForUnexposedApis())
+            {
+                return;
+            }
+
+            PipeUtils.SendMessage(new SvcNvDriverSettingsMessage(SvcMessageType.RestoreNvidiaDriverSetting) { ProfileName = drsEvent.ProfileName, DriverSettings = drsEvent.Settings });
 
             drsEvent.Handled = true;
         }
@@ -768,10 +890,10 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public void SetGpuClocks()
+        public void SetGpuClocks(PhysicalGPU gpu, uint lockedVoltageMicroV = 1000000, int coreOffsetKHz = 0, int memOffsetKHz = 0)
         {
             // TEST ONLY
-            var gpu = PhysicalGPU.GetPhysicalGPUs().FirstOrDefault();
+            gpu ??= PhysicalGPU.GetPhysicalGPUs().FirstOrDefault();
 
             if (gpu == null)
             {
@@ -783,17 +905,17 @@ namespace ColorControl.Services.NVIDIA
 
             var perf = GPUApi.GetPerformanceStates20(handle);
 
-            var lockv2 = new PrivateClockBoostLockV2(new[] { new ClockBoostLock(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, NvAPIWrapper.Native.GPU.ClockLockMode.Manual, 1000000) });
+            var lockv2 = new PrivateClockBoostLockV2(new[] { new ClockBoostLock(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, NvAPIWrapper.Native.GPU.ClockLockMode.Manual, lockedVoltageMicroV) });
 
             var bla = GPUApi.GetClockBoostLock(handle);
 
-            //GPUApi.SetClockBoostLock(handle, lockv2);
+            GPUApi.SetClockBoostLock(handle, lockv2);
 
-            //var curve = GPUApi.GetVFPCurve(handle);
+            var curve = GPUApi.GetVFPCurve(handle);
 
             var currentFreq = perf.Clocks.First().Value.First(v => v.DomainId == NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics).SingleFrequency;
 
-            var delta = new PerformanceStates20ParameterDelta(90000);
+            var delta = new PerformanceStates20ParameterDelta(coreOffsetKHz);
             //var delta2 = new PerformanceStates20ParameterDelta(0);
             //var delta3 = new PerformanceStates20ParameterDelta(0);
             //var single1 = new PerformanceStates20ClockDependentSingleFrequency(2670000);
@@ -807,17 +929,55 @@ namespace ColorControl.Services.NVIDIA
             var range = new PerformanceStates20ClockDependentFrequencyRange(2400000, 3000000, NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, 950000, 1050000);
             var clockEntry = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta, range);
 
+            var memDelta = new PerformanceStates20ParameterDelta(memOffsetKHz);
+            var memClockEntry = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory, memDelta);
+
             //var range2 = new PerformanceStates20ClockDependentFrequencyRange(2800001, 3000000, NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, 1000000, 1000000);
             //var clockEntry2 = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta2, range2);
 
             var deltaVoltage = new PerformanceStates20ParameterDelta(0);
             var voltage = new PerformanceStates20BaseVoltageEntryV1(NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, deltaVoltage);
 
-            var state = new PerformanceStates20InfoV1.PerformanceState20(NvAPIWrapper.Native.GPU.PerformanceStateId.P0_3DPerformance, new[] { clockEntry }, new[] { voltage });
+            var state = new PerformanceStates20InfoV1.PerformanceState20(NvAPIWrapper.Native.GPU.PerformanceStateId.P0_3DPerformance, new[] { clockEntry, memClockEntry }, new[] { voltage });
 
-            var newPerf = new PerformanceStates20InfoV3(new[] { state }, 1, 1);
+            var newPerf = new PerformanceStates20InfoV3(new[] { state }, 2, 1);
 
-            //GPUApi.SetPerformanceStates20(handle, newPerf);
+            GPUApi.SetPerformanceStates20(handle, newPerf);
+        }
+
+        public string GetGpuClocks(PhysicalGPU gpu)
+        {
+            var handle = gpu.Handle;
+
+            var perf = GPUApi.GetPerformanceStates20(handle);
+            var clock3D = perf.Clocks.FirstOrDefault(c => c.Key == NvAPIWrapper.Native.GPU.PerformanceStateId.P0_3DPerformance);
+
+            var boostLock = GPUApi.GetClockBoostLock(handle);
+
+            var values = new List<string>();
+
+            foreach (var boostClock in boostLock.ClockBoostLocks.Where(l => l.LockMode == NvAPIWrapper.Native.GPU.ClockLockMode.Manual))
+            {
+                var clock = clock3D.Value.FirstOrDefault(c => c.DomainId == boostClock.ClockDomain);
+
+                var value = $"{boostClock.ClockDomain}: ";
+
+                if (clock != null)
+                {
+                    value += $"{clock.FrequencyDeltaInkHz.DeltaValue}KHz @ ";
+                }
+
+                value += $"{boostClock.VoltageInMicroV}uv";
+
+                values.Add(value);
+            }
+
+            if (!values.Any())
+            {
+                values.Add("None");
+            }
+
+            return string.Join(", ", values);
         }
     }
 }

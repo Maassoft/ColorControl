@@ -16,6 +16,7 @@ using nspector.Common;
 using nspector.Common.Meta;
 using NStandard;
 using NvAPIWrapper.Display;
+using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native.Display;
 using NWin32;
 using NWin32.NativeTypes;
@@ -401,6 +402,12 @@ namespace ColorControl
             {
                 return _amdService.ApplyPreset(parameters[0]);
             }
+            if (_lgService != null && serviceName.Equals("LgPreset", StringComparison.OrdinalIgnoreCase))
+            {
+                Utils.WaitForTask(_lgService.ApplyPreset(parameters[0]));
+
+                return true;
+            }
 
             if (serviceName.Equals("StartProgram", StringComparison.OrdinalIgnoreCase))
             {
@@ -518,6 +525,8 @@ namespace ColorControl
                 return;
             }
 
+            var gpus = new List<PhysicalGPU>();
+
             var text = Program.TS_TASKNAME;
             foreach (var displayInfo in displays)
             {
@@ -561,7 +570,27 @@ namespace ColorControl
                 }
 
                 text += "\n" + displayInfo.InfoLine;
+
+                if (!gpus.Contains(displayInfo.Display.DisplayDevice.PhysicalGPU))
+                {
+                    gpus.Add(displayInfo.Display.DisplayDevice.PhysicalGPU);
+                }
             }
+
+            //cbxNvGPU.Items.Clear();
+            //cbxNvGPU.Items.AddRange(gpus.ToArray());
+            //if (cbxNvGPU.Items.Count > 0)
+            //{
+            //    cbxNvGPU.SelectedIndex = 0;
+
+            //    var gpu = gpus[0];
+
+            //    var gpuThermal = gpu.ThermalInformation.ThermalSensors.FirstOrDefault(s => s.Target == NvAPIWrapper.Native.GPU.ThermalSettingsTarget.GPU);
+
+            //    edtNvGpuInfo.Text = $"GPU: {gpu.CurrentClockFrequencies.GraphicsClock.Frequency / 1000}MHz @ {gpuThermal.CurrentTemperature}°C, Mem: {gpu.CurrentClockFrequencies.MemoryClock.Frequency / 1000}MHz";
+
+            //    edtNvOverclock.Text = _nvService.GetGpuClocks(gpu);
+            //}
 
             FormUtils.SetNotifyIconText(_trayIcon, text);
         }
@@ -695,7 +724,7 @@ namespace ColorControl
             var preset = GetSelectedNvPreset();
             var enabled = preset != null;
 
-            FormUtils.EnableControls(tabNVIDIA, enabled, new List<Control> { lvNvPresets, btnAddModesNv });
+            FormUtils.EnableControls(tabNVIDIA, enabled, new List<Control> { lvNvPresets, btnAddModesNv, btnChange, edtNvGpuInfo, btnNvSetClocks, btnNvSettings });
 
             if (enabled)
             {
@@ -1065,12 +1094,19 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
         }
 
-        private NvPreset GetSelectedNvPreset()
+        private NvPreset GetSelectedNvPreset(bool currentDisplay = false)
         {
             if (lvNvPresets.SelectedItems.Count > 0)
             {
                 var item = lvNvPresets.SelectedItems[0];
-                return (NvPreset)item.Tag;
+                var result = (NvPreset)item.Tag;
+
+                if (result == null && currentDisplay)
+                {
+                    result = _nvService.GetPresetForDisplay(item.SubItems[1].Text);
+                }
+
+                return result;
             }
             else
             {
@@ -1132,7 +1168,17 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void miNvPresetDitheringEnabled_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                miNvPresetDitheringEnabled.Checked = !miNvPresetDitheringEnabled.Checked;
+
+                _nvService.SetDithering(miNvPresetDitheringEnabled.Checked ? NvDitherState.Enabled : NvDitherState.Disabled);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
 
             preset.ditheringEnabled = !preset.ditheringEnabled;
 
@@ -1153,213 +1199,309 @@ NOTE: installing the service may cause a User Account Control popup.");
             AddOrUpdateItem();
         }
 
+        private Font _normalFont;
+        private Font _boldFont;
+        private Dictionary<bool, Font> _menuItemFonts;
+
         private void mnuNvPresets_Opening(object sender, CancelEventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+            var isCurrentDisplay = preset?.IsDisplayPreset == true;
 
-            miNvApply.Enabled = preset != null;
-            miNvPresetApplyOnStartup.Enabled = preset != null;
-            mnuNvDisplay.Enabled = preset != null;
-            miNvPresetColorSettings.Enabled = preset != null;
+            var presetItemsVisible = preset != null && !isCurrentDisplay;
+
+            miNvApply.Visible = presetItemsVisible;
+            miNvPresetApplyOnStartup.Visible = presetItemsVisible;
+            tssNvPresetMenu.Visible = presetItemsVisible;
+            mnuNvDisplay.Visible = presetItemsVisible;
+            miNvPresetColorSettings.Enabled = presetItemsVisible;
             mnuNvPresetsColorSettings.Enabled = preset != null;
             mnuRefreshRate.Enabled = preset != null;
             mnuNvResolution.Enabled = preset != null;
             miNvPresetDithering.Enabled = preset != null;
             miNvHDR.Enabled = preset != null;
+            miNvCopyId.Visible = presetItemsVisible;
+            miNvDriverSettingsIncluded.Visible = presetItemsVisible;
             mnuNvDriverSettings.Enabled = preset != null;
 
-            if (preset != null)
+            if (preset == null)
             {
-                miNvPresetApplyOnStartup.Checked = _config.NvPresetId_ApplyOnStartup == preset.id;
+                return;
+            }
 
-                if (mnuNvDisplay.DropDownItems.Count == 1)
+            _normalFont ??= new Font(mnuNvDriverSettings.Font, FontStyle.Regular);
+            _boldFont ??= new Font(_normalFont, FontStyle.Bold);
+            _menuItemFonts ??= new Dictionary<bool, Font> { { false, _normalFont }, { true, _boldFont } };
+
+            miNvPresetApplyOnStartup.Checked = preset.id > 0 && _config.NvPresetId_ApplyOnStartup == preset.id;
+
+            miNvPresetApplyDithering.Visible = !isCurrentDisplay;
+            miNvPresetColorSettings.Visible = !isCurrentDisplay;
+            miNvResolutionIncluded.Visible = !isCurrentDisplay;
+            miRefreshRateIncluded.Visible = !isCurrentDisplay;
+            miHDRIncluded.Visible = !isCurrentDisplay;
+
+            if (mnuNvDisplay.DropDownItems.Count == 1)
+            {
+                var displays = _nvService.GetDisplays();
+                for (var i = 0; i < displays.Length; i++)
                 {
-                    var displays = _nvService.GetDisplays();
-                    for (var i = 0; i < displays.Length; i++)
-                    {
-                        var display = displays[i];
-                        var name = FormUtils.ExtendedDisplayName(display.Name);
+                    var display = displays[i];
+                    var name = FormUtils.ExtendedDisplayName(display.Name);
 
-                        var item = mnuNvDisplay.DropDownItems.Add(name);
-                        item.Tag = display;
-                        item.Click += displayMenuItem_Click;
-                    }
+                    var item = mnuNvDisplay.DropDownItems.Add(name);
+                    item.Tag = display;
+                    item.Click += displayMenuItem_Click;
+                }
+            }
+
+            FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Bit depth", typeof(ColorDataDepth), preset.colorData, "ColorDepth", nvPresetColorDataMenuItem_Click);
+            FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Format", typeof(ColorDataFormat), preset.colorData, "ColorFormat", nvPresetColorDataMenuItem_Click);
+            FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Dynamic range", typeof(ColorDataDynamicRange), preset.colorData, "DynamicRange", nvPresetColorDataMenuItem_Click);
+            FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Color space", typeof(ColorDataColorimetry), preset.colorData, "Colorimetry", nvPresetColorDataMenuItem_Click);
+
+            BuildNvRefreshRateResolutionMenu(preset);
+
+            miNvPrimaryDisplay.Checked = preset.primaryDisplay;
+            foreach (var item in mnuNvDisplay.DropDownItems)
+            {
+                if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                {
+                    menuItem.Checked = ((Display)menuItem.Tag).Name.Equals(preset.displayName);
+                }
+            }
+
+            miNvPresetColorSettings.Checked = preset.applyColorData;
+            miNvPresetApplyDithering.Checked = preset.applyDithering;
+            miNvPresetDitheringEnabled.Checked = preset.ditheringEnabled;
+
+            foreach (var item in mnuNvDitheringBitDepth.DropDownItems.OfType<ToolStripMenuItem>())
+            {
+                if (item.Tag != null)
+                {
+                    item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringBits;
+                }
+            }
+            foreach (var item in mnuNvDitheringMode.DropDownItems.OfType<ToolStripMenuItem>())
+            {
+                if (item.Tag != null)
+                {
+                    item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringMode;
+                }
+            }
+
+            miHDRIncluded.Checked = preset.applyHDR;
+            miHDREnabled.Checked = preset.HDREnabled;
+            miToggleHDR.Checked = preset.toggleHDR;
+
+            miNvDriverSettingsIncluded.Checked = preset.applyDriverSettings;
+
+            mnuNvPresetsColorSettings.Font = _menuItemFonts[preset.applyColorData];
+            mnuRefreshRate.Font = _menuItemFonts[preset.applyRefreshRate];
+            mnuNvResolution.Font = _menuItemFonts[preset.applyResolution];
+            miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
+            miNvHDR.Font = _menuItemFonts[preset.applyHDR];
+
+            UpdateNvPresetMenuFont();
+
+            BuildNvidiaDriverSettingsMenu(mnuNvDriverSettings, isCurrentDisplay ? null : preset.driverSettings);
+
+            mnuNvDriverSettings.Font = _menuItemFonts[preset.applyDriverSettings];
+        }
+
+        private void BuildNvRefreshRateResolutionMenu(NvPreset preset)
+        {
+            var displayName = preset.primaryDisplay ? null : preset.displayName;
+
+            if (displayName != _lastDisplayRefreshRates)
+            {
+                while (mnuRefreshRate.DropDownItems.Count > 1)
+                {
+                    mnuRefreshRate.DropDownItems.RemoveAt(mnuRefreshRate.DropDownItems.Count - 1);
+                }
+                while (mnuNvResolution.DropDownItems.Count > 1)
+                {
+                    mnuNvResolution.DropDownItems.RemoveAt(mnuNvResolution.DropDownItems.Count - 1);
+                }
+            }
+
+            if (mnuRefreshRate.DropDownItems.Count == 1)
+            {
+                var refreshRates = _nvService.GetAvailableRefreshRates(preset);
+                _lastDisplayRefreshRates = displayName;
+
+                foreach (var refreshRate in refreshRates)
+                {
+                    var item = mnuRefreshRate.DropDownItems.Add(refreshRate.ToString() + "Hz");
+                    item.Tag = refreshRate;
+                    item.Click += refreshRateMenuItem_Click;
+                }
+            }
+
+            if (mnuNvResolution.DropDownItems.Count == 1)
+            {
+                var modes = _nvService.GetAvailableResolutions(preset);
+
+                foreach (var mode in modes)
+                {
+                    var item = mnuNvResolution.DropDownItems.Add($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
+                    item.Tag = mode;
+                    item.Click += resolutionNvMenuItem_Click;
+                }
+            }
+
+            miRefreshRateIncluded.Checked = preset.applyRefreshRate;
+            foreach (var item in mnuRefreshRate.DropDownItems)
+            {
+                if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                {
+                    menuItem.Checked = (uint)menuItem.Tag == preset.refreshRate;
+                }
+            }
+
+            miNvResolutionIncluded.Checked = preset.applyResolution;
+            foreach (var item in mnuNvResolution.DropDownItems)
+            {
+                if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                {
+                    var mode = (DEVMODEA)menuItem.Tag;
+                    menuItem.Checked = mode.dmPelsWidth == preset.resolutionWidth && mode.dmPelsHeight == preset.resolutionHeight;
+                }
+            }
+        }
+
+        private void UpdateNvPresetMenuFont(bool updateTopItems = false)
+        {
+            foreach (var menu in mnuNvPresets.Items.OfType<ToolStripMenuItem>().Where(i => i != mnuNvDriverSettings))
+            {
+                if (updateTopItems)
+                {
+                    menu.Font = _normalFont;
                 }
 
-                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Bit depth", typeof(ColorDataDepth), preset.colorData, "ColorDepth", nvPresetColorDataMenuItem_Click);
-                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Format", typeof(ColorDataFormat), preset.colorData, "ColorFormat", nvPresetColorDataMenuItem_Click);
-                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Dynamic range", typeof(ColorDataDynamicRange), preset.colorData, "DynamicRange", nvPresetColorDataMenuItem_Click);
-                FormUtils.BuildDropDownMenu(mnuNvPresetsColorSettings, "Color space", typeof(ColorDataColorimetry), preset.colorData, "Colorimetry", nvPresetColorDataMenuItem_Click);
+                SetMenuFont(menu, _normalFont);
+            }
+        }
 
-                if (preset.displayName != _lastDisplayRefreshRates)
+        private void SetMenuFont(ToolStripMenuItem menu, Font font)
+        {
+            foreach (var item in menu.DropDownItems.OfType<ToolStripMenuItem>())
+            {
+                item.Font = item.Checked ? _boldFont : font;
+
+                SetMenuFont(item, font);
+            }
+        }
+
+        private void BuildNvidiaDriverSettingsMenu(ToolStripDropDownItem parent, Dictionary<uint, uint> settings = null, ContextMenuStrip contextMenuStrip = null)
+        {
+            var driverSettings = _nvService.GetVisibleSettings().OrderBy(s => s.GroupName);
+            var handledGroupItems = new List<ToolStripMenuItem>();
+            var showUnchanged = settings != null;
+            var defaultValue = SettingMeta.UnsetDwordValue;
+
+            foreach (var driverSetting in driverSettings)
+            {
+                var groupName = $"mnuNvDriverSettingGroup_{driverSetting.GroupName}";
+                var groupItem = FormUtils.BuildMenuItem(contextMenuStrip?.Items ?? parent.DropDownItems, groupName, driverSetting.GroupName);
+
+                var itemName = $"mnuNvDriverSettingItem_{driverSetting.SettingText}";
+                var item = FormUtils.BuildMenuItem(groupItem.DropDownItems, itemName, driverSetting.SettingText, driverSetting);
+                var settingMeta = _nvService.GetSettingMeta(driverSetting.SettingId);
+
+                var presetSetting = defaultValue;
+                var isDefault = false;
+                if (settings != null)
                 {
-                    while (mnuRefreshRate.DropDownItems.Count > 1)
-                    {
-                        mnuRefreshRate.DropDownItems.RemoveAt(mnuRefreshRate.DropDownItems.Count - 1);
-                    }
-                    while (mnuNvResolution.DropDownItems.Count > 1)
-                    {
-                        mnuNvResolution.DropDownItems.RemoveAt(mnuNvResolution.DropDownItems.Count - 1);
-                    }
+                    presetSetting = settings.GetValueOrDefault(driverSetting.SettingId, defaultValue);
+                    isDefault = presetSetting == defaultValue;
+                }
+                else
+                {
+                    (presetSetting, isDefault) = settingMeta.ToIntValue(driverSetting.ValueText);
                 }
 
-                if (mnuRefreshRate.DropDownItems.Count == 1)
-                {
-                    var refreshRates = _nvService.GetAvailableRefreshRates(preset);
-                    _lastDisplayRefreshRates = preset.displayName;
+                item.Font = _menuItemFonts[!isDefault];
 
-                    foreach (var refreshRate in refreshRates)
-                    {
-                        var item = mnuRefreshRate.DropDownItems.Add(refreshRate.ToString() + "Hz");
-                        item.Tag = refreshRate;
-                        item.Click += refreshRateMenuItem_Click;
-                    }
+                if (!handledGroupItems.Contains(groupItem))
+                {
+                    groupItem.Tag = null;
+                    handledGroupItems.Add(groupItem);
+                }
+                if (!isDefault)
+                {
+                    groupItem.Tag = true;
                 }
 
-                if (mnuNvResolution.DropDownItems.Count == 1)
-                {
-                    var modes = _nvService.GetAvailableResolutions(preset);
+                var subItemUnchangedName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}_Unchanged";
+                var subItemUnchanged = FormUtils.BuildMenuItem(item.DropDownItems, subItemUnchangedName, "Unchanged", onClick: driverSettingValueNvMenuItem_Click);
+                subItemUnchanged.Visible = showUnchanged;
 
-                    foreach (var mode in modes)
-                    {
-                        var item = mnuNvResolution.DropDownItems.Add($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
-                        item.Tag = mode;
-                        item.Click += resolutionNvMenuItem_Click;
-                    }
+                if (showUnchanged)
+                {
+                    subItemUnchanged.Checked = presetSetting == defaultValue;
+                    subItemUnchanged.Font = _menuItemFonts[subItemUnchanged.Checked];
                 }
 
-                miNvPrimaryDisplay.Checked = preset.primaryDisplay;
-                foreach (var item in mnuNvDisplay.DropDownItems)
+                if (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3)
                 {
-                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
-                    {
-                        menuItem.Checked = ((Display)menuItem.Tag).Name.Equals(preset.displayName);
-                    }
+                    var value = settingMeta.DwordValues.FirstOrDefault(v => v.ValueName == driverSetting.ValueText);
+
+                    var subItemName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}_SubItem";
+                    var subItem = FormUtils.BuildMenuItem(item.DropDownItems, subItemName, "", onClick: driverSettingFrameRateNvMenuItem_Click);
+
+                    var metaValue = settingMeta.DwordValues.FirstOrDefault(v => v.Value == presetSetting);
+                    subItem.Text = $"{metaValue?.ValueName ?? "??FPS"} (click to change)";
+
+                    subItem.Tag = value?.Value ?? 0;
+                    subItem.Checked = presetSetting != defaultValue;
+
+                    continue;
                 }
 
-                miNvPresetColorSettings.Checked = preset.applyColorData;
-
-                miRefreshRateIncluded.Checked = preset.applyRefreshRate;
-                foreach (var item in mnuRefreshRate.DropDownItems)
+                if (settingMeta.SettingType == nspector.Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE)
                 {
-                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                    foreach (var settingValue in settingMeta.DwordValues)
                     {
-                        menuItem.Checked = (uint)menuItem.Tag == preset.refreshRate;
-                    }
-                }
-
-                miNvResolutionIncluded.Checked = preset.applyResolution;
-                foreach (var item in mnuNvResolution.DropDownItems)
-                {
-                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
-                    {
-                        var mode = (DEVMODEA)menuItem.Tag;
-                        menuItem.Checked = mode.dmPelsWidth == preset.resolutionWidth && mode.dmPelsHeight == preset.resolutionHeight;
-                    }
-                }
-
-                miNvPresetApplyDithering.Checked = preset.applyDithering;
-                miNvPresetDitheringEnabled.Checked = preset.ditheringEnabled;
-
-                foreach (var item in mnuNvDitheringBitDepth.DropDownItems.OfType<ToolStripMenuItem>())
-                {
-                    if (item.Tag != null)
-                    {
-                        item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringBits;
-                    }
-                }
-                foreach (var item in mnuNvDitheringMode.DropDownItems.OfType<ToolStripMenuItem>())
-                {
-                    if (item.Tag != null)
-                    {
-                        item.Checked = uint.Parse(item.Tag.ToString()) == preset.ditheringMode;
-                    }
-                }
-
-                miHDRIncluded.Checked = preset.applyHDR;
-                miHDREnabled.Checked = preset.HDREnabled;
-                miToggleHDR.Checked = preset.toggleHDR;
-
-                var driverSettings = _nvService.GetVisibleSettings();
-
-                miNvDriverSettingsIncluded.Checked = preset.applyDriverSettings;
-                if (mnuNvDriverSettings.DropDownItems.Count == 1)
-                {
-                    foreach (var driverSetting in driverSettings)
-                    {
-                        var item = new ToolStripMenuItem(driverSetting.SettingText);
-                        mnuNvDriverSettings.DropDownItems.Add(item);
-                        item.Tag = driverSetting;
-
-                        var subItemUnchanged = item.DropDownItems.Add("Unchanged");
-                        subItemUnchanged.Click += driverSettingValueNvMenuItem_Click;
-
-                        var settingMeta = _nvService.GetSettingMeta(driverSetting.SettingId);
-
-                        if (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3)
+                        var text = settingValue.ValueName;
+                        if (text.IndexOf(" (") == 10)
                         {
-                            var subItem = item.DropDownItems.Add($"{driverSetting.ValueText} (click to change)");
-
-                            var value = settingMeta.DwordValues.FirstOrDefault(v => v.ValueName == driverSetting.ValueText);
-
-                            subItem.Tag = value?.Value ?? 0;
-                            subItem.Click += driverSettingFrameRateNvMenuItem_Click;
-
-                            continue;
+                            text = text.Substring(0, 10);
                         }
 
-                        foreach (var settingValue in settingMeta.DwordValues)
-                        {
-                            var subItem = item.DropDownItems.Add(settingValue.ValueName);
-                            subItem.Tag = settingValue;
-                            subItem.Click += driverSettingValueNvMenuItem_Click;
-                        }
+                        var subItemName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}_SubItem_{settingValue.Value}";
+                        var subItem = FormUtils.BuildMenuItem(item.DropDownItems, subItemName, text, settingValue, driverSettingValueNvMenuItem_Click);
+
+                        subItem.Checked = presetSetting == settingValue.Value;
+                        subItem.Font = _menuItemFonts[subItem.Checked];
                     }
                 }
 
-                foreach (var item in mnuNvDriverSettings.DropDownItems)
+                if (settingMeta.SettingType == nspector.Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE)
                 {
-                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                    foreach (var settingValue in settingMeta.BinaryValues)
                     {
-                        var driverSetting = menuItem.Tag as SettingItem;
-                        var presetSetting = preset.driverSettings.GetValueOrDefault(driverSetting.SettingId, uint.MaxValue);
+                        var text = settingValue.ValueName.Substring(0, 18);
+                        var subItemName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}_SubItem_{text}";
 
-                        foreach (var subItem in menuItem.DropDownItems)
-                        {
-                            if (subItem is ToolStripMenuItem subMenuItem)
-                            {
-                                if (subMenuItem.Tag != null)
-                                {
-                                    if (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3)
-                                    {
-                                        if (presetSetting != uint.MaxValue)
-                                        {
-                                            var settingMeta = _nvService.GetSettingMeta(driverSetting.SettingId);
-                                            var metaValue = settingMeta.DwordValues.FirstOrDefault(v => v.Value == presetSetting);
-                                            subMenuItem.Text = $"{metaValue?.ValueName ?? "??FPS"} (click to change)";
+                        var subItem = FormUtils.BuildMenuItem(item.DropDownItems, subItemName, text, settingValue, driverSettingValueNvMenuItem_Click);
 
-                                            subMenuItem.Checked = true;
+                        var intValue = BitConverter.ToUInt32(settingValue.Value);
 
-                                            continue;
-                                        }
-
-                                        subMenuItem.Checked = false;
-
-                                        continue;
-                                    }
-
-                                    var settingValue = subMenuItem.Tag as SettingValue<uint>;
-
-                                    subMenuItem.Checked = presetSetting == settingValue.Value;
-                                }
-                                else
-                                {
-                                    subMenuItem.Checked = presetSetting == uint.MaxValue;
-                                }
-                            }
-                        }
+                        subItem.Checked = presetSetting == intValue;
+                        subItem.Font = _menuItemFonts[subItem.Checked];
                     }
                 }
+
+                if (item.DropDownItems.Count == 0 || item.DropDownItems.Count == 1 && item.DropDownItems[0].Text == "Unchanged")
+                {
+                    groupItem.DropDownItems.Remove(item);
+                }
+            }
+
+            foreach (var groupItem in handledGroupItems)
+            {
+                groupItem.Font = _menuItemFonts[groupItem.Tag != null];
             }
         }
 
@@ -1370,7 +1512,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
             var value = menuItem.Tag;
 
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
 
             var dictionary = new Dictionary<string, object>
             {
@@ -1385,6 +1527,14 @@ NOTE: installing the service may cause a User Account Control popup.");
 
             var colorData = NvPreset.GenerateColorData(dictionary);
 
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetColorData(preset.Display, colorData);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
             preset.colorData = colorData;
 
             AddOrUpdateItem();
@@ -1394,7 +1544,15 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             var refreshRate = (uint)((ToolStripItem)sender).Tag;
 
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetMode(refreshRate: refreshRate);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
 
             preset.refreshRate = refreshRate;
 
@@ -1405,7 +1563,15 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             var mode = (DEVMODEA)((ToolStripItem)sender).Tag;
 
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetMode(mode.dmPelsWidth, mode.dmPelsHeight);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
 
             preset.resolutionWidth = mode.dmPelsWidth;
             preset.resolutionHeight = mode.dmPelsHeight;
@@ -1477,7 +1643,15 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void miToggleHDR_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetHDRState(preset.Display, !_nvService.IsHDREnabled());
+
+                UpdateDisplayInfoItems();
+                return;
+            }
 
             preset.toggleHDR = !preset.toggleHDR;
 
@@ -1491,7 +1665,16 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void miHDREnabled_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                miHDREnabled.Checked = !miHDREnabled.Checked;
+                _nvService.SetHDRState(preset.Display, miHDREnabled.Checked);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
 
             preset.HDREnabled = !preset.HDREnabled;
             preset.toggleHDR = false;
@@ -1550,6 +1733,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             edtStepsLg.Enabled = enabled;
             btnLgAddButton.Enabled = enabled;
             cbxLgApps.Enabled = enabled;
+            btnLgRefreshApps.Enabled = enabled;
             btnDeleteLg.Enabled = enabled;
             cbxLgPresetTrigger.Enabled = enabled;
             edtLgPresetTriggerConditions.Enabled = enabled;
@@ -1918,6 +2102,8 @@ NOTE: installing the service may cause a User Account Control popup.");
             btnLgDeviceConvertToCustom.Enabled = devices.Any();
             btnLgExpert.Enabled = devices.Any();
             btnLgGameBar.Enabled = devices.Any();
+
+            cbxLgDevices_SelectedIndexChanged(cbxLgDevices, null);
 
             SetLgDevicePowerOptions();
         }
@@ -2659,9 +2845,19 @@ Do you want to continue?";
         {
             var item = sender as ToolStripMenuItem;
 
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
 
-            preset.ditheringBits = uint.Parse(item.Tag.ToString());
+            var ditheringBits = uint.Parse(item.Tag.ToString());
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, ditheringBits, preset.ditheringMode);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ditheringBits = ditheringBits;
 
             AddOrUpdateItem();
         }
@@ -2670,9 +2866,19 @@ Do you want to continue?";
         {
             var item = sender as ToolStripMenuItem;
 
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
 
-            preset.ditheringMode = uint.Parse(item.Tag.ToString());
+            var ditheringMode = uint.Parse(item.Tag.ToString());
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, preset.ditheringBits, ditheringMode);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ditheringMode = ditheringMode;
 
             AddOrUpdateItem();
         }
@@ -3779,7 +3985,7 @@ The InStart and Software Update items are now visible under the Expert-button."
 
         private void driverSettingValueNvMenuItem_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
 
             var menuItem = (ToolStripItem)sender;
             var parentMenuItem = menuItem.OwnerItem as ToolStripMenuItem;
@@ -3788,21 +3994,34 @@ The InStart and Software Update items are now visible under the Expert-button."
 
             if (menuItem.Tag == null)
             {
-                preset.ResetDriverSetting(settingItem.SettingId);
+                if (!preset.IsDisplayPreset)
+                {
+                    preset.ResetDriverSetting(settingItem.SettingId);
+                    AddOrUpdateItem();
+                }
+                return;
             }
-            else
-            {
-                var settingValue = (SettingValue<uint>)menuItem.Tag;
 
-                preset.UpdateDriverSetting(settingItem, settingValue.Value);
+            var intValue = menuItem.Tag is SettingValue<uint> intSettingValue ? intSettingValue.Value :
+                menuItem.Tag is SettingValue<byte[]> byteSettingValue ? BitConverter.ToUInt32(byteSettingValue.Value) : 0;
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetDriverSetting(settingItem.SettingId, intValue);
+
+                UpdateDisplayInfoItems();
+
+                return;
             }
+
+            preset.UpdateDriverSetting(settingItem, intValue);
 
             AddOrUpdateItem();
         }
 
         private void driverSettingFrameRateNvMenuItem_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true);
 
             var menuItem = (ToolStripItem)sender;
             var parentMenuItem = menuItem.OwnerItem as ToolStripMenuItem;
@@ -3810,29 +4029,60 @@ The InStart and Software Update items are now visible under the Expert-button."
             var settingItem = (SettingItem)parentMenuItem.Tag;
 
             var settingMeta = _nvService.GetSettingMeta(settingItem.SettingId);
-            var presetValue = preset.driverSettings.GetValueOrDefault(settingItem.SettingId, settingMeta.DefaultDwordValue);
 
+            uint presetValue;
+            if (preset.IsDisplayPreset)
+            {
+                (presetValue, _) = settingMeta.ToIntValue(settingItem.ValueText);
+            }
+            else
+            {
+                presetValue = preset.driverSettings.GetValueOrDefault(settingItem.SettingId, settingMeta.DefaultDwordValue);
+            }
+
+            var settingValue = SelectNvDriverValue(settingMeta, presetValue);
+
+            if (settingValue == SettingMeta.UnsetDwordValue)
+            {
+                return;
+            }
+
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetDriverSetting(settingItem.SettingId, settingValue);
+
+                UpdateDisplayInfoItems();
+
+                return;
+            }
+
+            preset.UpdateDriverSetting(settingItem, settingValue);
+
+            AddOrUpdateItem();
+        }
+
+        private uint SelectNvDriverValue(SettingMeta settingMeta, uint currentValue)
+        {
             var field = new MessageForms.FieldDefinition
             {
                 MinValue = settingMeta.DwordValues.First().Value,
                 MaxValue = settingMeta.DwordValues.Last().Value,
                 Label = settingMeta.SettingName,
                 FieldType = MessageForms.FieldType.Numeric,
-                Value = presetValue
+                Value = currentValue
             };
 
             var resultFields = MessageForms.ShowDialog(field.Label, new[] { field });
 
             if (!resultFields.Any())
             {
-                return;
+                return SettingMeta.UnsetDwordValue;
             }
 
             var settingValue = (uint)Utils.ParseInt((string)resultFields.First().Value);
 
-            preset.UpdateDriverSetting(settingItem, settingValue);
-
-            AddOrUpdateItem();
+            return settingValue;
         }
 
         private void mnuLgProgram_Click(object sender, EventArgs e)
@@ -4621,6 +4871,47 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void lvNvPresets_MouseLeave(object sender, EventArgs e)
         {
+            lvNvPresetsToolTip.Active = false;
+        }
+
+        private void btnNvSetClocks_Click(object sender, EventArgs e)
+        {
+            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Voltage in micro volt",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = 650000,
+                        MaxValue = 1100000,
+                        Value = 1050000
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Core offset in KHz",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = -502000,
+                        MaxValue = 1000000,
+                        Value = 0
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Memory offset in KHz",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = -502000,
+                        MaxValue = 2500000,
+                        Value = 0
+                    },
+            });
+            if (!values.Any())
+            {
+                return;
+            }
+
+            var voltage = (uint)values[0].ValueAsInt;
+            var coreOffset = values[1].ValueAsInt;
+            var memoryOffset = values[2].ValueAsInt;
+
+            _nvService.SetGpuClocks(null, voltage, coreOffset, memoryOffset);
         }
     }
 }
