@@ -3,6 +3,7 @@ using ColorControl.Forms;
 using ColorControl.Services.Common;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using nspector.Common;
 using nspector.Common.Meta;
 using NvAPIWrapper.Display;
@@ -14,11 +15,10 @@ using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using static NvAPIWrapper.Native.GPU.Structures.PerformanceStates20ClockEntryV1;
-using static NvAPIWrapper.Native.GPU.Structures.PrivateClockBoostLockV2;
 
 namespace ColorControl.Services.NVIDIA
 {
@@ -93,6 +93,8 @@ namespace ColorControl.Services.NVIDIA
 
         private Display _currentDisplay;
         private string _baseProfileName = "";
+        private string _configFilename;
+        public NvServiceConfig Config { get; private set; }
 
         private DrsSettingsService _drs;
         private DrsSettingsMetaService _meta;
@@ -139,7 +141,7 @@ namespace ColorControl.Services.NVIDIA
             NvPreset.NvService = this;
 
             AddJsonConverter(new ColorDataConverter());
-
+            LoadConfig();
             LoadPresets();
         }
 
@@ -211,6 +213,7 @@ namespace ColorControl.Services.NVIDIA
         public void GlobalSave()
         {
             SavePresets();
+            SaveConfig();
         }
 
         protected override List<NvPreset> GetDefaultPresets()
@@ -317,11 +320,46 @@ namespace ColorControl.Services.NVIDIA
                 SetDriverSettings(preset.driverSettings);
             }
 
+            if (preset.applyOverclocking)
+            {
+                ApplyOverclocking(preset.ocSettings);
+            }
+
             _lastAppliedPreset = preset;
 
             PresetApplied();
 
             return result;
+        }
+
+        public void ApplyOverclocking(NvGpuOcSettings setting)
+        {
+            ApplyOverclocking(new List<NvGpuOcSettings> { setting });
+        }
+
+        public void ApplyOverclocking(List<NvGpuOcSettings> settings)
+        {
+            if (!Utils.IsAdministrator())
+            {
+                PipeUtils.SendMessage(new SvcNvOverclockingMessage
+                {
+                    OverclockingSettings = settings
+                });
+
+                return;
+            }
+
+            foreach (var ocSetting in settings)
+            {
+                var gpuInfo = NvGpuInfo.GetGpuInfo(ocSetting.PCIIdentifier);
+
+                if (gpuInfo == null)
+                {
+                    continue;
+                }
+
+                gpuInfo.ApplyOcSettings(ocSetting);
+            }
         }
 
         public bool SetColorData(Display display, ColorData colorData)
@@ -361,7 +399,7 @@ namespace ColorControl.Services.NVIDIA
             return result;
         }
 
-        private static void CheckServiceInstance()
+        public static NvService CheckServiceInstance()
         {
             if (ServiceInstance == null)
             {
@@ -371,6 +409,8 @@ namespace ColorControl.Services.NVIDIA
                 ServiceInstance.Initialize();
                 ServiceInstance.RefreshProfileSettings();
             }
+
+            return ServiceInstance;
         }
 
         private void SetDriverSettings(Dictionary<uint, uint> settings)
@@ -619,6 +659,15 @@ namespace ColorControl.Services.NVIDIA
         public Display[] GetDisplays()
         {
             return Display.GetDisplays();
+        }
+
+        public List<PhysicalGPU> GetGPUs()
+        {
+            var gpuHandles = GPUApi.EnumPhysicalGPUs();
+
+            var gpus = gpuHandles.Select(h => new PhysicalGPU(h)).ToList();
+
+            return gpus;
         }
 
         public List<NvDisplayInfo> GetDisplayInfos()
@@ -890,94 +939,26 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public void SetGpuClocks(PhysicalGPU gpu, uint lockedVoltageMicroV = 1000000, int coreOffsetKHz = 0, int memOffsetKHz = 0)
+        private void LoadConfig()
         {
-            // TEST ONLY
-            gpu ??= PhysicalGPU.GetPhysicalGPUs().FirstOrDefault();
-
-            if (gpu == null)
+            _configFilename = Path.Combine(_dataPath, "NvConfig.json");
+            try
             {
-                Logger.Debug("No GPU");
-                return;
+                if (File.Exists(_configFilename))
+                {
+                    Config = JsonConvert.DeserializeObject<NvServiceConfig>(File.ReadAllText(_configFilename));
+                }
             }
-
-            var handle = gpu.Handle;
-
-            var perf = GPUApi.GetPerformanceStates20(handle);
-
-            var lockv2 = new PrivateClockBoostLockV2(new[] { new ClockBoostLock(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, NvAPIWrapper.Native.GPU.ClockLockMode.Manual, lockedVoltageMicroV) });
-
-            var bla = GPUApi.GetClockBoostLock(handle);
-
-            GPUApi.SetClockBoostLock(handle, lockv2);
-
-            var curve = GPUApi.GetVFPCurve(handle);
-
-            var currentFreq = perf.Clocks.First().Value.First(v => v.DomainId == NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics).SingleFrequency;
-
-            var delta = new PerformanceStates20ParameterDelta(coreOffsetKHz);
-            //var delta2 = new PerformanceStates20ParameterDelta(0);
-            //var delta3 = new PerformanceStates20ParameterDelta(0);
-            //var single1 = new PerformanceStates20ClockDependentSingleFrequency(2670000);
-            //var single2 = new PerformanceStates20ClockDependentSingleFrequency(2760000);
-            //var single3 = new PerformanceStates20ClockDependentSingleFrequency(2775000);
-
-            //var clockEntry1 = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta, single1);
-            //var clockEntry2 = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta2, single2);
-            //var clockEntry3 = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta3, single3);
-
-            var range = new PerformanceStates20ClockDependentFrequencyRange(2400000, 3000000, NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, 950000, 1050000);
-            var clockEntry = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta, range);
-
-            var memDelta = new PerformanceStates20ParameterDelta(memOffsetKHz);
-            var memClockEntry = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory, memDelta);
-
-            //var range2 = new PerformanceStates20ClockDependentFrequencyRange(2800001, 3000000, NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, 1000000, 1000000);
-            //var clockEntry2 = new PerformanceStates20ClockEntryV1(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics, delta2, range2);
-
-            var deltaVoltage = new PerformanceStates20ParameterDelta(0);
-            var voltage = new PerformanceStates20BaseVoltageEntryV1(NvAPIWrapper.Native.GPU.PerformanceVoltageDomain.Core, deltaVoltage);
-
-            var state = new PerformanceStates20InfoV1.PerformanceState20(NvAPIWrapper.Native.GPU.PerformanceStateId.P0_3DPerformance, new[] { clockEntry, memClockEntry }, new[] { voltage });
-
-            var newPerf = new PerformanceStates20InfoV3(new[] { state }, 2, 1);
-
-            GPUApi.SetPerformanceStates20(handle, newPerf);
+            catch (Exception ex)
+            {
+                Logger.Error($"LoadConfig: {ex.Message}");
+            }
+            Config ??= new NvServiceConfig();
         }
 
-        public string GetGpuClocks(PhysicalGPU gpu)
+        private void SaveConfig()
         {
-            var handle = gpu.Handle;
-
-            var perf = GPUApi.GetPerformanceStates20(handle);
-            var clock3D = perf.Clocks.FirstOrDefault(c => c.Key == NvAPIWrapper.Native.GPU.PerformanceStateId.P0_3DPerformance);
-
-            var boostLock = GPUApi.GetClockBoostLock(handle);
-
-            var values = new List<string>();
-
-            foreach (var boostClock in boostLock.ClockBoostLocks.Where(l => l.LockMode == NvAPIWrapper.Native.GPU.ClockLockMode.Manual))
-            {
-                var clock = clock3D.Value.FirstOrDefault(c => c.DomainId == boostClock.ClockDomain);
-
-                var value = $"{boostClock.ClockDomain}: ";
-
-                if (clock != null)
-                {
-                    value += $"{clock.FrequencyDeltaInkHz.DeltaValue}KHz @ ";
-                }
-
-                value += $"{boostClock.VoltageInMicroV}uv";
-
-                values.Add(value);
-            }
-
-            if (!values.Any())
-            {
-                values.Add("None");
-            }
-
-            return string.Join(", ", values);
+            Utils.WriteObject(_configFilename, Config);
         }
     }
 }

@@ -82,6 +82,8 @@
             this.miHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuNvDriverSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvDriverSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuNvOverclocking = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvOverclockingIncluded = new System.Windows.Forms.ToolStripMenuItem();
             this.miNvCopyId = new System.Windows.Forms.ToolStripMenuItem();
             this.btnApply = new System.Windows.Forms.Button();
             this.lvNvPresets = new System.Windows.Forms.ListView();
@@ -359,33 +361,31 @@
             this.lblNvOverclock.Location = new System.Drawing.Point(578, 496);
             this.lblNvOverclock.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblNvOverclock.Name = "lblNvOverclock";
-            this.lblNvOverclock.Size = new System.Drawing.Size(62, 15);
+            this.lblNvOverclock.Size = new System.Drawing.Size(51, 15);
             this.lblNvOverclock.TabIndex = 66;
-            this.lblNvOverclock.Text = "Set clocks:";
-            this.lblNvOverclock.Visible = false;
+            this.lblNvOverclock.Text = "OC info:";
             // 
             // edtNvOverclock
             // 
-            this.edtNvOverclock.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNvOverclock.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.edtNvOverclock.Enabled = false;
             this.edtNvOverclock.Location = new System.Drawing.Point(648, 493);
             this.edtNvOverclock.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtNvOverclock.Name = "edtNvOverclock";
-            this.edtNvOverclock.Size = new System.Drawing.Size(212, 23);
+            this.edtNvOverclock.Size = new System.Drawing.Size(457, 23);
             this.edtNvOverclock.TabIndex = 65;
-            this.edtNvOverclock.Visible = false;
             // 
             // btnNvSetClocks
             // 
             this.btnNvSetClocks.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnNvSetClocks.Location = new System.Drawing.Point(866, 490);
+            this.btnNvSetClocks.Location = new System.Drawing.Point(868, 433);
             this.btnNvSetClocks.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnNvSetClocks.Name = "btnNvSetClocks";
             this.btnNvSetClocks.Size = new System.Drawing.Size(88, 27);
             this.btnNvSetClocks.TabIndex = 64;
             this.btnNvSetClocks.Text = "Change...";
             this.btnNvSetClocks.UseVisualStyleBackColor = true;
-            this.btnNvSetClocks.Visible = false;
             this.btnNvSetClocks.Click += new System.EventHandler(this.btnNvSetClocks_Click);
             // 
             // lblNvGpuInfo
@@ -398,18 +398,17 @@
             this.lblNvGpuInfo.Size = new System.Drawing.Size(31, 15);
             this.lblNvGpuInfo.TabIndex = 63;
             this.lblNvGpuInfo.Text = "Info:";
-            this.lblNvGpuInfo.Visible = false;
             // 
             // edtNvGpuInfo
             // 
-            this.edtNvGpuInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.edtNvGpuInfo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.edtNvGpuInfo.Enabled = false;
             this.edtNvGpuInfo.Location = new System.Drawing.Point(648, 466);
             this.edtNvGpuInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtNvGpuInfo.Name = "edtNvGpuInfo";
-            this.edtNvGpuInfo.Size = new System.Drawing.Size(212, 23);
+            this.edtNvGpuInfo.Size = new System.Drawing.Size(457, 23);
             this.edtNvGpuInfo.TabIndex = 62;
-            this.edtNvGpuInfo.Visible = false;
             // 
             // lblNvGPU
             // 
@@ -421,7 +420,6 @@
             this.lblNvGPU.Size = new System.Drawing.Size(33, 15);
             this.lblNvGPU.TabIndex = 61;
             this.lblNvGPU.Text = "GPU:";
-            this.lblNvGPU.Visible = false;
             // 
             // cbxNvGPU
             // 
@@ -433,7 +431,7 @@
             this.cbxNvGPU.Name = "cbxNvGPU";
             this.cbxNvGPU.Size = new System.Drawing.Size(212, 23);
             this.cbxNvGPU.TabIndex = 60;
-            this.cbxNvGPU.Visible = false;
+            this.cbxNvGPU.SelectedIndexChanged += new System.EventHandler(this.cbxNvGPU_SelectedIndexChanged);
             // 
             // btnNvSettings
             // 
@@ -595,9 +593,10 @@
             this.miNvPresetDithering,
             this.miNvHDR,
             this.mnuNvDriverSettings,
+            this.mnuNvOverclocking,
             this.miNvCopyId});
             this.mnuNvPresets.Name = "mnuNvPresets";
-            this.mnuNvPresets.Size = new System.Drawing.Size(185, 230);
+            this.mnuNvPresets.Size = new System.Drawing.Size(185, 252);
             this.mnuNvPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuNvPresets_Opening);
             // 
             // miNvApply
@@ -837,6 +836,21 @@
             this.miNvDriverSettingsIncluded.Size = new System.Drawing.Size(120, 22);
             this.miNvDriverSettingsIncluded.Text = "Included";
             this.miNvDriverSettingsIncluded.Click += new System.EventHandler(this.miNvDriverSettingsIncluded_Click);
+            // 
+            // mnuNvOverclocking
+            // 
+            this.mnuNvOverclocking.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miNvOverclockingIncluded});
+            this.mnuNvOverclocking.Name = "mnuNvOverclocking";
+            this.mnuNvOverclocking.Size = new System.Drawing.Size(184, 22);
+            this.mnuNvOverclocking.Text = "Overclocking";
+            // 
+            // miNvOverclockingIncluded
+            // 
+            this.miNvOverclockingIncluded.Name = "miNvOverclockingIncluded";
+            this.miNvOverclockingIncluded.Size = new System.Drawing.Size(120, 22);
+            this.miNvOverclockingIncluded.Text = "Included";
+            this.miNvOverclockingIncluded.Click += new System.EventHandler(this.miNvOverclockingIncluded_Click);
             // 
             // miNvCopyId
             // 
@@ -3168,7 +3182,6 @@
         private System.Windows.Forms.Button btnNvPresetDelete;
         private System.Windows.Forms.Button btnAddModesNv;
         private System.Windows.Forms.ToolStripMenuItem miNvApply;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
@@ -3385,6 +3398,8 @@
         private System.Windows.Forms.Button btnNvSetClocks;
         private System.Windows.Forms.Label lblNvOverclock;
         private System.Windows.Forms.TextBox edtNvOverclock;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvOverclocking;
+        private System.Windows.Forms.ToolStripMenuItem miNvOverclockingIncluded;
     }
 }
 

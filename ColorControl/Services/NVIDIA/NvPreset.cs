@@ -32,6 +32,9 @@ namespace ColorControl.Services.NVIDIA
         public uint ditheringMode { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
+        public bool applyOverclocking { get; set; }
+        public List<NvGpuOcSettings> ocSettings { get; set; }
+
         [JsonIgnore]
         public bool IsDisplayPreset => Display != null;
         public Display Display { get; set; }
@@ -54,6 +57,7 @@ namespace ColorControl.Services.NVIDIA
             ditheringMode = 4;
             applyDriverSettings = false;
             driverSettings = new Dictionary<uint, uint>();
+            ocSettings = new List<NvGpuOcSettings>();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -96,7 +100,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Overclocking|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -129,11 +133,32 @@ namespace ColorControl.Services.NVIDIA
 
             values.Add(string.Format("{0}: {1}", applyDriverSettings ? "Included" : "Excluded", GetDriverSettingsDescription()));
 
+            values.Add(string.Format("{0}: {1}", applyOverclocking ? "Included" : "Excluded", GetOverclockingSettingsDescription()));
+
             values.Add(shortcut);
 
             values.Add(string.Format("{0}", config?.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
 
             return values;
+        }
+
+        public string GetOverclockingSettingsDescription(bool useNewLines = false)
+        {
+            if (ocSettings.Count == 0)
+            {
+                return "None";
+            }
+
+            var values = new List<string>();
+
+            foreach (var ocSetting in ocSettings)
+            {
+                var value = ocSetting.ToString();
+
+                values.Add($"{value}");
+            }
+
+            return string.Join(useNewLines ? "\r\n" : ", ", values);
         }
 
         public string GetDriverSettingsDescription(bool useNewLines = false)
@@ -292,6 +317,20 @@ namespace ColorControl.Services.NVIDIA
         internal void ResetDriverSetting(uint settingId)
         {
             driverSettings.Remove(settingId);
+        }
+
+        internal void UpdateOverclockingSetting(NvGpuOcSettings newSettings)
+        {
+            var index = ocSettings.FindIndex(s => s.PCIIdentifier == newSettings.PCIIdentifier);
+
+            if (index >= 0)
+            {
+                ocSettings[index] = newSettings;
+            }
+            else
+            {
+                ocSettings.Add(newSettings);
+            }
         }
     }
 }

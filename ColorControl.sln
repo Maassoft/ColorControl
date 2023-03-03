@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ColorControl", "ColorContro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nspector", "Nspector\Nspector.csproj", "{76797290-48F5-4A82-86C3-FAD25DAE4500}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NvAPIWrapper", "NvAPIWrapper\NvAPIWrapper.csproj", "{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,14 @@ Global
 		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|Any CPU.Build.0 = Release|Any CPU
 		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|x64.ActiveCfg = Release|Any CPU
 		{76797290-48F5-4A82-86C3-FAD25DAE4500}.Release|x64.Build.0 = Release|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Debug|x64.Build.0 = Debug|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Release|x64.ActiveCfg = Release|Any CPU
+		{42E2B4A6-6857-4427-AEF1-DF4C7EF8CC7C}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

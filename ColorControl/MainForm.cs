@@ -209,7 +209,7 @@ namespace ColorControl
             catch (Exception ex)
             {
                 //Logger.Error("Error initializing NvService: " + e.ToLogString());
-                Logger.Debug($"No NVIDIA device detected: {ex.Message}");
+                Logger.Debug($"No NVIDIA device detected: {ex.ToLogString()}");
                 tcMain.TabPages.Remove(tabNVIDIA);
             }
         }
@@ -577,22 +577,21 @@ namespace ColorControl
                 }
             }
 
-            //cbxNvGPU.Items.Clear();
-            //cbxNvGPU.Items.AddRange(gpus.ToArray());
-            //if (cbxNvGPU.Items.Count > 0)
-            //{
-            //    cbxNvGPU.SelectedIndex = 0;
-
-            //    var gpu = gpus[0];
-
-            //    var gpuThermal = gpu.ThermalInformation.ThermalSensors.FirstOrDefault(s => s.Target == NvAPIWrapper.Native.GPU.ThermalSettingsTarget.GPU);
-
-            //    edtNvGpuInfo.Text = $"GPU: {gpu.CurrentClockFrequencies.GraphicsClock.Frequency / 1000}MHz @ {gpuThermal.CurrentTemperature}°C, Mem: {gpu.CurrentClockFrequencies.MemoryClock.Frequency / 1000}MHz";
-
-            //    edtNvOverclock.Text = _nvService.GetGpuClocks(gpu);
-            //}
+            UpdateNvGpuInfo(gpus);
 
             FormUtils.SetNotifyIconText(_trayIcon, text);
+        }
+
+        private void UpdateNvGpuInfo(List<PhysicalGPU> gpus = null)
+        {
+            gpus ??= _nvService.GetGPUs();
+
+            cbxNvGPU.Items.Clear();
+            cbxNvGPU.Items.AddRange(gpus.ToArray());
+            if (cbxNvGPU.Items.Count > 0 && cbxNvGPU.SelectedIndex == -1)
+            {
+                cbxNvGPU.SelectedIndex = 0;
+            }
         }
 
         private void UpdateDisplayInfoItemsAmd()
@@ -724,7 +723,7 @@ namespace ColorControl
             var preset = GetSelectedNvPreset();
             var enabled = preset != null;
 
-            FormUtils.EnableControls(tabNVIDIA, enabled, new List<Control> { lvNvPresets, btnAddModesNv, btnChange, edtNvGpuInfo, btnNvSetClocks, btnNvSettings });
+            FormUtils.EnableControls(tabNVIDIA, enabled, new List<Control> { lvNvPresets, btnAddModesNv, btnChange, edtNvGpuInfo, btnNvSetClocks, btnNvSettings, edtNvOverclock });
 
             if (enabled)
             {
@@ -1223,6 +1222,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             miNvCopyId.Visible = presetItemsVisible;
             miNvDriverSettingsIncluded.Visible = presetItemsVisible;
             mnuNvDriverSettings.Enabled = preset != null;
+            mnuNvOverclocking.Visible = preset != null && _nvService.Config.ShowOverclocking;
 
             if (preset == null)
             {
@@ -1301,12 +1301,61 @@ NOTE: installing the service may cause a User Account Control popup.");
             mnuNvResolution.Font = _menuItemFonts[preset.applyResolution];
             miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
             miNvHDR.Font = _menuItemFonts[preset.applyHDR];
+            mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
+
+            BuildNvOverclockingMenu(preset);
 
             UpdateNvPresetMenuFont();
 
             BuildNvidiaDriverSettingsMenu(mnuNvDriverSettings, isCurrentDisplay ? null : preset.driverSettings);
 
             mnuNvDriverSettings.Font = _menuItemFonts[preset.applyDriverSettings];
+        }
+
+        private void BuildNvOverclockingMenu(NvPreset preset)
+        {
+            miNvOverclockingIncluded.Checked = preset.applyOverclocking;
+
+            var gpus = _nvService.GetGPUs();
+
+            foreach (var gpu in gpus)
+            {
+                var gpuPciId = gpu.BusInformation.PCIIdentifiers.ToString();
+
+                var name = $"{mnuNvOverclocking.Name}_{gpu.GPUId}";
+
+                var gpuItem = FormUtils.BuildMenuItem(mnuNvOverclocking.DropDownItems, name, gpu.FullName);
+
+                var subName = $"{name}_change";
+
+                var ocSettings = preset.ocSettings.FirstOrDefault(s => s.PCIIdentifier == gpuPciId) ?? new NvGpuOcSettings { PCIIdentifier = gpuPciId };
+
+                var subText = $"{ocSettings} (click to change)";
+
+                var subItem = FormUtils.BuildMenuItem(gpuItem.DropDownItems, subName, subText, ocSettings, nvChangeOverclockingMenuItem_Click);
+            }
+        }
+
+        private void nvChangeOverclockingMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            var menuItem = (ToolStripItem)sender;
+
+            var currentSettings = (NvGpuOcSettings)menuItem.Tag;
+
+            var gpuInfo = NvGpuInfo.GetGpuInfo(currentSettings.PCIIdentifier);
+
+            var newSettings = AskNvOcSettings(gpuInfo, currentSettings);
+
+            if (newSettings == null)
+            {
+                return;
+            }
+
+            preset.UpdateOverclockingSetting(newSettings);
+
+            AddOrUpdateItem();
         }
 
         private void BuildNvRefreshRateResolutionMenu(NvPreset preset)
@@ -2969,9 +3018,9 @@ Do you want to continue?";
                 ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
             };
 
-            var result = PipeUtils.SendMessage(message);
+            var result = PipeUtils.SendMessage(message, 10000);
 
-            if (!result.Result)
+            if (result != null && !result.Result)
             {
                 MessageForms.ErrorOk($"Error while updating: {result.ErrorMessage}");
 
@@ -4400,19 +4449,42 @@ The InStart and Software Update items are now visible under the Expert-button."
 
         private void miNvSettings_Click(object sender, EventArgs e)
         {
-            var shortcut = EditShortcut(_config.NvQuickAccessShortcut, "Quick Access shortcut", "NVIDIA controller settings");
+            EditNvSettings();
+        }
 
-            if (shortcut == null)
+        private void EditNvSettings()
+        {
+            var values = MessageForms.ShowDialog("NVIDIA controller settings", new[] {
+                new MessageForms.FieldDefinition
+                {
+                    Label = "Quick Access shortcut",
+                    FieldType = MessageForms.FieldType.Shortcut,
+                    Value = _config.NvQuickAccessShortcut
+                },
+                new MessageForms.FieldDefinition
+                {
+                    Label = "Enable overclocking",
+                    FieldType = MessageForms.FieldType.CheckBox,
+                    Value = _nvService.Config.ShowOverclocking
+                }
+            });
+            if (!values.Any())
             {
                 return;
             }
+
+            var shortcut = values[0].Value.ToString();
+            var enableOc = (bool)values[1].Value;
 
             var clear = !string.IsNullOrEmpty(_config.NvQuickAccessShortcut);
 
             _config.NvQuickAccessShortcut = shortcut;
 
             Utils.RegisterShortcut(Handle, SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, clear);
+
+            _nvService.Config.ShowOverclocking = enableOc;
         }
+
 
         private void btnNvSettings_Click(object sender, EventArgs e)
         {
@@ -4876,30 +4948,316 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void btnNvSetClocks_Click(object sender, EventArgs e)
         {
+            var gpu = cbxNvGPU.SelectedItem as PhysicalGPU;
+
+            if (gpu == null)
+            {
+                return;
+            }
+
+            var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+            var currentSettings = gpuInfo.GetOverclockSettings();
+
+            var newSettings = AskNvOcSettings(gpuInfo, currentSettings);
+
+            if (newSettings == null)
+            {
+                return;
+            }
+
+            _nvService.ApplyOverclocking(newSettings);
+
+            UpdateNvGpuInfo();
+        }
+
+        public NvGpuOcSettings AskNvOcSettings(NvGpuInfo gpuInfo, NvGpuOcSettings currentSettings)
+        {
+            var overclockTypes = Utils.GetDescriptions<NvGpuOcType>();
+
+            var values = MessageForms.ShowDialog("Choose desired overclock settings", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Overclock method",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = overclockTypes,
+                        Value = currentSettings.Type
+                    } });
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            var overclockType = Enum.Parse<NvGpuOcType>(values[0].Value.ToString());
+            var newSettings = default(NvGpuOcSettings);
+
+            if (overclockType == NvGpuOcType.Curve)
+            {
+                newSettings = AskNvCurveOcSettings(gpuInfo, currentSettings);
+            }
+            else if (overclockType == NvGpuOcType.Offset)
+            {
+                newSettings = AskNvOffsetOcSettings(gpuInfo, currentSettings);
+            }
+            else
+            {
+                newSettings = new NvGpuOcSettings
+                {
+                    Type = overclockType,
+                    PCIIdentifier = gpuInfo.GPU.BusInformation.PCIIdentifiers.ToString()
+                };
+            }
+
+            return newSettings;
+        }
+
+        public NvGpuOcSettings AskNvCurveOcSettings(NvGpuInfo gpuInfo, NvGpuOcSettings currentSettings)
+        {
+            var nvOverclockSettings = new NvGpuOcSettings
+            {
+                Type = NvGpuOcType.Curve,
+                PCIIdentifier = gpuInfo.GPU.BusInformation.PCIIdentifiers.ToString()
+            };
+
+            var curveEntries = gpuInfo.CurveV3.GPUCurveEntries;
+
+            var graphicsDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
+
+            var minCurveFreq = curveEntries.Max(e => e.DefaultFrequencyInkHz) + graphicsDelta.Item1;
+            var freqValues = curveEntries
+                .Where(e => e.DefaultFrequencyInkHz == 0 || e.DefaultFrequencyInkHz >= minCurveFreq)
+                .Select(e => (e.DefaultFrequencyInkHz / 1000).ToString()).Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            var voltValues = curveEntries
+                .Where(e => e.DefaultVoltageInMicroV == 0 || e.DefaultFrequencyInkHz >= minCurveFreq)
+                .OrderBy(e => e.DefaultVoltageInMicroV)
+                .Select(e => (e.DefaultVoltageInMicroV / 1000).ToString())
+                .Distinct()
+                .ToList();
+
+            var currentGraphicsVoltage = currentSettings.MaximumVoltageUv > 0 ? currentSettings.MaximumVoltageUv : 1050000;
+
+            var curveEntry = curveEntries.FirstOrDefault(e => e.VoltageInMicroV == currentGraphicsVoltage);
+            var currentGpuFreq = curveEntry.FrequencyInkHz;
+
+            var memoryDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
+
+            var powerLimits = gpuInfo.GetPowerLimits();
+
+            var defaultPowerLimitMw = gpuInfo.DefaultPowerInMilliWatts;
+
+            var powerField = defaultPowerLimitMw > 0 ?
+                new MessageForms.FieldDefinition
+                {
+                    Label = $"Power limit in milli watts. Min: {gpuInfo.MinPowerInMilliWatts}, max: {gpuInfo.MaxPowerInMilliWatts}",
+                    FieldType = MessageForms.FieldType.TrackBar,
+                    Value = (int)((decimal)defaultPowerLimitMw / 100000 * currentSettings.PowerPCM),
+                    MinValue = gpuInfo.MinPowerInMilliWatts,
+                    MaxValue = gpuInfo.MaxPowerInMilliWatts
+                }
+                : new MessageForms.FieldDefinition
+                {
+                    Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
+                    FieldType = MessageForms.FieldType.TrackBar,
+                    Value = currentSettings.PowerPCM,
+                    MinValue = powerLimits.Item1,
+                    MaxValue = powerLimits.Item2
+                };
+
             var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
                     new MessageForms.FieldDefinition
                     {
+                        Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = graphicsDelta.Item1 / 1000,
+                        MaxValue = graphicsDelta.Item2 / 1000,
+                        Value = currentSettings.GraphicsOffsetKHz / 1000
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Optional undervolt: maximum voltage in milli volt",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Value = currentSettings.MaximumVoltageUv / 1000,
+                        Values = voltValues,
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Optional undervolt: maximum core frequency in MHz",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Value = currentSettings.MaximumFrequencyKHz / 1000,
+                        Values = freqValues,
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = memoryDelta.Item1 / 1000,
+                        MaxValue = memoryDelta.Item2 / 1000,
+                        Value = currentSettings.MemoryOffsetKHz / 1000
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Voltage boost in %",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        Value = currentSettings.VoltageBoostPercent,
+                        MinValue = 0,
+                        MaxValue = 100
+                    },
+                    powerField,
+            });
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            nvOverclockSettings.GraphicsOffsetKHz = values[0].ValueAsInt * 1000;
+            nvOverclockSettings.MaximumVoltageUv = values[1].ValueAsUInt * 1000;
+            nvOverclockSettings.MaximumFrequencyKHz = values[2].ValueAsUInt * 1000;
+            nvOverclockSettings.MemoryOffsetKHz = values[3].ValueAsInt * 1000;
+            nvOverclockSettings.VoltageBoostPercent = values[4].ValueAsUInt;
+
+            var power = values[5].ValueAsUInt;
+
+            nvOverclockSettings.PowerPCM = defaultPowerLimitMw > 0 ? (uint)((decimal)power / defaultPowerLimitMw * 100000) : power;
+
+            return nvOverclockSettings;
+        }
+
+        public NvGpuOcSettings AskNvOffsetOcSettings(NvGpuInfo gpuInfo, NvGpuOcSettings currentSettings)
+        {
+            var nvOverclockSettings = new NvGpuOcSettings
+            {
+                Type = NvGpuOcType.Offset,
+                PCIIdentifier = gpuInfo.GPU.BusInformation.PCIIdentifiers.ToString()
+            };
+
+            var curveEntries = gpuInfo.CurveV3.GPUCurveEntries;
+
+            var freqValues = curveEntries.Select(e => (e.DefaultFrequencyInkHz / 1000).ToString()).Distinct().ToList();
+            var voltValues = curveEntries.Select(e => (e.DefaultVoltageInMicroV / 1000).ToString()).Distinct().ToList();
+
+            var currentGraphicsVoltage = currentSettings.MaximumVoltageUv > 0 ? currentSettings.MaximumVoltageUv : 1050000;
+
+            var curveEntry = curveEntries.FirstOrDefault(e => e.VoltageInMicroV == currentGraphicsVoltage);
+            var currentGpuFreq = curveEntry.FrequencyInkHz;
+
+            var graphicsDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
+            var memoryDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
+
+            var powerLimits = gpuInfo.GetPowerLimits();
+
+            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = graphicsDelta.Item1 / 1000,
+                        MaxValue = graphicsDelta.Item2 / 1000,
+                        Value = currentSettings.GraphicsOffsetKHz / 1000
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = memoryDelta.Item1 / 1000,
+                        MaxValue = memoryDelta.Item2 / 1000,
+                        Value = currentSettings.MemoryOffsetKHz / 1000
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Voltage boost in %",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        Value = currentSettings.VoltageBoostPercent,
+                        MinValue = 0,
+                        MaxValue = 100
+                    },
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        Value = currentSettings.PowerPCM,
+                        MinValue = powerLimits.Item1,
+                        MaxValue = powerLimits.Item2
+                    },
+            });
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            nvOverclockSettings.GraphicsOffsetKHz = values[0].ValueAsInt * 1000;
+            nvOverclockSettings.MemoryOffsetKHz = values[1].ValueAsInt * 1000;
+            nvOverclockSettings.VoltageBoostPercent = values[2].ValueAsUInt;
+            nvOverclockSettings.PowerPCM = values[3].ValueAsUInt;
+
+            return nvOverclockSettings;
+        }
+
+        public void SetClocks()
+        {
+            var gpu = cbxNvGPU.SelectedItem as PhysicalGPU;
+
+            var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+
+            var curveEntries = gpuInfo.CurveV3.GPUCurveEntries;
+
+            var freqValues = curveEntries.Select(e => e.DefaultFrequencyInkHz.ToString()).Distinct().ToList();
+            var voltValues = curveEntries.Select(e => e.DefaultVoltageInMicroV.ToString()).Distinct().ToList();
+
+            var lockedGraphics = gpuInfo.GetLockedBoost(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
+
+            var currentGraphicsVoltage = lockedGraphics.Item1 > 0 ? lockedGraphics.Item1 : 1050000;
+
+            var curveEntry = curveEntries.FirstOrDefault(e => e.VoltageInMicroV == currentGraphicsVoltage);
+            var currentGpuFreq = curveEntry.FrequencyInkHz;
+
+            var graphicsDelta = gpuInfo.GetDeltaClockLimits(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
+            var memoryDelta = gpuInfo.GetDeltaClockLimits(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
+
+            var graphicsMinValue = graphicsDelta?.DeltaRange.Minimum ?? -502000;
+            var graphicsMaxValue = graphicsDelta?.DeltaRange.Maximum ?? 1000000;
+            var memoryMinValue = memoryDelta?.DeltaRange.Minimum ?? -502000;
+            var memoryMaxValue = memoryDelta?.DeltaRange.Maximum ?? 3000000;
+
+            var currentGraphicsOffset = gpuInfo.GetOffset(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
+            var currentMemoryOffset = gpuInfo.GetOffset(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
+
+            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = $"Core offset in MHz ({graphicsMinValue}KHz to {graphicsMaxValue}KHz)",
+                        FieldType = MessageForms.FieldType.Numeric,
+                        MinValue = graphicsDelta?.DeltaRange.Minimum ?? -502000,
+                        MaxValue = graphicsDelta?.DeltaRange.Maximum ?? 1000000,
+                        Value = currentGraphicsOffset
+                    },
+                    new MessageForms.FieldDefinition
+                    {
                         Label = "Voltage in micro volt",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = 650000,
-                        MaxValue = 1100000,
-                        Value = 1050000
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = voltValues,
+                        //FieldType = MessageForms.FieldType.Numeric,
+                        //MinValue = 650000,
+                        //MaxValue = 1100000,
+                        //Value = currentGraphicsVoltage
                     },
                     new MessageForms.FieldDefinition
                     {
-                        Label = "Core offset in KHz",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = -502000,
-                        MaxValue = 1000000,
-                        Value = 0
+                        Label = "Core frequency in KHz",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = freqValues,
+                        //FieldType = MessageForms.FieldType.Numeric,
+                        //MinValue = 2000000,
+                        //MaxValue = 3200000,
+                        //Value = currentGpuFreq
                     },
                     new MessageForms.FieldDefinition
                     {
-                        Label = "Memory offset in KHz",
+                        Label = $"Memory offset in KHz ({memoryMinValue}KHz to {memoryMaxValue}KHz)",
                         FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = -502000,
+                        MinValue = graphicsDelta?.DeltaRange.Minimum ?? -502000,
                         MaxValue = 2500000,
-                        Value = 0
+                        Value = currentMemoryOffset
                     },
             });
             if (!values.Any())
@@ -4908,10 +5266,47 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
 
             var voltage = (uint)values[0].ValueAsInt;
-            var coreOffset = values[1].ValueAsInt;
+            //var coreOffset = values[1].ValueAsInt;
+            var coreFreq = values[1].ValueAsInt;
             var memoryOffset = values[2].ValueAsInt;
 
-            _nvService.SetGpuClocks(null, voltage, coreOffset, memoryOffset);
+            var normalized = (coreFreq / 15000) * 15000;
+            var newCurveEntryFreq = curveEntries.FirstOrDefault(e => e.DefaultFrequencyInkHz == normalized);
+            var newCurveEntryVolt = curveEntries.FirstOrDefault(e => e.DefaultVoltageInMicroV == voltage);
+
+            var coreOffset = (int)(newCurveEntryFreq.DefaultFrequencyInkHz - newCurveEntryVolt.DefaultFrequencyInkHz);
+
+            gpuInfo.SetGpuClocks(voltage, coreOffset, memoryOffset);
+        }
+
+        private void miNvOverclockingIncluded_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            preset.applyOverclocking = !preset.applyOverclocking;
+
+            AddOrUpdateItem();
+        }
+
+        private void cbxNvGPU_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RefreshNvGpuInfo();
+        }
+
+        private void RefreshNvGpuInfo()
+        {
+            var gpu = (PhysicalGPU)cbxNvGPU.SelectedItem;
+
+            if (gpu == null)
+            {
+                return;
+            }
+
+            var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+            var ocSettings = gpuInfo.GetOverclockSettings();
+
+            edtNvGpuInfo.Text = gpuInfo.ToString();
+            edtNvOverclock.Text = ocSettings.ToString();
         }
     }
 }

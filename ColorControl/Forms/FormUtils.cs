@@ -198,6 +198,11 @@ namespace ColorControl.Forms
                     item.Click += onClick;
                 }
             }
+            else
+            {
+                item.Text = text;
+                item.Tag = tag;
+            }
             //else if (onClick != null)
             //{
             //    RemoveEvents(item, "Click");

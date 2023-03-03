@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ColorControl.Services.NVIDIA;
+using System.Collections.Generic;
 
 namespace ColorControl.Svc
 {
@@ -12,6 +13,7 @@ namespace ColorControl.Svc
         RestartAfterUpdate = 21,
         ApplyNvidiaDriverSettings = 101,
         RestoreNvidiaDriverSetting = 102,
+        ApplyNvidiaOverclocking = 110,
     }
 
     public class SvcMessage
@@ -42,5 +44,15 @@ namespace ColorControl.Svc
         public string ProfileName { get; set; }
 
         public List<KeyValuePair<uint, string>> DriverSettings { get; set; }
+    }
+
+    public class SvcNvOverclockingMessage : SvcMessage
+    {
+        public SvcNvOverclockingMessage(SvcMessageType messageType = SvcMessageType.ApplyNvidiaOverclocking)
+        {
+            MessageType = messageType;
+        }
+
+        public List<NvGpuOcSettings> OverclockingSettings { get; set; }
     }
 }

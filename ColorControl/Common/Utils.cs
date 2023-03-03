@@ -1242,5 +1242,8 @@ The best and suggested method to provide this is via a Windows Service. Only whe
         {
             return SHA256CheckSum(filePath1) == SHA256CheckSum(filePath2);
         }
+
+        public static string ToUnitString(this uint value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
+        public static string ToUnitString(this int value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
     }
 }

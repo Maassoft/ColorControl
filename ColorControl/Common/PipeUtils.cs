@@ -10,12 +10,12 @@ namespace ColorControl.Common
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static string SendMessage(string message)
+        public static string SendMessage(string message, int timeout = 500)
         {
             var pipeClient = new NamedPipeClientStream(".", "testpipe", PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
             try
             {
-                pipeClient.Connect(500);
+                pipeClient.Connect(timeout);
                 try
                 {
                     var ss = new StreamString(pipeClient);
@@ -39,11 +39,11 @@ namespace ColorControl.Common
             }
         }
 
-        public static SvcResultMessage SendMessage(SvcMessage message)
+        public static SvcResultMessage SendMessage(SvcMessage message, int timeout = 500)
         {
             var messageJson = JsonConvert.SerializeObject(message);
 
-            var resultJson = SendMessage(messageJson);
+            var resultJson = SendMessage(messageJson, timeout);
 
             if (resultJson == null)
             {

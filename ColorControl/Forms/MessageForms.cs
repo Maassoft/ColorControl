@@ -16,6 +16,8 @@ namespace ColorControl.Forms
             DropDown,
             Flags,
             Shortcut,
+            CheckBox,
+            TrackBar
         }
 
         public class FieldDefinition
@@ -29,10 +31,14 @@ namespace ColorControl.Forms
             public object Value { get; set; }
 
             public int ValueAsInt => int.Parse(Value.ToString());
+            public uint ValueAsUInt => uint.Parse(Value.ToString());
         }
 
         public class MessageForm : Form
         {
+            private ToolTip _toolTip;
+            public Dictionary<Control, Control> _controls = new();
+
             public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
             {
                 ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
@@ -41,6 +47,25 @@ namespace ColorControl.Forms
             public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
             {
                 Utils.HandleKeyboardShortcutUp(e);
+            }
+
+            public void TrackBar_Scroll(object sender, EventArgs e)
+            {
+                var trackBar = sender as TrackBar;
+                var edit = (NumericUpDown)_controls[trackBar];
+
+                edit.Value = trackBar.Value;
+
+                _toolTip ??= new ToolTip();
+                _toolTip.Show(trackBar.Value.ToString(), trackBar, 50, 10, 1500);
+            }
+
+            public void TrackBarEdit_ValueChanged(object sender, EventArgs e)
+            {
+                var edit = (NumericUpDown)sender;
+                var trackBar = (TrackBar)_controls.First(c => c.Value == edit).Key;
+
+                trackBar.Value = (int)edit.Value;
             }
         }
 
@@ -179,10 +204,28 @@ namespace ColorControl.Forms
                         if (field.Values != null && field.Values.Any())
                         {
                             comboBox.Items.AddRange(field.Values.ToArray());
-                            comboBox.SelectedIndex = field.Value is string strValue ? comboBox.Items.IndexOf(strValue) : 0;
+                            comboBox.SelectedIndex = field.Value != null ? comboBox.Items.IndexOf(field.Value.ToString()) : 0;
+
+                            if (comboBox.SelectedIndex == -1)
+                            {
+                                comboBox.SelectedIndex = 0;
+                            }
                         }
 
                         control = comboBox;
+                        break;
+
+                    case FieldType.CheckBox:
+                        var checkBox = new CheckBox
+                        {
+                            Left = 40,
+                            Top = top,
+                            Width = 24,
+                        };
+
+                        checkBox.Checked = field.Value is bool boolValue && boolValue;
+
+                        control = checkBox;
                         break;
 
                     case FieldType.Flags:
@@ -214,6 +257,43 @@ namespace ColorControl.Forms
 
                         control = checkedListBox;
                         break;
+
+                    case FieldType.TrackBar:
+                        var trackBar = new TrackBar { Left = 40, Top = top, Width = 300 };
+                        var trackBarEdit = new NumericUpDown() { Left = trackBar.Left + trackBar.Width + 10, Top = top + 10, Width = 90 };
+
+                        trackBarEdit.ValueChanged += prompt.TrackBarEdit_ValueChanged;
+
+                        prompt._controls.Add(trackBar, trackBarEdit);
+
+                        trackBar.Orientation = Orientation.Horizontal;
+                        trackBar.TickStyle = TickStyle.Both;
+                        trackBar.Scroll += prompt.TrackBar_Scroll;
+
+                        if (field.MinValue != field.MaxValue)
+                        {
+                            trackBar.Minimum = (int)field.MinValue;
+                            trackBar.Maximum = (int)field.MaxValue;
+                            trackBar.TickFrequency = (trackBar.Maximum - trackBar.Minimum) / 100;
+
+                            trackBarEdit.Minimum = field.MinValue;
+                            trackBarEdit.Maximum = field.MaxValue;
+                        }
+
+                        if (field.Value != null)
+                        {
+                            trackBar.Value = field.Value is uint ? (int)(uint)field.Value : (int)field.Value;
+                            trackBarEdit.Value = trackBar.Value;
+                        }
+
+                        top += trackBar.Height - 25;
+                        prompt.Height += trackBar.Height - 25;
+
+                        prompt.Controls.Add(trackBarEdit);
+
+                        control = trackBar;
+                        break;
+
 
                     default:
                         continue;
@@ -248,6 +328,21 @@ namespace ColorControl.Forms
 
                             field.Value = compoundValue;
                             break;
+
+                        case FieldType.CheckBox:
+                            var checkBox = (CheckBox)box;
+
+                            field.Value = checkBox.Checked;
+
+                            break;
+
+                        case FieldType.TrackBar:
+                            var trackBar = (TrackBar)box;
+
+                            field.Value = trackBar.Value;
+
+                            break;
+
                         default:
                             field.Value = box.Text.Trim();
                             break;

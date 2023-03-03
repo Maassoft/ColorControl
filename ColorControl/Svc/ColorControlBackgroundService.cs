@@ -110,6 +110,7 @@ namespace ColorControl.Svc
                 SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
                 SvcMessageType.ApplyNvidiaDriverSettings => HandleNvDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
                 SvcMessageType.RestoreNvidiaDriverSetting => HandleNvRestoreDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
+                SvcMessageType.ApplyNvidiaOverclocking => HandleNvOverclockingMessage(JsonConvert.DeserializeObject<SvcNvOverclockingMessage>(json)),
                 _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
@@ -195,6 +196,13 @@ namespace ColorControl.Svc
             var result = NvService.RestoreDriverSettings(message.ProfileName, message.DriverSettings);
 
             return SvcResultMessage.FromResult(result);
+        }
+
+        private SvcResultMessage HandleNvOverclockingMessage(SvcNvOverclockingMessage message)
+        {
+            NvService.CheckServiceInstance().ApplyOverclocking(message.OverclockingSettings);
+
+            return SvcResultMessage.FromResult(true);
         }
 
         private async Task WakeDevicesAsync()
