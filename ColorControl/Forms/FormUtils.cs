@@ -3,6 +3,7 @@ using ColorControl.Services.Common;
 using NStandard;
 using NWin32;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -520,6 +521,33 @@ namespace ColorControl.Forms
             eventHandlerList.Dispose();
         }
 
+        public static void ListViewItemChecked<T>(ListView listView, ItemCheckedEventArgs e) where T : PresetBase
+        {
+            var checkedPreset = (T)e.Item.Tag;
+
+            if (checkedPreset == null || checkedPreset.ShowInQuickAccess == e.Item.Checked)
+            {
+                return;
+            }
+
+            var point = listView.PointToClient(Cursor.Position);
+
+            if (point.X >= 20)
+            {
+                e.Item.Checked = !e.Item.Checked;
+                return;
+            }
+
+            checkedPreset.ShowInQuickAccess = e.Item.Checked;
+
+            var preset = listView.GetSelectedItemTag<T>();
+
+            if (preset == checkedPreset)
+            {
+                listView.FireEvent("SelectedIndexChanged", listView, e);
+            }
+        }
+
         public static string ExtendedDisplayName(string displayName)
         {
             var name = displayName;
@@ -530,6 +558,108 @@ namespace ColorControl.Forms
             }
 
             return name;
+        }
+
+        public static string EditShortcut(string shortcut, string label = "Shortcut", string title = null)
+        {
+            var field = new MessageForms.FieldDefinition
+            {
+                Label = label,
+                FieldType = MessageForms.FieldType.Shortcut,
+                Value = shortcut
+            };
+            var values = MessageForms.ShowDialog(title ?? "Set shortcut", new[] { field });
+            if (!values.Any())
+            {
+                return null;
+            }
+
+            return values.First().Value.ToString();
+        }
+
+        public static void ListViewSort(object sender, ColumnClickEventArgs e)
+        {
+            var listView = (ListView)sender;
+            var sorter = (ListViewColumnSorter)listView.ListViewItemSorter;
+
+            // Determine if clicked column is already the column that is being sorted.
+            if (e.Column == sorter.SortColumn)
+            {
+                //if (sorter.Order == SortOrder.None)
+                //{
+                //    sorter.Order = SortOrder.Ascending;
+                //}
+                // Reverse the current sort direction for this column.
+                if (sorter.Order == SortOrder.Ascending)
+                {
+                    sorter.Order = SortOrder.Descending;
+                }
+                else
+                {
+                    sorter.Order = SortOrder.Ascending;
+                }
+            }
+            else
+            {
+                // Set the column number that is to be sorted; default to ascending.
+                sorter.SortColumn = e.Column;
+                sorter.Order = SortOrder.Ascending;
+            }
+
+            // Perform the sort with these new sort options.
+            listView.Sort();
+        }
+
+        public static void BuildServicePresetsMenu<T>(ToolStripMenuItem menu, ServiceBase<T> service, string name, EventHandler eventHandler) where T : PresetBase, new()
+        {
+            menu.DropDownItems.Clear();
+
+            foreach (var nvPreset in service?.GetPresets() ?? new List<T>())
+            {
+                var text = nvPreset.name;
+
+                if (!string.IsNullOrEmpty(text))
+                {
+                    var item = menu.DropDownItems.Add(text);
+                    item.Tag = nvPreset;
+                    item.Click += eventHandler;
+                }
+            }
+
+            menu.Visible = service != null;
+
+            menu.Text = menu.DropDownItems.Count > 0 ? $"{name} presets" : $"{name} presets (no named presets found)";
+        }
+
+        public static void ShowControls(Control parent, bool show = true, Control exclude = null)
+        {
+            for (var i = 0; i < parent.Controls.Count; i++)
+            {
+                var control = parent.Controls[i];
+                if (control != exclude)
+                {
+                    control.Visible = show;
+                }
+            }
+        }
+
+        public static void InitSortState(ListView listView, ListViewSortState sortState)
+        {
+            var sorter = new ListViewColumnSorter();
+            sorter.SortColumn = sortState.SortIndex;
+            sorter.Order = sortState.SortOrder;
+            listView.ListViewItemSorter = sorter;
+        }
+
+        public static void SaveSortState(IComparer comparer, ListViewSortState sortState)
+        {
+            if (!(comparer is ListViewColumnSorter sorter))
+            {
+                return;
+            }
+
+            sortState.SortOrder = sorter.Order;
+            sortState.SortIndex = sorter.SortColumn;
         }
     }
 

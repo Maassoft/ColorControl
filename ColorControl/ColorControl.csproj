@@ -60,6 +60,9 @@
 	<Compile Update="services\lg\RemoteControlPanel.cs">
 	  <SubType>UserControl</SubType>
 	</Compile>
+	<Compile Update="Services\NVIDIA\NvPanel.cs">
+	  <SubType>UserControl</SubType>
+	</Compile>
 	<EmbeddedResource Include="Resources\LG_register.json" />
 	<EmbeddedResource Include="Resources\RC_coords.txt" />
 	<EmbeddedResource Include="Resources\LG_remote.jpg" />
