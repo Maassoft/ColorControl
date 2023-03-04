@@ -19,8 +19,8 @@ namespace ColorControl.Services.LG
 {
     public partial class LgPanel : UserControl
     {
-        private static int SHORTCUTID_LGQA = -202;
-        private static int SHORTCUTID_GAMEBAR = -101;
+        public static readonly int SHORTCUTID_LGQA = -202;
+        public static readonly int SHORTCUTID_GAMEBAR = -101;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -69,11 +69,9 @@ namespace ColorControl.Services.LG
                 var item = mnuLgRcButtons.DropDownItems.Add(text);
                 item.Click += miLgAddButton_Click;
             }
-
-            Load += LgPanel_Load;
         }
 
-        private void LgPanel_Load(object sender, EventArgs e)
+        public void Init()
         {
             _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
 
@@ -1162,38 +1160,6 @@ Do you want to continue?"
         private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             FormUtils.ListViewItemChecked<LgPreset>(lvLgPresets, e);
-        }
-
-        private void lvNvPresets_ItemCheck(object sender, ItemCheckEventArgs e)
-        {
-            var listView = sender as System.Windows.Forms.ListView;
-
-            if (!listView.Focused)
-            {
-                return;
-            }
-
-
-            var point = listView.PointToClient(Cursor.Position);
-
-            if (point.X >= 20)
-            {
-                return;
-            }
-
-            var listItem = listView.Items[e.Index];
-
-            if (listItem.Tag == null)
-            {
-                MessageForms.WarningOk("Quick Access cannot be enabled for this item.");
-                e.NewValue = e.CurrentValue;
-            }
-
-            if (e.NewValue == CheckState.Checked && string.IsNullOrEmpty(listItem.Text))
-            {
-                MessageForms.WarningOk("A name must be entered before enabling Quick Access.");
-                e.NewValue = e.CurrentValue;
-            }
         }
     }
 }

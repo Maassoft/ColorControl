@@ -29,11 +29,6 @@ namespace ColorControl
         private static bool EndSession = false;
         private static bool UserExit = false;
         private static int SHORTCUTID_SCREENSAVER = -100;
-        private static int SHORTCUTID_GAMEBAR = -101;
-        private static int SHORTCUTID_NVQA = -200;
-        private static int SHORTCUTID_AMDQA = -201;
-        private static int SHORTCUTID_LGQA = -202;
-        private static int SHORTCUTID_GAMEQA = -203;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -41,10 +36,10 @@ namespace ColorControl
 
         private NvService _nvService;
         private NvPanel _nvPanel;
+        private NvDitherPanel _nvDitherPanel;
 
         private NotifyIcon _trayIcon;
         private bool _initialized = false;
-        private bool _disableEvents = false;
         private Config _config;
         private bool _setVisibleCalled = false;
 
@@ -65,10 +60,7 @@ namespace ColorControl
         private FileVersionInfo _currentVersionInfo;
         private bool _checkedForUpdates = false;
         private string _updateHtmlUrl;
-        private bool _updatingDitherSettings;
         private string _downloadUrl;
-
-        private LgGameBar _gameBarForm;
 
         private GameService _gameService;
         private GamePanel _gamePanel;
@@ -195,7 +187,7 @@ namespace ColorControl
 
                 tabNVIDIA.Controls.Add(_nvPanel);
 
-                InitShortcut(SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _nvService.ToggleQuickAccessForm);
+                InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _nvService.ToggleQuickAccessForm);
             }
             catch (Exception ex)
             {
@@ -217,7 +209,7 @@ namespace ColorControl
 
                 tabAMD.Controls.Add(_amdPanel);
 
-                InitShortcut(SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _amdService.ToggleQuickAccessForm);
+                InitShortcut(AmdPanel.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _amdService.ToggleQuickAccessForm);
             }
             catch (Exception)
             {
@@ -239,7 +231,7 @@ namespace ColorControl
 
                 tabGameLauncher.Controls.Add(_gamePanel);
 
-                InitShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
+                InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
             }
             catch (Exception e)
             {
@@ -271,14 +263,16 @@ namespace ColorControl
 
                 tabLG.Controls.Add(_lgPanel);
 
+                _lgPanel.Init();
+
                 edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
                 edtLgOptionShutdownDelay.Value = _lgService.Config.ShutdownDelay;
                 chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
                 chkLgSetSelectedDeviceByPowerOn.Checked = _lgService.Config.SetSelectedDeviceByPowerOn;
 
                 LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
-                InitShortcut(SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut, _lgPanel.ToggleGameBar);
-                InitShortcut(SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, _lgService.ToggleQuickAccessForm);
+                InitShortcut(LgPanel.SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut, _lgPanel.ToggleGameBar);
+                InitShortcut(LgPanel.SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, _lgService.ToggleQuickAccessForm);
 
                 if (!string.IsNullOrEmpty(_lgService.Config.GameBarShortcut))
                 {
@@ -768,29 +762,17 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void InitOptionsTab()
         {
-            grpNvidiaOptions.Visible = _nvService != null;
-            if (grpNvidiaOptions.Visible)
+            if (_nvService != null && _nvDitherPanel == null)
             {
-                if (cbxDitheringBitDepth.Items.Count == 0)
-                {
-                    cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
-                    cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
-                    FillGradient();
-                }
+                _nvDitherPanel = new NvDitherPanel(_nvService);
 
-                if (cbxDitheringDisplay.Items.Count == 0)
-                {
-                    var displays = _nvService.GetDisplayInfos();
-                    var primaryDisplay = _nvService.GetPrimaryDisplay();
-                    var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
-                    var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
+                tabOptions.Controls.Add(_nvDitherPanel);
 
-                    cbxDitheringDisplay.Items.AddRange(displays.ToArray());
+                _nvDitherPanel.Top = grpGeneralOptions.Top;
+                _nvDitherPanel.Left = grpGeneralOptions.Left + grpGeneralOptions.Width + 4;
+                _nvDitherPanel.Width = tabOptions.Width - _nvDitherPanel.Left - 4;
 
-                    cbxDitheringDisplay.SelectedIndex = index;
-                }
-
-                UpdateDitherSettings();
+                _nvDitherPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             }
 
             _initialized = false;
@@ -811,35 +793,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
 
             UpdateServiceInfo();
-        }
-
-        private void UpdateDitherSettings()
-        {
-            var display = ((NvDisplayInfo)cbxDitheringDisplay.SelectedItem)?.Display;
-            var ditherInfo = _nvService.GetDithering(display);
-
-            if (ditherInfo.state == -1)
-            {
-                MessageForms.ErrorOk("Error retrieving dithering settings. See log for details.");
-                return;
-            }
-
-            var state = (NvDitherState)ditherInfo.state;
-
-            _updatingDitherSettings = true;
-            try
-            {
-                chkDitheringEnabled.CheckState = state switch { NvDitherState.Enabled => CheckState.Checked, NvDitherState.Disabled => CheckState.Unchecked, _ => CheckState.Indeterminate };
-                cbxDitheringBitDepth.SelectedIndex = ditherInfo.bits;
-                cbxDitheringMode.SelectedIndex = ditherInfo.mode;
-
-                cbxDitheringBitDepth.Enabled = state == NvDitherState.Enabled;
-                cbxDitheringMode.Enabled = state == NvDitherState.Enabled;
-            }
-            finally
-            {
-                _updatingDitherSettings = false;
-            }
         }
 
         private void UpdateTrayMenu(ToolStripMenuItem menu, IEnumerable<PresetBase> presets, EventHandler eventHandler)
@@ -1083,42 +1036,6 @@ Do you want to continue?";
             edtLog.Clear();
         }
 
-        private void FillGradient()
-        {
-            if (pbGradient.Image == null)
-            {
-                pbGradient.Image = Utils.GenerateGradientBitmap(pbGradient.Width, pbGradient.Height);
-            }
-        }
-
-        private void ApplyDitheringOptions()
-        {
-            if (_updatingDitherSettings)
-            {
-                return;
-            }
-
-            var state = chkDitheringEnabled.CheckState switch { CheckState.Checked => NvDitherState.Enabled, CheckState.Unchecked => NvDitherState.Disabled, _ => NvDitherState.Auto };
-            var bitDepth = cbxDitheringBitDepth.SelectedIndex;
-            var mode = cbxDitheringMode.SelectedIndex;
-            var display = ((NvDisplayInfo)cbxDitheringDisplay.SelectedItem)?.Display;
-
-            if (_nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal), currentDisplay: display) && state == NvDitherState.Auto)
-            {
-                UpdateDitherSettings();
-            }
-        }
-
-        private void cbxDitheringBitDepth_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            ApplyDitheringOptions();
-        }
-
-        private void cbxDitheringMode_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            ApplyDitheringOptions();
-        }
-
         private void AfterInitialized()
         {
             _nvPanel?.AfterInitialized();
@@ -1305,25 +1222,6 @@ The InStart and Software Update items are now visible under the Expert-button."
             ResumeLayout(true);
         }
 
-        private void chkDitheringEnabled_CheckStateChanged(object sender, EventArgs e)
-        {
-            cbxDitheringBitDepth.Enabled = chkDitheringEnabled.CheckState == CheckState.Checked;
-            cbxDitheringMode.Enabled = chkDitheringEnabled.CheckState == CheckState.Checked;
-
-            ApplyDitheringOptions();
-        }
-
-        private void btnLgDeviceOptionsHelp_Click(object sender, EventArgs e)
-        {
-            MessageForms.InfoOk(
-@"Notes:
-- power on after startup requires ""Automatically start after login"" - see Options
-- power on after resume from standby may need some retries for waking TV - see Options
-- power off on shutdown: because this app cannot detect a restart, restarting could also trigger this. Hold down Ctrl on restart to prevent power off.
-- Use Windows power settings: powering on/off of TV will follow Windows settings. If activated, it's better to disable all other power options except power off on shutdown.
-");
-        }
-
         private void edtLgOptionShutdownDelay_ValueChanged(object sender, EventArgs e)
         {
             _lgService.Config.ShutdownDelay = (int)edtLgOptionShutdownDelay.Value;
@@ -1507,16 +1405,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             _trayIcon.Visible = false;
         }
 
-        private void cbxDitheringDisplay_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-            UpdateDitherSettings();
-        }
-
         private void edtLgPowerOnAfterResumeDelay_ValueChanged(object sender, EventArgs e)
         {
             _lgService.Config.PowerOnRetries = (int)edtLgMaxPowerOnRetries.Value;
@@ -1571,11 +1459,11 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
                 if (string.IsNullOrEmpty(text))
                 {
-                    WinApi.UnregisterHotKey(Handle, SHORTCUTID_GAMEBAR);
+                    WinApi.UnregisterHotKey(Handle, LgPanel.SHORTCUTID_GAMEBAR);
                 }
                 else
                 {
-                    Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEBAR, text);
+                    Utils.RegisterShortcut(Handle, LgPanel.SHORTCUTID_GAMEBAR, text);
                 }
             }
         }

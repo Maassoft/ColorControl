@@ -19,7 +19,7 @@ namespace ColorControl.Services.GameLauncher
 {
     public partial class GamePanel : UserControl
     {
-        private static int SHORTCUTID_GAMEQA = -203;
+        public static readonly int SHORTCUTID_GAMEQA = -203;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 

@@ -15,7 +15,7 @@ namespace ColorControl.Services.AMD
 {
     public partial class AmdPanel : UserControl
     {
-        private static int SHORTCUTID_AMDQA = -201;
+        public static readonly int SHORTCUTID_AMDQA = -201;
 
         private AmdService _amdService;
         private NotifyIcon _trayIcon;

@@ -22,7 +22,7 @@ namespace ColorControl.Services.NVIDIA
 {
     partial class NvPanel : UserControl
     {
-        private static int SHORTCUTID_NVQA = -200;
+        public static readonly int SHORTCUTID_NVQA = -200;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tcMain = new System.Windows.Forms.TabControl();
             this.tabNVIDIA = new System.Windows.Forms.TabPage();
@@ -36,15 +35,6 @@
             this.tabLG = new System.Windows.Forms.TabPage();
             this.tabGameLauncher = new System.Windows.Forms.TabPage();
             this.tabOptions = new System.Windows.Forms.TabPage();
-            this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
-            this.lblDitheringDisplay = new System.Windows.Forms.Label();
-            this.cbxDitheringDisplay = new System.Windows.Forms.ComboBox();
-            this.lblDitheringMode = new System.Windows.Forms.Label();
-            this.cbxDitheringMode = new System.Windows.Forms.ComboBox();
-            this.lblDitheringBitDepth = new System.Windows.Forms.Label();
-            this.cbxDitheringBitDepth = new System.Windows.Forms.ComboBox();
-            this.chkDitheringEnabled = new System.Windows.Forms.CheckBox();
-            this.pbGradient = new System.Windows.Forms.PictureBox();
             this.grpMiscellaneousOptions = new System.Windows.Forms.GroupBox();
             this.btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
@@ -94,8 +84,6 @@
             this.btnUpdate = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabOptions.SuspendLayout();
-            this.grpNvidiaOptions.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
             this.grpMiscellaneousOptions.SuspendLayout();
             this.grpLGOptions.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.edtLgOptionShutdownDelay)).BeginInit();
@@ -172,7 +160,6 @@
             // 
             // tabOptions
             // 
-            this.tabOptions.Controls.Add(this.grpNvidiaOptions);
             this.tabOptions.Controls.Add(this.grpMiscellaneousOptions);
             this.tabOptions.Controls.Add(this.grpLGOptions);
             this.tabOptions.Controls.Add(this.grpGeneralOptions);
@@ -184,120 +171,6 @@
             this.tabOptions.TabIndex = 2;
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
-            // 
-            // grpNvidiaOptions
-            // 
-            this.grpNvidiaOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringDisplay);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringDisplay);
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringMode);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringMode);
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringBitDepth);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringBitDepth);
-            this.grpNvidiaOptions.Controls.Add(this.chkDitheringEnabled);
-            this.grpNvidiaOptions.Controls.Add(this.pbGradient);
-            this.grpNvidiaOptions.Location = new System.Drawing.Point(537, 7);
-            this.grpNvidiaOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpNvidiaOptions.Name = "grpNvidiaOptions";
-            this.grpNvidiaOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(569, 365);
-            this.grpNvidiaOptions.TabIndex = 6;
-            this.grpNvidiaOptions.TabStop = false;
-            this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
-            // 
-            // lblDitheringDisplay
-            // 
-            this.lblDitheringDisplay.AutoSize = true;
-            this.lblDitheringDisplay.Location = new System.Drawing.Point(7, 23);
-            this.lblDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringDisplay.Name = "lblDitheringDisplay";
-            this.lblDitheringDisplay.Size = new System.Drawing.Size(48, 15);
-            this.lblDitheringDisplay.TabIndex = 9;
-            this.lblDitheringDisplay.Text = "Display:";
-            // 
-            // cbxDitheringDisplay
-            // 
-            this.cbxDitheringDisplay.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringDisplay.FormattingEnabled = true;
-            this.cbxDitheringDisplay.Location = new System.Drawing.Point(75, 17);
-            this.cbxDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringDisplay.Name = "cbxDitheringDisplay";
-            this.cbxDitheringDisplay.Size = new System.Drawing.Size(212, 23);
-            this.cbxDitheringDisplay.TabIndex = 8;
-            this.cbxDitheringDisplay.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringDisplay_SelectedIndexChanged);
-            // 
-            // lblDitheringMode
-            // 
-            this.lblDitheringMode.AutoSize = true;
-            this.lblDitheringMode.Location = new System.Drawing.Point(7, 105);
-            this.lblDitheringMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringMode.Name = "lblDitheringMode";
-            this.lblDitheringMode.Size = new System.Drawing.Size(41, 15);
-            this.lblDitheringMode.TabIndex = 7;
-            this.lblDitheringMode.Text = "Mode:";
-            // 
-            // cbxDitheringMode
-            // 
-            this.cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringMode.FormattingEnabled = true;
-            this.cbxDitheringMode.Location = new System.Drawing.Point(75, 99);
-            this.cbxDitheringMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringMode.Name = "cbxDitheringMode";
-            this.cbxDitheringMode.Size = new System.Drawing.Size(136, 23);
-            this.cbxDitheringMode.TabIndex = 6;
-            this.cbxDitheringMode.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringMode_SelectedIndexChanged);
-            // 
-            // lblDitheringBitDepth
-            // 
-            this.lblDitheringBitDepth.AutoSize = true;
-            this.lblDitheringBitDepth.Location = new System.Drawing.Point(7, 74);
-            this.lblDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringBitDepth.Name = "lblDitheringBitDepth";
-            this.lblDitheringBitDepth.Size = new System.Drawing.Size(60, 15);
-            this.lblDitheringBitDepth.TabIndex = 5;
-            this.lblDitheringBitDepth.Text = "Bit-depth:";
-            // 
-            // cbxDitheringBitDepth
-            // 
-            this.cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringBitDepth.FormattingEnabled = true;
-            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 68);
-            this.cbxDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
-            this.cbxDitheringBitDepth.Size = new System.Drawing.Size(136, 23);
-            this.cbxDitheringBitDepth.TabIndex = 4;
-            this.cbxDitheringBitDepth.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringBitDepth_SelectedIndexChanged);
-            // 
-            // chkDitheringEnabled
-            // 
-            this.chkDitheringEnabled.AutoSize = true;
-            this.chkDitheringEnabled.Checked = true;
-            this.chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkDitheringEnabled.Location = new System.Drawing.Point(7, 46);
-            this.chkDitheringEnabled.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkDitheringEnabled.Name = "chkDitheringEnabled";
-            this.chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
-            this.chkDitheringEnabled.TabIndex = 3;
-            this.chkDitheringEnabled.Text = "Dithering enabled";
-            this.chkDitheringEnabled.ThreeState = true;
-            this.chkDitheringEnabled.UseVisualStyleBackColor = true;
-            this.chkDitheringEnabled.CheckStateChanged += new System.EventHandler(this.chkDitheringEnabled_CheckStateChanged);
-            // 
-            // pbGradient
-            // 
-            this.pbGradient.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pbGradient.Location = new System.Drawing.Point(7, 128);
-            this.pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(555, 228);
-            this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pbGradient.TabIndex = 0;
-            this.pbGradient.TabStop = false;
             // 
             // grpMiscellaneousOptions
             // 
@@ -921,9 +794,6 @@
             this.Resize += new System.EventHandler(this.MainForm_Resize);
             this.tcMain.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
-            this.grpNvidiaOptions.ResumeLayout(false);
-            this.grpNvidiaOptions.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).EndInit();
             this.grpMiscellaneousOptions.ResumeLayout(false);
             this.grpMiscellaneousOptions.PerformLayout();
             this.grpLGOptions.ResumeLayout(false);
@@ -960,7 +830,6 @@
         private System.Windows.Forms.GroupBox grpNVIDIAInfo;
         private System.Windows.Forms.TreeView tvNVIDIAInfo;
         private System.Windows.Forms.Button btnRefreshNVIDIAInfo;
-        private System.Windows.Forms.ContextMenuStrip mnuLgButtons;
         private System.Windows.Forms.GroupBox grpLGOptions;
         private System.Windows.Forms.NumericUpDown edtLgMaxPowerOnRetries;
         private System.Windows.Forms.Label lblLgMaxPowerOnRetries;
@@ -976,23 +845,7 @@
         private System.Windows.Forms.TabPage tabNVIDIA;
         private System.Windows.Forms.TabPage tabAMD;
         private System.Windows.Forms.Button btnClearLog;
-        private System.Windows.Forms.GroupBox grpNvidiaOptions;
-        private System.Windows.Forms.PictureBox pbGradient;
-        private System.Windows.Forms.Label lblDitheringMode;
-        private System.Windows.Forms.ComboBox cbxDitheringMode;
-        private System.Windows.Forms.Label lblDitheringBitDepth;
-        private System.Windows.Forms.ComboBox cbxDitheringBitDepth;
-        private System.Windows.Forms.CheckBox chkDitheringEnabled;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgRcButtons;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgActions;
         private System.Windows.Forms.CheckBox chkMinimizeToSystemTray;
-        private System.Windows.Forms.ContextMenuStrip mnuLgExpert;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgOLEDMotionPro;
-        private System.Windows.Forms.ToolStripMenuItem miLgEnableMotionPro;
-        private System.Windows.Forms.ToolStripMenuItem miLgDisableMotionPro;
-        private System.Windows.Forms.ToolStripSeparator miLgExpertSeparator1;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgNvPresets;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgAmdPresets;
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
         private System.Windows.Forms.CheckBox chkLgShowAdvancedActions;
         private System.Windows.Forms.CheckBox chkGdiScaling;
@@ -1001,7 +854,6 @@
         private System.Windows.Forms.Label lblLgOptionShutdownDelay;
         private System.Windows.Forms.Label lblGameBarShortcut;
         private System.Windows.Forms.TextBox edtLgGameBarShortcut;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgProgram;
         private System.Windows.Forms.TabPage tabGameLauncher;
         private System.Windows.Forms.RadioButton rbElevationService;
         private System.Windows.Forms.RadioButton rbElevationProcess;
@@ -1015,8 +867,6 @@
         private System.Windows.Forms.CheckBox chkAutoInstallUpdates;
         private System.Windows.Forms.CheckBox chkLgSetSelectedDeviceByPowerOn;
         private System.Windows.Forms.Button btnUpdate;
-        private System.Windows.Forms.Label lblDitheringDisplay;
-        private System.Windows.Forms.ComboBox cbxDitheringDisplay;
     }
 }
 
