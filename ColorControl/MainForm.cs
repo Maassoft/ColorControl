@@ -44,7 +44,6 @@ namespace ColorControl
 
         private NvService _nvService;
         private NvPanel _nvPanel;
-        private string _lastDisplayRefreshRates = string.Empty;
 
         private NotifyIcon _trayIcon;
         private bool _initialized = false;
@@ -74,6 +73,7 @@ namespace ColorControl
         private LgGameBar _gameBarForm;
 
         private GameService _gameService;
+        private GamePanel _gamePanel;
 
         //private KeyboardHookManager _keyboardHookManager;
         private IntPtr _screenStateNotify;
@@ -235,9 +235,11 @@ namespace ColorControl
             {
                 var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
                 _gameService = new GameService(appContextProvider, HandleExternalServiceForLgDevice);
-                FillGamePresets();
 
-                FormUtils.InitSortState(lvGamePresets, _config.GamePresetsSortState);
+                _gamePanel = new GamePanel(_gameService, _nvService, _amdService, _lgService, _trayIcon, Handle);
+                _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+                tabGameLauncher.Controls.Add(_gamePanel);
 
                 InitShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
             }
@@ -450,22 +452,6 @@ namespace ColorControl
             }
         }
 
-        private void FillGamePresets()
-        {
-            FormUtils.InitListView(lvGamePresets, GamePreset.GetColumnNames());
-
-            foreach (var preset in _gameService.GetPresets())
-            {
-                AddOrUpdateItemGame(preset);
-                Utils.RegisterShortcut(Handle, preset.id, preset.shortcut);
-            }
-        }
-
-        private void AddOrUpdateItemGame(GamePreset preset = null)
-        {
-            FormUtils.AddOrUpdateListItem(lvGamePresets, _gameService.GetPresets(), _config, preset);
-        }
-
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (!(SystemShutdown || EndSession || UserExit) && _config.MinimizeOnClose)
@@ -497,9 +483,9 @@ namespace ColorControl
 
             _nvPanel?.Save();
             _amdPanel?.Save();
+            _gamePanel?.Save();
 
             FormUtils.SaveSortState(lvLgPresets.ListViewItemSorter, _config.LgPresetsSortState);
-            FormUtils.SaveSortState(lvGamePresets.ListViewItemSorter, _config.GamePresetsSortState);
 
             SaveConfig();
         }
@@ -794,19 +780,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             Utils.HandleKeyboardShortcutUp(e);
         }
 
-        private GamePreset GetSelectedGamePreset()
-        {
-            if (lvGamePresets.SelectedItems.Count > 0)
-            {
-                var item = lvGamePresets.SelectedItems[0];
-                return (GamePreset)item.Tag;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         private void FillLgPresets()
         {
             FormUtils.InitListView(lvLgPresets, LgPreset.GetColumnNames());
@@ -1028,16 +1001,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
             else if (tcMain.SelectedTab == tabGameLauncher)
             {
-                UpdateGameLauncherTab();
-            }
-        }
-
-        private void UpdateGameLauncherTab()
-        {
-            if (cbxGameStepType.Items.Count == 0)
-            {
-                cbxGameStepType.Items.AddRange(Utils.GetDescriptions<GameStepType>().ToArray());
-                cbxGameStepType.SelectedIndex = 0;
+                _gamePanel?.UpdateInfo();
             }
         }
 
@@ -1340,12 +1304,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             var preset = (LgPreset)item.Tag;
 
             ApplyLgPreset(preset);
-        }
-
-        private void ApplySelectedGamePreset()
-        {
-            var preset = GetSelectedGamePreset();
-            ApplyGamePreset(preset);
         }
 
         private void btnDeleteLg_Click(object sender, EventArgs e)
@@ -2493,255 +2451,6 @@ The InStart and Software Update items are now visible under the Expert-button."
             }
         }
 
-        private void lvGamePresets_SelectedIndexChanged(object sender, EventArgs _)
-        {
-            var preset = GetSelectedGamePreset();
-            var enabled = preset != null;
-
-            FormUtils.EnableControls(tabGameLauncher, enabled, new List<Control> { lvGamePresets, btnGameAdd });
-
-            if (preset != null)
-            {
-                edtGameName.Text = preset.name;
-                edtGamePath.Text = preset.Path;
-                edtGameParameters.Text = preset.Parameters;
-                chkGameRunAsAdmin.Checked = preset.RunAsAdministrator;
-                chkGameQuickAccess.Checked = preset.ShowInQuickAccess;
-                ShowGameSteps();
-            }
-            else
-            {
-                edtGameName.Text = string.Empty;
-                edtGamePath.Text = string.Empty;
-                edtGameParameters.Text = string.Empty;
-                chkGameRunAsAdmin.Checked = false;
-                chkGameQuickAccess.Checked = false;
-                edtGamePrelaunchSteps.Text = string.Empty;
-            }
-        }
-
-        private void lvGamePresets_DoubleClick(object sender, EventArgs e)
-        {
-            ApplySelectedGamePreset();
-        }
-
-        private void btnGameLaunch_Click(object sender, EventArgs e)
-        {
-            ApplySelectedGamePreset();
-        }
-
-        private void btnGameClone_Click(object sender, EventArgs e)
-        {
-            var preset = GetSelectedGamePreset();
-
-            var newPreset = preset.Clone();
-
-            AddOrUpdateItemGame(newPreset);
-        }
-
-        private void btnGameAdd_Click(object sender, EventArgs e)
-        {
-            var file = Utils.SelectFile();
-
-            AddGamePreset(file);
-        }
-
-        private void AddGamePreset(FileInfo file)
-        {
-            var preset = _gameService.CreateNewPreset();
-
-            if (file != null)
-            {
-                var versionInfo = FileVersionInfo.GetVersionInfo(file.FullName);
-
-                preset.Path = file.FullName;
-
-                var fileName = Path.GetFileNameWithoutExtension(preset.Path);
-
-                preset.name = !string.IsNullOrEmpty(versionInfo.FileDescription) ? versionInfo.FileDescription :
-                    !string.IsNullOrEmpty(versionInfo.ProductName) ? versionInfo.ProductName : fileName;
-            }
-
-            AddOrUpdateItemGame(preset);
-        }
-
-        private void btnGameSave_Click(object sender, EventArgs e)
-        {
-            SaveGamePreset();
-        }
-
-        private void SaveGamePreset()
-        {
-            var shortcut = string.Empty;
-            if (!Utils.ValidateShortcut(shortcut))
-            {
-                return;
-            }
-
-            var preset = GetSelectedGamePreset();
-
-            var name = edtGameName.Text.Trim();
-
-            if (name.Length == 0 || _gameService.GetPresets().Any(x => x.id != preset.id && x.name.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            {
-                MessageForms.WarningOk("The name can not be empty and must be unique.");
-                return;
-            }
-
-            preset.name = name;
-            preset.Path = edtGamePath.Text;
-            preset.Parameters = edtGameParameters.Text;
-            preset.RunAsAdministrator = chkGameRunAsAdmin.Checked;
-            preset.ShowInQuickAccess = chkGameQuickAccess.Checked;
-
-            var clear = !string.IsNullOrEmpty(preset.shortcut);
-
-            var shortcutChanged = !shortcut.Equals(preset.shortcut);
-            if (shortcutChanged)
-            {
-                preset.shortcut = shortcut;
-            }
-
-            var text = edtGamePrelaunchSteps.Text;
-
-            var stepsList = (GameStepType)cbxGameStepType.SelectedIndex switch
-            {
-                GameStepType.PreLaunch => preset.PreLaunchSteps,
-                GameStepType.PostLaunch => preset.PostLaunchSteps,
-                GameStepType.Finalize => preset.FinalizeSteps,
-                _ => throw new InvalidOperationException("Invalid game step type")
-            };
-
-            Utils.ParseWords(stepsList, text);
-
-            AddOrUpdateItemGame();
-
-            if (shortcutChanged)
-            {
-                Utils.RegisterShortcut(Handle, preset.id, preset.shortcut, clear);
-            }
-        }
-
-        private void btnGameBrowse_Click(object sender, EventArgs e)
-        {
-            var file = Utils.SelectFile();
-
-            if (file == null)
-            {
-                return;
-            }
-
-            var preset = GetSelectedGamePreset();
-
-            preset.Path = file.FullName;
-
-            edtGamePath.Text = preset.Path;
-
-            if (string.IsNullOrEmpty(preset.name) || preset.name.StartsWith("New preset", StringComparison.OrdinalIgnoreCase))
-            {
-                var fileName = Path.GetFileNameWithoutExtension(preset.Path);
-
-                edtGameName.Text = fileName;
-                preset.name = fileName;
-            }
-
-            AddOrUpdateItemGame();
-        }
-
-        private void btnGameDelete_Click(object sender, EventArgs e)
-        {
-            var preset = GetSelectedGamePreset();
-
-            if (preset == null)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(preset.shortcut))
-            {
-                WinApi.UnregisterHotKey(Handle, preset.id);
-            }
-
-            _gameService.GetPresets().Remove(preset);
-
-            var item = lvGamePresets.SelectedItems[0];
-            lvGamePresets.Items.Remove(item);
-        }
-
-        private void mnuGameAddStep_Opening(object sender, CancelEventArgs e)
-        {
-            FormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
-        }
-
-        private void miGameAddPreset_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripItem;
-            var preset = item.Tag as PresetBase;
-
-            var text = $"{preset.GetType().Name}({preset.name})";
-
-            FormUtils.AddStepToTextBox(edtGamePrelaunchSteps, text);
-        }
-
-        private void btnGameAddStep_Click(object sender, EventArgs e)
-        {
-            mnuGameAddStep.Show(btnGameAddStep, btnGameAddStep.PointToClient(Cursor.Position));
-        }
-
-        private void mnuGameStartProgram_Click(object sender, EventArgs e)
-        {
-            var file = Utils.SelectFile();
-
-            if (file != null)
-            {
-                FormUtils.AddStepToTextBox(edtGamePrelaunchSteps, $"StartProgram({file.FullName})");
-            }
-        }
-
-        private void lvGamePresets_DragDrop(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                var file = new FileInfo(files.First());
-
-                AddGamePreset(file);
-            }
-        }
-
-        private void lvGamePresets_DragEnter(object sender, DragEventArgs e)
-        {
-            e.Effect = DragDropEffects.All;
-        }
-
-        private void btnGameActions_Click(object sender, EventArgs e)
-        {
-            mnuGameActions.Show(btnGameSettings, btnGameSettings.PointToClient(Cursor.Position));
-        }
-
-        private void mnuGameNvInspector_Click(object sender, EventArgs e)
-        {
-            _nvPanel?.StartNvProfileInspector();
-        }
-
-        private void miGameSetQuickAccessShortcut_Click(object sender, EventArgs e)
-        {
-            var shortcut = FormUtils.EditShortcut(_config.GameQuickAccessShortcut);
-
-            if (shortcut == null)
-            {
-                return;
-            }
-
-            var clear = !string.IsNullOrEmpty(_config.GameQuickAccessShortcut);
-
-            _config.GameQuickAccessShortcut = shortcut;
-
-            Utils.RegisterShortcut(Handle, SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, clear);
-        }
-
         private void btnLgSettings_Click(object sender, EventArgs e)
         {
             var shortcut = FormUtils.EditShortcut(_config.LgQuickAccessShortcut, "Quick Access shortcut", "LG controller settings");
@@ -2756,16 +2465,6 @@ The InStart and Software Update items are now visible under the Expert-button."
             _config.LgQuickAccessShortcut = shortcut;
 
             Utils.RegisterShortcut(Handle, SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, clear);
-        }
-
-        private void mnuGameActions_Opening(object sender, CancelEventArgs e)
-        {
-            mnuGameNvInspector.Visible = _nvService != null;
-        }
-
-        private void lvGamePresets_ItemChecked(object sender, ItemCheckedEventArgs e)
-        {
-            FormUtils.ListViewItemChecked<GamePreset>(lvGamePresets, e);
         }
 
         private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
@@ -2819,82 +2518,6 @@ The InStart and Software Update items are now visible under the Expert-button."
             _config.AmdQuickAccessShortcut = shortcut;
 
             Utils.RegisterShortcut(Handle, SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, clear);
-        }
-
-        private void btnGameProcessAffinity_Click(object sender, EventArgs e)
-        {
-            var preset = GetSelectedGamePreset();
-
-            if (preset == null)
-            {
-                return;
-            }
-
-            var numberOfProcessors = Environment.ProcessorCount;
-
-            var options = Enumerable.Range(0, numberOfProcessors).Select(i => $"CPU #{i}");
-
-            var values = MessageForms.ShowDialog("Set processor affinity", new[] {
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = "Set desired processors which are allowed to run program",
-                        FieldType = MessageForms.FieldType.Flags,
-                        Values = options,
-                        Value = preset.ProcessAffinityMask
-                    }
-                });
-
-            if (!values.Any())
-            {
-                return;
-            }
-
-            var value = values.First().Value;
-
-            preset.ProcessAffinityMask = (uint)(int)value;
-        }
-
-        private void btnGameOptions_Click(object sender, EventArgs e)
-        {
-            mnuGameOptions.Show(btnGameOptions, btnGameOptions.PointToClient(Cursor.Position));
-        }
-
-        private void miGameProcessPriority_Click(object sender, EventArgs e)
-        {
-            var preset = GetSelectedGamePreset();
-
-            if (preset == null)
-            {
-                return;
-            }
-
-            var dropDownValues = Utils.GetDescriptions<GamePriorityClass>();
-
-            var values = MessageForms.ShowDialog("Set process priority", new[] {
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = "Set desired process priority",
-                        FieldType = MessageForms.FieldType.DropDown,
-                        Values = dropDownValues,
-                        Value = preset.ProcessPriorityClass > 0 ? ((GamePriorityClass)preset.ProcessPriorityClass).GetDescription() : GamePriorityClass.Normal.GetDescription()
-                    }
-                });
-
-            if (!values.Any())
-            {
-                return;
-            }
-
-            var value = values.First().Value.ToString();
-            var enumName = Utils.GetEnumNameByDescription(typeof(GamePriorityClass), value);
-            if (enumName != null)
-            {
-                value = enumName;
-            }
-
-            var enumValue = Enum.Parse(typeof(GamePriorityClass), value);
-
-            preset.ProcessPriorityClass = (uint)(int)enumValue;
         }
 
         private void rbElevationNone_CheckedChanged(object sender, EventArgs e)
@@ -3039,39 +2662,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
         private void cbxLogType_SelectedIndexChanged(object sender, EventArgs e)
         {
             LoadLog();
-        }
-
-        private void cbxGameStepType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            ShowGameSteps();
-        }
-
-        private void ShowGameSteps()
-        {
-            var preset = GetSelectedGamePreset();
-
-            if (preset == null)
-            {
-                return;
-            }
-
-            switch ((GameStepType)cbxGameStepType.SelectedIndex)
-            {
-                case GameStepType.PreLaunch:
-                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.PreLaunchSteps);
-                    break;
-                case GameStepType.PostLaunch:
-                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.PostLaunchSteps);
-                    break;
-                case GameStepType.Finalize:
-                    edtGamePrelaunchSteps.Text = string.Join(", ", preset.FinalizeSteps);
-                    break;
-            }
-        }
-
-        private void edtGamePrelaunchSteps_Leave(object sender, EventArgs e)
-        {
-            SaveGamePreset();
         }
 
         private void MainForm_Click(object sender, EventArgs e)
