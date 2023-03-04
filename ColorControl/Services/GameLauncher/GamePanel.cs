@@ -108,7 +108,7 @@ namespace ColorControl.Services.GameLauncher
             ApplyGamePreset(preset);
         }
 
-        private bool ApplyGamePreset(GamePreset preset)
+        internal bool ApplyGamePreset(GamePreset preset)
         {
             if (preset == null || _gameService == null)
             {

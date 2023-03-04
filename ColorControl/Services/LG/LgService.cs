@@ -831,6 +831,10 @@ namespace ColorControl.Services.LG
 
         public void PowerSettingChanged(WindowsPowerSetting setting)
         {
+            if (Devices == null)
+            {
+                return;
+            }
 
             if (setting == WindowsPowerSetting.Off)
             {
