@@ -832,7 +832,7 @@ namespace ColorControl.Services.NVIDIA
             ApplyNvPreset(preset);
         }
 
-        private bool ApplyNvPreset(NvPreset preset)
+        public bool ApplyNvPreset(NvPreset preset)
         {
             if (preset == null || _nvService == null)
             {
