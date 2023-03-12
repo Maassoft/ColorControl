@@ -1,6 +1,8 @@
 ﻿using ColorControl.Common;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
@@ -28,6 +30,7 @@ namespace ColorControl.Forms
             public decimal MinValue { get; set; }
             public decimal MaxValue { get; set; }
             public int NumberOfValues { get; set; }
+            public int StepSize { get; set; }
             public object Value { get; set; }
 
             public int ValueAsInt => int.Parse(Value.ToString());
@@ -53,6 +56,15 @@ namespace ColorControl.Forms
             {
                 var trackBar = sender as TrackBar;
                 var edit = (NumericUpDown)_controls[trackBar];
+
+                var indexDbl = (trackBar.Value * 1.0) / trackBar.TickFrequency;
+                var index = Convert.ToInt32(Math.Round(indexDbl));
+
+                var newValue = trackBar.Value < trackBar.Maximum ? trackBar.TickFrequency * index : trackBar.Value;
+                newValue = Math.Max(newValue, trackBar.Minimum);
+                newValue = Math.Min(newValue, trackBar.Maximum);
+
+                trackBar.Value = newValue;
 
                 edit.Value = trackBar.Value;
 
@@ -114,30 +126,42 @@ namespace ColorControl.Forms
 
             var prompt = new MessageForm()
             {
-                Width = 500,
-                Height = 90 + (fields.Count() * 55),
+                Width = 460,
+                Height = 106 + (fields.Count() * 50),
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = caption,
                 StartPosition = FormStartPosition.CenterScreen
             };
 
+            var groupBox = new Panel();
+            groupBox.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom;
+            groupBox.Top = 0;
+            groupBox.Left = 0;
+            groupBox.Width = prompt.Width;
+            groupBox.Height = prompt.Height - 80;
+            groupBox.BackColor = SystemColors.Window;
+            //groupBox.Margin = new Padding(20);
+
+            prompt.Controls.Add(groupBox);
+
             var top = 10;
             var boxes = new List<Control>();
             var counter = 1;
+            const int DefaultLeft = 20;
 
             foreach (var field in fields)
             {
                 var label = field.Label;
-                var textLabel = new Label() { Left = 40, Top = top, Text = label, AutoSize = true };
-                top += 25;
-                prompt.Controls.Add(textLabel);
+                var textLabel = new Label() { Left = DefaultLeft, Top = top, Text = label, AutoSize = true };
+                top += 20;
+                groupBox.Controls.Add(textLabel);
 
                 Control control;
 
                 switch (field.FieldType)
                 {
                     case FieldType.Text:
-                        var textBox = new MaskedTextBox() { Left = 40, Top = top, Width = 400 };
+                        var textBox = new MaskedTextBox() { Left = DefaultLeft, Top = top, Width = 400 };
 
                         if (label.Contains("Ip-address"))
                         {
@@ -157,7 +181,7 @@ namespace ColorControl.Forms
                     case FieldType.Shortcut:
                         var shortcutTextBox = new TextBox()
                         {
-                            Left = 40,
+                            Left = DefaultLeft,
                             Top = top,
                             Width = 200,
                             Name = $"edtShortcut_{counter}",
@@ -176,7 +200,7 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.Numeric:
-                        var numericEdit = new NumericUpDown() { Left = 40, Top = top, Width = 400 };
+                        var numericEdit = new NumericUpDown() { Left = DefaultLeft, Top = top, Width = 400 };
 
                         if (field.MinValue != field.MaxValue)
                         {
@@ -195,7 +219,7 @@ namespace ColorControl.Forms
                     case FieldType.DropDown:
                         var comboBox = new ComboBox
                         {
-                            Left = 40,
+                            Left = DefaultLeft,
                             Top = top,
                             Width = 400,
                             DropDownStyle = ComboBoxStyle.DropDownList
@@ -218,7 +242,7 @@ namespace ColorControl.Forms
                     case FieldType.CheckBox:
                         var checkBox = new CheckBox
                         {
-                            Left = 40,
+                            Left = DefaultLeft,
                             Top = top,
                             Width = 24,
                         };
@@ -231,7 +255,7 @@ namespace ColorControl.Forms
                     case FieldType.Flags:
                         var checkedListBox = new CheckedListBox
                         {
-                            Left = 40,
+                            Left = DefaultLeft,
                             Top = top,
                             Width = 400,
                             Height = 100,
@@ -259,7 +283,7 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.TrackBar:
-                        var trackBar = new TrackBar { Left = 40, Top = top, Width = 300 };
+                        var trackBar = new TrackBar { Left = DefaultLeft, Top = top, Width = 300 };
                         var trackBarEdit = new NumericUpDown() { Left = trackBar.Left + trackBar.Width + 10, Top = top + 10, Width = 90 };
 
                         trackBarEdit.ValueChanged += prompt.TrackBarEdit_ValueChanged;
@@ -274,7 +298,16 @@ namespace ColorControl.Forms
                         {
                             trackBar.Minimum = (int)field.MinValue;
                             trackBar.Maximum = (int)field.MaxValue;
-                            trackBar.TickFrequency = (trackBar.Maximum - trackBar.Minimum) / 100;
+
+                            if (field.StepSize > 0)
+                            {
+                                trackBar.TickFrequency = field.StepSize;
+                            }
+                            else
+                            {
+                                var tick = (trackBar.Maximum - trackBar.Minimum);
+                                trackBar.TickFrequency = tick >= 100000 ? 5000 : 1;
+                            }
 
                             trackBarEdit.Minimum = field.MinValue;
                             trackBarEdit.Maximum = field.MaxValue;
@@ -289,7 +322,7 @@ namespace ColorControl.Forms
                         top += trackBar.Height - 25;
                         prompt.Height += trackBar.Height - 25;
 
-                        prompt.Controls.Add(trackBarEdit);
+                        groupBox.Controls.Add(trackBarEdit);
 
                         control = trackBar;
                         break;
@@ -300,13 +333,13 @@ namespace ColorControl.Forms
                 }
 
                 top += 30;
-                prompt.Controls.Add(control);
+                groupBox.Controls.Add(control);
                 boxes.Add(control);
                 control.Tag = field;
                 counter++;
             }
 
-            var confirmation = new Button() { Text = "OK", Left = 365, Width = 75, Top = prompt.ClientRectangle.Height - 30 };
+            var confirmation = new Button() { Text = "OK", Left = DefaultLeft + 400 - 75, Width = 75, Top = prompt.ClientRectangle.Height - 30 };
             confirmation.Click += (sender, e) =>
             {
                 foreach (var box in boxes)

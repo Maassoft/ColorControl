@@ -531,6 +531,19 @@ namespace nspector.Common
             return result.OrderBy(x => x.SettingText).ThenBy(x => x.GroupName).ToList();
         }
 
+        public async Task<List<SettingItem>> GetSettingsForProfileAsync(string profileName, SettingViewMode viewMode)
+        {
+            var result = default(List<SettingItem>);
+
+            await Task.Run(() =>
+            {
+                var applications = default(Dictionary<string, string>);
+                result = GetSettingsForProfile(profileName, viewMode, ref applications, true);
+            });
+
+            return result;
+        }
+
         public void AddApplication(string profileName, string applicationName)
         {
             DrsSession((hSession) =>

@@ -97,6 +97,7 @@
 	<PackageReference Include="NLog" Version="5.0.4" />
 	<PackageReference Include="NStandard" Version="0.15.2" />
 	<PackageReference Include="NWin32" Version="1.2.3" />
+	<PackageReference Include="System.Management" Version="7.0.0" />
 	<PackageReference Include="TaskScheduler" Version="2.10.1" />
 	<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.9" />
   </ItemGroup>

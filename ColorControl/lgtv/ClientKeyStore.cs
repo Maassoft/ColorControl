@@ -25,7 +25,7 @@ namespace LgTv
         public void SaveClientKey(string key)
         {
             var filename = Path.Combine(Utils.GetDataPath(), ip + "_ClientKey.txt");
-            File.WriteAllText(filename, key);
+            Utils.WriteText(filename, key);
         }
 
         public bool HasValidHandShake(string expectedHandShake)
@@ -48,7 +48,7 @@ namespace LgTv
         public void SaveHandShake(string data)
         {
             var filename = Path.Combine(Utils.GetDataPath(), ip + "_HandShake.txt");
-            File.WriteAllText(filename, data);
+            Utils.WriteText(filename, data);
         }
     }
 }

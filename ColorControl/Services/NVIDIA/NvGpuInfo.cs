@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using ColorControl.Forms;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.GPU;
@@ -22,6 +23,8 @@ namespace ColorControl.Services.NVIDIA
 
     public class NvGpuOcSettings
     {
+        public static readonly uint DefaultPowerPCM = 100000;
+
         public string PCIIdentifier { get; set; }
         public int MemoryOffsetKHz { get; set; }
         public NvGpuOcType Type { get; set; }
@@ -29,7 +32,7 @@ namespace ColorControl.Services.NVIDIA
         public uint MaximumFrequencyKHz { get; set; }
         public uint MaximumVoltageUv { get; set; }
         public uint VoltageBoostPercent { get; set; }
-        public uint PowerPCM { get; set; }
+        public uint PowerPCM { get; set; } = DefaultPowerPCM;
 
         public override string ToString()
         {
@@ -73,6 +76,16 @@ namespace ColorControl.Services.NVIDIA
                 value += $"Power: {PowerPCM / 1000}%";
             }
 
+            if (VoltageBoostPercent > 0)
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    value += ", ";
+                }
+
+                value += $"Voltage: {VoltageBoostPercent}%";
+            }
+
             if (string.IsNullOrEmpty(value))
             {
                 value = "None";
@@ -96,6 +109,7 @@ namespace ColorControl.Services.NVIDIA
         public int? DefaultPowerInMilliWatts { get; private set; }
         public int MinPowerInMilliWatts { get; private set; }
         public int MaxPowerInMilliWatts { get; private set; }
+        public int MinCoreStepInMHz { get; private set; } = 15;
 
 
         public static readonly PublicClockDomain[] Domains = new[] { PublicClockDomain.Graphics, PublicClockDomain.Memory };
@@ -209,6 +223,8 @@ namespace ColorControl.Services.NVIDIA
             catch (Exception ex)
             {
                 Logger.Debug(ex);
+
+                MinCoreStepInMHz = 12;
 
                 var bla = GPUApi.GetClockBoostMask(GPU.Handle);
 
@@ -368,6 +384,10 @@ namespace ColorControl.Services.NVIDIA
             var power = GPUApi.ClientPowerPoliciesGetStatus(GPU.Handle);
 
             ocSettings.PowerPCM = power.PowerPolicyStatusEntries.FirstOrDefault(e => e.PerformanceStateId == PerformanceStateId.P0_3DPerformance).PowerTargetInPCM;
+
+            var voltageBoost = GPUApi.GetCoreVoltageBoostPercent(GPU.Handle);
+
+            ocSettings.VoltageBoostPercent = voltageBoost.Percent;
 
             foreach (var domain in Domains)
             {
@@ -662,5 +682,106 @@ namespace ColorControl.Services.NVIDIA
             return string.Empty;
         }
 
+        internal MessageForms.FieldDefinition GetCoreOffsetField(NvGpuOcSettings settings)
+        {
+            var graphicsDelta = GetDeltaClockMinMax(PublicClockDomain.Graphics);
+
+            //var field = new MessageForms.FieldDefinition
+            //{
+            //    Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+            //    FieldType = MessageForms.FieldType.Numeric,
+            //    MinValue = graphicsDelta.Item1 / 1000,
+            //    MaxValue = graphicsDelta.Item2 / 1000,
+            //    Value = settings.GraphicsOffsetKHz / 1000
+            //};
+
+            var field = new MessageForms.FieldDefinition
+            {
+                Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+                FieldType = MessageForms.FieldType.TrackBar,
+                MinValue = graphicsDelta.Item1 / 1000,
+                MaxValue = graphicsDelta.Item2 / 1000,
+                Value = settings.GraphicsOffsetKHz / 1000,
+                StepSize = MinCoreStepInMHz
+            };
+
+            return field;
+        }
+
+        internal MessageForms.FieldDefinition GetMemoryOffsetField(NvGpuOcSettings settings)
+        {
+            var memoryDelta = GetDeltaClockMinMax(PublicClockDomain.Memory);
+
+            //var field = new MessageForms.FieldDefinition
+            //{
+            //    Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+            //    FieldType = MessageForms.FieldType.Numeric,
+            //    MinValue = memoryDelta.Item1 / 1000,
+            //    MaxValue = memoryDelta.Item2 / 1000,
+            //    Value = settings.MemoryOffsetKHz / 1000
+            //};
+
+            var field = new MessageForms.FieldDefinition
+            {
+                Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+                FieldType = MessageForms.FieldType.TrackBar,
+                MinValue = memoryDelta.Item1 / 1000,
+                MaxValue = memoryDelta.Item2 / 1000,
+                Value = settings.MemoryOffsetKHz / 1000,
+                StepSize = 25
+            };
+
+            return field;
+        }
+
+        internal MessageForms.FieldDefinition GetPowerField(NvGpuOcSettings settings)
+        {
+            var powerLimits = GetPowerLimits();
+
+            var defaultPowerLimitMw = DefaultPowerInMilliWatts;
+
+            if (settings.PowerPCM == 0)
+            {
+                settings.PowerPCM = NvGpuOcSettings.DefaultPowerPCM;
+            }
+            else if (settings.PowerPCM < powerLimits.Item1)
+            {
+                settings.PowerPCM = powerLimits.Item1;
+            }
+
+            var powerField = defaultPowerLimitMw > 0 ?
+                new MessageForms.FieldDefinition
+                {
+                    Label = $"Power limit in milli watts. Min: {MinPowerInMilliWatts}, max: {MaxPowerInMilliWatts}",
+                    FieldType = MessageForms.FieldType.TrackBar,
+                    Value = (int)((decimal)defaultPowerLimitMw / 100000 * settings.PowerPCM),
+                    MinValue = MinPowerInMilliWatts,
+                    MaxValue = MaxPowerInMilliWatts
+                }
+                : new MessageForms.FieldDefinition
+                {
+                    Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
+                    FieldType = MessageForms.FieldType.TrackBar,
+                    Value = settings.PowerPCM,
+                    MinValue = powerLimits.Item1,
+                    MaxValue = powerLimits.Item2
+                };
+
+            return powerField;
+        }
+
+        internal MessageForms.FieldDefinition GetVoltageBoostField(NvGpuOcSettings settings)
+        {
+            var field = new MessageForms.FieldDefinition
+            {
+                Label = "Voltage boost in %",
+                FieldType = MessageForms.FieldType.TrackBar,
+                Value = settings.VoltageBoostPercent,
+                MinValue = 0,
+                MaxValue = 100
+            };
+
+            return field;
+        }
     }
 }

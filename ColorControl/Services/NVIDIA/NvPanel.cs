@@ -116,8 +116,6 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var gpus = new List<PhysicalGPU>();
-
             var text = Program.TS_TASKNAME;
             foreach (var displayInfo in displays)
             {
@@ -161,14 +159,9 @@ namespace ColorControl.Services.NVIDIA
                 }
 
                 text += "\n" + displayInfo.InfoLine;
-
-                if (!gpus.Contains(displayInfo.Display.DisplayDevice.PhysicalGPU))
-                {
-                    gpus.Add(displayInfo.Display.DisplayDevice.PhysicalGPU);
-                }
             }
 
-            UpdateNvGpuInfo(gpus);
+            UpdateNvGpuInfo();
 
             FormUtils.SetNotifyIconText(_trayIcon, text);
         }
@@ -547,7 +540,7 @@ namespace ColorControl.Services.NVIDIA
         private void BuildNvidiaDriverSettingsMenu(ToolStripDropDownItem parent, Dictionary<uint, uint> settings = null, ContextMenuStrip contextMenuStrip = null)
         {
             var driverSettings = _nvService.GetVisibleSettings().OrderBy(s => s.GroupName);
-            var handledGroupItems = new List<ToolStripMenuItem>();
+            var handledGroupItems = new Dictionary<ToolStripMenuItem, bool>();
             var showUnchanged = settings != null;
             var defaultValue = SettingMeta.UnsetDwordValue;
 
@@ -574,14 +567,14 @@ namespace ColorControl.Services.NVIDIA
 
                 item.Font = _menuItemFonts[!isDefault];
 
-                if (!handledGroupItems.Contains(groupItem))
+                if (!handledGroupItems.ContainsKey(groupItem))
                 {
                     groupItem.Tag = null;
-                    handledGroupItems.Add(groupItem);
+                    handledGroupItems.Add(groupItem, !isDefault);
                 }
-                if (!isDefault)
+                else if (!isDefault)
                 {
-                    groupItem.Tag = true;
+                    handledGroupItems[groupItem] = true;
                 }
 
                 var subItemUnchangedName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}_Unchanged";
@@ -650,9 +643,9 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
-            foreach (var groupItem in handledGroupItems)
+            foreach (var groupItemKeyValue in handledGroupItems)
             {
-                groupItem.Font = _menuItemFonts[groupItem.Tag != null];
+                groupItemKeyValue.Key.Font = _menuItemFonts[groupItemKeyValue.Value];
             }
         }
 
@@ -1192,7 +1185,7 @@ namespace ColorControl.Services.NVIDIA
         {
             var overclockTypes = Utils.GetDescriptions<NvGpuOcType>();
 
-            var values = MessageForms.ShowDialog("Choose desired overclock settings", new[] {
+            var values = MessageForms.ShowDialog($"Overclock settings - {gpuInfo.GPU.FullName}", new[] {
                     new MessageForms.FieldDefinition
                     {
                         Label = "Overclock method",
@@ -1247,7 +1240,7 @@ namespace ColorControl.Services.NVIDIA
                 .OrderBy(x => x)
                 .ToList();
             var voltValues = curveEntries
-                .Where(e => e.DefaultVoltageInMicroV == 0 || e.DefaultFrequencyInkHz >= minCurveFreq)
+                .Where(e => (e.DefaultVoltageInMicroV == 0 || e.DefaultFrequencyInkHz >= minCurveFreq) && e.DefaultVoltageInMicroV <= 1100000)
                 .OrderBy(e => e.DefaultVoltageInMicroV)
                 .Select(e => (e.DefaultVoltageInMicroV / 1000).ToString())
                 .Distinct()
@@ -1258,39 +1251,14 @@ namespace ColorControl.Services.NVIDIA
             var curveEntry = curveEntries.FirstOrDefault(e => e.VoltageInMicroV == currentGraphicsVoltage);
             var currentGpuFreq = curveEntry.FrequencyInkHz;
 
-            var memoryDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
+            var coreOffsetField = gpuInfo.GetCoreOffsetField(currentSettings);
+            var memoryOffsetField = gpuInfo.GetMemoryOffsetField(currentSettings);
 
-            var powerLimits = gpuInfo.GetPowerLimits();
+            var voltageBoostField = gpuInfo.GetVoltageBoostField(currentSettings);
+            var powerField = gpuInfo.GetPowerField(currentSettings);
 
-            var defaultPowerLimitMw = gpuInfo.DefaultPowerInMilliWatts;
-
-            var powerField = defaultPowerLimitMw > 0 ?
-                new MessageForms.FieldDefinition
-                {
-                    Label = $"Power limit in milli watts. Min: {gpuInfo.MinPowerInMilliWatts}, max: {gpuInfo.MaxPowerInMilliWatts}",
-                    FieldType = MessageForms.FieldType.TrackBar,
-                    Value = (int)((decimal)defaultPowerLimitMw / 100000 * currentSettings.PowerPCM),
-                    MinValue = gpuInfo.MinPowerInMilliWatts,
-                    MaxValue = gpuInfo.MaxPowerInMilliWatts
-                }
-                : new MessageForms.FieldDefinition
-                {
-                    Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
-                    FieldType = MessageForms.FieldType.TrackBar,
-                    Value = currentSettings.PowerPCM,
-                    MinValue = powerLimits.Item1,
-                    MaxValue = powerLimits.Item2
-                };
-
-            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = graphicsDelta.Item1 / 1000,
-                        MaxValue = graphicsDelta.Item2 / 1000,
-                        Value = currentSettings.GraphicsOffsetKHz / 1000
-                    },
+            var values = MessageForms.ShowDialog($"Overclock settings - {gpuInfo.GPU.FullName}", new[] {
+                    coreOffsetField,
                     new MessageForms.FieldDefinition
                     {
                         Label = "Optional undervolt: maximum voltage in milli volt",
@@ -1305,22 +1273,8 @@ namespace ColorControl.Services.NVIDIA
                         Value = currentSettings.MaximumFrequencyKHz / 1000,
                         Values = freqValues,
                     },
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = memoryDelta.Item1 / 1000,
-                        MaxValue = memoryDelta.Item2 / 1000,
-                        Value = currentSettings.MemoryOffsetKHz / 1000
-                    },
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = "Voltage boost in %",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        Value = currentSettings.VoltageBoostPercent,
-                        MinValue = 0,
-                        MaxValue = 100
-                    },
+                    memoryOffsetField,
+                    voltageBoostField,
                     powerField,
             });
             if (!values.Any())
@@ -1335,8 +1289,7 @@ namespace ColorControl.Services.NVIDIA
             nvOverclockSettings.VoltageBoostPercent = values[4].ValueAsUInt;
 
             var power = values[5].ValueAsUInt;
-
-            nvOverclockSettings.PowerPCM = defaultPowerLimitMw > 0 ? (uint)((decimal)power / defaultPowerLimitMw * 100000) : power;
+            nvOverclockSettings.PowerPCM = powerField.FieldType == MessageForms.FieldType.TrackBar ? (uint)((decimal)power / gpuInfo.DefaultPowerInMilliWatts * 100000) : power;
 
             return nvOverclockSettings;
         }
@@ -1349,54 +1302,17 @@ namespace ColorControl.Services.NVIDIA
                 PCIIdentifier = gpuInfo.GPU.BusInformation.PCIIdentifiers.ToString()
             };
 
-            var curveEntries = gpuInfo.CurveV3.GPUCurveEntries;
+            var coreOffsetField = gpuInfo.GetCoreOffsetField(currentSettings);
+            var memoryOffsetField = gpuInfo.GetMemoryOffsetField(currentSettings);
 
-            var freqValues = curveEntries.Select(e => (e.DefaultFrequencyInkHz / 1000).ToString()).Distinct().ToList();
-            var voltValues = curveEntries.Select(e => (e.DefaultVoltageInMicroV / 1000).ToString()).Distinct().ToList();
+            var voltageBoostField = gpuInfo.GetVoltageBoostField(currentSettings);
+            var powerField = gpuInfo.GetPowerField(currentSettings);
 
-            var currentGraphicsVoltage = currentSettings.MaximumVoltageUv > 0 ? currentSettings.MaximumVoltageUv : 1050000;
-
-            var curveEntry = curveEntries.FirstOrDefault(e => e.VoltageInMicroV == currentGraphicsVoltage);
-            var currentGpuFreq = curveEntry.FrequencyInkHz;
-
-            var graphicsDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
-            var memoryDelta = gpuInfo.GetDeltaClockMinMax(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
-
-            var powerLimits = gpuInfo.GetPowerLimits();
-
-            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = graphicsDelta.Item1 / 1000,
-                        MaxValue = graphicsDelta.Item2 / 1000,
-                        Value = currentSettings.GraphicsOffsetKHz / 1000
-                    },
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        MinValue = memoryDelta.Item1 / 1000,
-                        MaxValue = memoryDelta.Item2 / 1000,
-                        Value = currentSettings.MemoryOffsetKHz / 1000
-                    },
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = "Voltage boost in %",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        Value = currentSettings.VoltageBoostPercent,
-                        MinValue = 0,
-                        MaxValue = 100
-                    },
-                    new MessageForms.FieldDefinition
-                    {
-                        Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
-                        FieldType = MessageForms.FieldType.Numeric,
-                        Value = currentSettings.PowerPCM,
-                        MinValue = powerLimits.Item1,
-                        MaxValue = powerLimits.Item2
-                    },
+            var values = MessageForms.ShowDialog($"Overclock settings - {gpuInfo.GPU.FullName}", new[] {
+                    coreOffsetField,
+                    memoryOffsetField,
+                    voltageBoostField,
+                    powerField,
             });
             if (!values.Any())
             {
@@ -1406,7 +1322,9 @@ namespace ColorControl.Services.NVIDIA
             nvOverclockSettings.GraphicsOffsetKHz = values[0].ValueAsInt * 1000;
             nvOverclockSettings.MemoryOffsetKHz = values[1].ValueAsInt * 1000;
             nvOverclockSettings.VoltageBoostPercent = values[2].ValueAsUInt;
-            nvOverclockSettings.PowerPCM = values[3].ValueAsUInt;
+
+            var power = values[3].ValueAsUInt;
+            nvOverclockSettings.PowerPCM = powerField.FieldType == MessageForms.FieldType.TrackBar ? (uint)((decimal)power / gpuInfo.DefaultPowerInMilliWatts * 100000) : power;
 
             return nvOverclockSettings;
         }
@@ -1440,7 +1358,7 @@ namespace ColorControl.Services.NVIDIA
             var currentGraphicsOffset = gpuInfo.GetOffset(NvAPIWrapper.Native.GPU.PublicClockDomain.Graphics);
             var currentMemoryOffset = gpuInfo.GetOffset(NvAPIWrapper.Native.GPU.PublicClockDomain.Memory);
 
-            var values = MessageForms.ShowDialog("Set desired clock speeds and voltage", new[] {
+            var values = MessageForms.ShowDialog($"Overclock settings - {gpuInfo.GPU.FullName}", new[] {
                     new MessageForms.FieldDefinition
                     {
                         Label = $"Core offset in MHz ({graphicsMinValue}KHz to {graphicsMaxValue}KHz)",
@@ -1454,20 +1372,12 @@ namespace ColorControl.Services.NVIDIA
                         Label = "Voltage in micro volt",
                         FieldType = MessageForms.FieldType.DropDown,
                         Values = voltValues,
-                        //FieldType = MessageForms.FieldType.Numeric,
-                        //MinValue = 650000,
-                        //MaxValue = 1100000,
-                        //Value = currentGraphicsVoltage
                     },
                     new MessageForms.FieldDefinition
                     {
                         Label = "Core frequency in KHz",
                         FieldType = MessageForms.FieldType.DropDown,
                         Values = freqValues,
-                        //FieldType = MessageForms.FieldType.Numeric,
-                        //MinValue = 2000000,
-                        //MaxValue = 3200000,
-                        //Value = currentGpuFreq
                     },
                     new MessageForms.FieldDefinition
                     {

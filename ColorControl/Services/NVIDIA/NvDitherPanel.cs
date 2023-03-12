@@ -18,24 +18,18 @@ namespace ColorControl.Services.NVIDIA
 
             InitializeComponent();
 
-            if (cbxDitheringBitDepth.Items.Count == 0)
-            {
-                cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
-                cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
-                FillGradient();
-            }
+            cbxDitheringBitDepth.Items.AddRange(Utils.GetDescriptions<NvDitherBits>().ToArray());
+            cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
+            FillGradient();
 
-            if (cbxDitheringDisplay.Items.Count == 0)
-            {
-                var displays = _nvService.GetDisplayInfos();
-                var primaryDisplay = _nvService.GetPrimaryDisplay();
-                var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
-                var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
+            var displays = _nvService.GetDisplayInfos();
+            var primaryDisplay = _nvService.GetPrimaryDisplay();
+            var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
+            var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
 
-                cbxDitheringDisplay.Items.AddRange(displays.ToArray());
+            cbxDitheringDisplay.Items.AddRange(displays.ToArray());
 
-                cbxDitheringDisplay.SelectedIndex = index;
-            }
+            cbxDitheringDisplay.SelectedIndex = index;
 
             UpdateDitherSettings();
 

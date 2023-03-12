@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -542,6 +543,10 @@ namespace ColorControl.Services.LG
 
             await Task.Delay(2000);
 
+            //var startWatch = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStartTrace");
+            //startWatch.EventArrived += startWatch_EventArrived;
+            //startWatch.Start();
+
             MonitorContext ??= new ProcessMonitorContext();
             //Process[] lastProcesses = null;
 
@@ -632,6 +637,11 @@ namespace ColorControl.Services.LG
                     Logger.Error("CheckProcesses: " + ex.ToLogString());
                 }
             }
+        }
+
+        private void startWatch_EventArrived(object sender, EventArrivedEventArgs e)
+        {
+            //Logger.Debug("Process started: " + e.NewEvent.Properties["ProcessName"].Value);
         }
 
         private async Task<int> HandleScreenSaverProcessAsync(int lastProcessId, Process[] processes, List<LgDevice> connectedDevices)
