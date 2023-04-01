@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.LG
 {
-    public partial class LgPanel : UserControl
+    public partial class LgPanel : UserControl, IModulePanel
     {
         public static readonly int SHORTCUTID_LGQA = -202;
         public static readonly int SHORTCUTID_GAMEBAR = -101;
@@ -1143,23 +1143,141 @@ Do you want to continue?"
 
         private void btnLgSettings_Click(object sender, EventArgs e)
         {
-            var shortcut = FormUtils.EditShortcut(_config.LgQuickAccessShortcut, "Quick Access shortcut", "LG controller settings");
-
-            if (shortcut == null)
-            {
-                return;
-            }
-
-            var clear = !string.IsNullOrEmpty(_config.LgQuickAccessShortcut);
-
-            _config.LgQuickAccessShortcut = shortcut;
-
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, clear);
+            mnuLgSettings.Show(btnLgSettings, btnLgSettings.PointToClient(Cursor.Position));
         }
 
         private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
             FormUtils.ListViewItemChecked<LgPreset>(lvLgPresets, e);
+        }
+
+        private void miTestPowerOffOn_Click(object sender, EventArgs e)
+        {
+            var text =
+@"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
+For waking up to work, you need to activate the following setting on the TV:
+
+Connection > Mobile TV On > Turn on via Wi-Fi
+
+It will also work over a wired connection.
+You can also activate this option by using the Expert-button and selecting Wake-On-LAN > Enabled.
+
+Do you want to continue?";
+
+            if (MessageForms.QuestionYesNo(text) == DialogResult.Yes)
+            {
+                Utils.WaitForTask(_lgService.PowerOff());
+
+                MessageForms.InfoOk("Press ENTER to wake the TV.");
+
+                _lgService.WakeSelectedDevice();
+            }
+        }
+
+        private void miNvSettings_Click(object sender, EventArgs e)
+        {
+            var advancedWasEnabled = _lgService.Config.ShowAdvancedActions;
+
+            var fields = new MessageForms.FieldDefinition[]
+            {
+                new()
+                {
+                    FieldType = MessageForms.FieldType.Numeric,
+                    Label = "Maximum number of retries powering on after startup/resume.",
+                    SubLabel = "Retries are necessary to wait for the network link of your pc to be established.",
+                    MinValue = 1,
+                    MaxValue = 40,
+                    Value = _lgService.Config.PowerOnRetries
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.Numeric,
+                    Label = "Delay when shutting down/restarting PC (milli seconds).",
+                    SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
+                    MinValue = 0,
+                    MaxValue = 5000,
+                    Value = _lgService.Config.ShutdownDelay
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.Shortcut,
+                    Label = "Quick Access shortcut",
+                    Value = _lgService.Config.QuickAccessShortcut
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.Shortcut,
+                    Label = "Game Bar shortcut",
+                    Value = _lgService.Config.GameBarShortcut
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.CheckBox,
+                    Label = "Show advanced actions under the Expert-button (InStart, EzAdjust, Software Update)",
+                    Value = _lgService.Config.ShowAdvancedActions
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.CheckBox,
+                    Label = "Automatically set selected device to last powered on",
+                    Value = _lgService.Config.SetSelectedDeviceByPowerOn
+                }
+            };
+
+            var values = MessageForms.ShowDialog("LG controller settings", fields);
+
+            if (values?.Any() != true)
+            {
+                return;
+            }
+
+            _lgService.Config.PowerOnRetries = values[0].ValueAsInt;
+            _lgService.Config.ShutdownDelay = values[1].ValueAsInt;
+
+            var shortcutQA = values[2].Value.ToString();
+            var clear = !string.IsNullOrEmpty(_lgService.Config.QuickAccessShortcut);
+
+            _lgService.Config.QuickAccessShortcut = shortcutQA;
+
+            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut, clear);
+
+            var shortcutGB = values[3].Value.ToString();
+            _lgService.Config.GameBarShortcut = shortcutGB;
+
+            if (string.IsNullOrEmpty(shortcutGB))
+            {
+                WinApi.UnregisterHotKey(_mainHandle, SHORTCUTID_GAMEBAR);
+            }
+            else
+            {
+                Utils.RegisterShortcut(_mainHandle, SHORTCUTID_GAMEBAR, shortcutGB);
+            }
+
+            _lgService.Config.ShowAdvancedActions = values[4].ValueAsBool;
+            _lgService.Config.SetSelectedDeviceByPowerOn = values[5].ValueAsBool;
+
+            if (!advancedWasEnabled && _lgService.Config.ShowAdvancedActions)
+            {
+                if (MessageForms.QuestionYesNo(
+@"Are you sure you want to enable the advanced actions under the Expert-button?
+These actions include:
+- InStart service menu
+- EzAdjust service menu
+- Software Update-app with firmware downgrade functionality enabled
+
+These features may cause irreversible damage to your tv and will void your warranty.
+This app and its creator are in no way accountable for any damages it may cause to your tv."
+                ) != DialogResult.Yes)
+                {
+                    _lgService.Config.ShowAdvancedActions = false;
+                    return;
+                }
+                MessageForms.InfoOk(
+@"Advanced actions activated.
+The InStart, EzAdjust and Software Update items are now visible under the Expert-button."
+                );
+            }
+
         }
     }
 }

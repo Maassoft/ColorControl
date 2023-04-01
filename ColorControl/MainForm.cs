@@ -69,6 +69,7 @@ namespace ColorControl
         private IntPtr _screenStateNotify;
 
         private Dictionary<int, Action> _shortcuts = new();
+        private Dictionary<string, Func<UserControl>> _modules = new();
 
         public MainForm(AppContext appContext)
         {
@@ -79,6 +80,8 @@ namespace ColorControl
             _config = Program.Config;
 
             LoadConfig();
+
+            LoadModules();
 
             MessageForms.MainForm = this;
 
@@ -127,10 +130,12 @@ namespace ColorControl
 
             //Utils.StartService();
 
-            InitNvService();
-            InitAmdService();
-            InitLgService();
-            InitGameService();
+            InitModules();
+
+            //InitNvService();
+            //InitAmdService();
+            //InitLgService();
+            //InitGameService();
 
             InitInfo();
             UpdateServiceInfo();
@@ -145,6 +150,64 @@ namespace ColorControl
             //Task.Run(() => Utils.StartPipeAsync());
 
             AfterInitialized();
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            InitModules();
+        }
+
+        private void LoadModules()
+        {
+            _modules.Add("NVIDIA controller", InitNvService);
+            _modules.Add("AMD controller", InitAmdService);
+            _modules.Add("LG controller", InitLgService);
+            _modules.Add("Game launcher", InitGameService);
+
+            foreach (var keyValue in _modules)
+            {
+                var existingModule = _config.Modules.FirstOrDefault(m => m.DisplayName == keyValue.Key);
+
+                if (existingModule == null)
+                {
+                    existingModule = new Module { DisplayName = keyValue.Key, IsActive = true, InitAction = keyValue.Value };
+                    _config.Modules.Add(existingModule);
+                }
+                else
+                {
+                    existingModule.InitAction = keyValue.Value;
+                }
+            }
+        }
+
+        private void InitModules()
+        {
+            var tabIndex = 0;
+
+            var _ = tcMain.Handle;
+
+            foreach (var module in _config.Modules.Where(m => m.IsActive))
+            {
+                var control = module.InitAction();
+
+                if (control == null)
+                {
+                    continue;
+                }
+
+                var tabPage = new TabPage(module.DisplayName);
+                tcMain.TabPages.Insert(tabIndex, tabPage);
+                //tcMain.TabPages.Add(tabPage);
+
+                tabPage.Controls.Add(control);
+
+                control.Size = tabPage.ClientSize;
+                control.BackColor = SystemColors.Window;
+
+                tabIndex++;
+            }
+
+            tcMain.SelectedIndex = 0;
         }
 
         private void UpdateServiceInfo()
@@ -172,7 +235,7 @@ namespace ColorControl
             rbElevationService.Text = text;
         }
 
-        private void InitNvService()
+        private UserControl InitNvService()
         {
             try
             {
@@ -185,19 +248,20 @@ namespace ColorControl
                 _nvPanel = new NvPanel(_nvService, _trayIcon, Handle);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                tabNVIDIA.Controls.Add(_nvPanel);
-
                 InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _nvService.ToggleQuickAccessForm);
+
+                return _nvPanel;
             }
             catch (Exception ex)
             {
                 //Logger.Error("Error initializing NvService: " + e.ToLogString());
                 Logger.Debug($"No NVIDIA device detected: {ex.ToLogString()}");
-                tcMain.TabPages.Remove(tabNVIDIA);
+
+                return null;
             }
         }
 
-        private void InitAmdService()
+        private UserControl InitAmdService()
         {
             try
             {
@@ -207,19 +271,20 @@ namespace ColorControl
                 _amdPanel = new AmdPanel(_amdService, _trayIcon, Handle);
                 _amdPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                tabAMD.Controls.Add(_amdPanel);
-
                 InitShortcut(AmdPanel.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _amdService.ToggleQuickAccessForm);
+
+                return _amdPanel;
             }
             catch (Exception)
             {
                 //Logger.Error("Error initializing AmdService: " + e.ToLogString());
                 Logger.Debug("No AMD device detected");
-                tcMain.TabPages.Remove(tabAMD);
+
+                return null;
             }
         }
 
-        private void InitGameService()
+        private UserControl InitGameService()
         {
             try
             {
@@ -229,14 +294,15 @@ namespace ColorControl
                 _gamePanel = new GamePanel(_gameService, _nvService, _amdService, _lgService, _trayIcon, Handle);
                 _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                tabGameLauncher.Controls.Add(_gamePanel);
-
                 InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
+
+                return _gamePanel;
             }
             catch (Exception e)
             {
                 Logger.Error("Error initializing GameService: " + e.ToLogString());
-                tcMain.TabPages.Remove(tabGameLauncher);
+
+                return null;
             }
         }
 
@@ -250,7 +316,7 @@ namespace ColorControl
             }
         }
 
-        private void InitLgService()
+        private UserControl InitLgService()
         {
             try
             {
@@ -261,23 +327,13 @@ namespace ColorControl
                 _lgPanel = new LgPanel(_lgService, _nvService, _amdService, _trayIcon, Handle);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                tabLG.Controls.Add(_lgPanel);
-
                 _lgPanel.Init();
-
-                edtLgMaxPowerOnRetries.Value = _lgService.Config.PowerOnRetries;
-                edtLgOptionShutdownDelay.Value = _lgService.Config.ShutdownDelay;
-                chkLgShowAdvancedActions.Checked = _lgService.Config.ShowAdvancedActions;
-                chkLgSetSelectedDeviceByPowerOn.Checked = _lgService.Config.SetSelectedDeviceByPowerOn;
 
                 LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
                 InitShortcut(LgPanel.SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut, _lgPanel.ToggleGameBar);
-                InitShortcut(LgPanel.SHORTCUTID_LGQA, _config.LgQuickAccessShortcut, _lgService.ToggleQuickAccessForm);
+                InitShortcut(LgPanel.SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut, _lgService.ToggleQuickAccessForm);
 
-                if (!string.IsNullOrEmpty(_lgService.Config.GameBarShortcut))
-                {
-                    edtLgGameBarShortcut.Text = _lgService.Config.GameBarShortcut;
-                }
+                return _lgPanel;
 
                 // New shortcut manager, not working yet
                 //if (_keyboardHookManager == null)
@@ -290,6 +346,8 @@ namespace ColorControl
             catch (Exception e)
             {
                 Logger.Error("Error initializing LgService: " + e.ToLogString());
+
+                return null;
             }
         }
 
@@ -343,14 +401,7 @@ namespace ColorControl
         {
             _currentVersionInfo = FileVersionInfo.GetVersionInfo(Path.GetFileName(Application.ExecutablePath));
 
-            //if (ApplicationDeployment.IsNetworkDeployed)
-            //{
-            //    Text = Application.ProductName + " " + ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString();
-            //}
-            //else
-            //{
             Text = Application.ProductName + " " + Application.ProductVersion;
-            //}
 
             if (Utils.IsAdministrator())
             {
@@ -366,6 +417,7 @@ namespace ColorControl
             lbPlugins.Items.Add("NWin32 by zmjack");
             lbPlugins.Items.Add("TaskScheduler by David Hall");
             lbPlugins.Items.Add("NVIDIA Profile Inspector by Orbmu2k");
+            lbPlugins.Items.Add("NvidiaML wrapper by LibreHardwareMonitor");
         }
 
         private void OpenForm(object sender, EventArgs e)
@@ -632,29 +684,6 @@ namespace ColorControl
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            if (_nvService == null)
-            {
-                //FormUtils.ShowControls(tabNVIDIA, false, lblError);
-
-                //lblError.Text = "Error while initializing the NVIDIA-wrapper. You either don't have a NVIDIA GPU or it is disabled. NVIDIA controls will not be available.";
-                //lblError.Visible = true;
-            }
-
-            if (_amdService == null)
-            {
-                //FormUtils.ShowControls(tabAMD, false, lblErrorAMD);
-
-                //lblErrorAMD.Text = "Error while initializing the ADL-wrapper. You either don't have a AMD GPU or it is disabled. AMD controls will not be available.";
-                //lblErrorAMD.Visible = true;
-            }
-
-            if (_lgService == null)
-            {
-                //FormUtils.ShowControls(tabLG, false, lblLgError);
-                //lblLgError.Text = "Error while initializing the LG-controller. You either don't have a LG TV, it is disabled or a configuration file is corrupt.";
-                //lblLgError.Visible = true;
-            }
-
             InitSelectedTab();
             CheckForUpdates();
 
@@ -704,7 +733,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         protected override void SetVisibleCore(bool value)
         {
-            if (!_setVisibleCalled && _config.StartMinimized)
+            if (!_setVisibleCalled && _config.StartMinimized && !Debugger.IsAttached)
             {
                 _setVisibleCalled = true;
                 if (_config.MinimizeToTray)
@@ -734,11 +763,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void InitSelectedTab()
         {
-            if (tcMain.SelectedTab == tabLG)
-            {
-                _lgPanel?.UpdateInfo();
-            }
-            else if (tcMain.SelectedTab == tabLog)
+            if (tcMain.SelectedTab == tabLog)
             {
                 LoadLog();
             }
@@ -750,18 +775,22 @@ NOTE: installing the service may cause a User Account Control popup.");
             {
                 InitOptionsTab();
             }
-            else if (tcMain.SelectedTab == tabNVIDIA)
+            else if (tcMain.SelectedTab?.Controls.Count > 0 && tcMain.SelectedTab.Controls[0] is IModulePanel panel)
             {
-                _nvPanel?.UpdateInfo();
-            }
-            else if (tcMain.SelectedTab == tabGameLauncher)
-            {
-                _gamePanel?.UpdateInfo();
+                panel.UpdateInfo();
             }
         }
 
         private void InitOptionsTab()
         {
+            if (chkModules.Items.Count == 0)
+            {
+                foreach (var module in _config.Modules)
+                {
+                    chkModules.Items.Add(module.DisplayName, module.IsActive);
+                }
+            }
+
             if (_nvService != null && _nvDitherPanel == null)
             {
                 _nvDitherPanel = new NvDitherPanel(_nvService);
@@ -998,17 +1027,13 @@ Do you want to continue?";
 
         private void MainForm_Activated(object sender, EventArgs e)
         {
-            if (tcMain.SelectedTab == tabNVIDIA)
-            {
-                _nvPanel?.UpdateInfo();
-            }
-            else if (tcMain.SelectedTab == tabAMD)
-            {
-                _amdPanel?.UpdateInfo();
-            }
-            else if (tcMain.SelectedTab == tabLog)
+            if (tcMain.SelectedTab == tabLog)
             {
                 LoadLog();
+            }
+            else if (tcMain.SelectedTab?.Controls.Count > 0 && tcMain.SelectedTab.Controls[0] is IModulePanel panel)
+            {
+                panel.UpdateInfo();
             }
         }
 
@@ -1122,7 +1147,7 @@ Do you want to continue?";
                 ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
             };
 
-            var result = PipeUtils.SendMessage(message, 10000);
+            var result = PipeUtils.SendMessage(message, 30000);
 
             if (result != null && !result.Result)
             {
@@ -1175,38 +1200,6 @@ Do you want to continue?";
             }
         }
 
-        private void chkLgShowAdvancedActions_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-            if (chkLgShowAdvancedActions.Checked)
-            {
-                if (MessageForms.QuestionYesNo(
-@"Are you sure you want to enable the advanced actions under the Expert-button?
-These actions include:
-- InStart service menu
-- EzAdjust service menu
-- Software Update-app with firmware downgrade functionality enabled
-
-These features may cause irreversible damage to your tv and will void your warranty.
-This app and its creator are in no way accountable for any damages it may cause to your tv."
-                ) != DialogResult.Yes)
-                {
-                    chkLgShowAdvancedActions.Checked = false;
-                    return;
-                }
-                MessageForms.InfoOk(
-@"Advanced actions activated.
-The InStart and Software Update items are now visible under the Expert-button."
-                );
-            }
-
-            _lgService.Config.ShowAdvancedActions = chkLgShowAdvancedActions.Checked;
-        }
-
         private void chkGdiScaling_CheckedChanged(object sender, EventArgs e)
         {
             _config.UseGdiScaling = chkGdiScaling.Checked;
@@ -1220,11 +1213,6 @@ The InStart and Software Update items are now visible under the Expert-button."
         private void MainForm_ResizeEnd(object sender, EventArgs e)
         {
             ResumeLayout(true);
-        }
-
-        private void edtLgOptionShutdownDelay_ValueChanged(object sender, EventArgs e)
-        {
-            _lgService.Config.ShutdownDelay = (int)edtLgOptionShutdownDelay.Value;
         }
 
         private void rbElevationNone_CheckedChanged(object sender, EventArgs e)
@@ -1405,11 +1393,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             _trayIcon.Visible = false;
         }
 
-        private void edtLgPowerOnAfterResumeDelay_ValueChanged(object sender, EventArgs e)
-        {
-            _lgService.Config.PowerOnRetries = (int)edtLgMaxPowerOnRetries.Value;
-        }
-
         private void chkFixChromeFonts_CheckedChanged(object sender, EventArgs e)
         {
             if (_initialized)
@@ -1426,46 +1409,43 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
         }
 
-        private void chkLgSetSelectedDeviceByWol_CheckedChanged(object sender, EventArgs e)
+        private void chkModules_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!_initialized)
             {
                 return;
             }
 
-            _lgService.Config.SetSelectedDeviceByPowerOn = chkLgSetSelectedDeviceByPowerOn.Checked;
-        }
-
-        private void edtLgGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
-        {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
-        }
-
-        private void edtLgGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
-        {
-            Utils.HandleKeyboardShortcutUp(e);
-        }
-
-        private void edtLgGameBarShortcut_TextChanged(object sender, EventArgs e)
-        {
-            var text = edtLgGameBarShortcut.Text;
-
-            var blnOk = string.IsNullOrEmpty(text) || !ShortCutExists(text);
-            edtLgGameBarShortcut.ForeColor = blnOk ? Color.Red : SystemColors.WindowText;
-
-            if (blnOk)
+            for (var i = 0; i < chkModules.Items.Count; i++)
             {
-                _lgService.Config.GameBarShortcut = text;
+                var item = chkModules.Items[i].ToString();
 
-                if (string.IsNullOrEmpty(text))
-                {
-                    WinApi.UnregisterHotKey(Handle, LgPanel.SHORTCUTID_GAMEBAR);
-                }
-                else
-                {
-                    Utils.RegisterShortcut(Handle, LgPanel.SHORTCUTID_GAMEBAR, text);
-                }
+                var module = _config.Modules.First(m => m.DisplayName == item.ToString());
+
+                module.IsActive = chkModules.GetItemChecked(i);
             }
+        }
+
+        private void MainForm_KeyDown(object sender, KeyEventArgs e)
+        {
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if ((keyData == (Keys.Control | Keys.PageUp) || keyData == (Keys.Control | Keys.PageDown)) && IsShortcutControlFocused())
+            {
+                var control = FindFocusedControl() as TextBox;
+
+                if (control != null)
+                {
+                    var keyEvent = new KeyEventArgs(keyData);
+
+                    control.Text = Utils.FormatKeyboardShortcut(keyEvent);
+                }
+
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 }

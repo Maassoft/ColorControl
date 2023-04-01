@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 
 namespace ColorControl
 {
@@ -42,6 +43,7 @@ namespace ColorControl
         public bool UseDedicatedElevatedProcess { get; set; }
         public ElevationMethod ElevationMethod { get; set; }
         public bool ElevationMethodAsked { get; set; }
+        public List<Module> Modules { get; set; }
 
         public Config()
         {
@@ -60,6 +62,7 @@ namespace ColorControl
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();
             GamePresetsSortState = new ListViewSortState();
+            Modules = new List<Module>();
         }
     }
 }

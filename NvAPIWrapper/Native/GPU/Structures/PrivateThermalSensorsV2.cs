@@ -1,9 +1,9 @@
-﻿using System.Linq;
-using System.Runtime.InteropServices;
-using NvAPIWrapper.Native.Attributes;
+﻿using NvAPIWrapper.Native.Attributes;
 using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.Helpers;
 using NvAPIWrapper.Native.Interfaces;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace NvAPIWrapper.Native.GPU.Structures
 {
@@ -36,11 +36,11 @@ namespace NvAPIWrapper.Native.GPU.Structures
             _Mask = mask;
         }
 
-        public float[] Temperatures
+        public double[] Temperatures
         {
             get
             {
-                return _Temperatures.Select((t) => t / 256.0f).ToArray();
+                return _Temperatures.Select((t) => t / 256.0D).ToArray();
             }
         }
     }

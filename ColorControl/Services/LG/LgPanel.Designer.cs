@@ -88,11 +88,15 @@
             this.btnLgDeviceFilterRefresh = new System.Windows.Forms.Button();
             this.clbLgPower = new System.Windows.Forms.CheckedListBox();
             this.lblLgError = new System.Windows.Forms.Label();
+            this.mnuLgSettings = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miTestPowerOffOn = new System.Windows.Forms.ToolStripMenuItem();
+            this.miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.scLgController)).BeginInit();
             this.scLgController.Panel1.SuspendLayout();
             this.scLgController.SuspendLayout();
             this.mnuLgExpert.SuspendLayout();
             this.mnuLgButtons.SuspendLayout();
+            this.mnuLgSettings.SuspendLayout();
             this.SuspendLayout();
             // 
             // scLgController
@@ -154,14 +158,14 @@
             this.scLgController.Panel1MinSize = 750;
             this.scLgController.Panel2MinSize = 150;
             this.scLgController.Size = new System.Drawing.Size(1114, 539);
-            this.scLgController.SplitterDistance = 900;
+            this.scLgController.SplitterDistance = 899;
             this.scLgController.SplitterWidth = 5;
             this.scLgController.TabIndex = 43;
             // 
             // btnLgSettings
             // 
             this.btnLgSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnLgSettings.Location = new System.Drawing.Point(808, 284);
+            this.btnLgSettings.Location = new System.Drawing.Point(807, 284);
             this.btnLgSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgSettings.Name = "btnLgSettings";
             this.btnLgSettings.Size = new System.Drawing.Size(88, 27);
@@ -219,7 +223,7 @@
             this.edtLgPresetDescription.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtLgPresetDescription.Multiline = true;
             this.edtLgPresetDescription.Name = "edtLgPresetDescription";
-            this.edtLgPresetDescription.Size = new System.Drawing.Size(700, 43);
+            this.edtLgPresetDescription.Size = new System.Drawing.Size(699, 43);
             this.edtLgPresetDescription.TabIndex = 60;
             // 
             // lblLgPresetDescription
@@ -236,7 +240,7 @@
             // btnLgDeviceOptionsHelp
             // 
             this.btnLgDeviceOptionsHelp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnLgDeviceOptionsHelp.Location = new System.Drawing.Point(873, 70);
+            this.btnLgDeviceOptionsHelp.Location = new System.Drawing.Point(872, 70);
             this.btnLgDeviceOptionsHelp.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgDeviceOptionsHelp.Name = "btnLgDeviceOptionsHelp";
             this.btnLgDeviceOptionsHelp.Size = new System.Drawing.Size(22, 27);
@@ -411,7 +415,7 @@
             this.chkLgRemoteControlShow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkLgRemoteControlShow.Appearance = System.Windows.Forms.Appearance.Button;
             this.chkLgRemoteControlShow.AutoSize = true;
-            this.chkLgRemoteControlShow.Location = new System.Drawing.Point(794, 8);
+            this.chkLgRemoteControlShow.Location = new System.Drawing.Point(793, 8);
             this.chkLgRemoteControlShow.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.chkLgRemoteControlShow.Name = "chkLgRemoteControlShow";
             this.chkLgRemoteControlShow.Size = new System.Drawing.Size(101, 25);
@@ -478,7 +482,7 @@
             this.lvLgPresets.MultiSelect = false;
             this.lvLgPresets.Name = "lvLgPresets";
             this.lvLgPresets.ShowItemToolTips = true;
-            this.lvLgPresets.Size = new System.Drawing.Size(889, 126);
+            this.lvLgPresets.Size = new System.Drawing.Size(888, 126);
             this.lvLgPresets.TabIndex = 8;
             this.lvLgPresets.UseCompatibleStateImageBehavior = false;
             this.lvLgPresets.View = System.Windows.Forms.View.Details;
@@ -681,7 +685,7 @@
             this.edtStepsLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.edtStepsLg.Multiline = true;
             this.edtStepsLg.Name = "edtStepsLg";
-            this.edtStepsLg.Size = new System.Drawing.Size(700, 43);
+            this.edtStepsLg.Size = new System.Drawing.Size(699, 43);
             this.edtStepsLg.TabIndex = 17;
             // 
             // btnLgAddButton
@@ -689,7 +693,7 @@
             this.btnLgAddButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnLgAddButton.ContextMenuStrip = this.mnuLgButtons;
             this.btnLgAddButton.Enabled = false;
-            this.btnLgAddButton.Location = new System.Drawing.Point(808, 439);
+            this.btnLgAddButton.Location = new System.Drawing.Point(807, 439);
             this.btnLgAddButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLgAddButton.Name = "btnLgAddButton";
             this.btnLgAddButton.Size = new System.Drawing.Size(88, 27);
@@ -800,7 +804,7 @@
             this.clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.clbLgPower.MultiColumn = true;
             this.clbLgPower.Name = "clbLgPower";
-            this.clbLgPower.Size = new System.Drawing.Size(862, 76);
+            this.clbLgPower.Size = new System.Drawing.Size(861, 76);
             this.clbLgPower.TabIndex = 34;
             this.clbLgPower.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.clbLgPower_ItemCheck);
             // 
@@ -814,6 +818,29 @@
             this.lblLgError.TabIndex = 15;
             this.lblLgError.Text = "ErrorText";
             this.lblLgError.Visible = false;
+            // 
+            // mnuLgSettings
+            // 
+            this.mnuLgSettings.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.mnuLgSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miTestPowerOffOn,
+            this.miNvSettings});
+            this.mnuLgSettings.Name = "mnuLgButtons";
+            this.mnuLgSettings.Size = new System.Drawing.Size(168, 48);
+            // 
+            // miTestPowerOffOn
+            // 
+            this.miTestPowerOffOn.Name = "miTestPowerOffOn";
+            this.miTestPowerOffOn.Size = new System.Drawing.Size(167, 22);
+            this.miTestPowerOffOn.Text = "Test power off/on";
+            this.miTestPowerOffOn.Click += new System.EventHandler(this.miTestPowerOffOn_Click);
+            // 
+            // miNvSettings
+            // 
+            this.miNvSettings.Name = "miNvSettings";
+            this.miNvSettings.Size = new System.Drawing.Size(167, 22);
+            this.miNvSettings.Text = "Settings";
+            this.miNvSettings.Click += new System.EventHandler(this.miNvSettings_Click);
             // 
             // LgPanel
             // 
@@ -829,6 +856,7 @@
             this.scLgController.ResumeLayout(false);
             this.mnuLgExpert.ResumeLayout(false);
             this.mnuLgButtons.ResumeLayout(false);
+            this.mnuLgSettings.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -894,6 +922,8 @@
         private System.Windows.Forms.ToolStripMenuItem mnuLgProgram;
         private System.Windows.Forms.CheckBox chkLgQuickAccess;
         private System.Windows.Forms.Button btnLgSettings;
-
+        private System.Windows.Forms.ContextMenuStrip mnuLgSettings;
+        private System.Windows.Forms.ToolStripMenuItem miTestPowerOffOn;
+        private System.Windows.Forms.ToolStripMenuItem miNvSettings;
     }
 }

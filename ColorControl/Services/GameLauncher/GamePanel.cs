@@ -17,7 +17,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.GameLauncher
 {
-    public partial class GamePanel : UserControl
+    public partial class GamePanel : UserControl, IModulePanel
     {
         public static readonly int SHORTCUTID_GAMEQA = -203;
 

@@ -8,6 +8,7 @@ using NvAPIWrapper.Native.Interfaces.GPU;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using static NvAPIWrapper.Native.GPU.Structures.PerformanceStates20ClockEntryV1;
 using static NvAPIWrapper.Native.GPU.Structures.PrivateClockBoostLockV2;
 
@@ -21,6 +22,13 @@ namespace ColorControl.Services.NVIDIA
         BoostLock = 3
     }
 
+    public enum NvThermalSensorType
+    {
+        Gpu = 0,
+        HotSpot = 1,
+        Memory = 3
+    }
+
     public class NvGpuOcSettings
     {
         public static readonly uint DefaultPowerPCM = 100000;
@@ -31,6 +39,7 @@ namespace ColorControl.Services.NVIDIA
         public int GraphicsOffsetKHz { get; set; }
         public uint MaximumFrequencyKHz { get; set; }
         public uint MaximumVoltageUv { get; set; }
+        public bool FrequencyPreferred { get; set; }
         public uint VoltageBoostPercent { get; set; }
         public uint PowerPCM { get; set; } = DefaultPowerPCM;
 
@@ -40,7 +49,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (Type == NvGpuOcType.BoostLock)
             {
-                value += $"GPU: Locked: {(GraphicsOffsetKHz >= 0 ? "+" : "-")}{GraphicsOffsetKHz.ToUnitString()} @ {MaximumVoltageUv}uv";
+                value += $"GPU: Locked: {(GraphicsOffsetKHz >= 0 ? "+" : "-")}{GraphicsOffsetKHz.ToUnitString()} = {MaximumFrequencyKHz.ToUnitString()} @ {MaximumVoltageUv / 1000}mV";
             }
             else if (Type == NvGpuOcType.Curve)
             {
@@ -48,7 +57,7 @@ namespace ColorControl.Services.NVIDIA
 
                 if (MaximumVoltageUv > 0)
                 {
-                    value += $", UV: {MaximumFrequencyKHz.ToUnitString()} @ {MaximumVoltageUv / 1000}mv";
+                    value += $", UV: {MaximumFrequencyKHz.ToUnitString()} @ {MaximumVoltageUv / 1000}mV";
                 }
             }
             else if (Type == NvGpuOcType.Offset)
@@ -100,8 +109,8 @@ namespace ColorControl.Services.NVIDIA
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public PhysicalGPU GPU { get; }
-        public List<ClockBoostLock> ClockBoostLocks { get; private set; }
-        public List<IPerformanceStates20ClockEntry> ClockEntries { get; private set; }
+        public List<ClockBoostLock> ClockBoostLocks { get; private set; } = new();
+        public List<IPerformanceStates20ClockEntry> ClockEntries { get; private set; } = new();
         public ClockDomainInfo StockGraphicsClock { get; private set; }
         public ClockDomainInfo StockMemoryClock { get; private set; }
         public PrivateVFPCurveV3 CurveV3 { get; private set; }
@@ -110,6 +119,10 @@ namespace ColorControl.Services.NVIDIA
         public int MinPowerInMilliWatts { get; private set; }
         public int MaxPowerInMilliWatts { get; private set; }
         public int MinCoreStepInMHz { get; private set; } = 15;
+
+        public List<NvGpuOcType> SupportedOcTypes { get; private set; } = new();
+
+        public string PCIIdentifier { get; private set; }
 
 
         public static readonly PublicClockDomain[] Domains = new[] { PublicClockDomain.Graphics, PublicClockDomain.Memory };
@@ -138,33 +151,15 @@ namespace ColorControl.Services.NVIDIA
         private NvGpuInfo(PhysicalGPU gpu)
         {
             GPU = gpu;
+            PCIIdentifier = GPU.BusInformation.PCIIdentifiers.ToString();
 
-            StockGraphicsClock = GPU.BoostClockFrequencies.GraphicsClock;
-            StockMemoryClock = GPU.BoostClockFrequencies.MemoryClock;
+            Logger.Swallow(ReadStockClocks);
+            Logger.Swallow(ReadClockEntries);
+            Logger.Swallow(ReadBoostLocks);
+            ReadCurves();
+            Logger.Swallow(ReadMinMaxPower);
 
-            var handle = gpu.Handle;
-
-            //var xx = GPUApi.ClientPowerTopologyGetStatus(handle);
-
-            var perf = GPUApi.GetPerformanceStates20(handle);
-            var clock3D = perf.Clocks.FirstOrDefault(c => c.Key == PerformanceStateId.P0_3DPerformance);
-
-            var boostLock = GPUApi.GetClockBoostLock(handle);
-
-            ReadCurve();
-
-            if (NvidiaML.IsAvailable || NvidiaML.Initialize())
-            {
-                var device = NvidiaML.NvmlDeviceGetHandleByIndex(0);
-                DefaultPowerInMilliWatts = NvidiaML.NvmlDeviceGetPowerManagementDefaultLimit(device.Value);
-
-                var powerLimits = GetPowerLimits();
-
-                MinPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item1);
-                MaxPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item2);
-
-            }
-
+            //var handle = gpu.Handle;
             //var bla2 = GPUApi.GetClockBoostRanges(handle);
             //var bla3 = GPUApi.GetClockBoostTableV2(handle);
 
@@ -185,13 +180,58 @@ namespace ColorControl.Services.NVIDIA
 
             //var bla4 = GPUApi.GetAllClockFrequencies(handle);
 
-            ClockBoostLocks = boostLock.ClockBoostLocks.Where(l => l.LockMode == ClockLockMode.Manual).ToList();
+            SetSupportedOcTypes();
+        }
+
+        private void ReadMinMaxPower()
+        {
+            if (NvidiaML.IsAvailable || NvidiaML.Initialize())
+            {
+                var device = NvidiaML.NvmlDeviceGetHandleByIndex(0);
+                DefaultPowerInMilliWatts = NvidiaML.NvmlDeviceGetPowerManagementDefaultLimit(device.Value);
+
+                var powerLimits = GetPowerLimits();
+
+                MinPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item1);
+                MaxPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item2);
+            }
+        }
+
+        private void ReadClockEntries()
+        {
+            var perf = GPUApi.GetPerformanceStates20(GPU.Handle);
+            var clock3D = perf.Clocks.FirstOrDefault(c => c.Key == PerformanceStateId.P0_3DPerformance);
             ClockEntries = clock3D.Value.ToList();
+        }
+
+        private void ReadStockClocks()
+        {
+            StockGraphicsClock = GPU.BoostClockFrequencies.GraphicsClock;
+            StockMemoryClock = GPU.BoostClockFrequencies.MemoryClock;
+        }
+
+        private void SetSupportedOcTypes()
+        {
+            SupportedOcTypes.Clear();
+            SupportedOcTypes.Add(NvGpuOcType.None);
+            SupportedOcTypes.Add(NvGpuOcType.Offset);
+
+            if (CurveV3.GPUCurveEntries?.Length > 0)
+            {
+                SupportedOcTypes.Add(NvGpuOcType.Curve);
+                SupportedOcTypes.Add(NvGpuOcType.BoostLock);
+            }
+        }
+
+        private void ReadBoostLocks()
+        {
+            var boostLock = GPUApi.GetClockBoostLock(GPU.Handle);
+            ClockBoostLocks = boostLock.ClockBoostLocks.Where(l => l.LockMode == ClockLockMode.Manual).ToList();
         }
 
         public (uint, uint) GetPowerLimits()
         {
-            var power = GPU.PerformanceControl.PowerLimitInformation.FirstOrDefault();
+            var power = Logger.Swallow(() => GPU.PerformanceControl.PowerLimitInformation.FirstOrDefault(), default);
 
             if (power == null)
             {
@@ -214,42 +254,54 @@ namespace ColorControl.Services.NVIDIA
             return 0;
         }
 
-        private void ReadCurve()
+        private void ReadCurves()
         {
-            try
+            if (!Logger.Swallow(ReadCurveV3, false))
             {
-                CurveV3 = GPUApi.GetVFPCurveV3(GPU.Handle);
+                Logger.Swallow(ReadCurveV1);
             }
-            catch (Exception ex)
+        }
+
+        private bool ReadCurveV3()
+        {
+            CurveV3 = GPUApi.GetVFPCurveV3(GPU.Handle);
+
+            return true;
+        }
+
+        private bool ReadCurveV1()
+        {
+            Logger.Debug($"{GPU.FullName}: CurveV3 not available, falling back to V1");
+
+            MinCoreStepInMHz = 12;
+
+            var bla = GPUApi.GetClockBoostMask(GPU.Handle);
+
+            var masks = bla._Masks;
+            Logger.Debug("MASKS: " + masks[0]);
+            Logger.Debug("MASK: " + bla._Unknown1[0]);
+
+            CurveV1 = GPUApi.GetVFPCurve(GPU.Handle, masks);
+
+            var length = CurveV1.GPUCurveEntries.Length;
+            var minFreq = CurveV1.GPUCurveEntries.Min(e => e.FrequencyInkHz);
+            var maxFreq = CurveV1.GPUCurveEntries.Max(e => e.FrequencyInkHz);
+            var minV = CurveV1.GPUCurveEntries.Min(e => e.VoltageInMicroV);
+            var maxV = CurveV1.GPUCurveEntries.Max(e => e.VoltageInMicroV);
+
+            Logger.Debug($"CurveV1: L: {length}, MinF: {minFreq}, MaxF: {maxFreq}, MinV: {minV}, MaxV: {maxV}");
+
+            foreach (var entry in CurveV1.GPUCurveEntries)
             {
-                Logger.Debug(ex);
-
-                MinCoreStepInMHz = 12;
-
-                var bla = GPUApi.GetClockBoostMask(GPU.Handle);
-
-                var masks = bla._Masks;
-                Logger.Debug("MASKS: " + masks[0]);
-
-                Logger.Debug("MASK: " + bla._Unknown1[0]);
-
-                CurveV1 = GPUApi.GetVFPCurve(GPU.Handle, masks);
-
-                var length = CurveV1.GPUCurveEntries.Length;
-                var minFreq = CurveV1.GPUCurveEntries.Min(e => e.FrequencyInkHz);
-                var maxFreq = CurveV1.GPUCurveEntries.Max(e => e.FrequencyInkHz);
-                var minV = CurveV1.GPUCurveEntries.Min(e => e.VoltageInMicroV);
-                var maxV = CurveV1.GPUCurveEntries.Max(e => e.VoltageInMicroV);
-
-                Logger.Debug($"CurveV1: L: {length}, MinF: {minFreq}, MaxF: {maxFreq}, MinV: {minV}, MaxV: {maxV}");
+                Logger.Debug($"CurveV1: Freq: {entry.FrequencyInkHz}, Volt: {entry.VoltageInMicroV}");
             }
+
+            return true;
         }
 
         public bool ApplyOcSettings(NvGpuOcSettings settings)
         {
-            var pciId = GPU.BusInformation.PCIIdentifiers.ToString();
-
-            if (settings.PCIIdentifier != pciId)
+            if (settings.PCIIdentifier != PCIIdentifier)
             {
                 Logger.Warn($"Cannot apply OC-settings: PCI-identifier does not match GPU: {settings.PCIIdentifier}");
 
@@ -263,6 +315,11 @@ namespace ColorControl.Services.NVIDIA
                 SetPower(settings.PowerPCM);
             }
 
+            if (settings.Type == NvGpuOcType.None)
+            {
+                return true;
+            }
+
             if (settings.MemoryOffsetKHz != 0)
             {
                 SetMemoryClockOffsetDelta(settings.MemoryOffsetKHz);
@@ -271,11 +328,6 @@ namespace ColorControl.Services.NVIDIA
             if (settings.VoltageBoostPercent >= 0)
             {
                 SetVoltageBoostPercent(settings.VoltageBoostPercent);
-            }
-
-            if (settings.Type == NvGpuOcType.None)
-            {
-                return true;
             }
 
             if (settings.Type == NvGpuOcType.BoostLock)
@@ -312,21 +364,55 @@ namespace ColorControl.Services.NVIDIA
 
         public override string ToString()
         {
-            var gpuThermal = GPU.ThermalInformation.ThermalSensors.FirstOrDefault(s => s.Target == ThermalSettingsTarget.GPU);
             var gpuVoltage = GPUApi.GetCurrentVoltage(GPU.Handle).ValueInMicroVolt;
+
+            var temps = GetTemperatures();
+            var power = GetPowerUsageInMilliWatts();
+
+            var sb = new StringBuilder();
+
+            sb.Append($"GPU: {GPU.CurrentClockFrequencies.GraphicsClock.Frequency.ToUnitString()} @ {gpuVoltage / 1000} mV, {temps[NvThermalSensorType.Gpu]}°");
+
+            if (temps.TryGetValue(NvThermalSensorType.HotSpot, out var hotSpotTemp))
+            {
+                sb.Append($"/{hotSpotTemp}°");
+            }
+
+            sb.Append($", Mem: {GPU.CurrentClockFrequencies.MemoryClock.Frequency.ToUnitString()}");
+
+            if (temps.TryGetValue(NvThermalSensorType.Memory, out var memoryTemp))
+            {
+                sb.Append($", {memoryTemp}°");
+            }
+
+            sb.Append($", Pwr: {Math.Round(power / 1000.0, 1)}W");
+
+            return sb.ToString();
+        }
+
+        public Dictionary<NvThermalSensorType, double> GetTemperatures()
+        {
+            var temperatures = new Dictionary<NvThermalSensorType, double>();
 
             try
             {
                 var temps = GPUApi.QueryThermalSensors(GPU.Handle, 255u);
-                var hotspotTemp = Math.Round(temps.Temperatures[1]);
-                var memoryTemp = temps.Temperatures[7];
-                var power = GetPowerUsageInMilliWatts();
 
-                return $"GPU: {GPU.CurrentClockFrequencies.GraphicsClock.Frequency.ToUnitString()} @ {gpuVoltage / 1000}mv, {gpuThermal.CurrentTemperature}°/{hotspotTemp}°C, Mem: {GPU.CurrentClockFrequencies.MemoryClock.Frequency.ToUnitString()}, {memoryTemp}°C, Pwr: {power / 1000}W";
+                var gpuTemp = Math.Round(temps.Temperatures[0], 1);
+                var hotspotTemp = Math.Round(temps.Temperatures[1], 1);
+                var memoryTemp = temps.Temperatures.Last(l => l != 0);
+
+                temperatures.Add(NvThermalSensorType.Gpu, gpuTemp);
+                temperatures.Add(NvThermalSensorType.HotSpot, hotspotTemp);
+                temperatures.Add(NvThermalSensorType.Memory, memoryTemp);
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                var gpuThermal = GPU.ThermalInformation.ThermalSensors.FirstOrDefault(s => s.Target == ThermalSettingsTarget.GPU);
+                temperatures.Add(NvThermalSensorType.Gpu, gpuThermal.CurrentTemperature);
+            }
 
-            return $"GPU: {GPU.CurrentClockFrequencies.GraphicsClock.Frequency.ToUnitString()} @ {gpuVoltage / 1000}mv, {gpuThermal.CurrentTemperature}°C, Mem: {GPU.CurrentClockFrequencies.MemoryClock.Frequency.ToUnitString()}";
+            return temperatures;
         }
 
         public (int, int) GetDeltaClockMinMax(PublicClockDomain domain)
@@ -343,7 +429,7 @@ namespace ColorControl.Services.NVIDIA
 
         public bool HasLock(PublicClockDomain domain)
         {
-            return ClockBoostLocks.Any(l => l.ClockDomain == domain && l.LockMode == ClockLockMode.Manual);
+            return ClockBoostLocks.Any(l => l.ClockDomain == domain && l.LockMode == ClockLockMode.Manual) == true;
         }
 
         public int GetOffset(PublicClockDomain domain)
@@ -379,7 +465,7 @@ namespace ColorControl.Services.NVIDIA
 
         public NvGpuOcSettings GetOverclockSettings()
         {
-            var ocSettings = new NvGpuOcSettings();
+            var ocSettings = new NvGpuOcSettings { PCIIdentifier = PCIIdentifier };
 
             var power = GPUApi.ClientPowerPoliciesGetStatus(GPU.Handle);
 
@@ -405,6 +491,17 @@ namespace ColorControl.Services.NVIDIA
                     if (domain == PublicClockDomain.Graphics)
                     {
                         ocSettings.GraphicsOffsetKHz = locked.Item2;
+
+                        if (CurveV3.GPUCurveEntries?.Length > 0)
+                        {
+                            var voltItem = CurveV3.GPUCurveEntries.FirstOrDefault(e => e.DefaultVoltageInMicroV == ocSettings.MaximumVoltageUv);
+
+                            if (voltItem.DefaultFrequencyInkHz > 0)
+                            {
+                                var freq = voltItem.DefaultFrequencyInkHz + ocSettings.GraphicsOffsetKHz;
+                                ocSettings.MaximumFrequencyKHz = (uint)freq;
+                            }
+                        }
                     }
                     else
                     {
@@ -432,6 +529,7 @@ namespace ColorControl.Services.NVIDIA
                             {
                                 ocSettings.MaximumVoltageUv = maxOcEntry.VoltageInMicroV;
                                 ocSettings.MaximumFrequencyKHz = maxDefEntry.FrequencyInkHz;
+                                ocSettings.FrequencyPreferred = ocSettings.MaximumFrequencyKHz > 0;
                             }
                         }
                     }
@@ -580,7 +678,12 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetCurveOffset(int offsetKHz = 0, uint maxVoltageUv = 0, uint maxFreqKHz = 0)
         {
-            var normalizedOffset = (offsetKHz / 15000) * 15000;
+            if ((CurveV3.GPUCurveEntries?.Length ?? 0) == 0)
+            {
+                return;
+            }
+
+            var normalizedOffset = (offsetKHz / MinCoreStepInMHz) * MinCoreStepInMHz;
 
             var handle = GPU.Handle;
 
@@ -621,7 +724,7 @@ namespace ColorControl.Services.NVIDIA
             }
             GPUApi.SetClockBoostTableV2(handle, boostTable);
 
-            ReadCurve();
+            ReadCurves();
         }
 
         public void ResetGpuClocks()
@@ -752,11 +855,11 @@ namespace ColorControl.Services.NVIDIA
             var powerField = defaultPowerLimitMw > 0 ?
                 new MessageForms.FieldDefinition
                 {
-                    Label = $"Power limit in milli watts. Min: {MinPowerInMilliWatts}, max: {MaxPowerInMilliWatts}",
+                    Label = $"Power limit in watts. Min: {MinPowerInMilliWatts / 1000}, max: {MaxPowerInMilliWatts / 1000}",
                     FieldType = MessageForms.FieldType.TrackBar,
-                    Value = (int)((decimal)defaultPowerLimitMw / 100000 * settings.PowerPCM),
-                    MinValue = MinPowerInMilliWatts,
-                    MaxValue = MaxPowerInMilliWatts
+                    Value = (int)Math.Round((decimal)defaultPowerLimitMw / 100000000 * settings.PowerPCM),
+                    MinValue = MinPowerInMilliWatts / 1000,
+                    MaxValue = MaxPowerInMilliWatts / 1000
                 }
                 : new MessageForms.FieldDefinition
                 {
@@ -782,6 +885,49 @@ namespace ColorControl.Services.NVIDIA
             };
 
             return field;
+        }
+
+        internal (MessageForms.FieldDefinition, MessageForms.FieldDefinition) GetCurveVoltFreqFields(NvGpuOcSettings settings)
+        {
+            var curveEntries = CurveV3.GPUCurveEntries;
+
+            var graphicsDelta = GetDeltaClockMinMax(PublicClockDomain.Graphics);
+
+            var minCurveFreq = curveEntries.Max(e => e.DefaultFrequencyInkHz) + graphicsDelta.Item1;
+            var freqValues = curveEntries
+                .Where(e => e.DefaultFrequencyInkHz == 0 || e.DefaultFrequencyInkHz >= minCurveFreq)
+                .Select(e => (e.DefaultFrequencyInkHz / 1000).ToString()).Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            var voltValues = curveEntries
+                .Where(e => (e.DefaultVoltageInMicroV == 0 || e.DefaultFrequencyInkHz >= minCurveFreq) && e.DefaultVoltageInMicroV <= 1100000)
+                .OrderBy(e => e.DefaultVoltageInMicroV)
+                .Select(e => (e.DefaultVoltageInMicroV / 1000).ToString())
+                .Distinct()
+                .ToList();
+
+            var voltField = new MessageForms.FieldDefinition
+            {
+                Label = "Optional undervolt: maximum voltage in millivolt (0 = disabled)",
+                SubLabel = "If both UV voltage and UV frequency are set, frequency is derived from voltage.",
+                FieldType = MessageForms.FieldType.DropDown,
+                Value = settings.FrequencyPreferred ? 0 : settings.MaximumVoltageUv / 1000,
+                Values = voltValues,
+            };
+            var freqField = new MessageForms.FieldDefinition
+            {
+                Label = "Optional undervolt: maximum core frequency in MHz (0 = disabled)",
+                FieldType = MessageForms.FieldType.DropDown,
+                Value = !settings.FrequencyPreferred ? 0 : settings.MaximumFrequencyKHz / 1000,
+                Values = freqValues,
+            };
+
+            return (voltField, freqField);
+        }
+
+        public uint PowerToPCM(uint power, bool powerInMilliWatts)
+        {
+            return powerInMilliWatts ? (uint)((decimal)power / DefaultPowerInMilliWatts * 100000000) : power * 1000;
         }
     }
 }

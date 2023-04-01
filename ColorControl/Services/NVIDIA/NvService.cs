@@ -322,7 +322,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyOverclocking)
             {
-                ApplyOverclocking(preset.ocSettings);
+                result = ApplyOverclocking(preset.ocSettings);
             }
 
             _lastAppliedPreset = preset;
@@ -332,22 +332,29 @@ namespace ColorControl.Services.NVIDIA
             return result;
         }
 
-        public void ApplyOverclocking(NvGpuOcSettings setting)
+        public bool ApplyOverclocking(NvGpuOcSettings setting)
         {
-            ApplyOverclocking(new List<NvGpuOcSettings> { setting });
+            return ApplyOverclocking(new List<NvGpuOcSettings> { setting });
         }
 
-        public void ApplyOverclocking(List<NvGpuOcSettings> settings)
+        public bool ApplyOverclocking(List<NvGpuOcSettings> settings)
         {
             if (!Utils.IsAdministrator())
             {
-                PipeUtils.SendMessage(new SvcNvOverclockingMessage
+                var result = PipeUtils.SendMessage(new SvcNvOverclockingMessage
                 {
                     OverclockingSettings = settings
                 });
 
-                return;
+                if (result == null)
+                {
+                    return false;
+                }
+
+                return true;
             }
+
+            var result2 = true;
 
             foreach (var ocSetting in settings)
             {
@@ -358,8 +365,10 @@ namespace ColorControl.Services.NVIDIA
                     continue;
                 }
 
-                gpuInfo.ApplyOcSettings(ocSetting);
+                result2 = gpuInfo.ApplyOcSettings(ocSetting);
             }
+
+            return result2;
         }
 
         public bool SetColorData(Display display, ColorData colorData)
@@ -801,6 +810,20 @@ namespace ColorControl.Services.NVIDIA
             }
 
             preset.HDREnabled = IsHDREnabled(display);
+
+            if (Config.ShowOverclocking)
+            {
+                var gpus = GetGPUs();
+
+                foreach (var gpu in gpus)
+                {
+                    var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+
+                    var settings = gpuInfo.GetOverclockSettings();
+
+                    preset.ocSettings.Add(settings);
+                }
+            }
 
             return preset;
         }

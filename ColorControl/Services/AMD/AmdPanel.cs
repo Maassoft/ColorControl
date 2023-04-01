@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.AMD
 {
-    public partial class AmdPanel : UserControl
+    public partial class AmdPanel : UserControl, IModulePanel
     {
         public static readonly int SHORTCUTID_AMDQA = -201;
 
@@ -166,7 +166,7 @@ namespace ColorControl.Services.AMD
             FormUtils.SaveSortState(lvAmdPresets.ListViewItemSorter, _config.AmdPresetsSortState);
         }
 
-        internal void UpdateInfo()
+        public void UpdateInfo()
         {
             UpdateDisplayInfoItemsAmd();
         }

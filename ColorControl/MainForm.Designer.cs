@@ -30,29 +30,16 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tcMain = new System.Windows.Forms.TabControl();
-            this.tabNVIDIA = new System.Windows.Forms.TabPage();
-            this.tabAMD = new System.Windows.Forms.TabPage();
-            this.tabLG = new System.Windows.Forms.TabPage();
-            this.tabGameLauncher = new System.Windows.Forms.TabPage();
             this.tabOptions = new System.Windows.Forms.TabPage();
+            this.grpOptionsModules = new System.Windows.Forms.GroupBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.chkModules = new System.Windows.Forms.CheckedListBox();
             this.grpMiscellaneousOptions = new System.Windows.Forms.GroupBox();
             this.btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.edtBlankScreenSaverShortcut = new System.Windows.Forms.TextBox();
             this.lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             this.chkFixChromeFonts = new System.Windows.Forms.CheckBox();
-            this.grpLGOptions = new System.Windows.Forms.GroupBox();
-            this.chkLgSetSelectedDeviceByPowerOn = new System.Windows.Forms.CheckBox();
-            this.lblGameBarShortcut = new System.Windows.Forms.Label();
-            this.edtLgGameBarShortcut = new System.Windows.Forms.TextBox();
-            this.lblLgOptionShutdownDelayHelp = new System.Windows.Forms.Label();
-            this.edtLgOptionShutdownDelay = new System.Windows.Forms.NumericUpDown();
-            this.lblLgOptionShutdownDelay = new System.Windows.Forms.Label();
-            this.chkLgShowAdvancedActions = new System.Windows.Forms.CheckBox();
-            this.btnLGTestPower = new System.Windows.Forms.Button();
-            this.lblLgMaxPowerOnRetriesDescription = new System.Windows.Forms.Label();
-            this.edtLgMaxPowerOnRetries = new System.Windows.Forms.NumericUpDown();
-            this.lblLgMaxPowerOnRetries = new System.Windows.Forms.Label();
             this.grpGeneralOptions = new System.Windows.Forms.GroupBox();
             this.chkAutoInstallUpdates = new System.Windows.Forms.CheckBox();
             this.btnStartStopService = new System.Windows.Forms.Button();
@@ -84,10 +71,8 @@
             this.btnUpdate = new System.Windows.Forms.Button();
             this.tcMain.SuspendLayout();
             this.tabOptions.SuspendLayout();
+            this.grpOptionsModules.SuspendLayout();
             this.grpMiscellaneousOptions.SuspendLayout();
-            this.grpLGOptions.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgOptionShutdownDelay)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).BeginInit();
             this.grpGeneralOptions.SuspendLayout();
             this.tabLog.SuspendLayout();
             this.tabInfo.SuspendLayout();
@@ -100,10 +85,6 @@
             this.tcMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tcMain.Controls.Add(this.tabNVIDIA);
-            this.tcMain.Controls.Add(this.tabAMD);
-            this.tcMain.Controls.Add(this.tabLG);
-            this.tcMain.Controls.Add(this.tabGameLauncher);
             this.tcMain.Controls.Add(this.tabOptions);
             this.tcMain.Controls.Add(this.tabLog);
             this.tcMain.Controls.Add(this.tabInfo);
@@ -115,53 +96,10 @@
             this.tcMain.TabIndex = 1;
             this.tcMain.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             // 
-            // tabNVIDIA
-            // 
-            this.tabNVIDIA.Location = new System.Drawing.Point(4, 24);
-            this.tabNVIDIA.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabNVIDIA.Name = "tabNVIDIA";
-            this.tabNVIDIA.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabNVIDIA.Size = new System.Drawing.Size(1114, 539);
-            this.tabNVIDIA.TabIndex = 0;
-            this.tabNVIDIA.Text = "NVIDIA controller";
-            this.tabNVIDIA.UseVisualStyleBackColor = true;
-            // 
-            // tabAMD
-            // 
-            this.tabAMD.Location = new System.Drawing.Point(4, 24);
-            this.tabAMD.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabAMD.Name = "tabAMD";
-            this.tabAMD.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabAMD.Size = new System.Drawing.Size(1114, 539);
-            this.tabAMD.TabIndex = 5;
-            this.tabAMD.Text = "AMD controller";
-            this.tabAMD.UseVisualStyleBackColor = true;
-            // 
-            // tabLG
-            // 
-            this.tabLG.Location = new System.Drawing.Point(4, 24);
-            this.tabLG.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabLG.Name = "tabLG";
-            this.tabLG.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.tabLG.Size = new System.Drawing.Size(1114, 539);
-            this.tabLG.TabIndex = 1;
-            this.tabLG.Text = "LG controller";
-            this.tabLG.UseVisualStyleBackColor = true;
-            // 
-            // tabGameLauncher
-            // 
-            this.tabGameLauncher.Location = new System.Drawing.Point(4, 24);
-            this.tabGameLauncher.Name = "tabGameLauncher";
-            this.tabGameLauncher.Padding = new System.Windows.Forms.Padding(3);
-            this.tabGameLauncher.Size = new System.Drawing.Size(1114, 539);
-            this.tabGameLauncher.TabIndex = 6;
-            this.tabGameLauncher.Text = "Game Launcher";
-            this.tabGameLauncher.UseVisualStyleBackColor = true;
-            // 
             // tabOptions
             // 
+            this.tabOptions.Controls.Add(this.grpOptionsModules);
             this.tabOptions.Controls.Add(this.grpMiscellaneousOptions);
-            this.tabOptions.Controls.Add(this.grpLGOptions);
             this.tabOptions.Controls.Add(this.grpGeneralOptions);
             this.tabOptions.Location = new System.Drawing.Point(4, 24);
             this.tabOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -172,6 +110,39 @@
             this.tabOptions.Text = "Options";
             this.tabOptions.UseVisualStyleBackColor = true;
             // 
+            // grpOptionsModules
+            // 
+            this.grpOptionsModules.Controls.Add(this.label1);
+            this.grpOptionsModules.Controls.Add(this.chkModules);
+            this.grpOptionsModules.Location = new System.Drawing.Point(7, 187);
+            this.grpOptionsModules.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpOptionsModules.Name = "grpOptionsModules";
+            this.grpOptionsModules.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.grpOptionsModules.Size = new System.Drawing.Size(522, 131);
+            this.grpOptionsModules.TabIndex = 11;
+            this.grpOptionsModules.TabStop = false;
+            this.grpOptionsModules.Text = "Modules";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(7, 19);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(511, 15);
+            this.label1.TabIndex = 7;
+            this.label1.Text = "Here you can disable modules you do not want. A restart is required for a change " +
+    "to have effect.";
+            // 
+            // chkModules
+            // 
+            this.chkModules.FormattingEnabled = true;
+            this.chkModules.Location = new System.Drawing.Point(7, 40);
+            this.chkModules.Name = "chkModules";
+            this.chkModules.Size = new System.Drawing.Size(507, 76);
+            this.chkModules.TabIndex = 0;
+            this.chkModules.SelectedIndexChanged += new System.EventHandler(this.chkModules_SelectedIndexChanged);
+            // 
             // grpMiscellaneousOptions
             // 
             this.grpMiscellaneousOptions.Controls.Add(this.btnSetShortcutScreenSaver);
@@ -179,7 +150,7 @@
             this.grpMiscellaneousOptions.Controls.Add(this.edtBlankScreenSaverShortcut);
             this.grpMiscellaneousOptions.Controls.Add(this.lblFixChromeFontsDescription);
             this.grpMiscellaneousOptions.Controls.Add(this.chkFixChromeFonts);
-            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 402);
+            this.grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 324);
             this.grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             this.grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -241,163 +212,6 @@
             this.chkFixChromeFonts.Text = "ClearType: fix bad fonts in Chrome (turn on grayscale anti-aliasing)";
             this.chkFixChromeFonts.UseVisualStyleBackColor = true;
             this.chkFixChromeFonts.CheckedChanged += new System.EventHandler(this.chkFixChromeFonts_CheckedChanged);
-            // 
-            // grpLGOptions
-            // 
-            this.grpLGOptions.Controls.Add(this.chkLgSetSelectedDeviceByPowerOn);
-            this.grpLGOptions.Controls.Add(this.lblGameBarShortcut);
-            this.grpLGOptions.Controls.Add(this.edtLgGameBarShortcut);
-            this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelayHelp);
-            this.grpLGOptions.Controls.Add(this.edtLgOptionShutdownDelay);
-            this.grpLGOptions.Controls.Add(this.lblLgOptionShutdownDelay);
-            this.grpLGOptions.Controls.Add(this.chkLgShowAdvancedActions);
-            this.grpLGOptions.Controls.Add(this.btnLGTestPower);
-            this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetriesDescription);
-            this.grpLGOptions.Controls.Add(this.edtLgMaxPowerOnRetries);
-            this.grpLGOptions.Controls.Add(this.lblLgMaxPowerOnRetries);
-            this.grpLGOptions.Location = new System.Drawing.Point(8, 187);
-            this.grpLGOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpLGOptions.Name = "grpLGOptions";
-            this.grpLGOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpLGOptions.Size = new System.Drawing.Size(522, 209);
-            this.grpLGOptions.TabIndex = 4;
-            this.grpLGOptions.TabStop = false;
-            this.grpLGOptions.Text = "LG controller";
-            // 
-            // chkLgSetSelectedDeviceByPowerOn
-            // 
-            this.chkLgSetSelectedDeviceByPowerOn.AutoSize = true;
-            this.chkLgSetSelectedDeviceByPowerOn.Location = new System.Drawing.Point(8, 180);
-            this.chkLgSetSelectedDeviceByPowerOn.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkLgSetSelectedDeviceByPowerOn.Name = "chkLgSetSelectedDeviceByPowerOn";
-            this.chkLgSetSelectedDeviceByPowerOn.Size = new System.Drawing.Size(302, 19);
-            this.chkLgSetSelectedDeviceByPowerOn.TabIndex = 60;
-            this.chkLgSetSelectedDeviceByPowerOn.Text = "Automatically set selected device to last powered on";
-            this.chkLgSetSelectedDeviceByPowerOn.UseVisualStyleBackColor = true;
-            this.chkLgSetSelectedDeviceByPowerOn.CheckedChanged += new System.EventHandler(this.chkLgSetSelectedDeviceByWol_CheckedChanged);
-            // 
-            // lblGameBarShortcut
-            // 
-            this.lblGameBarShortcut.AutoSize = true;
-            this.lblGameBarShortcut.Location = new System.Drawing.Point(266, 127);
-            this.lblGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblGameBarShortcut.Name = "lblGameBarShortcut";
-            this.lblGameBarShortcut.Size = new System.Drawing.Size(108, 15);
-            this.lblGameBarShortcut.TabIndex = 59;
-            this.lblGameBarShortcut.Text = "Game Bar shortcut:";
-            // 
-            // edtLgGameBarShortcut
-            // 
-            this.edtLgGameBarShortcut.Location = new System.Drawing.Point(386, 121);
-            this.edtLgGameBarShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtLgGameBarShortcut.Name = "edtLgGameBarShortcut";
-            this.edtLgGameBarShortcut.ReadOnly = true;
-            this.edtLgGameBarShortcut.Size = new System.Drawing.Size(128, 23);
-            this.edtLgGameBarShortcut.TabIndex = 58;
-            this.edtLgGameBarShortcut.TextChanged += new System.EventHandler(this.edtLgGameBarShortcut_TextChanged);
-            this.edtLgGameBarShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyDown);
-            this.edtLgGameBarShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtLgGameBarShortcut_KeyUp);
-            // 
-            // lblLgOptionShutdownDelayHelp
-            // 
-            this.lblLgOptionShutdownDelayHelp.AutoSize = true;
-            this.lblLgOptionShutdownDelayHelp.Location = new System.Drawing.Point(7, 94);
-            this.lblLgOptionShutdownDelayHelp.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblLgOptionShutdownDelayHelp.Name = "lblLgOptionShutdownDelayHelp";
-            this.lblLgOptionShutdownDelayHelp.Size = new System.Drawing.Size(385, 15);
-            this.lblLgOptionShutdownDelayHelp.TabIndex = 11;
-            this.lblLgOptionShutdownDelayHelp.Text = "This delay may prevent the tv from powering off when restarting the pc.";
-            // 
-            // edtLgOptionShutdownDelay
-            // 
-            this.edtLgOptionShutdownDelay.Increment = new decimal(new int[] {
-            100,
-            0,
-            0,
-            0});
-            this.edtLgOptionShutdownDelay.Location = new System.Drawing.Point(428, 68);
-            this.edtLgOptionShutdownDelay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtLgOptionShutdownDelay.Maximum = new decimal(new int[] {
-            5000,
-            0,
-            0,
-            0});
-            this.edtLgOptionShutdownDelay.Name = "edtLgOptionShutdownDelay";
-            this.edtLgOptionShutdownDelay.ReadOnly = true;
-            this.edtLgOptionShutdownDelay.Size = new System.Drawing.Size(86, 23);
-            this.edtLgOptionShutdownDelay.TabIndex = 10;
-            this.edtLgOptionShutdownDelay.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.edtLgOptionShutdownDelay.ValueChanged += new System.EventHandler(this.edtLgOptionShutdownDelay_ValueChanged);
-            // 
-            // lblLgOptionShutdownDelay
-            // 
-            this.lblLgOptionShutdownDelay.AutoSize = true;
-            this.lblLgOptionShutdownDelay.Location = new System.Drawing.Point(7, 70);
-            this.lblLgOptionShutdownDelay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblLgOptionShutdownDelay.Name = "lblLgOptionShutdownDelay";
-            this.lblLgOptionShutdownDelay.Size = new System.Drawing.Size(249, 15);
-            this.lblLgOptionShutdownDelay.TabIndex = 9;
-            this.lblLgOptionShutdownDelay.Text = "Delay when shutting down/restarting pc (ms):";
-            // 
-            // chkLgShowAdvancedActions
-            // 
-            this.chkLgShowAdvancedActions.AutoSize = true;
-            this.chkLgShowAdvancedActions.Location = new System.Drawing.Point(8, 155);
-            this.chkLgShowAdvancedActions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkLgShowAdvancedActions.Name = "chkLgShowAdvancedActions";
-            this.chkLgShowAdvancedActions.Size = new System.Drawing.Size(419, 19);
-            this.chkLgShowAdvancedActions.TabIndex = 8;
-            this.chkLgShowAdvancedActions.Text = "Show advanced actions under the Expert-button (InStart, Software Update)";
-            this.chkLgShowAdvancedActions.UseVisualStyleBackColor = true;
-            this.chkLgShowAdvancedActions.CheckedChanged += new System.EventHandler(this.chkLgShowAdvancedActions_CheckedChanged);
-            // 
-            // btnLGTestPower
-            // 
-            this.btnLGTestPower.Location = new System.Drawing.Point(8, 121);
-            this.btnLGTestPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnLGTestPower.Name = "btnLGTestPower";
-            this.btnLGTestPower.Size = new System.Drawing.Size(167, 27);
-            this.btnLGTestPower.TabIndex = 6;
-            this.btnLGTestPower.Text = "Test power off/on";
-            this.btnLGTestPower.UseVisualStyleBackColor = true;
-            this.btnLGTestPower.Click += new System.EventHandler(this.btnLGTestPower_Click);
-            // 
-            // lblLgMaxPowerOnRetriesDescription
-            // 
-            this.lblLgMaxPowerOnRetriesDescription.AutoSize = true;
-            this.lblLgMaxPowerOnRetriesDescription.Location = new System.Drawing.Point(7, 46);
-            this.lblLgMaxPowerOnRetriesDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblLgMaxPowerOnRetriesDescription.Name = "lblLgMaxPowerOnRetriesDescription";
-            this.lblLgMaxPowerOnRetriesDescription.Size = new System.Drawing.Size(415, 15);
-            this.lblLgMaxPowerOnRetriesDescription.TabIndex = 5;
-            this.lblLgMaxPowerOnRetriesDescription.Text = "Retries are necessary to wait for the network link of your pc to be established. " +
-    "";
-            // 
-            // edtLgMaxPowerOnRetries
-            // 
-            this.edtLgMaxPowerOnRetries.Location = new System.Drawing.Point(428, 20);
-            this.edtLgMaxPowerOnRetries.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtLgMaxPowerOnRetries.Maximum = new decimal(new int[] {
-            25,
-            0,
-            0,
-            0});
-            this.edtLgMaxPowerOnRetries.Name = "edtLgMaxPowerOnRetries";
-            this.edtLgMaxPowerOnRetries.ReadOnly = true;
-            this.edtLgMaxPowerOnRetries.Size = new System.Drawing.Size(86, 23);
-            this.edtLgMaxPowerOnRetries.TabIndex = 1;
-            this.edtLgMaxPowerOnRetries.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            this.edtLgMaxPowerOnRetries.ValueChanged += new System.EventHandler(this.edtLgPowerOnAfterResumeDelay_ValueChanged);
-            // 
-            // lblLgMaxPowerOnRetries
-            // 
-            this.lblLgMaxPowerOnRetries.AutoSize = true;
-            this.lblLgMaxPowerOnRetries.Location = new System.Drawing.Point(7, 22);
-            this.lblLgMaxPowerOnRetries.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblLgMaxPowerOnRetries.Name = "lblLgMaxPowerOnRetries";
-            this.lblLgMaxPowerOnRetries.Size = new System.Drawing.Size(340, 15);
-            this.lblLgMaxPowerOnRetries.TabIndex = 0;
-            this.lblLgMaxPowerOnRetries.Text = "Maximum number of retries powering on after startup/resume:";
             // 
             // grpGeneralOptions
             // 
@@ -794,12 +608,10 @@
             this.Resize += new System.EventHandler(this.MainForm_Resize);
             this.tcMain.ResumeLayout(false);
             this.tabOptions.ResumeLayout(false);
+            this.grpOptionsModules.ResumeLayout(false);
+            this.grpOptionsModules.PerformLayout();
             this.grpMiscellaneousOptions.ResumeLayout(false);
             this.grpMiscellaneousOptions.PerformLayout();
-            this.grpLGOptions.ResumeLayout(false);
-            this.grpLGOptions.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgOptionShutdownDelay)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.edtLgMaxPowerOnRetries)).EndInit();
             this.grpGeneralOptions.ResumeLayout(false);
             this.grpGeneralOptions.PerformLayout();
             this.tabLog.ResumeLayout(false);
@@ -815,7 +627,6 @@
         #endregion
 
         private System.Windows.Forms.TabControl tcMain;
-        private System.Windows.Forms.TabPage tabLG;
         private System.Windows.Forms.TabPage tabOptions;
         private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
@@ -830,11 +641,6 @@
         private System.Windows.Forms.GroupBox grpNVIDIAInfo;
         private System.Windows.Forms.TreeView tvNVIDIAInfo;
         private System.Windows.Forms.Button btnRefreshNVIDIAInfo;
-        private System.Windows.Forms.GroupBox grpLGOptions;
-        private System.Windows.Forms.NumericUpDown edtLgMaxPowerOnRetries;
-        private System.Windows.Forms.Label lblLgMaxPowerOnRetries;
-        private System.Windows.Forms.Button btnLGTestPower;
-        private System.Windows.Forms.Label lblLgMaxPowerOnRetriesDescription;
         private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
         private System.Windows.Forms.CheckBox chkFixChromeFonts;
         private System.Windows.Forms.Label lblFixChromeFontsDescription;
@@ -842,19 +648,10 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox edtBlankScreenSaverShortcut;
         private System.Windows.Forms.CheckBox chkMinimizeOnClose;
-        private System.Windows.Forms.TabPage tabNVIDIA;
-        private System.Windows.Forms.TabPage tabAMD;
         private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.CheckBox chkMinimizeToSystemTray;
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
-        private System.Windows.Forms.CheckBox chkLgShowAdvancedActions;
         private System.Windows.Forms.CheckBox chkGdiScaling;
-        private System.Windows.Forms.Label lblLgOptionShutdownDelayHelp;
-        private System.Windows.Forms.NumericUpDown edtLgOptionShutdownDelay;
-        private System.Windows.Forms.Label lblLgOptionShutdownDelay;
-        private System.Windows.Forms.Label lblGameBarShortcut;
-        private System.Windows.Forms.TextBox edtLgGameBarShortcut;
-        private System.Windows.Forms.TabPage tabGameLauncher;
         private System.Windows.Forms.RadioButton rbElevationService;
         private System.Windows.Forms.RadioButton rbElevationProcess;
         private System.Windows.Forms.RadioButton rbElevationAdmin;
@@ -865,8 +662,10 @@
         private System.Windows.Forms.Label lblShowLog;
         private System.Windows.Forms.ComboBox cbxLogType;
         private System.Windows.Forms.CheckBox chkAutoInstallUpdates;
-        private System.Windows.Forms.CheckBox chkLgSetSelectedDeviceByPowerOn;
         private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.GroupBox grpOptionsModules;
+        private System.Windows.Forms.CheckedListBox chkModules;
+        private System.Windows.Forms.Label label1;
     }
 }
 

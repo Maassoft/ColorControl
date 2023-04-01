@@ -25,6 +25,7 @@ namespace ColorControl.Forms
         public class FieldDefinition
         {
             public string Label { get; set; }
+            public string SubLabel { get; set; }
             public FieldType FieldType { get; set; } = FieldType.Text;
             public IEnumerable<string> Values { get; set; }
             public decimal MinValue { get; set; }
@@ -35,6 +36,7 @@ namespace ColorControl.Forms
 
             public int ValueAsInt => int.Parse(Value.ToString());
             public uint ValueAsUInt => uint.Parse(Value.ToString());
+            public bool ValueAsBool => bool.Parse(Value.ToString());
         }
 
         public class MessageForm : Form
@@ -120,14 +122,14 @@ namespace ColorControl.Forms
             return ShowDialog(caption, fieldDefinitions, validateFunc);
         }
 
-        public static List<FieldDefinition> ShowDialog(string caption, IEnumerable<FieldDefinition> fields, Func<IEnumerable<FieldDefinition>, string> validateFunc = null)
+        public static List<FieldDefinition> ShowDialog(string caption, IEnumerable<FieldDefinition> fields, Func<IEnumerable<FieldDefinition>, string> validateFunc = null, string okButtonText = "OK")
         {
             var values = new List<FieldDefinition>();
 
             var prompt = new MessageForm()
             {
                 Width = 460,
-                Height = 106 + (fields.Count() * 50),
+                Height = 106,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = caption,
                 StartPosition = FormStartPosition.CenterScreen
@@ -152,9 +154,20 @@ namespace ColorControl.Forms
             foreach (var field in fields)
             {
                 var label = field.Label;
-                var textLabel = new Label() { Left = DefaultLeft, Top = top, Text = label, AutoSize = true };
-                top += 20;
-                groupBox.Controls.Add(textLabel);
+
+                if (field.FieldType != FieldType.CheckBox)
+                {
+                    var textLabel = new Label() { Left = DefaultLeft, Top = top, Text = label, AutoSize = true };
+                    top += 20;
+                    groupBox.Controls.Add(textLabel);
+                }
+
+                if (field.SubLabel != null)
+                {
+                    var textSubLabel = new Label() { Left = DefaultLeft, Top = top, Text = field.SubLabel, AutoSize = true };
+                    top += 20;
+                    groupBox.Controls.Add(textSubLabel);
+                }
 
                 Control control;
 
@@ -200,7 +213,7 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.Numeric:
-                        var numericEdit = new NumericUpDown() { Left = DefaultLeft, Top = top, Width = 400 };
+                        var numericEdit = new NumericUpDown() { Left = DefaultLeft, Top = top, Width = 200 };
 
                         if (field.MinValue != field.MaxValue)
                         {
@@ -240,11 +253,15 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.CheckBox:
+
+                        top += 4;
+
                         var checkBox = new CheckBox
                         {
                             Left = DefaultLeft,
                             Top = top,
-                            Width = 24,
+                            AutoSize = true,
+                            Text = label
                         };
 
                         checkBox.Checked = field.Value is bool boolValue && boolValue;
@@ -339,7 +356,23 @@ namespace ColorControl.Forms
                 counter++;
             }
 
-            var confirmation = new Button() { Text = "OK", Left = DefaultLeft + 400 - 75, Width = 75, Top = prompt.ClientRectangle.Height - 30 };
+            var maxWidth = boxes.Max(c => c.Width + c.Left) + 20;
+
+            if (groupBox.Width < maxWidth)
+            {
+                groupBox.Width = maxWidth;
+                prompt.Width = groupBox.Width;
+            }
+
+            var maxHeight = boxes.Max(c => c.Height + c.Top) + 20;
+
+            if (groupBox.Height < maxHeight)
+            {
+                prompt.Height = maxHeight + 80;
+                groupBox.Height = maxHeight;
+            }
+
+            var confirmation = new Button() { Text = okButtonText, Left = prompt.ClientRectangle.Width - 75 - 20, Width = 75, Top = prompt.ClientRectangle.Height - 30 };
             confirmation.Click += (sender, e) =>
             {
                 foreach (var box in boxes)
