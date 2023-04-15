@@ -61,7 +61,8 @@ namespace ColorControl.Services.LG
             Series2019,
             Series2020,
             Series2021,
-            Series2022
+            Series2022,
+            Series2023
         }
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
@@ -80,6 +81,7 @@ namespace ColorControl.Services.LG
         public bool PowerOffOnShutdown { get; set; }
         public bool PowerOffOnStandby { get; set; }
         public bool PowerOffOnScreenSaver { get; set; }
+        public int ScreenSaverMinimalDuration { get; set; }
         public bool PowerOnAfterScreenSaver { get; set; }
         public bool PowerOnAfterManualPowerOff { get; set; }
         public bool PowerOnByWindows { get; set; }
@@ -142,6 +144,9 @@ namespace ColorControl.Services.LG
 
         public event EventHandler PictureSettingsChangedEvent;
         public event EventHandler PowerStateChangedEvent;
+
+        [JsonIgnore]
+        private Timer _powerOffTimer;
 
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
@@ -254,6 +259,11 @@ namespace ColorControl.Services.LG
             AddSetConfigAction("tv.conti.supportUsedTime", typeof(BoolFalseToTrue), title: "Total Power On Time");
 
             AddGenericPictureAction("wolwowlOnOff", typeof(FalseToTrue), category: "network", title: "Wake-On-LAN");
+        }
+
+        ~LgDevice()
+        {
+            _powerOffTimer?.Dispose();
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -430,6 +440,7 @@ namespace ColorControl.Services.LG
                 'X' => ModelYear.Series2020,
                 '1' => ModelYear.Series2021,
                 '2' => ModelYear.Series2022,
+                '3' => ModelYear.Series2023,
                 _ => ModelYear.None
             };
 
@@ -1082,6 +1093,24 @@ namespace ColorControl.Services.LG
                     action.CurrentValue = 0;
                 }
             }
+        }
+
+        internal void ClearPowerOffTask()
+        {
+            _powerOffTimer?.Dispose();
+        }
+
+        internal void PowerOffIn(int seconds)
+        {
+            _powerOffTimer = new Timer(PowerOffByTimer);
+            _powerOffTimer.Change(TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(seconds));
+        }
+
+        private void PowerOffByTimer(object state)
+        {
+            _powerOffTimer?.Dispose();
+
+            var _ = PowerOff(true);
         }
     }
 }

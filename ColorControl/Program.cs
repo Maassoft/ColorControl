@@ -2,6 +2,7 @@
 using ColorControl.Forms;
 using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Svc;
@@ -207,7 +208,7 @@ namespace ColorControl
         {
             if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
             {
-                Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix);
+                Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix, startUpParams.ChromeFontFixApplicationDataFolder);
                 return true;
             }
             if (startUpParams.EnableAutoStart || startUpParams.DisableAutoStart)
@@ -353,6 +354,9 @@ namespace ColorControl
                 {
                     //services.AddSingleton<NvService>();
                     services.RegisterSharedServices();
+                    services.AddSingleton<LgService>();
+                    services.AddSingleton<PowerEventDispatcher>();
+                    services.AddSingleton<ProcessEventDispatcher>();
                 });
         }
         private static async Task RunService(string[] args)
@@ -377,6 +381,7 @@ namespace ColorControl
         private static void RegisterSharedServices(this IServiceCollection services)
         {
             services.AddSingleton<AppContextProvider>();
+            services.AddSingleton<SessionSwitchDispatcher>();
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

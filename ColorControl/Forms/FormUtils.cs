@@ -45,12 +45,14 @@ namespace ColorControl.Forms
 
         public static void SetNotifyIconText(NotifyIcon ni, string text)
         {
-            text = text.Substring(0, Math.Min(text.Length, 127));
-            Type t = typeof(NotifyIcon);
-            BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
-            t.GetField("text", hidden).SetValue(ni, text);
-            if ((bool)t.GetField("added", hidden).GetValue(ni))
-                t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
+            ni.Text = text;
+
+            //text = text.Substring(0, Math.Min(text.Length, 127));
+            //Type t = typeof(NotifyIcon);
+            //BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            //t.GetField("text", hidden).SetValue(ni, text);
+            //if ((bool)t.GetField("added", hidden).GetValue(ni))
+            //    t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
         }
 
         public static ToolStripMenuItem BuildDropDownMenuEx(ToolStripItemCollection items, string parentName, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0, bool noSubItems = false)

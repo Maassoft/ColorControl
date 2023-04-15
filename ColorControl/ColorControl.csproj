@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
 	<LangVersion>10.0</LangVersion>
-	<TargetFramework>net6.0-windows10.0.20348.0</TargetFramework>
+	<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
 	<OutputType>WinExe</OutputType>
 	<IsWebBootstrapper>false</IsWebBootstrapper>
 	<PublishUrl>publish\</PublishUrl>
@@ -19,8 +19,8 @@
 	<PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-	<ApplicationVersion>9.0.0.0</ApplicationVersion>
-	<Version>9.0.0.0</Version>
+	<ApplicationVersion>9.1.0.0</ApplicationVersion>
+	<Version>9.1.0.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
 	<PublishWizardCompleted>true</PublishWizardCompleted>
 	<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -89,17 +89,17 @@
   </ItemGroup>
   <ItemGroup>
 	<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-	<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
-	<PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
+	<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+	<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup>
-	<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-	<PackageReference Include="NLog" Version="5.0.4" />
-	<PackageReference Include="NStandard" Version="0.15.2" />
-	<PackageReference Include="NWin32" Version="1.2.3" />
+	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	<PackageReference Include="NLog" Version="5.1.2" />
+	<PackageReference Include="NStandard" Version="0.24.0" />
+	<PackageReference Include="NWin32" Version="1.2.6" />
 	<PackageReference Include="System.Management" Version="7.0.0" />
 	<PackageReference Include="TaskScheduler" Version="2.10.1" />
-	<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.9" />
+	<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.13" />
   </ItemGroup>
   <ItemGroup>
 	<ProjectReference Include="..\Nspector\Nspector.csproj" />

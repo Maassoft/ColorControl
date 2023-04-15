@@ -1,6 +1,6 @@
 ﻿using ColorControl.Common;
-using ColorControl.Forms;
 using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Svc;
 using LgTv;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -77,6 +76,9 @@ namespace ColorControl.Services.LG
 
         private string _configFilename;
         private bool _allowPowerOn;
+        private readonly PowerEventDispatcher _powerEventDispatcher;
+        private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
+        private readonly ProcessEventDispatcher _processEventDispatcher;
         private LgDevice _selectedDevice;
         private string _rcButtonsFilename;
         private List<LgPreset> _remoteControlButtons;
@@ -84,15 +86,15 @@ namespace ColorControl.Services.LG
 
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
-        private Task _monitorTask;
-        private int _monitorTaskCounter;
         private LgPreset _lastTriggeredPreset;
         private RestartDetector _restartDetector;
 
-        public LgService(AppContextProvider appContextProvider, bool allowPowerOn) : base(appContextProvider)
+        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher) : base(appContextProvider)
         {
-            _allowPowerOn = allowPowerOn;
-
+            _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
+            _powerEventDispatcher = powerEventDispatcher;
+            _sessionSwitchDispatcher = sessionSwitchDispatcher;
+            _processEventDispatcher = processEventDispatcher;
             LgPreset.LgApps = _lgApps;
 
             _restartDetector = new RestartDetector();
@@ -111,9 +113,8 @@ namespace ColorControl.Services.LG
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                var lgService = Program.ServiceProvider.GetRequiredService<LgService>();
 
-                var lgService = new LgService(appContextProvider, true);
                 await lgService.RefreshDevices(afterStartUp: true);
 
                 var result = await lgService.ApplyPreset(presetName);
@@ -442,32 +443,35 @@ namespace ColorControl.Services.LG
 
         public void InstallEventHandlers()
         {
-            SystemEvents.PowerModeChanged -= PowerModeChanged;
-            SystemEvents.PowerModeChanged += PowerModeChanged;
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Resume, PowerModeChanged);
+
             //SystemEvents.SessionEnded -= SessionEnded;
             //SystemEvents.SessionEnded += SessionEnded;
 
-            UserSessionInfo.UserSessionSwitch -= SessionSwitched;
-            UserSessionInfo.UserSessionSwitch += SessionSwitched;
+            _sessionSwitchDispatcher.RegisterEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitched);
 
-            MonitorProcesses();
+            _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
         }
 
-        private void SessionSwitched(bool toLocal)
+        private void SessionSwitched(object sender, SessionSwitchEventArgs e)
         {
-            if (toLocal)
+            if (_sessionSwitchDispatcher.UserLocalSession)
             {
-                if (_poweredOffByScreenSaver)
-                {
-                    Logger.Debug("User switched to local and screen was powered off due to screensaver: waking up");
-                    _poweredOffByScreenSaver = false;
-                    _poweredOffByScreenSaverProcessId = 0;
-                    WakeAfterStartupOrResume();
-                }
-                else
-                {
-                    Logger.Debug("User switched to local but screen was not powered off by screensaver: NOT waking up");
-                }
+                return;
+            }
+
+
+            if (_poweredOffByScreenSaver)
+            {
+                Logger.Debug("User switched to local and screen was powered off due to screensaver: waking up");
+                _poweredOffByScreenSaver = false;
+                _poweredOffByScreenSaverProcessId = 0;
+                WakeAfterStartupOrResume();
+            }
+            else
+            {
+                Logger.Debug("User switched to local but screen was not powered off by screensaver: NOT waking up");
             }
         }
 
@@ -479,6 +483,8 @@ namespace ColorControl.Services.LG
 
             if (powerOn)
             {
+                Devices.ForEach(d => d.ClearPowerOffTask());
+
                 WakeAfterStartupOrResume(PowerOnOffState.Resume);
                 return;
             }
@@ -516,199 +522,101 @@ namespace ColorControl.Services.LG
             }
         }
 
-        private void MonitorProcesses()
+        public async Task ProcessChanged(object sender, ProcessChangedEventArgs args, CancellationToken token)
         {
-            var enableMonitoring = ShouldMonitorProcesses();
-            if (enableMonitoring && _monitorTask == null)
+            try
             {
-                _monitorTask = CheckProcesses();
-            }
-            else if (!enableMonitoring && _monitorTask != null)
-            {
-                _monitorTask = null;
-            }
-        }
+                var wasConnected = Devices.Any(d => (d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) && d.IsConnected());
 
-        public bool ShouldMonitorProcesses()
-        {
-            return Devices.Any(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) || _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None));
-        }
+                var applicableDevices = Devices.Where(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
+                    ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
 
-        public async Task CheckProcesses()
-        {
-            var wasConnected = Devices.Any(d => (d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) && d.IsConnected());
-            _monitorTaskCounter++;
-            var validCounter = _monitorTaskCounter;
-            var lastProcessId = 0;
-
-            await Task.Delay(2000);
-
-            //var startWatch = new ManagementEventWatcher("SELECT * FROM Win32_ProcessStartTrace");
-            //startWatch.EventArrived += startWatch_EventArrived;
-            //startWatch.Start();
-
-            MonitorContext ??= new ProcessMonitorContext();
-            //Process[] lastProcesses = null;
-
-            while (validCounter == _monitorTaskCounter)
-            {
-                await Task.Delay(_poweredOffByScreenSaver ? 500 : 1000);
-
-                try
+                if (!applicableDevices.Any())
                 {
-                    var applicableDevices = Devices.Where(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-                        ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
-
-                    if (!applicableDevices.Any())
-                    {
-                        continue;
-                    }
-
-                    if (_poweredOffByScreenSaver && !UserSessionInfo.UserLocalSession)
-                    {
-                        continue;
-                    }
-
-                    var processes = Process.GetProcesses();
-
-                    if (_poweredOffByScreenSaver)
-                    {
-                        if (processes.Any(p => p.Id == _poweredOffByScreenSaverProcessId))
-                        {
-                            continue;
-                        }
-
-                        Logger.Debug("Screensaver stopped, waking");
-                        _poweredOffByScreenSaver = false;
-                        _poweredOffByScreenSaverProcessId = 0;
-                        lastProcessId = 0;
-                        WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
-
-                        continue;
-                    }
-
-                    var connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
-
-                    if (!connectedDevices.Any())
-                    {
-                        if (wasConnected)
-                        {
-                            Logger.Debug("Process monitor: TV(s) where connected, but not any longer");
-                            wasConnected = false;
-                            continue;
-                        }
-                        else
-                        {
-                            var devices = applicableDevices.ToList();
-                            foreach (var device in devices)
-                            {
-                                Logger.Debug($"Process monitor: test connection with {device.Name}...");
-                                var test = await device.TestConnection();
-                                Logger.Debug("Process monitor: test connection result: " + test);
-                            }
-
-                            connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
-
-                            if (!connectedDevices.Any())
-                            {
-                                continue;
-                            }
-                        }
-                    }
-
-                    if (!wasConnected)
-                    {
-                        Logger.Debug("Process monitor: TV(s) where not connected, but connection has now been established");
-                        wasConnected = true;
-                    }
-
-                    if (connectedDevices.Any(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver))
-                    {
-                        lastProcessId = await HandleScreenSaverProcessAsync(lastProcessId, processes, connectedDevices);
-                    }
-
-                    MonitorContext.Devices = connectedDevices.Where(d => d.TriggersEnabled).ToList();
-                    MonitorContext.RunningProcesses = processes;
-
-                    await ExecuteProcessPresets(MonitorContext);
+                    return;
                 }
-                catch (Exception ex)
+
+                if (_poweredOffByScreenSaver && !_sessionSwitchDispatcher.UserLocalSession)
                 {
-                    Logger.Error("CheckProcesses: " + ex.ToLogString());
+                    return;
                 }
+
+                var processes = args.RunningProcesses;
+
+                if (_poweredOffByScreenSaver)
+                {
+                    if (processes.Any(p => p.Id == _poweredOffByScreenSaverProcessId))
+                    {
+                        return;
+                    }
+
+                    Logger.Debug("Screensaver stopped, waking");
+                    _poweredOffByScreenSaver = false;
+                    _poweredOffByScreenSaverProcessId = 0;
+                    WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+
+                    return;
+                }
+
+                var connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
+
+                if (!connectedDevices.Any())
+                {
+                    if (wasConnected)
+                    {
+                        Logger.Debug("Process monitor: TV(s) where connected, but not any longer");
+                        wasConnected = false;
+
+                        return;
+                    }
+                    else
+                    {
+                        var devices = applicableDevices.ToList();
+                        foreach (var device in devices)
+                        {
+                            Logger.Debug($"Process monitor: test connection with {device.Name}...");
+                            var test = await device.TestConnection();
+                            Logger.Debug("Process monitor: test connection result: " + test);
+                        }
+
+                        connectedDevices = applicableDevices.Where(d => d.IsConnected()).ToList();
+
+                        if (!connectedDevices.Any())
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                if (!wasConnected)
+                {
+                    Logger.Debug("Process monitor: TV(s) where not connected, but connection has now been established");
+                    wasConnected = true;
+                }
+
+                if (connectedDevices.Any(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver))
+                {
+                    await HandleScreenSaverProcessAsync(processes, connectedDevices);
+                }
+
+                await ExecuteProcessPresets(args, connectedDevices);
+
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("ProcessChanged: " + ex.ToLogString());
             }
         }
 
-        private void startWatch_EventArrived(object sender, EventArrivedEventArgs e)
+        private async Task ExecuteProcessPresets(ProcessChangedEventArgs context, IList<LgDevice> connectedDevices)
         {
-            //Logger.Debug("Process started: " + e.NewEvent.Properties["ProcessName"].Value);
-        }
+            var triggerDevices = connectedDevices.Where(d => d.TriggersEnabled).ToList();
 
-        private async Task<int> HandleScreenSaverProcessAsync(int lastProcessId, Process[] processes, List<LgDevice> connectedDevices)
-        {
-            var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
-
-            if (process == null)
+            if (context.IsScreenSaverActive)
             {
-                return 0;
+                return;
             }
 
-            var parent = process.Parent(processes);
-
-            if (parent?.ProcessName.Contains("winlogon") ?? false)
-            {
-                Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
-                try
-                {
-                    foreach (var device in connectedDevices.Where(d => d.PowerOffOnScreenSaver))
-                    {
-                        Logger.Debug($"Screensaver check: test connection with {device.Name}...");
-                        var test = await device.TestConnection();
-                        Logger.Debug("Screensaver check: test connection result: " + test);
-                        if (!test)
-                        {
-                            continue;
-                        }
-
-                        Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
-                        try
-                        {
-                            _poweredOffByScreenSaver = await device.PowerOff(true).WaitAsync(TimeSpan.FromSeconds(5));
-                        }
-                        catch (TimeoutException)
-                        {
-                            // Assume powering off was successful
-                            _poweredOffByScreenSaver = true;
-                            Logger.Error($"Screensaver check: timeout exception while powering off (probably connection closed)");
-                        }
-                        catch (Exception pex)
-                        {
-                            // Assume powering off was successful
-                            _poweredOffByScreenSaver = true;
-                            Logger.Error($"Screensaver check: exception while powering off (probably connection closed): " + pex.Message);
-                        }
-                        Logger.Debug($"Screensaver check: powered off tv {device.Name}");
-                    }
-
-                    _poweredOffByScreenSaverProcessId = process.Id;
-                    lastProcessId = 0;
-                }
-                catch (Exception e)
-                {
-                    Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
-                }
-            }
-            else if (process.Id != lastProcessId)
-            {
-                Logger.Debug($"Screensaver started: {process.ProcessName}, but invalid parent: {parent?.ProcessName ?? "no parent"}");
-                lastProcessId = process.Id;
-            }
-
-            return lastProcessId;
-        }
-
-        private async Task ExecuteProcessPresets(ProcessMonitorContext context)
-        {
             var selectedDevice = SelectedDevice;
 
             var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch) &&
@@ -719,33 +627,6 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            context.IsNotificationDisabled = FormUtils.IsNotificationDisabled();
-
-            var (processId, isFullScreen) = FormUtils.GetForegroundProcessIdAndIfFullScreen();
-
-            if (processId == Environment.ProcessId)
-            {
-                return;
-            }
-
-            if (processId > 0)
-            {
-                var process = context.RunningProcesses.FirstOrDefault(p => p.Id == processId);
-
-                if (process?.ProcessName?.Contains(".scr") ?? false)
-                {
-                    return;
-                }
-
-                context.ForegroundProcess = process;
-                context.ForegroundProcessIsFullScreen = isFullScreen;
-            }
-            else
-            {
-                context.ForegroundProcess = null;
-                context.ForegroundProcessIsFullScreen = false;
-            }
-
             var changedProcesses = new List<Process>();
             if (context.ForegroundProcess != null)
             {
@@ -754,23 +635,14 @@ namespace ColorControl.Services.LG
 
             if (context.ForegroundProcess != null && context.ForegroundProcessIsFullScreen)
             {
-                if (!context.LastFullScreenProcessName.Equals(context.ForegroundProcess.ProcessName))
-                {
-                    context.LastFullScreenProcessName = context.ForegroundProcess.ProcessName;
-                    //Logger.Debug($"Foreground fullscreen app detected: {context.ForegroundProcess.ProcessName}");
-                }
-
                 presets = presets.Where(p => p.Triggers.Any(t => t.Conditions.HasFlag(PresetConditionType.FullScreen)));
-                context.WasFullScreen = true;
             }
-            else if (context.WasFullScreen)
+            else if (context.StoppedFullScreen)
             {
                 presets = presets.Where(p => p.Triggers.Any(t => !t.Conditions.HasFlag(PresetConditionType.FullScreen)));
-                context.WasFullScreen = false;
-                context.LastFullScreenProcessName = string.Empty;
             }
 
-            var isHDRActive = context.Devices.Any(d => d.IsUsingHDRPictureMode());
+            var isHDRActive = triggerDevices.Any(d => d.IsUsingHDRPictureMode());
 
             var isGsyncActive = LgDevice.ExternalServiceHandler("GsyncEnabled", new[] { "" });
 
@@ -784,27 +656,11 @@ namespace ColorControl.Services.LG
                 IsNotificationDisabled = context.IsNotificationDisabled
             };
 
-            var toApplyPresets = new List<LgPreset>();
-            foreach (var preset in presets)
-            {
-                if (preset.Triggers.Any(t => t.TriggerActive(triggerContext)))
-                {
-                    toApplyPresets.Add(preset);
-                }
-            }
+            var toApplyPresets = presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
 
             if (toApplyPresets.Any())
             {
-                LgPreset toApplyPreset;
-                if (toApplyPresets.Count > 1)
-                {
-                    toApplyPreset = toApplyPresets.FirstOrDefault(p => p.Triggers.Any(t => !t.IncludedProcesses.Contains("*")));
-                    toApplyPreset = toApplyPreset != null ? toApplyPreset : toApplyPresets.First();
-                }
-                else
-                {
-                    toApplyPreset = toApplyPresets.First();
-                }
+                var toApplyPreset = toApplyPresets.FirstOrDefault(p => toApplyPresets.Count == 1 || p.Triggers.Any(t => !t.IncludedProcesses.Contains("*"))) ?? toApplyPresets.First();
 
                 if (_lastTriggeredPreset != toApplyPreset)
                 {
@@ -812,6 +668,78 @@ namespace ColorControl.Services.LG
 
                     _lastTriggeredPreset = toApplyPreset;
                 }
+            }
+        }
+
+        private async Task HandleScreenSaverProcessAsync(IList<Process> processes, List<LgDevice> connectedDevices)
+        {
+            var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
+
+            var powerOffDevices = connectedDevices.Where(d => d.PowerOffOnScreenSaver).ToList();
+
+            if (process == null)
+            {
+                powerOffDevices.ForEach(d => d.ClearPowerOffTask());
+
+                return;
+            }
+
+            var parent = process.Parent(processes);
+
+            // Ignore manually started screen savers
+            if (parent?.ProcessName.Contains("winlogon") != true)
+            {
+                return;
+            }
+
+            Logger.Debug($"Screensaver started: {process.ProcessName}, parent: {parent.ProcessName}");
+            try
+            {
+                foreach (var device in powerOffDevices)
+                {
+                    Logger.Debug($"Screensaver check: test connection with {device.Name}...");
+                    var test = await device.TestConnection();
+                    Logger.Debug("Screensaver check: test connection result: " + test);
+                    if (!test)
+                    {
+                        continue;
+                    }
+
+                    if (device.ScreenSaverMinimalDuration > 0)
+                    {
+                        _poweredOffByScreenSaver = true;
+
+                        device.PowerOffIn(device.ScreenSaverMinimalDuration);
+
+                        continue;
+                    }
+
+
+                    Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
+                    try
+                    {
+                        _poweredOffByScreenSaver = await device.PowerOff(true).WaitAsync(TimeSpan.FromSeconds(5));
+                    }
+                    catch (TimeoutException)
+                    {
+                        // Assume powering off was successful
+                        _poweredOffByScreenSaver = true;
+                        Logger.Error($"Screensaver check: timeout exception while powering off (probably connection closed)");
+                    }
+                    catch (Exception pex)
+                    {
+                        // Assume powering off was successful
+                        _poweredOffByScreenSaver = true;
+                        Logger.Error($"Screensaver check: exception while powering off (probably connection closed): " + pex.Message);
+                    }
+                    Logger.Debug($"Screensaver check: powered off tv {device.Name}");
+                }
+
+                _poweredOffByScreenSaverProcessId = process.Id;
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
             }
         }
 
@@ -929,7 +857,7 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            if (checkUserSession && !UserSessionInfo.UserLocalSession)
+            if (checkUserSession && !_sessionSwitchDispatcher.UserLocalSession)
             {
                 Logger.Debug($"WakeAfterStartupOrResume: not waking because session info indicates no local session");
                 return;

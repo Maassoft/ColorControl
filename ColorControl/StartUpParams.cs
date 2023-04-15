@@ -28,6 +28,7 @@ namespace ColorControl
         public bool RunningFromScheduledTask { get; private set; }
         public bool ActivateChromeFontFix { get; private set; }
         public bool DeactivateChromeFontFix { get; private set; }
+        public string ChromeFontFixApplicationDataFolder { get; private set; }
         public bool ExecuteHelp { get; private set; }
         public bool ExecuteNvidiaPreset { get; private set; }
         public string NvidiaPresetIdOrName { get; private set; }
@@ -63,6 +64,12 @@ namespace ColorControl
                 {
                     switch (parseNameParam)
                     {
+                        case ActivateChromeFontFixParam:
+                        case DeactivateChromeFontFixParam:
+                            {
+                                settings.ChromeFontFixApplicationDataFolder = arg;
+                                break;
+                            }
                         case ExecuteNvidiaPresetParam:
                             {
                                 settings.NvidiaPresetIdOrName = arg;
@@ -132,11 +139,13 @@ namespace ColorControl
                     case ActivateChromeFontFixParam:
                         {
                             settings.ActivateChromeFontFix = true;
+                            parseNameParam = ActivateChromeFontFixParam;
                             break;
                         }
                     case DeactivateChromeFontFixParam:
                         {
                             settings.DeactivateChromeFontFix = true;
+                            parseNameParam = DeactivateChromeFontFixParam;
                             break;
                         }
                     case ExecuteHelpParam:

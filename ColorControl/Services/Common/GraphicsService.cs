@@ -87,8 +87,9 @@ namespace ColorControl.Services.Common
             DEVMODEA devMode;
             while (NativeMethods.EnumDisplaySettingsA(displayName, i, out devMode))
             {
-                if ((!portrait && devMode.dmPelsWidth == horizontal && devMode.dmPelsHeight == vertical) ||
-                    (portrait && devMode.dmPelsWidth == vertical && devMode.dmPelsHeight == horizontal))
+                if (((!portrait && devMode.dmPelsWidth == horizontal && devMode.dmPelsHeight == vertical) ||
+                    (portrait && devMode.dmPelsWidth == vertical && devMode.dmPelsHeight == horizontal)) &&
+                    !list.Contains(devMode.dmDisplayFrequency))
                 {
                     list.Add(devMode.dmDisplayFrequency);
                 }

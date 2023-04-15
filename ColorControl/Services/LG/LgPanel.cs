@@ -32,7 +32,6 @@ namespace ColorControl.Services.LG
         private NotifyIcon _trayIcon;
 
         private string _lgTabMessage;
-        private bool _initialized = false;
         private bool _disableEvents = false;
         private LgGameBar _gameBarForm;
 
@@ -74,7 +73,6 @@ namespace ColorControl.Services.LG
         public void Init()
         {
             _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
-
             _lgService.InstallEventHandlers();
         }
 
@@ -289,11 +287,6 @@ namespace ColorControl.Services.LG
                                  (PresetConditionType)edtLgPresetTriggerConditions.Tag,
                                  edtLgPresetIncludedProcesses.Text,
                                  edtLgPresetExcludedProcesses.Text);
-
-            if (triggerType != PresetTriggerType.None)
-            {
-                _lgService.InstallEventHandlers();
-            }
 
             var shortcutChanged = !shortcut.Equals(preset.shortcut);
             if (shortcutChanged)
@@ -665,7 +658,7 @@ namespace ColorControl.Services.LG
 
         private void clbLgPower_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            if (!_initialized || _disableEvents)
+            if (_disableEvents)
             {
                 return;
             }
@@ -701,8 +694,6 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 device.PowerOffByWindows = clbLgPower.GetItemChecked(8);
                 device.PowerOnByWindows = clbLgPower.GetItemChecked(9);
                 device.UseSecureConnection = clbLgPower.GetItemChecked(10);
-
-                _lgService.InstallEventHandlers();
 
                 if (e.Index == 10)
                 {
@@ -1278,6 +1269,33 @@ The InStart, EzAdjust and Software Update items are now visible under the Expert
                 );
             }
 
+        }
+
+        private void clbLgPower_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            btnLgDeviceOptionsSettings.Enabled = clbLgPower.SelectedIndex == 4;
+        }
+
+        private void btnLgDeviceOptionsSettings_Click(object sender, EventArgs e)
+        {
+            var device = _lgService.SelectedDevice;
+            var selectedItem = clbLgPower.SelectedItem;
+
+            var durationField = new MessageForms.FieldDefinition
+            {
+                Label = "Enter the minimal duration the screen saver must be running (in seconds)",
+                FieldType = MessageForms.FieldType.Numeric,
+                MinValue = 0,
+                MaxValue = 3600,
+                Value = device.ScreenSaverMinimalDuration
+            };
+
+            if (!MessageForms.ShowDialog($"Settings - {selectedItem}", new[] { durationField }).Any())
+            {
+                return;
+            }
+
+            device.ScreenSaverMinimalDuration = durationField.ValueAsInt;
         }
     }
 }

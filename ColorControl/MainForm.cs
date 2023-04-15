@@ -140,7 +140,6 @@ namespace ColorControl
             InitInfo();
             UpdateServiceInfo();
 
-            UserSessionInfo.Install();
             _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
             //Scale(new SizeF(1.25F, 1.25F));
@@ -320,9 +319,7 @@ namespace ColorControl
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-
-                _lgService = new LgService(appContextProvider, StartUpParams.RunningFromScheduledTask);
+                _lgService = Program.ServiceProvider.GetRequiredService<LgService>();
 
                 _lgPanel = new LgPanel(_lgService, _nvService, _amdService, _trayIcon, Handle);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -562,20 +559,24 @@ namespace ColorControl
             {
                 //Logger.Debug($"WM_SYSCOMMAND: {m.WParam.ToInt32()}");
 
-                if (m.WParam.ToInt32() == NativeConstants.SC_MONITORPOWER)
-                {
+                //if (m.WParam.ToInt32() == NativeConstants.SC_MONITORPOWER)
+                //{
 
-                }
+                //}
             }
             else if (m.Msg == NativeConstants.WM_POWERBROADCAST)
             {
+                //Logger.Debug($"WM_POWERBROADCAST: {m.WParam.ToInt32()}");
+
                 if (m.WParam.ToInt32() == WinApi.PBT_POWERSETTINGCHANGE)
                 {
                     var ps = Marshal.PtrToStructure<WinApi.POWERBROADCAST_SETTING>(m.LParam);
 
-                    Logger.Debug($"PBT_POWERSETTINGCHANGE: {ps.Data}");
+                    var power = (LgService.WindowsPowerSetting)ps.Data;
 
-                    _lgService?.PowerSettingChanged((LgService.WindowsPowerSetting)ps.Data);
+                    Logger.Debug($"PBT_POWERSETTINGCHANGE: {power}");
+
+                    _lgService?.PowerSettingChanged(power);
                 }
             }
 
@@ -1398,14 +1399,12 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             if (_initialized)
             {
                 _config.FixChromeFonts = chkFixChromeFonts.Checked;
-                if (chkFixChromeFonts.Checked)
-                {
-                    Utils.ExecuteElevated(StartUpParams.ActivateChromeFontFixParam);
-                }
-                else
-                {
-                    Utils.ExecuteElevated(StartUpParams.DeactivateChromeFontFixParam);
-                }
+
+                var param = chkFixChromeFonts.Checked ? StartUpParams.ActivateChromeFontFixParam : StartUpParams.DeactivateChromeFontFixParam;
+
+                var folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                Utils.ExecuteElevated($"{param} {folder}");
             }
         }
 

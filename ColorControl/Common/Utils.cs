@@ -296,7 +296,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return key != null && key.GetValue(null).ToString().Contains("--disable-lcd-text");
         }
 
-        internal static bool InstallChromeFix(bool install)
+        internal static bool InstallChromeFix(bool install, string applicationDataFolder)
         {
             var argument = "--disable-lcd-text";
 
@@ -312,7 +312,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
                 key.SetValue(null, value);
             }
 
-            var roamingFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var roamingFolder = applicationDataFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
             UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk"), argument, !install);
             UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\Google Chrome.lnk"), argument, !install);

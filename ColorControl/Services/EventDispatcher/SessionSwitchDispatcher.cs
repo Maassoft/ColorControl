@@ -1,29 +1,29 @@
 ﻿using Microsoft.Win32;
 
-namespace ColorControl
+namespace ColorControl.Services.EventDispatcher
 {
-    static class UserSessionInfo
+    public class SessionSwitchDispatcher : EventDispatcher<SessionSwitchEventArgs>
     {
+        public const string Event_SessionSwitch = "SessionSwitch";
+
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static bool UserLocalSession { get; private set; } = true;
-        public static SessionSwitchReason LastSessionSwitchReason { get; private set; } = 0;
+        public bool UserLocalSession { get; private set; } = true;
+        public SessionSwitchReason LastSessionSwitchReason { get; private set; } = 0;
 
-        public delegate void UserSessionSwitchHandler(bool toLocal);
-        public static event UserSessionSwitchHandler UserSessionSwitch;
-
-        public static void Install()
+        public SessionSwitchDispatcher()
         {
             SystemEvents.SessionSwitch += SessionSwitchHandler;
         }
 
-        public static void SessionSwitchHandler(object sender, SessionSwitchEventArgs evt)
+        public void SessionSwitchHandler(object sender, SessionSwitchEventArgs evt)
         {
             if (evt.Reason == SessionSwitchReason.ConsoleDisconnect)
             {
                 Logger.Debug("Detected a disconnect from the console");
                 UserLocalSession = false;
-                UserSessionSwitch(false);
+
+                DispatchEvent(Event_SessionSwitch, evt);
             }
             else if (evt.Reason == SessionSwitchReason.ConsoleConnect)
             {
@@ -32,7 +32,7 @@ namespace ColorControl
                 {
                     Logger.Debug("Session state switched to local");
                     UserLocalSession = true;
-                    UserSessionSwitch(true);
+                    DispatchEvent(Event_SessionSwitch, evt);
                 }
             }
             LastSessionSwitchReason = evt.Reason;

@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,13 @@ namespace ColorControl.Svc
     public sealed class ColorControlBackgroundService : BackgroundService
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
         private static string LgConfigFile = "LgConfig.json";
+
+        public ColorControlBackgroundService(SessionSwitchDispatcher sessionSwitchDispatcher)
+        {
+            _sessionSwitchDispatcher = sessionSwitchDispatcher;
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -207,7 +214,7 @@ namespace ColorControl.Svc
 
         private async Task WakeDevicesAsync()
         {
-            if (!UserSessionInfo.UserLocalSession)
+            if (!_sessionSwitchDispatcher.UserLocalSession)
             {
                 return;
             }

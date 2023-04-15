@@ -1,7 +1,6 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
 using ColorControl.Native;
-using NLog;
 using nspector;
 using nspector.Common;
 using nspector.Common.Meta;
@@ -24,7 +23,7 @@ namespace ColorControl.Services.NVIDIA
     {
         public static readonly int SHORTCUTID_NVQA = -200;
 
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        //private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private NvService _nvService;
