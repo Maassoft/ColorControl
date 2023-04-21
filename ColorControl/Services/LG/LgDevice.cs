@@ -263,7 +263,7 @@ namespace ColorControl.Services.LG
 
         ~LgDevice()
         {
-            _powerOffTimer?.Dispose();
+            ClearPowerOffTask();
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
@@ -780,9 +780,9 @@ namespace ColorControl.Services.LG
             return await _lgTvApi.GetApps(force);
         }
 
-        internal async Task<bool> PowerOff(bool checkHdmi = false)
+        internal async Task<bool> PowerOff(bool checkHdmi = false, bool reconnect = true)
         {
-            if (!await Connected(true) || CurrentState != PowerState.Active)
+            if (!await Connected(reconnect) || CurrentState != PowerState.Active)
             {
                 return false;
             }
@@ -1102,15 +1102,25 @@ namespace ColorControl.Services.LG
 
         internal void PowerOffIn(int seconds)
         {
+            ClearPowerOffTask();
+
             _powerOffTimer = new Timer(PowerOffByTimer);
             _powerOffTimer.Change(TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(seconds));
         }
 
-        private void PowerOffByTimer(object state)
+        private void PowerOffByTimer(object _)
         {
-            _powerOffTimer?.Dispose();
+            ClearPowerOffTask();
 
-            var _ = PowerOff(true);
+            Logger.Debug($"Device {Name} is now powering off due to delayed screensaver task");
+
+            var x = PowerOff(true, false);
+
+            //Task.Run(async () =>
+            //{
+            //    // Do not force reconnect here (MessageWebSocket issues)
+            //    await PowerOff(true, false);
+            //});
         }
     }
 }

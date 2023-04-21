@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	<LangVersion>10.0</LangVersion>
 	<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
 	<OutputType>WinExe</OutputType>
 	<IsWebBootstrapper>false</IsWebBootstrapper>
@@ -19,8 +18,8 @@
 	<PublisherName>Maassoft</PublisherName>
 	<Company>Maassoft</Company>
 	<ApplicationRevision>0</ApplicationRevision>
-	<ApplicationVersion>9.1.0.0</ApplicationVersion>
-	<Version>9.1.0.0</Version>
+	<ApplicationVersion>9.1.1.0</ApplicationVersion>
+	<Version>9.1.1.0</Version>
 	<UseApplicationTrust>false</UseApplicationTrust>
 	<PublishWizardCompleted>true</PublishWizardCompleted>
 	<BootstrapperEnabled>false</BootstrapperEnabled>

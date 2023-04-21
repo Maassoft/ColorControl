@@ -38,8 +38,11 @@ namespace LgTv
         {
             try
             {
+                _connection?.Dispose();
+
                 ConnectionClosed = false;
                 _commandCount = 0;
+
                 _connection = new MessageWebSocket();
                 _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
                 _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.InvalidName);

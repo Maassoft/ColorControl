@@ -792,17 +792,24 @@ NOTE: installing the service may cause a User Account Control popup.");
                 }
             }
 
-            if (_nvService != null && _nvDitherPanel == null)
+            if (_nvService != null)
             {
-                _nvDitherPanel = new NvDitherPanel(_nvService);
+                if (_nvDitherPanel == null)
+                {
+                    _nvDitherPanel = new NvDitherPanel(_nvService);
 
-                tabOptions.Controls.Add(_nvDitherPanel);
+                    tabOptions.Controls.Add(_nvDitherPanel);
 
-                _nvDitherPanel.Top = grpGeneralOptions.Top;
-                _nvDitherPanel.Left = grpGeneralOptions.Left + grpGeneralOptions.Width + 4;
-                _nvDitherPanel.Width = tabOptions.Width - _nvDitherPanel.Left - 4;
+                    _nvDitherPanel.Top = grpGeneralOptions.Top;
+                    _nvDitherPanel.Left = grpGeneralOptions.Left + grpGeneralOptions.Width + 4;
+                    _nvDitherPanel.Width = tabOptions.Width - _nvDitherPanel.Left - 4;
 
-                _nvDitherPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                    _nvDitherPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                }
+                else
+                {
+                    _nvDitherPanel.UpdateInfo();
+                }
             }
 
             _initialized = false;

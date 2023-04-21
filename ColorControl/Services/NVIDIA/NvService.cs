@@ -240,8 +240,17 @@ namespace ColorControl.Services.NVIDIA
 
         public Display GetPrimaryDisplay()
         {
-            var displayId = DisplayDevice.GetGDIPrimaryDisplayDevice().DisplayId;
-            return Display.GetDisplays().FirstOrDefault(x => x.DisplayDevice.DisplayId == displayId);
+            try
+            {
+                var displayId = DisplayDevice.GetGDIPrimaryDisplayDevice().DisplayId;
+                return Display.GetDisplays().FirstOrDefault(x => x.DisplayDevice.DisplayId == displayId);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error while getting primary display device");
+
+                return null;
+            }
         }
 
         public bool ApplyPreset(string idOrName)
@@ -677,6 +686,23 @@ namespace ColorControl.Services.NVIDIA
             var gpus = gpuHandles.Select(h => new PhysicalGPU(h)).ToList();
 
             return gpus;
+        }
+
+        public List<NvDisplayInfo> GetSimpleDisplayInfos()
+        {
+            var displays = GetDisplays();
+            var list = new List<NvDisplayInfo>();
+
+            foreach (var display in displays)
+            {
+                var name = FormUtils.ExtendedDisplayName(display.Name);
+
+                var displayInfo = new NvDisplayInfo(display, null, null, name);
+
+                list.Add(displayInfo);
+            }
+
+            return list;
         }
 
         public List<NvDisplayInfo> GetDisplayInfos()

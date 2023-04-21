@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using NWin32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -88,6 +89,7 @@ namespace ColorControl.Services.LG
         private int _poweredOffByScreenSaverProcessId;
         private LgPreset _lastTriggeredPreset;
         private RestartDetector _restartDetector;
+        private SynchronizationContext _syncContext;
 
         public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher) : base(appContextProvider)
         {
@@ -98,6 +100,7 @@ namespace ColorControl.Services.LG
             LgPreset.LgApps = _lgApps;
 
             _restartDetector = new RestartDetector();
+            _syncContext = AsyncOperationManager.SynchronizationContext;
 
             LoadConfig();
             LoadPresets();
@@ -434,6 +437,8 @@ namespace ColorControl.Services.LG
 
         internal void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
+            Devices.ForEach(d => d.ClearPowerOffTask());
+
             var wakeDevices = Devices.Where(d => state == PowerOnOffState.StartUp && d.PowerOnAfterStartup ||
                                                  state == PowerOnOffState.Resume && d.PowerOnAfterResume ||
                                                  state == PowerOnOffState.ScreenSaver && d.PowerOnAfterScreenSaver);
@@ -456,11 +461,10 @@ namespace ColorControl.Services.LG
 
         private void SessionSwitched(object sender, SessionSwitchEventArgs e)
         {
-            if (_sessionSwitchDispatcher.UserLocalSession)
+            if (!_sessionSwitchDispatcher.UserLocalSession)
             {
                 return;
             }
-
 
             if (_poweredOffByScreenSaver)
             {
@@ -483,8 +487,6 @@ namespace ColorControl.Services.LG
 
             if (powerOn)
             {
-                Devices.ForEach(d => d.ClearPowerOffTask());
-
                 WakeAfterStartupOrResume(PowerOnOffState.Resume);
                 return;
             }
@@ -553,7 +555,11 @@ namespace ColorControl.Services.LG
                     Logger.Debug("Screensaver stopped, waking");
                     _poweredOffByScreenSaver = false;
                     _poweredOffByScreenSaverProcessId = 0;
-                    WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+
+                    _syncContext.Send((x) =>
+                    {
+                        WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+                    }, null);
 
                     return;
                 }
@@ -698,7 +704,16 @@ namespace ColorControl.Services.LG
                 foreach (var device in powerOffDevices)
                 {
                     Logger.Debug($"Screensaver check: test connection with {device.Name}...");
-                    var test = await device.TestConnection();
+
+                    var test = false;
+
+                    _syncContext.Send((x) =>
+                    {
+                        var task = device.TestConnection();
+                        test = Utils.WaitForTask(task);
+                    }, null);
+
+                    //var test = await device.TestConnection();
                     Logger.Debug("Screensaver check: test connection result: " + test);
                     if (!test)
                     {
@@ -707,13 +722,14 @@ namespace ColorControl.Services.LG
 
                     if (device.ScreenSaverMinimalDuration > 0)
                     {
+                        Logger.Debug($"Screensaver check: powering off tv {device.Name} in {device.ScreenSaverMinimalDuration} seconds because of screensaver");
+
                         _poweredOffByScreenSaver = true;
 
                         device.PowerOffIn(device.ScreenSaverMinimalDuration);
 
                         continue;
                     }
-
 
                     Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
                     try

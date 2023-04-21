@@ -288,31 +288,38 @@ namespace LgTv
 
         public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1, bool useSecureWs = true)
         {
-            var instance = new LgTvApi(ip, new LgTvApiCore(), new ClientKeyStore(ip), useSecureWs);
+            var instance = new LgTvApi(ip, useSecureWs);
 
-            Logger.Debug($"Trying to connect with websocket uri: {instance.webSocketUri}");
+            return await instance.Connect(retries);
+        }
+
+        private LgTvApi(string ip, bool useSecureWs)
+        {
+            webSocketUri = useSecureWs ? $"wss://{ip}:3001" : $"ws://{ip}:3000";
+            _ip = ip;
+            _connection = new LgTvApiCore();
+            _keyStore = new ClientKeyStore(ip);
+        }
+
+        private async Task<LgTvApi> Connect(int retries)
+        {
+            Logger.Debug($"Trying to connect with websocket uri: {webSocketUri}");
 
             while (retries > 0)
             {
-                var connected = await instance.Connect();
+                var connected = await Connect();
                 if (connected)
                 {
-                    await instance.MakeHandShake();
-                    return instance;
+                    await MakeHandShake();
+                    return this;
                 }
                 retries--;
                 await Task.Delay(500);
             }
-            instance.Dispose();
-            return null;
-        }
 
-        private LgTvApi(string ip, LgTvApiCore connection, ClientKeyStore keyStore, bool useSecureWs)
-        {
-            webSocketUri = useSecureWs ? $"wss://{ip}:3001" : $"ws://{ip}:3000";
-            _ip = ip;
-            _connection = connection;
-            _keyStore = keyStore;
+            Dispose();
+
+            return null;
         }
 
         public string GetIpAddress()

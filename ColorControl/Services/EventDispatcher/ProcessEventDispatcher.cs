@@ -36,7 +36,9 @@ namespace ColorControl.Services.EventDispatcher
         {
             IsRunning = true;
 
-            var _ = CheckProcesses();
+            Task.Run(async () => await CheckProcesses());
+
+            //var _ = CheckProcesses();
         }
 
         private async Task CheckProcesses()

@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.NVIDIA
 {
-    public partial class NvDitherPanel : UserControl
+    public partial class NvDitherPanel : UserControl, IModulePanel
     {
         private NvService _nvService;
         private bool _updatingDitherSettings;
@@ -22,18 +22,32 @@ namespace ColorControl.Services.NVIDIA
             cbxDitheringMode.Items.AddRange(Utils.GetDescriptions<NvDitherMode>().ToArray());
             FillGradient();
 
-            var displays = _nvService.GetDisplayInfos();
+            RefreshDisplays();
+
+            UpdateDitherSettings();
+
+            _initialized = true;
+        }
+
+        private void RefreshDisplays()
+        {
+            var displays = _nvService.GetSimpleDisplayInfos();
+
+            if (displays == null)
+            {
+                return;
+            }
+
             var primaryDisplay = _nvService.GetPrimaryDisplay();
             var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
             var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
 
             cbxDitheringDisplay.Items.AddRange(displays.ToArray());
 
-            cbxDitheringDisplay.SelectedIndex = index;
-
-            UpdateDitherSettings();
-
-            _initialized = true;
+            if (cbxDitheringDisplay.SelectedIndex == -1)
+            {
+                cbxDitheringDisplay.SelectedIndex = index;
+            }
         }
 
         private void UpdateDitherSettings()
@@ -116,6 +130,12 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
+            UpdateDitherSettings();
+        }
+
+        public void UpdateInfo()
+        {
+            RefreshDisplays();
             UpdateDitherSettings();
         }
     }
