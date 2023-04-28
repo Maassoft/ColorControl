@@ -3,6 +3,7 @@ using ColorControl.Forms;
 using ColorControl.Native;
 using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
@@ -13,6 +14,7 @@ using NvAPIWrapper.Display;
 using NWin32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -20,6 +22,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Windows.UI.ViewManagement;
 
 namespace ColorControl
 {
@@ -31,10 +34,10 @@ namespace ColorControl
         private static int SHORTCUTID_SCREENSAVER = -100;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
+        private readonly PowerEventDispatcher _powerEventDispatcher;
+        private readonly ServiceManager _serviceManager;
         private string _dataDir;
 
-        private NvService _nvService;
         private NvPanel _nvPanel;
         private NvDitherPanel _nvDitherPanel;
 
@@ -43,7 +46,6 @@ namespace ColorControl
         private Config _config;
         private bool _setVisibleCalled = false;
 
-        private LgService _lgService;
         private LgPanel _lgPanel;
 
         private ToolStripMenuItem _nvTrayMenu;
@@ -54,7 +56,6 @@ namespace ColorControl
         private StartUpParams StartUpParams { get; }
         public string _lgTabMessage { get; private set; }
 
-        private AmdService _amdService;
         private AmdPanel _amdPanel;
         private bool _skipResize;
         private FileVersionInfo _currentVersionInfo;
@@ -62,7 +63,6 @@ namespace ColorControl
         private string _updateHtmlUrl;
         private string _downloadUrl;
 
-        private GameService _gameService;
         private GamePanel _gamePanel;
 
         //private KeyboardHookManager _keyboardHookManager;
@@ -71,11 +71,14 @@ namespace ColorControl
         private Dictionary<int, Action> _shortcuts = new();
         private Dictionary<string, Func<UserControl>> _modules = new();
 
-        public MainForm(AppContext appContext)
+        public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager)
         {
             InitializeComponent();
-            StartUpParams = appContext.StartUpParams;
+            StartUpParams = appContextProvider.GetAppContext().StartUpParams;
+            appContextProvider.GetAppContext().SynchronizationContext = AsyncOperationManager.SynchronizationContext;
 
+            _powerEventDispatcher = powerEventDispatcher;
+            _serviceManager = serviceManager;
             _dataDir = Program.DataDir;
             _config = Program.Config;
 
@@ -148,12 +151,13 @@ namespace ColorControl
 
             //Task.Run(() => Utils.StartPipeAsync());
 
+            //SwitchTheme();
+
             AfterInitialized();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            InitModules();
         }
 
         private void LoadModules()
@@ -241,13 +245,13 @@ namespace ColorControl
                 //throw new Exception("bla");
                 Logger.Debug("Initializing NVIDIA...");
                 var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-                _nvService = new NvService(appContextProvider);
+                _serviceManager.NvService = new NvService(appContextProvider);
                 Logger.Debug("Initializing NVIDIA...Done.");
 
-                _nvPanel = new NvPanel(_nvService, _trayIcon, Handle);
+                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _nvService.ToggleQuickAccessForm);
+                InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _serviceManager.NvService.ToggleQuickAccessForm);
 
                 return _nvPanel;
             }
@@ -265,12 +269,12 @@ namespace ColorControl
             try
             {
                 var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-                _amdService = new AmdService(appContextProvider);
+                _serviceManager.AmdService = new AmdService(appContextProvider);
 
-                _amdPanel = new AmdPanel(_amdService, _trayIcon, Handle);
+                _amdPanel = new AmdPanel(_serviceManager.AmdService, _trayIcon, Handle);
                 _amdPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                InitShortcut(AmdPanel.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _amdService.ToggleQuickAccessForm);
+                InitShortcut(AmdPanel.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _serviceManager.AmdService.ToggleQuickAccessForm);
 
                 return _amdPanel;
             }
@@ -287,13 +291,12 @@ namespace ColorControl
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-                _gameService = new GameService(appContextProvider, HandleExternalServiceForLgDevice);
+                _serviceManager.GameService = Program.ServiceProvider.GetRequiredService<GameService>();
 
-                _gamePanel = new GamePanel(_gameService, _nvService, _amdService, _lgService, _trayIcon, Handle);
+                _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _trayIcon, Handle);
                 _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-                InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _gameService.ToggleQuickAccessForm);
+                InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _serviceManager.GameService.ToggleQuickAccessForm);
 
                 return _gamePanel;
             }
@@ -319,16 +322,15 @@ namespace ColorControl
         {
             try
             {
-                _lgService = Program.ServiceProvider.GetRequiredService<LgService>();
+                _serviceManager.LgService = Program.ServiceProvider.GetRequiredService<LgService>();
 
-                _lgPanel = new LgPanel(_lgService, _nvService, _amdService, _trayIcon, Handle);
+                _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _trayIcon, Handle);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 _lgPanel.Init();
 
-                LgDevice.ExternalServiceHandler = HandleExternalServiceForLgDevice;
-                InitShortcut(LgPanel.SHORTCUTID_GAMEBAR, _lgService.Config.GameBarShortcut, _lgPanel.ToggleGameBar);
-                InitShortcut(LgPanel.SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut, _lgService.ToggleQuickAccessForm);
+                InitShortcut(LgPanel.SHORTCUTID_GAMEBAR, _serviceManager.LgService.Config.GameBarShortcut, _lgPanel.ToggleGameBar);
+                InitShortcut(LgPanel.SHORTCUTID_LGQA, _serviceManager.LgService.Config.QuickAccessShortcut, _serviceManager.LgService.ToggleQuickAccessForm);
 
                 return _lgPanel;
 
@@ -352,46 +354,10 @@ namespace ColorControl
         {
             BeginInvoke(async () =>
             {
-                var preset = _lgService.GetPresets().FirstOrDefault(p => p.name == "Backlight 20");
+                var preset = _serviceManager.LgService.GetPresets().FirstOrDefault(p => p.name == "Backlight 20");
 
-                await _lgService.ApplyPreset(preset);
+                await _serviceManager.LgService.ApplyPreset(preset);
             });
-        }
-
-        private bool HandleExternalServiceForLgDevice(string serviceName, string[] parameters)
-        {
-            if (string.IsNullOrEmpty(serviceName) || parameters.Length == 0)
-            {
-                return false;
-            }
-
-            if (_nvService != null && serviceName.Equals("NvPreset", StringComparison.OrdinalIgnoreCase))
-            {
-                return _nvService.ApplyPreset(parameters[0]);
-            }
-            if (_nvService != null && serviceName.Equals("GsyncEnabled", StringComparison.OrdinalIgnoreCase))
-            {
-                return _nvService.IsGsyncEnabled();
-            }
-            if (_amdService != null && serviceName.Equals("AmdPreset", StringComparison.OrdinalIgnoreCase))
-            {
-                return _amdService.ApplyPreset(parameters[0]);
-            }
-            if (_lgService != null && serviceName.Equals("LgPreset", StringComparison.OrdinalIgnoreCase))
-            {
-                Utils.WaitForTask(_lgService.ApplyPreset(parameters[0]));
-
-                return true;
-            }
-
-            if (serviceName.Equals("StartProgram", StringComparison.OrdinalIgnoreCase))
-            {
-                Utils.StartProcess(parameters[0], parameters.Length > 1 ? string.Join(" ", parameters.Skip(1)) : null, setWorkingDir: true);
-
-                return true;
-            }
-
-            return false;
         }
 
         private void InitInfo()
@@ -461,22 +427,17 @@ namespace ColorControl
 
             GlobalSave();
 
-            if (SystemShutdown && _lgService != null)
+            if (SystemShutdown)
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
 
-                var devices = _lgService.Devices.Where(d => d.PowerOffOnShutdown);
-
-                _lgService.PowerOffDevices(devices);
+                _powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
             }
         }
 
         private void GlobalSave()
         {
-            _nvService?.GlobalSave();
-            _amdService?.GlobalSave();
-            _lgService?.GlobalSave();
-            _gameService?.GlobalSave();
+            _serviceManager.Save();
 
             _nvPanel?.Save();
             _amdPanel?.Save();
@@ -523,19 +484,19 @@ namespace ColorControl
                 // 6. Handle what will happen once a respective hotkey is pressed
                 else
                 {
-                    var preset = _nvService?.GetPresets().FirstOrDefault(x => x.id == id);
+                    var preset = _serviceManager.NvService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (preset != null)
                     {
                         _nvPanel?.ApplyNvPreset(preset);
                     }
 
-                    var amdPreset = _amdService?.GetPresets().FirstOrDefault(x => x.id == id);
+                    var amdPreset = _serviceManager.AmdService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (amdPreset != null)
                     {
                         _amdPanel?.ApplyAmdPreset(amdPreset);
                     }
 
-                    var lgPreset = _lgService?.GetPresets().FirstOrDefault(x => x.id == id);
+                    var lgPreset = _serviceManager.LgService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (lgPreset != null)
                     {
                         _lgPanel?.ApplyLgPreset(lgPreset);
@@ -572,11 +533,11 @@ namespace ColorControl
                 {
                     var ps = Marshal.PtrToStructure<WinApi.POWERBROADCAST_SETTING>(m.LParam);
 
-                    var power = (LgService.WindowsPowerSetting)ps.Data;
+                    var power = (WindowsMonitorPowerSetting)ps.Data;
 
                     Logger.Debug($"PBT_POWERSETTINGCHANGE: {power}");
 
-                    _lgService?.PowerSettingChanged(power);
+                    _powerEventDispatcher.SendEvent(power == WindowsMonitorPowerSetting.Off ? PowerEventDispatcher.Event_MonitorOff : PowerEventDispatcher.Event_MonitorOn);
                 }
             }
 
@@ -683,10 +644,10 @@ namespace ColorControl
             Utils.WriteObject(Program.ConfigFilename, _config);
         }
 
-        private void MainForm_Shown(object sender, EventArgs e)
+        private async void MainForm_Shown(object sender, EventArgs e)
         {
             InitSelectedTab();
-            CheckForUpdates();
+            await CheckForUpdates();
 
             CheckElevationMethod();
         }
@@ -792,11 +753,11 @@ NOTE: installing the service may cause a User Account Control popup.");
                 }
             }
 
-            if (_nvService != null)
+            if (_serviceManager.NvService != null)
             {
                 if (_nvDitherPanel == null)
                 {
-                    _nvDitherPanel = new NvDitherPanel(_nvService);
+                    _nvDitherPanel = new NvDitherPanel(_serviceManager.NvService);
 
                     tabOptions.Controls.Add(_nvDitherPanel);
 
@@ -854,62 +815,62 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
         }
 
-        private void TrayMenuItemNv_Click(object sender, EventArgs e)
+        private async void TrayMenuItemNv_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripMenuItem;
             var preset = (NvPreset)item.Tag;
 
-            _nvPanel?.ApplyNvPreset(preset);
+            await _nvPanel?.ApplyNvPreset(preset);
         }
 
-        private void TrayMenuItemAmd_Click(object sender, EventArgs e)
+        private async void TrayMenuItemAmd_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripMenuItem;
             var preset = (AmdPreset)item.Tag;
 
-            _amdPanel?.ApplyAmdPreset(preset);
+            await _amdPanel?.ApplyAmdPreset(preset);
         }
 
-        private void TrayMenuItemGame_Click(object sender, EventArgs e)
+        private async void TrayMenuItemGame_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripMenuItem;
             var preset = (GamePreset)item.Tag;
 
-            _gamePanel?.ApplyGamePreset(preset);
+            await _gamePanel?.ApplyGamePreset(preset);
         }
 
         private void trayIconContextMenu_Popup(object sender, EventArgs e)
         {
-            _nvTrayMenu.Visible = _nvService != null;
+            _nvTrayMenu.Visible = _serviceManager.NvService != null;
             if (_nvTrayMenu.Visible)
             {
-                var presets = _nvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
+                var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
 
                 UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
             }
 
-            _amdTrayMenu.Visible = _amdService != null;
+            _amdTrayMenu.Visible = _serviceManager.AmdService != null;
             if (_amdTrayMenu.Visible)
             {
-                var presets = _amdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
+                var presets = _serviceManager.AmdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
 
                 UpdateTrayMenu(_amdTrayMenu, presets, TrayMenuItemAmd_Click);
             }
 
-            _lgTrayMenu.Visible = _lgService != null;
+            _lgTrayMenu.Visible = _serviceManager.LgService != null;
             if (_lgTrayMenu.Visible)
             {
-                var presets = _lgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
+                var presets = _serviceManager.LgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
 
                 _lgTrayMenu.DropDownItems.Clear();
 
                 UpdateTrayMenu(_lgTrayMenu, presets, TrayMenuItemLg_Click);
             }
 
-            _gameTrayMenu.Visible = _gameService != null;
+            _gameTrayMenu.Visible = _serviceManager.GameService != null;
             if (_gameTrayMenu.Visible)
             {
-                var presets = _gameService.GetPresets();
+                var presets = _serviceManager.GameService.GetPresets();
 
                 _gameTrayMenu.DropDownItems.Clear();
 
@@ -917,12 +878,12 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
         }
 
-        private void TrayMenuItemLg_Click(object sender, EventArgs e)
+        private async void TrayMenuItemLg_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripMenuItem;
             var preset = (LgPreset)item.Tag;
 
-            _lgPanel?.ApplyLgPreset(preset);
+            await _lgPanel?.ApplyLgPreset(preset);
         }
 
         private void LoadLog()
@@ -969,12 +930,12 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void LoadInfo()
         {
-            grpNVIDIAInfo.Visible = _nvService != null;
+            grpNVIDIAInfo.Visible = _serviceManager.NvService != null;
         }
 
         private void btnRefreshNVIDIAInfo_Click(object sender, EventArgs e)
         {
-            if (_nvService != null)
+            if (_serviceManager.NvService != null)
             {
                 tvNVIDIAInfo.Nodes.Clear();
                 var displays = Display.GetDisplays();
@@ -984,29 +945,6 @@ NOTE: installing the service may cause a User Account Control popup.");
                     var node = TreeNodeBuilder.CreateTree(display, $"Display[{i}]");
                     tvNVIDIAInfo.Nodes.Add(node);
                 }
-            }
-        }
-
-        private void btnLGTestPower_Click(object sender, EventArgs e)
-        {
-            var text =
-@"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
-For waking up to work, you need to activate the following setting on the TV:
-
-Connection > Mobile TV On > Turn on via Wi-Fi
-
-It will also work over a wired connection.
-You can also activate this option by using the Expert-button and selecting Wake-On-LAN > Enabled.
-
-Do you want to continue?";
-
-            if (MessageForms.QuestionYesNo(text) == DialogResult.Yes)
-            {
-                Utils.WaitForTask(_lgService.PowerOff());
-
-                MessageForms.InfoOk("Press ENTER to wake the TV.");
-
-                _lgService.WakeSelectedDevice();
             }
         }
 
@@ -1075,11 +1013,11 @@ Do you want to continue?";
             _amdPanel?.AfterInitialized();
             if (_trayIcon.Visible)
             {
-                CheckForUpdates();
+                var _ = CheckForUpdates();
             }
         }
 
-        private void CheckForUpdates()
+        private async Task CheckForUpdates()
         {
             if (!_config.CheckForUpdates || _checkedForUpdates || Debugger.IsAttached)
             {
@@ -1088,7 +1026,7 @@ Do you want to continue?";
 
             _checkedForUpdates = true;
 
-            var _ = Utils.GetRestJsonAsync("https://api.github.com/repos/maassoft/colorcontrol/releases/latest", InitHandleCheckForUpdates);
+            await Utils.GetRestJsonAsync("https://api.github.com/repos/maassoft/colorcontrol/releases/latest", InitHandleCheckForUpdates);
         }
 
         private void InitHandleCheckForUpdates(dynamic latest)
@@ -1185,9 +1123,9 @@ Do you want to continue?";
         private bool ShortCutExists(string shortcut, int presetId = 0)
         {
             return
-                (_nvService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false) ||
-                (_amdService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false) ||
-                (_lgService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false);
+                (_serviceManager.NvService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false) ||
+                (_serviceManager.AmdService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false) ||
+                (_serviceManager.LgService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false);
         }
 
         private void chkMinimizeToSystemTray_CheckedChanged(object sender, EventArgs e)
@@ -1324,7 +1262,7 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 ");
         }
 
-        private void btnStartStopService_Click(object sender, EventArgs e)
+        private async void btnStartStopService_Click(object sender, EventArgs e)
         {
             btnStartStopService.Enabled = false;
             try
@@ -1340,11 +1278,11 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
                     Utils.StopService();
                 }
 
-                var wait = 1000;
+                var wait = 1500;
 
                 while (wait > 0)
                 {
-                    Utils.WaitForTask(Task.Delay(100));
+                    await Task.Delay(100);
 
                     if (start == Utils.IsServiceRunning())
                     {
@@ -1369,10 +1307,41 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void MainForm_Click(object sender, EventArgs e)
         {
+            //_config.UseDarkMode = !_config.UseDarkMode;
+
+            //SetTheme(_config.UseDarkMode);
+
+            //_powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
             //PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
             //Program.Restart();
             //Environment.Exit(0);
             //InstallUpdate("");
+        }
+
+        private void SetTheme(bool toDark)
+        {
+            var settings = new UISettings();
+
+            var foregroundColorValue = settings.GetColorValue(UIColorType.Foreground);
+            var isDarkMode = FormUtils.IsColorLight(foregroundColorValue);
+
+            var backroundColorValue = settings.GetColorValue(UIColorType.Background);
+
+            //var toDark = isDarkMode;
+
+            const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+            var value = toDark ? 1 : 0;
+
+            var result = WinApi.DwmSetWindowAttribute(Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, 4);
+
+            //var toDark = BackColor == SystemColors.Control;
+
+            BackColor = toDark ? Color.FromArgb(backroundColorValue.R, backroundColorValue.G, backroundColorValue.B) : SystemColors.Control;
+            ForeColor = toDark ? Color.FromArgb(foregroundColorValue.R, foregroundColorValue.G, foregroundColorValue.B) : SystemColors.ControlText;
+
+            FormUtils.SetControlTheme(this, BackColor, ForeColor);
+
+            WinApi.FlushMenuThemes();
         }
 
         private void chkAutoInstallUpdates_CheckedChanged(object sender, EventArgs e)
@@ -1430,10 +1399,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
                 module.IsActive = chkModules.GetItemChecked(i);
             }
-        }
-
-        private void MainForm_KeyDown(object sender, KeyEventArgs e)
-        {
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

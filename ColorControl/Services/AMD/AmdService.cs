@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ColorControl.Services.AMD
@@ -24,7 +25,7 @@ namespace ColorControl.Services.AMD
             LoadPresets();
         }
 
-        public static bool ExecutePresetAsync(string idOrName)
+        public static async Task<bool> ExecutePresetAsync(string idOrName)
         {
             try
             {
@@ -32,7 +33,7 @@ namespace ColorControl.Services.AMD
 
                 var service = new AmdService(appContextProvider);
 
-                var result = service.ApplyPreset(idOrName);
+                var result = await service.ApplyPreset(idOrName);
 
                 if (!result)
                 {
@@ -98,12 +99,12 @@ namespace ColorControl.Services.AMD
             return _currentDisplay;
         }
 
-        public bool ApplyPreset(string idOrName)
+        public async Task<bool> ApplyPreset(string idOrName)
         {
             var preset = GetPresetByIdOrName(idOrName);
             if (preset != null)
             {
-                return ApplyPreset(preset);
+                return await ApplyPreset(preset);
             }
             else
             {
@@ -111,7 +112,7 @@ namespace ColorControl.Services.AMD
             }
         }
 
-        public override bool ApplyPreset(AmdPreset preset)
+        public override async Task<bool> ApplyPreset(AmdPreset preset)
         {
             SetCurrentDisplay(preset);
 

@@ -1,5 +1,7 @@
 ﻿using ColorControl.Common;
+using ColorControl.Services.Common;
 using LgTv;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -13,7 +15,7 @@ namespace ColorControl.Services.LG
     {
         public class InvokableAction
         {
-            public Func<Dictionary<string, object>, bool> Function { get; set; }
+            public Func<Dictionary<string, object>, Task<bool>> AsyncFunction { get; set; }
             public string Name { get; set; }
             public Type EnumType { get; set; }
             public decimal MinValue { get; set; }
@@ -66,7 +68,6 @@ namespace ColorControl.Services.LG
         }
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-        public static Func<string, string[], bool> ExternalServiceHandler;
         public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
 
         public string Name { get; private set; }
@@ -82,7 +83,10 @@ namespace ColorControl.Services.LG
         public bool PowerOffOnStandby { get; set; }
         public bool PowerOffOnScreenSaver { get; set; }
         public int ScreenSaverMinimalDuration { get; set; }
+        public bool TurnScreenOffOnScreenSaver { get; set; }
+        public bool HandleManualScreenSaver { get; set; }
         public bool PowerOnAfterScreenSaver { get; set; }
+        public bool TurnScreenOnAfterScreenSaver { get; set; }
         public bool PowerOnAfterManualPowerOff { get; set; }
         public bool PowerOnByWindows { get; set; }
         public bool PowerOffByWindows { get; set; }
@@ -148,11 +152,16 @@ namespace ColorControl.Services.LG
         [JsonIgnore]
         private Timer _powerOffTimer;
 
+        [JsonIgnore]
+        private ServiceManager _serviceManager;
+
         [JsonConstructor]
         public LgDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
             PictureSettings = new LgDevicePictureSettings();
             ActionsOnGameBar = new List<string>(DefaultActionsOnGameBar);
+
+            _serviceManager = Program.ServiceProvider.GetRequiredService<ServiceManager>();
 
             Name = name;
             IpAddress = ipAddress;
@@ -161,7 +170,7 @@ namespace ColorControl.Services.LG
             IsDummy = isDummy;
             TriggersEnabled = true;
 
-            AddInvokableAction("WOL", new Func<Dictionary<string, object>, bool>(WakeAction));
+            AddInvokableAction("WOL", WakeAction);
             AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
             AddGenericPictureAction("brightness", minValue: 0, maxValue: 100, title: "Brightness/Black Level");
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
@@ -238,8 +247,8 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("whiteBalanceGreen", minValue: -50, maxValue: 50, numberOfValues: 22);
             AddGenericPictureAction("whiteBalanceRed", minValue: -50, maxValue: 50, numberOfValues: 22);
             //AddGenericPictureAction("wb20PointsGammaValue", minValue: -50, maxValue: 50);
-            AddInvokableAction("turnScreenOff", new Func<Dictionary<string, object>, bool>(TurnScreenOffAction));
-            AddInvokableAction("turnScreenOn", new Func<Dictionary<string, object>, bool>(TurnScreenOnAction));
+            AddInvokableAction("turnScreenOff", TurnScreenOffAction);
+            AddInvokableAction("turnScreenOn", TurnScreenOnAction);
 
             AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "inStart" }));
             AddInternalPresetAction(new LgPreset("EzAdjust", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "ezAdjust" }));
@@ -266,12 +275,14 @@ namespace ColorControl.Services.LG
             ClearPowerOffTask();
         }
 
-        private void AddInvokableAction(string name, Func<Dictionary<string, object>, bool> function)
+        private void AddInvokableAction(string name, Func<Dictionary<string, object>, Task<bool>> function)
         {
             var action = new InvokableAction
             {
                 Name = name,
-                Function = function
+                AsyncFunction = function,
+                Category = "misc",
+                Title = name
             };
 
             _invokableActions.Add(action);
@@ -293,7 +304,7 @@ namespace ColorControl.Services.LG
             var action = new InvokableAction
             {
                 Name = name,
-                Function = new Func<Dictionary<string, object>, bool>(GenericPictureAction),
+                AsyncFunction = GenericPictureAction,
                 EnumType = type,
                 MinValue = minValue,
                 MaxValue = maxValue,
@@ -311,7 +322,7 @@ namespace ColorControl.Services.LG
             var action = new InvokableAction
             {
                 Name = name,
-                Function = new Func<Dictionary<string, object>, bool>(GenericDeviceConfigAction),
+                AsyncFunction = GenericDeviceConfigAction,
                 EnumType = type,
                 Title = title == null ? Utils.FirstCharUpperCase(name) : title
             };
@@ -324,7 +335,7 @@ namespace ColorControl.Services.LG
             var action = new InvokableAction
             {
                 Name = name,
-                Function = new Func<Dictionary<string, object>, bool>(GenericSetConfigAction),
+                AsyncFunction = GenericSetConfigAction,
                 EnumType = type,
                 Title = title == null ? Utils.FirstCharUpperCase(name) : title,
                 Category = "Config",
@@ -507,7 +518,7 @@ namespace ColorControl.Services.LG
                         PoweredOffBy = PoweredOffViaApp ? PowerOffSource.App : PowerOffSource.Manually;
                     }
                 }
-                else
+                else if (CurrentState != PowerState.Screen_Off)
                 {
                     PoweredOffBy = PoweredOffViaApp ? PowerOffSource.App : PowerOffSource.Manually;
                 }
@@ -542,7 +553,7 @@ namespace ColorControl.Services.LG
             return !_lgTvApi?.ConnectionClosed ?? false;
         }
 
-        internal void DisposeConnection()
+        private void DisposeConnection()
         {
             if (_lgTvApi != null)
             {
@@ -655,7 +666,7 @@ namespace ColorControl.Services.LG
             {
                 var keySpec = step.Split(':');
 
-                var delay = 0;
+                var delay = 10;
                 var key = step;
                 if (keySpec.Length == 2)
                 {
@@ -679,23 +690,20 @@ namespace ColorControl.Services.LG
                 var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
                 if (action != null)
                 {
-                    ExecuteAction(action, parameters);
+                    await ExecuteActionAsync(action, parameters);
 
                     executeKey = false;
                 }
-                if (ExternalServiceHandler != null && parameters != null)
+                if (parameters != null && await _serviceManager.HandleExternalServiceAsync(key, parameters))
                 {
-                    if (ExternalServiceHandler(key, parameters))
-                    {
-                        executeKey = false;
-                    }
+                    executeKey = false;
                 }
 
                 if (executeKey)
                 {
                     mouse ??= await api.GetMouse();
-                    SendKey(mouse, key);
-                    delay = delay == 0 ? 180 : delay;
+                    await SendKey(mouse, key);
+                    delay = delay == 0 ? 100 : delay;
                 }
 
                 if (delay > 0)
@@ -705,9 +713,9 @@ namespace ColorControl.Services.LG
             }
         }
 
-        public void ExecuteAction(InvokableAction action, string[] parameters)
+        public async Task ExecuteActionAsync(InvokableAction action, string[] parameters)
         {
-            var function = action.Function;
+            var function = action.AsyncFunction;
             if (function == null)
             {
                 return;
@@ -721,14 +729,14 @@ namespace ColorControl.Services.LG
                     { "category", action.Category }
                 };
 
-                function(keyValues);
+                await function(keyValues);
                 return;
             }
 
-            function(null);
+            await function(null);
         }
 
-        private void SendKey(LgWebOsMouseService mouse, string key)
+        private async Task SendKey(LgWebOsMouseService mouse, string key)
         {
             key = key.ToUpper();
             if (key.Length >= 1 && int.TryParse(key[0].ToString(), out _))
@@ -736,7 +744,7 @@ namespace ColorControl.Services.LG
                 key = "_" + key;
             }
             var button = (ButtonType)Enum.Parse(typeof(ButtonType), key);
-            mouse.SendButton(button);
+            await mouse.SendButton(button);
         }
 
         public async Task<LgWebOsMouseService> GetMouseAsync()
@@ -749,16 +757,6 @@ namespace ColorControl.Services.LG
         private async Task CheckConnectionAsync()
         {
             if (!await Connected())
-            {
-                throw new InvalidOperationException("Not connected");
-            }
-        }
-
-        private void CheckConnection()
-        {
-            var task = CheckConnectionAsync();
-
-            if (task.Status != TaskStatus.RanToCompletion)
             {
                 throw new InvalidOperationException("Not connected");
             }
@@ -780,6 +778,46 @@ namespace ColorControl.Services.LG
             return await _lgTvApi.GetApps(force);
         }
 
+        public async Task<bool> PerformActionOnScreenSaver()
+        {
+            if (!IsPowerOffAllowed())
+            {
+                return true;
+            }
+
+            if (TurnScreenOffOnScreenSaver)
+            {
+                Logger.Debug("Turning screen off on screen saver");
+                await _lgTvApi.TurnScreenOff();
+
+                return true;
+            }
+
+            Logger.Debug($"Device {Name} is now powering off due to delayed screensaver task");
+
+            return await PowerOff(true, false);
+        }
+
+        public async Task<bool> PerformActionAfterScreenSaver(int powerOnRetries)
+        {
+            if (TurnScreenOffOnScreenSaver && IsConnected())
+            {
+                if (TurnScreenOnAfterScreenSaver)
+                {
+                    try
+                    {
+                        Logger.Debug("Turning screen on after screen saver");
+                        await _lgTvApi.TurnScreenOn();
+                    }
+                    catch (Exception) { }
+                }
+
+                return true;
+            }
+
+            return await WakeAndConnectWithRetries(powerOnRetries);
+        }
+
         internal async Task<bool> PowerOff(bool checkHdmi = false, bool reconnect = true)
         {
             if (!await Connected(reconnect) || CurrentState != PowerState.Active)
@@ -787,9 +825,8 @@ namespace ColorControl.Services.LG
                 return false;
             }
 
-            if (checkHdmi && CurrentAppId != null && HDMIPortNumber != 0 && !CurrentAppId.EndsWith($".hdmi{HDMIPortNumber}", StringComparison.InvariantCulture))
+            if (checkHdmi && !IsPowerOffAllowed())
             {
-                Logger.Debug($"[{Name}] PowerOff is ignored because current app {CurrentAppId} does not match configured HDMI port {HDMIPortNumber}");
                 return true;
             }
 
@@ -798,11 +835,22 @@ namespace ColorControl.Services.LG
 
             try
             {
-                await _lgTvApi.TurnOff().WaitAsync(TimeSpan.FromSeconds(2));
+                await _lgTvApi.TurnOff().WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(true);
             }
             catch (TimeoutException ex)
             {
                 Logger.Debug($"Timeout when turning off tv: {ex.Message}");
+            }
+
+            return true;
+        }
+
+        public bool IsPowerOffAllowed()
+        {
+            if (CurrentAppId != null && HDMIPortNumber != 0 && !CurrentAppId.EndsWith($".hdmi{HDMIPortNumber}", StringComparison.InvariantCulture))
+            {
+                Logger.Debug($"[{Name}] PowerOff/ScreenOff is ignored because current app {CurrentAppId} does not match configured HDMI port {HDMIPortNumber}");
+                return false;
             }
 
             return true;
@@ -994,34 +1042,32 @@ namespace ColorControl.Services.LG
             return await _lgTvApi.GetSystemSettings2("picture");
         }
 
-        private bool WakeAction(Dictionary<string, object> parameters)
+        private async Task<bool> WakeAction(Dictionary<string, object> _)
         {
             return Wake();
         }
 
-        private bool TurnScreenOffAction(Dictionary<string, object> parameters)
+        private async Task<bool> TurnScreenOffAction(Dictionary<string, object> _)
         {
-            CheckConnection();
+            await CheckConnectionAsync();
 
-            var task = _lgTvApi.TurnScreenOff();
-            Utils.WaitForTask(task);
+            await _lgTvApi.TurnScreenOff();
 
             return true;
         }
 
-        private bool TurnScreenOnAction(Dictionary<string, object> parameters)
+        private async Task<bool> TurnScreenOnAction(Dictionary<string, object> _)
         {
-            CheckConnection();
+            await CheckConnectionAsync();
 
-            var task = _lgTvApi.TurnScreenOn();
-            Utils.WaitForTask(task);
+            await _lgTvApi.TurnScreenOn();
 
             return true;
         }
 
-        private bool GenericPictureAction(Dictionary<string, object> parameters)
+        private async Task<bool> GenericPictureAction(Dictionary<string, object> parameters)
         {
-            CheckConnection();
+            await CheckConnectionAsync();
 
             var settingName = parameters["name"].ToString();
             var stringValues = parameters["value"] as string[];
@@ -1031,17 +1077,16 @@ namespace ColorControl.Services.LG
             {
                 value = stringValues.Select(s => int.Parse(s)).ToArray();
             }
-            var task = _lgTvApi.SetSystemSettings(settingName, value, category);
-            Utils.WaitForTask(task);
+            await _lgTvApi.SetSystemSettings(settingName, value, category);
 
             UpdateCurrentValueOfAction(settingName, value.ToString());
 
             return true;
         }
 
-        private bool GenericDeviceConfigAction(Dictionary<string, object> parameters)
+        private async Task<bool> GenericDeviceConfigAction(Dictionary<string, object> parameters)
         {
-            CheckConnection();
+            await CheckConnectionAsync();
 
             var id = parameters["name"].ToString().Replace("_icon", string.Empty);
             var stringValues = parameters["value"] as string[];
@@ -1049,22 +1094,20 @@ namespace ColorControl.Services.LG
 
             var description = Utils.GetDescriptionByEnumName<HdmiIcon>(value);
 
-            var task = _lgTvApi.SetDeviceConfig(id, value, description);
-            Utils.WaitForTask(task);
+            await _lgTvApi.SetDeviceConfig(id, value, description);
 
             return true;
         }
 
-        private bool GenericSetConfigAction(Dictionary<string, object> parameters)
+        private async Task<bool> GenericSetConfigAction(Dictionary<string, object> parameters)
         {
-            CheckConnection();
+            await CheckConnectionAsync();
 
             var key = parameters["name"].ToString();
             var values = parameters["value"] as object[];
             var value = values[0];
 
-            var task = _lgTvApi.SetConfig(key, value);
-            Utils.WaitForTask(task);
+            await _lgTvApi.SetConfig(key, value);
 
             return true;
         }
@@ -1112,15 +1155,7 @@ namespace ColorControl.Services.LG
         {
             ClearPowerOffTask();
 
-            Logger.Debug($"Device {Name} is now powering off due to delayed screensaver task");
-
-            var x = PowerOff(true, false);
-
-            //Task.Run(async () =>
-            //{
-            //    // Do not force reconnect here (MessageWebSocket issues)
-            //    await PowerOff(true, false);
-            //});
+            var x = PerformActionOnScreenSaver();
         }
     }
 }

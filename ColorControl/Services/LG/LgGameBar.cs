@@ -140,6 +140,12 @@ namespace ColorControl.Services.LG
                 _settingChanged = false;
                 return;
             }
+
+            if (!Visible)
+            {
+                return;
+            }
+
             BeginInvoke(new Action(UpdateValues));
         }
 
@@ -275,7 +281,7 @@ namespace ColorControl.Services.LG
             Hide();
         }
 
-        private void tbTrackBar_Scroll(object sender, EventArgs e)
+        private async void tbTrackBar_Scroll(object sender, EventArgs e)
         {
             _settingChanged = true;
             ResetAutoHide();
@@ -283,8 +289,7 @@ namespace ColorControl.Services.LG
             var trackBar = sender as TrackBar;
             var setting = (TbSetting)trackBar.Tag;
 
-            var value = string.Empty;
-
+            string value;
             if (setting.EnumType == null)
             {
                 value = trackBar.Value.ToString();
@@ -295,7 +300,7 @@ namespace ColorControl.Services.LG
                 value = enumValue.ToString();
             }
 
-            _lgDevice.SetSystemSettings(setting.Name, value).ConfigureAwait(false);
+            await _lgDevice.SetSystemSettings(setting.Name, value);
 
             if (_toolTip != null)
             {

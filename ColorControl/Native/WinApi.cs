@@ -131,5 +131,23 @@ namespace ColorControl.Native
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool ChangeWindowMessageFilterEx(IntPtr hWnd, uint msg, ChangeWindowMessageFilterExAction action, ref CHANGEFILTERSTRUCT changeInfo);
+
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+        public static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, EntryPoint = "#104")]
+        public static extern int RefreshImmersiveColorPolicyState();
+
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, EntryPoint = "#133")]
+        public static extern int AllowDarkModeForWindow(IntPtr hWnd, bool allow);
+
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, EntryPoint = "#135")]
+        public static extern int SetPreferredAppMode(int appMode);
+
+        [DllImport("uxtheme.dll", EntryPoint = "#136")]
+        public static extern void FlushMenuThemes();
+
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
     }
 }

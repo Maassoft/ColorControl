@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ColorControl.Services.GameLauncher
@@ -102,13 +103,13 @@ namespace ColorControl.Services.GameLauncher
             }
         }
 
-        private void ApplySelectedGamePreset()
+        private async Task ApplySelectedGamePreset()
         {
             var preset = GetSelectedGamePreset();
-            ApplyGamePreset(preset);
+            await ApplyGamePreset(preset);
         }
 
-        internal bool ApplyGamePreset(GamePreset preset)
+        internal async Task<bool> ApplyGamePreset(GamePreset preset)
         {
             if (preset == null || _gameService == null)
             {
@@ -116,7 +117,7 @@ namespace ColorControl.Services.GameLauncher
             }
             try
             {
-                var result = _gameService.ApplyPreset(preset, Program.AppContext);
+                var result = await _gameService.ApplyPreset(preset, Program.AppContext);
                 if (!result)
                 {
                     throw new Exception("Error while applying Game-preset. At least one setting could not be applied. Check the log for details.");
@@ -158,14 +159,14 @@ namespace ColorControl.Services.GameLauncher
             }
         }
 
-        private void lvGamePresets_DoubleClick(object sender, EventArgs e)
+        private async void lvGamePresets_DoubleClick(object sender, EventArgs e)
         {
-            ApplySelectedGamePreset();
+            await ApplySelectedGamePreset();
         }
 
-        private void btnGameLaunch_Click(object sender, EventArgs e)
+        private async void btnGameLaunch_Click(object sender, EventArgs e)
         {
-            ApplySelectedGamePreset();
+            await ApplySelectedGamePreset();
         }
 
         private void btnGameClone_Click(object sender, EventArgs e)

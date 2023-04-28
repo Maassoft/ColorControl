@@ -36,9 +36,9 @@ namespace ColorControl.Services.EventDispatcher
         {
             IsRunning = true;
 
-            Task.Run(async () => await CheckProcesses());
+            //Task.Run(async () => await CheckProcesses());
 
-            //var _ = CheckProcesses();
+            var _ = CheckProcesses();
         }
 
         private async Task CheckProcesses()
@@ -50,7 +50,6 @@ namespace ColorControl.Services.EventDispatcher
             //startWatch.Start();
 
             MonitorContext ??= new ProcessChangedEventArgs();
-            //Process[] lastProcesses = null;
 
             while (IsRunning)
             {

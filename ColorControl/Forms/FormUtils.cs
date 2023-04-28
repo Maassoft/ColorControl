@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using ColorControl.Native;
 using ColorControl.Services.Common;
 using NStandard;
 using NWin32;
@@ -427,11 +428,54 @@ namespace ColorControl.Forms
             for (var i = 0; i < parent.Controls.Count; i++)
             {
                 var control = parent.Controls[i];
-                if (!excludedControls?.Contains(control) ?? true)
+                if (control is not Label && (!excludedControls?.Contains(control) ?? true))
                 {
                     control.Enabled = enable;
                 }
             }
+        }
+
+        private static Dictionary<Type, Color> _defaultColors = new Dictionary<Type, Color>();
+
+        public static void SetControlTheme(Control control, Color backColor, Color foreColor)
+        {
+            var controlType = control.GetType();
+
+            var controlBackColor = backColor;
+
+            if (backColor == SystemColors.Control)
+            {
+                if (_defaultColors.TryGetValue(controlType, out var newBackColor))
+                {
+                    controlBackColor = newBackColor;
+                }
+            }
+            else
+            {
+                if (!_defaultColors.ContainsKey(controlType))
+                {
+                    _defaultColors.Add(controlType, control.BackColor);
+                }
+            }
+
+            //control.BackColor = controlBackColor;
+            //control.ForeColor = foreColor;
+
+            //var result = WinApi.SetWindowTheme(control.Handle, "Explorer", null);
+            var result = WinApi.AllowDarkModeForWindow(control.Handle, true);
+            //var result2 = NativeMethods.SendMessageW(control.Handle, NativeConstants.WM_THEMECHANGED, 0, 0);
+
+            for (var i = 0; i < control.Controls.Count; i++)
+            {
+                var childControl = control.Controls[i];
+
+                SetControlTheme(childControl, backColor, foreColor);
+            }
+        }
+
+        public static bool IsColorLight(Windows.UI.Color color)
+        {
+            return ((5 * color.G) + (2 * color.R) + color.B) > (8 * 128);
         }
 
         public static void AddStepToTextBox(TextBox textBox, string step)

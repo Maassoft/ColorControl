@@ -24,6 +24,7 @@ namespace ColorControl
         public bool MinimizeToTray { get; set; }
         public bool CheckForUpdates { get; set; }
         public bool AutoInstallUpdates { get; set; }
+        public bool UseDarkMode { get; set; }
         public int DisplaySettingsDelay { get; set; }
         public string ScreenSaverShortcut { get; set; }
         public int FormWidth { get; set; }

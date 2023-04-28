@@ -71,7 +71,7 @@ namespace ColorControl.Forms
 
             try
             {
-                Program.HandleStartupParams(startUpParams, null);
+                var _ = Program.HandleStartupParams(startUpParams, null);
             }
             catch (Exception)
             {

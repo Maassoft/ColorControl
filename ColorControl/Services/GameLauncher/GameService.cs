@@ -1,7 +1,5 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.Common;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,36 +15,12 @@ namespace ColorControl.Services.GameLauncher
 
         protected override string PresetsBaseFilename => "GamePresets.json";
 
-        private Func<string, string[], bool> _externalServiceHandler;
+        private ServiceManager _serviceManager;
 
-        public GameService(AppContextProvider appContextProvider, Func<string, string[], bool> externalServiceHandler = null) : base(appContextProvider)
+        public GameService(AppContextProvider appContextProvider, ServiceManager serviceManager) : base(appContextProvider)
         {
             LoadPresets();
-            _externalServiceHandler = externalServiceHandler;
-        }
-
-        public static bool ExecutePresetAsync(string idOrName)
-        {
-            try
-            {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-
-                var service = new GameService(appContextProvider);
-
-                var result = service.ApplyPreset(idOrName);
-
-                if (!result)
-                {
-                    Console.WriteLine("Preset not found or error while executing.");
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error executing preset: " + ex.ToLogString());
-                return false;
-            }
+            _serviceManager = serviceManager;
         }
 
         protected override List<GamePreset> GetDefaultPresets()
@@ -64,12 +38,12 @@ namespace ColorControl.Services.GameLauncher
             SavePresets();
         }
 
-        public bool ApplyPreset(string idOrName)
+        public async Task<bool> ApplyPreset(string idOrName)
         {
             var preset = GetPresetByIdOrName(idOrName);
             if (preset != null)
             {
-                return ApplyPreset(preset, Program.AppContext);
+                return await ApplyPreset(preset, Program.AppContext);
             }
             else
             {
@@ -77,16 +51,16 @@ namespace ColorControl.Services.GameLauncher
             }
         }
 
-        public override bool ApplyPreset(GamePreset preset)
+        public override async Task<bool> ApplyPreset(GamePreset preset)
         {
-            return ApplyPreset(preset, Program.AppContext);
+            return await ApplyPreset(preset, Program.AppContext);
         }
 
-        public bool ApplyPreset(GamePreset preset, AppContext appContext)
+        public async Task<bool> ApplyPreset(GamePreset preset, AppContext appContext)
         {
             var result = true;
 
-            ExecuteSteps(preset.PreLaunchSteps);
+            await ExecuteSteps(preset.PreLaunchSteps);
 
             Process process = null;
 
@@ -95,11 +69,11 @@ namespace ColorControl.Services.GameLauncher
                 process = Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
             }
 
-            ExecuteSteps(preset.PostLaunchSteps);
+            await ExecuteSteps(preset.PostLaunchSteps);
 
             if (process != null && preset.FinalizeSteps?.Any() == true)
             {
-                var _ = ExecuteFinalizationStepsAsync(process, preset.FinalizeSteps);
+                await ExecuteFinalizationStepsAsync(process, preset.FinalizeSteps);
             }
 
             _lastAppliedPreset = preset;
@@ -113,10 +87,10 @@ namespace ColorControl.Services.GameLauncher
         {
             await process.WaitForExitAsync();
 
-            ExecuteSteps(finalizeSteps);
+            await ExecuteSteps(finalizeSteps);
         }
 
-        private void ExecuteSteps(List<string> steps)
+        private async Task ExecuteSteps(List<string> steps)
         {
             if (steps?.Any() != true)
             {
@@ -149,9 +123,9 @@ namespace ColorControl.Services.GameLauncher
 
                 var handled = false;
 
-                if (_externalServiceHandler != null && parameters != null)
+                if (parameters != null)
                 {
-                    handled = _externalServiceHandler(key, parameters);
+                    handled = await _serviceManager.HandleExternalServiceAsync(key, parameters);
                 }
 
                 if (!handled)
@@ -160,7 +134,7 @@ namespace ColorControl.Services.GameLauncher
 
                 if (delay > 0)
                 {
-                    Utils.WaitForTask(Task.Delay(delay));
+                    await Task.Delay(delay);
                 }
 
             }

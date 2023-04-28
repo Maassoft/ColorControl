@@ -9,7 +9,6 @@ using Newtonsoft.Json;
 using NWin32;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -21,22 +20,6 @@ namespace ColorControl.Services.LG
 {
     class LgService : ServiceBase<LgPreset>
     {
-        internal enum PowerOnOffState
-        {
-            StartUp = 1,
-            Resume = 2,
-            ScreenSaver = 3,
-            ShutDown = 4,
-            StandBy = 5
-        }
-
-        internal enum WindowsPowerSetting
-        {
-            Off = 0,
-            On = 1,
-            Dimmed = 2
-        }
-
         internal class ProcessMonitorContext
         {
             public List<LgDevice> Devices { get; set; }
@@ -80,6 +63,7 @@ namespace ColorControl.Services.LG
         private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
         private readonly ProcessEventDispatcher _processEventDispatcher;
+        private readonly ServiceManager _serviceManager;
         private LgDevice _selectedDevice;
         private string _rcButtonsFilename;
         private List<LgPreset> _remoteControlButtons;
@@ -91,16 +75,18 @@ namespace ColorControl.Services.LG
         private RestartDetector _restartDetector;
         private SynchronizationContext _syncContext;
 
-        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher) : base(appContextProvider)
+        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
         {
             _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
             _powerEventDispatcher = powerEventDispatcher;
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
             _processEventDispatcher = processEventDispatcher;
+            _serviceManager = serviceManager;
             LgPreset.LgApps = _lgApps;
 
             _restartDetector = new RestartDetector();
-            _syncContext = AsyncOperationManager.SynchronizationContext;
+            _syncContext = appContextProvider.GetAppContext().SynchronizationContext;
+            LgTvApiCore.SyncContext = _syncContext;
 
             LoadConfig();
             LoadPresets();
@@ -364,13 +350,9 @@ namespace ColorControl.Services.LG
             }
         }
 
-        public override bool ApplyPreset(LgPreset preset)
+        public override async Task<bool> ApplyPreset(LgPreset preset)
         {
-            var task = ApplyPreset(preset, false);
-
-            Utils.WaitForTask(task);
-
-            return task.Result;
+            return await ApplyPreset(preset, false);
         }
 
         public async Task<bool> ApplyPreset(LgPreset preset, bool reconnect = false)
@@ -443,13 +425,16 @@ namespace ColorControl.Services.LG
                                                  state == PowerOnOffState.Resume && d.PowerOnAfterResume ||
                                                  state == PowerOnOffState.ScreenSaver && d.PowerOnAfterScreenSaver);
 
-            PowerOnDevices(wakeDevices, state, checkUserSession);
+            PowerOnDevicesTask(wakeDevices, state, checkUserSession);
         }
 
         public void InstallEventHandlers()
         {
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Resume, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
 
             //SystemEvents.SessionEnded -= SessionEnded;
             //SystemEvents.SessionEnded += SessionEnded;
@@ -479,20 +464,44 @@ namespace ColorControl.Services.LG
             }
         }
 
-        private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
         {
-            var powerOn = e.Mode == PowerModes.Resume;
+            Logger.Debug($"PowerModeChanged: {e.State}");
 
-            Logger.Debug($"PowerModeChanged: {e.Mode}");
-
-            if (powerOn)
+            switch (e.State)
             {
-                WakeAfterStartupOrResume(PowerOnOffState.Resume);
-                return;
-            }
+                case PowerOnOffState.Resume:
+                    {
+                        WakeAfterStartupOrResume(PowerOnOffState.Resume);
+                        break;
+                    }
+                case PowerOnOffState.StandBy:
+                    {
+                        var devices = Devices.Where(d => d.PowerOffOnStandby);
+                        PowerOffDevices(devices, PowerOnOffState.StandBy);
+                        break;
+                    }
+                case PowerOnOffState.ShutDown:
+                    {
+                        var devices = Devices.Where(d => d.PowerOffOnShutdown);
 
-            var devices = Devices.Where(d => d.PowerOffOnStandby);
-            PowerOffDevices(devices, PowerOnOffState.StandBy);
+                        PowerOffDevices(devices);
+                        break;
+                    }
+
+                case PowerOnOffState.MonitorOff:
+                    {
+                        var devices = Devices.Where(d => d.PowerOffByWindows).ToList();
+                        PowerOffDevices(devices, PowerOnOffState.MonitorOff);
+                        break;
+                    }
+                case PowerOnOffState.MonitorOn:
+                    {
+                        var devices = Devices.Where(d => d.PowerOnByWindows).ToList();
+                        PowerOnDevicesTask(devices);
+                        break;
+                    }
+            }
         }
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
@@ -552,14 +561,21 @@ namespace ColorControl.Services.LG
                         return;
                     }
 
+                    var process = processes.FirstOrDefault(p => p.ProcessName.ToLowerInvariant().EndsWith(".scr"));
+
+                    if (process != null)
+                    {
+                        Logger.Debug($"Detected screen saver process switch from {_poweredOffByScreenSaverProcessId} to {process.Id}");
+
+                        _poweredOffByScreenSaverProcessId = process.Id;
+                        return;
+                    }
+
                     Logger.Debug("Screensaver stopped, waking");
                     _poweredOffByScreenSaver = false;
                     _poweredOffByScreenSaverProcessId = 0;
 
-                    _syncContext.Send((x) =>
-                    {
-                        WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
-                    }, null);
+                    WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
 
                     return;
                 }
@@ -581,6 +597,7 @@ namespace ColorControl.Services.LG
                         foreach (var device in devices)
                         {
                             Logger.Debug($"Process monitor: test connection with {device.Name}...");
+
                             var test = await device.TestConnection();
                             Logger.Debug("Process monitor: test connection result: " + test);
                         }
@@ -650,7 +667,7 @@ namespace ColorControl.Services.LG
 
             var isHDRActive = triggerDevices.Any(d => d.IsUsingHDRPictureMode());
 
-            var isGsyncActive = LgDevice.ExternalServiceHandler("GsyncEnabled", new[] { "" });
+            var isGsyncActive = await _serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
 
             var triggerContext = new PresetTriggerContext
             {
@@ -670,6 +687,8 @@ namespace ColorControl.Services.LG
 
                 if (_lastTriggeredPreset != toApplyPreset)
                 {
+                    Logger.Debug($"Applying triggered preset: {toApplyPreset.name} because trigger conditions are met");
+
                     await ApplyPreset(toApplyPreset);
 
                     _lastTriggeredPreset = toApplyPreset;
@@ -692,8 +711,8 @@ namespace ColorControl.Services.LG
 
             var parent = process.Parent(processes);
 
-            // Ignore manually started screen savers
-            if (parent?.ProcessName.Contains("winlogon") != true)
+            // Ignore manually started screen savers if no devices prefer this
+            if (parent?.ProcessName.Contains("winlogon") != true && !connectedDevices.Any(d => d.HandleManualScreenSaver))
             {
                 return;
             }
@@ -705,15 +724,7 @@ namespace ColorControl.Services.LG
                 {
                     Logger.Debug($"Screensaver check: test connection with {device.Name}...");
 
-                    var test = false;
-
-                    _syncContext.Send((x) =>
-                    {
-                        var task = device.TestConnection();
-                        test = Utils.WaitForTask(task);
-                    }, null);
-
-                    //var test = await device.TestConnection();
+                    var test = await device.TestConnection();
                     Logger.Debug("Screensaver check: test connection result: " + test);
                     if (!test)
                     {
@@ -734,7 +745,7 @@ namespace ColorControl.Services.LG
                     Logger.Debug($"Screensaver check: powering off tv {device.Name} because of screensaver");
                     try
                     {
-                        _poweredOffByScreenSaver = await device.PowerOff(true).WaitAsync(TimeSpan.FromSeconds(5));
+                        _poweredOffByScreenSaver = await device.PerformActionOnScreenSaver().WaitAsync(TimeSpan.FromSeconds(5));
                     }
                     catch (TimeoutException)
                     {
@@ -783,25 +794,6 @@ namespace ColorControl.Services.LG
             }
         }
 
-        public void PowerSettingChanged(WindowsPowerSetting setting)
-        {
-            if (Devices == null)
-            {
-                return;
-            }
-
-            if (setting == WindowsPowerSetting.Off)
-            {
-                var devices = Devices.Where(d => d.PowerOffByWindows).ToList();
-                PowerOffDevices(devices, PowerOnOffState.StandBy);
-            }
-            else if (setting == WindowsPowerSetting.On)
-            {
-                var devices = Devices.Where(d => d.PowerOnByWindows).ToList();
-                PowerOnDevices(devices);
-            }
-        }
-
         public void PowerOffDevices(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.ShutDown)
         {
             if (!devices.Any())
@@ -815,14 +807,15 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
+            var error = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
             try
             {
+                Logger.Debug($"SetThreadExecutionState: {error}, Thread#: {Environment.CurrentManagedThreadId}");
                 if (state == PowerOnOffState.ShutDown)
                 {
                     var sleep = Config.ShutdownDelay;
 
-                    Logger.Debug($"PowerOffDevices: Waiting for {sleep} milliseconds...");
+                    Logger.Debug($"PowerOffDevices: Waiting for a maximum of {sleep} milliseconds...");
 
                     while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
                     {
@@ -842,7 +835,7 @@ namespace ColorControl.Services.LG
                 var tasks = new List<Task>();
                 foreach (var device in devices)
                 {
-                    var task = device.PowerOff(true);
+                    var task = device.PowerOff(true, false);
 
                     tasks.Add(task);
                 }
@@ -856,17 +849,24 @@ namespace ColorControl.Services.LG
                     }
                 }
 
-                var waitTask = Task.WhenAll(tasks.ToArray());
-                Utils.WaitForTask(waitTask);
+                // We can't use async here because we need to stay on the main thread...
+                var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
+
                 Logger.Debug("Done powering off tv(s)");
             }
             finally
             {
-                NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
+                var error2 = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
+                Logger.Debug($"SetThreadExecutionState (reset): {error2}, Thread#: {Environment.CurrentManagedThreadId}");
             }
         }
 
-        public void PowerOnDevices(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        public void PowerOnDevicesTask(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        {
+            Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
+        }
+
+        public async Task PowerOnDevices(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             if (!devices.Any())
             {
@@ -891,17 +891,20 @@ namespace ColorControl.Services.LG
                     continue;
                 }
 
-                device.DisposeConnection();
+                if (state == PowerOnOffState.ScreenSaver)
+                {
+                    tasks.Add(device.PerformActionAfterScreenSaver(Config.PowerOnRetries));
+                    continue;
+                }
 
                 var task = device.WakeAndConnectWithRetries(Config.PowerOnRetries);
                 tasks.Add(task);
             }
 
+            await Task.WhenAll(tasks.ToArray());
+
             if (File.Exists(resumeScript))
             {
-                var waitTask = Task.WhenAll(tasks.ToArray());
-                Utils.WaitForTask(waitTask);
-
                 Utils.StartProcess(resumeScript, hidden: true);
             }
         }

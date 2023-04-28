@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ColorControl.Services.NVIDIA
 {
@@ -145,7 +146,7 @@ namespace ColorControl.Services.NVIDIA
             LoadPresets();
         }
 
-        public static bool ExecutePresetAsync(string idOrName)
+        public static async Task<bool> ExecutePresetAsync(string idOrName)
         {
             try
             {
@@ -153,7 +154,7 @@ namespace ColorControl.Services.NVIDIA
 
                 var nvService = new NvService(appContextProvider);
 
-                var result = nvService.ApplyPreset(idOrName);
+                var result = await nvService.ApplyPreset(idOrName);
 
                 if (!result)
                 {
@@ -253,12 +254,12 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public bool ApplyPreset(string idOrName)
+        public async Task<bool> ApplyPreset(string idOrName)
         {
             var preset = GetPresetByIdOrName(idOrName);
             if (preset != null)
             {
-                return ApplyPreset(preset);
+                return await ApplyPreset(preset);
             }
             else
             {
@@ -266,7 +267,7 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public override bool ApplyPreset(NvPreset preset)
+        public override async Task<bool> ApplyPreset(NvPreset preset)
         {
             var result = true;
 

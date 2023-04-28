@@ -1,6 +1,7 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
 using ColorControl.Native;
+using ColorControl.Services.Common;
 using nspector;
 using nspector.Common;
 using nspector.Common.Meta;
@@ -28,15 +29,16 @@ namespace ColorControl.Services.NVIDIA
         private Config _config;
         private NvService _nvService;
         private IntPtr _mainHandle;
+        private readonly AppContextProvider _appContextProvider;
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, Common.AppContextProvider appContextProvider)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
             _mainHandle = handle;
-
+            _appContextProvider = appContextProvider;
             _config = AppContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -141,6 +143,7 @@ namespace ColorControl.Services.NVIDIA
                     item.Font = new Font(item.Font, item.Font.Style | FontStyle.Bold);
                     item.BackColor = Color.LightGray;
                 }
+                //item.BackColor = _appContextProvider.GetAppContext().Config.UseDarkMode ? Color.DimGray : Color.LightGray;
 
                 var values = displayInfo.Values;
 
@@ -184,9 +187,9 @@ namespace ColorControl.Services.NVIDIA
             FormUtils.AddOrUpdateListItem(lvNvPresets, _nvService.GetPresets(), _config, preset);
         }
 
-        private void btnApply_Click(object sender, EventArgs e)
+        private async void btnApply_Click(object sender, EventArgs e)
         {
-            ApplySelectedNvPreset();
+            await ApplySelectedNvPreset();
         }
 
         private void lvNvPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
@@ -829,13 +832,13 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-        private void ApplySelectedNvPreset()
+        private async Task ApplySelectedNvPreset()
         {
             var preset = GetSelectedNvPreset();
-            ApplyNvPreset(preset);
+            await ApplyNvPreset(preset);
         }
 
-        public bool ApplyNvPreset(NvPreset preset)
+        public async Task<bool> ApplyNvPreset(NvPreset preset)
         {
             if (preset == null || _nvService == null)
             {
@@ -843,7 +846,7 @@ namespace ColorControl.Services.NVIDIA
             }
             try
             {
-                var result = _nvService.ApplyPreset(preset);
+                var result = await _nvService.ApplyPreset(preset);
                 if (!result)
                 {
                     throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
@@ -1407,7 +1410,7 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-        private void ApplyNvPresetOnStartup(int attempts = 5)
+        private async Task ApplyNvPresetOnStartup(int attempts = 5)
         {
             var startUpParams = AppContext.CurrentContext.StartUpParams;
 
@@ -1427,19 +1430,14 @@ namespace ColorControl.Services.NVIDIA
                 {
                     if (_nvService.HasDisplaysAttached())
                     {
-                        ApplyNvPreset(preset);
+                        await ApplyNvPreset(preset);
+                        return;
                     }
-                    else
+                    attempts--;
+                    if (attempts > 0)
                     {
-                        attempts--;
-                        if (attempts > 0)
-                        {
-                            Task.Run(async () =>
-                            {
-                                await Task.Delay(2000);
-                                BeginInvoke(() => ApplyNvPresetOnStartup(attempts));
-                            });
-                        }
+                        await Task.Delay(2000);
+                        await ApplyNvPresetOnStartup(attempts);
                     }
                 }
             }
@@ -1489,7 +1487,7 @@ namespace ColorControl.Services.NVIDIA
 
         public void AfterInitialized()
         {
-            ApplyNvPresetOnStartup();
+            var _ = ApplyNvPresetOnStartup();
         }
 
         internal void Save()

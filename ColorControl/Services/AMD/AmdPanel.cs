@@ -121,10 +121,10 @@ namespace ColorControl.Services.AMD
 
         public void AfterInitialized()
         {
-            ApplyAmdPresetOnStartup();
+            var _ = ApplyAmdPresetOnStartup();
         }
 
-        private void ApplyAmdPresetOnStartup(int attempts = 5)
+        private async Task ApplyAmdPresetOnStartup(int attempts = 5)
         {
             var startUpParams = AppContext.CurrentContext.StartUpParams;
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.AmdPresetIdOrName) ? startUpParams.AmdPresetIdOrName : _config.AmdPresetId_ApplyOnStartup.ToString();
@@ -143,18 +143,15 @@ namespace ColorControl.Services.AMD
                 {
                     if (_amdService.HasDisplaysAttached())
                     {
-                        ApplyAmdPreset(preset);
+                        await ApplyAmdPreset(preset);
                     }
                     else
                     {
                         attempts--;
                         if (attempts > 0)
                         {
-                            Task.Run(async () =>
-                            {
-                                await Task.Delay(2000);
-                                BeginInvoke(() => ApplyAmdPresetOnStartup(attempts));
-                            });
+                            await Task.Delay(2000);
+                            await ApplyAmdPresetOnStartup(attempts);
                         }
                     }
                 }
@@ -226,13 +223,13 @@ namespace ColorControl.Services.AMD
             AddOrUpdateItemAmd();
         }
 
-        private void ApplySelectedAmdPreset()
+        private async Task ApplySelectedAmdPreset()
         {
             var preset = GetSelectedAmdPreset();
-            ApplyAmdPreset(preset);
+            await ApplyAmdPreset(preset);
         }
 
-        internal bool ApplyAmdPreset(AmdPreset preset)
+        internal async Task<bool> ApplyAmdPreset(AmdPreset preset)
         {
             if (preset == null || _amdService == null)
             {
@@ -240,7 +237,7 @@ namespace ColorControl.Services.AMD
             }
             try
             {
-                var result = _amdService.ApplyPreset(preset);
+                var result = await _amdService.ApplyPreset(preset);
                 if (!result)
                 {
                     throw new Exception("Error while applying AMD preset. At least one setting could not be applied. Check the log for details.");
@@ -255,9 +252,9 @@ namespace ColorControl.Services.AMD
             }
         }
 
-        private void btnApplyAmd_Click(object sender, EventArgs e)
+        private async void btnApplyAmd_Click(object sender, EventArgs e)
         {
-            ApplySelectedAmdPreset();
+            await ApplySelectedAmdPreset();
         }
 
         private void btnChangeAmd_Click(object sender, EventArgs e)

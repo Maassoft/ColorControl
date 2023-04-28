@@ -1,4 +1,6 @@
 ﻿using ColorControl.Common;
+using System.ComponentModel;
+using System.Threading;
 
 namespace ColorControl
 {
@@ -10,6 +12,7 @@ namespace ColorControl
 
         public StartUpParams StartUpParams { get; private set; }
         public string DataPath { get; private set; }
+        public SynchronizationContext SynchronizationContext { get; set; } = AsyncOperationManager.SynchronizationContext;
 
         public AppContext(Config config, StartUpParams startUpParams, string dataPath)
         {

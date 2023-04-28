@@ -22,6 +22,8 @@ namespace LgTv
 
     public class LgTvApiCore : IDisposable
     {
+        public static SynchronizationContext SyncContext { get; set; }
+
         public bool ConnectionClosed { get; private set; }
 
         private MessageWebSocket _connection;
@@ -38,17 +40,22 @@ namespace LgTv
         {
             try
             {
+                //Logger.Debug($"Connecting from thread: {Environment.CurrentManagedThreadId}");
+
                 _connection?.Dispose();
 
                 ConnectionClosed = false;
                 _commandCount = 0;
 
-                _connection = new MessageWebSocket();
-                _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
-                _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.InvalidName);
-                _connection.Control.MessageType = SocketMessageType.Utf8;
-                _connection.MessageReceived += Connection_MessageReceived;
-                _connection.Closed += Connection_Closed;
+                // Not creating the web socket from main thread can cause a stackoverflow in combase32.dll
+                if (Environment.CurrentManagedThreadId != 1)
+                {
+                    SyncContext.Send((_) => CreateWebSocket(), null);
+                }
+                else
+                {
+                    CreateWebSocket();
+                }
 
                 try
                 {
@@ -80,6 +87,16 @@ namespace LgTv
                 Logger.Error($"Connect to {uri}: {e.Message}");
                 return false;
             }
+        }
+
+        private void CreateWebSocket()
+        {
+            _connection = new MessageWebSocket();
+            _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
+            _connection.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.InvalidName);
+            _connection.Control.MessageType = SocketMessageType.Utf8;
+            _connection.MessageReceived += Connection_MessageReceived;
+            _connection.Closed += Connection_Closed;
         }
 
         public async Task SendMessageAsync(string message)

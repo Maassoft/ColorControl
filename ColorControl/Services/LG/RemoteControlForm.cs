@@ -112,32 +112,32 @@ namespace ColorControl.Services.LG
             HandleKey(e.KeyCode);
         }
 
-        private void chkDirectMode_CheckedChanged(object sender, EventArgs e)
+        private async void chkDirectMode_CheckedChanged(object sender, EventArgs e)
         {
             if (chkDirectMode.Checked)
             {
-//                MessageForms.InfoOk(
-//@"If you enable Direct Mode you will be able to control the TV directly via your keyboard and mouse.
-//Note that your mouse will be captured in a box and that due to pointer accelaration the control will not be perfect.
+                //                MessageForms.InfoOk(
+                //@"If you enable Direct Mode you will be able to control the TV directly via your keyboard and mouse.
+                //Note that your mouse will be captured in a box and that due to pointer accelaration the control will not be perfect.
 
-//Keyboard keys:
-//- arrow keys: navigate the menu
-//- backspace: go back
-//- escape: exit
-//- S: open picture settings
-//- media keys: volume up/down/mute
+                //Keyboard keys:
+                //- arrow keys: navigate the menu
+                //- backspace: go back
+                //- escape: exit
+                //- S: open picture settings
+                //- media keys: volume up/down/mute
 
-//Mouse:
-//- left button: activate/open item
-//- right button: go back
-//- wheel: scroll through menus (only vertically)
+                //Mouse:
+                //- left button: activate/open item
+                //- right button: go back
+                //- wheel: scroll through menus (only vertically)
 
-//Press F1 to stop Direct Mode."
-//                );
+                //Press F1 to stop Direct Mode."
+                //                );
 
                 if (_mouseService == null)
                 {
-                    _lgService.GetMouseAsync().ContinueWith((task) => BeginInvoke(new Action<Task<LgWebOsMouseService>>(SetMouseService), new[] { task }));
+                    await _lgService.GetMouseAsync().ContinueWith((task) => BeginInvoke(new Action<Task<LgWebOsMouseService>>(SetMouseService), new[] { task }));
                 }
             }
             else

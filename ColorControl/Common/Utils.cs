@@ -427,41 +427,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return devices;
         }
 
-        public static T WaitForTask<T>(Task<T> task)
-        {
-            if (ConsoleOpened)
-            {
-                task.Wait();
-                return task.Result;
-            }
-
-            while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
-            {
-                Thread.Sleep(10);
-                Application.DoEvents();
-            }
-            return task.Result;
-        }
-
-        public static void WaitForTask(Task task, bool doEvents = true)
-        {
-            if (ConsoleOpened)
-            {
-                task.Wait();
-                return;
-            }
-
-            while (task != null && (task.Status < TaskStatus.WaitingForChildrenToComplete))
-            {
-                Thread.Sleep(10);
-
-                if (doEvents)
-                {
-                    Application.DoEvents();
-                }
-            }
-        }
-
         internal static Image GenerateGradientBitmap(int width, int height)
         {
             var bitmap = new Bitmap(512, height);
@@ -1151,7 +1116,12 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             var httpClient = new HttpClient();
             using var stream = await httpClient.GetStreamAsync(url);
 
-            using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+
+            using var fileStream = new FileStream(filePath, FileMode.CreateNew);
 
             await stream.CopyToAsync(fileStream);
         }

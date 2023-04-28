@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ColorControl.Services.Common
 {
@@ -60,7 +61,7 @@ namespace ColorControl.Services.Common
             return preset;
         }
 
-        public abstract bool ApplyPreset(T preset);
+        public abstract Task<bool> ApplyPreset(T preset);
 
         public T GetLastAppliedPreset()
         {

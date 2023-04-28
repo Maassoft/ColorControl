@@ -231,11 +231,11 @@ namespace ColorControl.Services.LG
             }
         }
 
-        private void btnApplyLg_Click(object sender, EventArgs e)
+        private async void btnApplyLg_Click(object sender, EventArgs e)
         {
             var preset = GetSelectedLgPreset();
 
-            ApplyLgPreset(preset);
+            await ApplyLgPreset(preset);
         }
 
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
@@ -463,23 +463,14 @@ namespace ColorControl.Services.LG
             AddOrUpdateItemLg(_lgService.CreateNewPreset());
         }
 
-        internal void ApplyLgPreset(LgPreset preset, bool reconnect = false, bool wait = false)
+        internal async Task ApplyLgPreset(LgPreset preset, bool reconnect = false)
         {
             if (preset == null)
             {
                 return;
             }
 
-            var applyTask = _lgService.ApplyPreset(preset, reconnect).ContinueWith((task) => BeginInvoke(() => LgPresetApplied(task)));
-            if (wait)
-            {
-                Utils.WaitForTask(applyTask);
-            }
-        }
-
-        private void LgPresetApplied(Task<bool> task)
-        {
-            var result = task.Result;
+            var result = await _lgService.ApplyPreset(preset, reconnect);
             if (!result)
             {
                 MessageForms.WarningOk("Could not apply the preset (entirely). Check the log for details.");
@@ -516,10 +507,10 @@ namespace ColorControl.Services.LG
             ApplySelectedLgPreset();
         }
 
-        private void ApplySelectedLgPreset()
+        private async void ApplySelectedLgPreset()
         {
             var preset = GetSelectedLgPreset();
-            ApplyLgPreset(preset);
+            await ApplyLgPreset(preset);
         }
 
         private void btnLgAddButton_Click(object sender, EventArgs e)
@@ -541,12 +532,14 @@ namespace ColorControl.Services.LG
 
             var value = ShowLgActionForm(action);
 
+            var text = action.Name;
+
             if (!string.IsNullOrEmpty(value))
             {
-                var text = $"{action.Name}({value})";
-
-                FormUtils.AddStepToTextBox(edtStepsLg, text);
+                text += $"({value})";
             }
+
+            FormUtils.AddStepToTextBox(edtStepsLg, text);
         }
 
         private string ShowLgActionForm(LgDevice.InvokableAction action)
@@ -736,7 +729,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
             }
         }
 
-        private void btnLgAddDevice_Click(object sender, EventArgs e)
+        private async void btnLgAddDevice_Click(object sender, EventArgs e)
         {
             var values = MessageForms.ShowDialog("Add tv", new[] { "Name", "Ip-address", "MAC-address" }, ValidateAddDevice);
             if (values.Any())
@@ -749,9 +742,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 Enabled = false;
                 try
                 {
-                    var task = device.TestConnection();
-
-                    result = Utils.WaitForTask(task);
+                    await device.TestConnection();
                 }
                 finally
                 {
@@ -866,7 +857,7 @@ Do you want to continue?"
 
             const string gameBarName = "miGameBar";
 
-            var expertActions = actions.Where(a => a.EnumType != null || a.MaxValue > a.MinValue).ToList();
+            var expertActions = actions.Where(a => a.EnumType != null || a.MaxValue > a.MinValue || a.AsyncFunction != null).ToList();
 
             var categories = expertActions.Select(a => a.Category ?? "misc").Where(c => !string.IsNullOrEmpty(c)).Distinct();
 
@@ -956,7 +947,7 @@ Do you want to continue?"
             mnuLgExpert.Show(btnLgExpert, btnLgExpert.PointToClient(Cursor.Position));
         }
 
-        private void btnLgExpertColorGamut_Click(object sender, EventArgs e)
+        private async void btnLgExpertColorGamut_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripItem;
             var action = item.Tag as LgDevice.InvokableAction;
@@ -970,7 +961,7 @@ Do you want to continue?"
 
             try
             {
-                _lgService.SelectedDevice?.ExecuteAction(action, new[] { value });
+                await _lgService.SelectedDevice?.ExecuteActionAsync(action, new[] { value });
             }
             catch (InvalidOperationException ex)
             {
@@ -980,7 +971,7 @@ Do you want to continue?"
             }
         }
 
-        private void ApplyLgExpertValueRange(LgDevice.InvokableAction action)
+        private async void ApplyLgExpertValueRange(LgDevice.InvokableAction action)
         {
             var value = ShowLgActionForm(action);
 
@@ -991,15 +982,15 @@ Do you want to continue?"
 
             var values = value.Split(";");
 
-            _lgService.SelectedDevice?.ExecuteAction(action, values);
+            await _lgService.SelectedDevice?.ExecuteActionAsync(action, values);
         }
 
-        private void btnLgExpertPresetAction_Click(object sender, EventArgs e)
+        private async void btnLgExpertPresetAction_Click(object sender, EventArgs e)
         {
             var item = sender as ToolStripItem;
             var preset = (LgPreset)item.Tag;
 
-            _lgService.ApplyPreset(preset).ConfigureAwait(false);
+            await _lgService.ApplyPreset(preset);
         }
 
         private void miLgEnableMotionPro_Click(object sender, EventArgs e)
@@ -1142,7 +1133,7 @@ Do you want to continue?"
             FormUtils.ListViewItemChecked<LgPreset>(lvLgPresets, e);
         }
 
-        private void miTestPowerOffOn_Click(object sender, EventArgs e)
+        private async void miTestPowerOffOn_Click(object sender, EventArgs e)
         {
             var text =
 @"The TV will now power off. Please wait for the TV to be powered off completely (relay click) and press ENTER to wake it again.
@@ -1157,7 +1148,7 @@ Do you want to continue?";
 
             if (MessageForms.QuestionYesNo(text) == DialogResult.Yes)
             {
-                Utils.WaitForTask(_lgService.PowerOff());
+                await _lgService.PowerOff();
 
                 MessageForms.InfoOk("Press ENTER to wake the TV.");
 
@@ -1289,13 +1280,34 @@ The InStart, EzAdjust and Software Update items are now visible under the Expert
                 MaxValue = 3600,
                 Value = device.ScreenSaverMinimalDuration
             };
+            var turnOffField = new MessageForms.FieldDefinition
+            {
+                Label = "Turn screen off instead of power off",
+                FieldType = MessageForms.FieldType.CheckBox,
+                Value = device.TurnScreenOffOnScreenSaver
+            };
+            var turnOnField = new MessageForms.FieldDefinition
+            {
+                Label = "Turn screen on instead of power on",
+                FieldType = MessageForms.FieldType.CheckBox,
+                Value = device.TurnScreenOnAfterScreenSaver
+            };
+            var manualField = new MessageForms.FieldDefinition
+            {
+                Label = "Perform action even on manually executed screen saver",
+                FieldType = MessageForms.FieldType.CheckBox,
+                Value = device.HandleManualScreenSaver
+            };
 
-            if (!MessageForms.ShowDialog($"Settings - {selectedItem}", new[] { durationField }).Any())
+            if (!MessageForms.ShowDialog($"Settings - {selectedItem}", new[] { durationField, turnOffField, turnOnField, manualField }).Any())
             {
                 return;
             }
 
             device.ScreenSaverMinimalDuration = durationField.ValueAsInt;
+            device.TurnScreenOffOnScreenSaver = turnOffField.ValueAsBool;
+            device.TurnScreenOnAfterScreenSaver = turnOnField.ValueAsBool;
+            device.HandleManualScreenSaver = manualField.ValueAsBool;
         }
     }
 }
