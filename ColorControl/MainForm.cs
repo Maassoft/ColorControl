@@ -689,7 +689,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         protected override void SetVisibleCore(bool value)
         {
-            if (!_setVisibleCalled && _config.StartMinimized/* && !Debugger.IsAttached*/)
+            if (!_setVisibleCalled && _config.StartMinimized && !Debugger.IsAttached)
             {
                 _setVisibleCalled = true;
                 if (_config.MinimizeToTray)

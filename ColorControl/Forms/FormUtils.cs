@@ -366,55 +366,6 @@ namespace ColorControl.Forms
             }
         }
 
-        public static void ListView_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
-        {
-            //Fills one solid background for each cell.
-            using (SolidBrush backBrush = new SolidBrush(CurrentBackColor))
-            {
-                e.Graphics.FillRectangle(backBrush, e.Bounds);
-            }
-            //Draw the borders for the header around each cell.
-            using (Pen backBrush = new Pen(Color.DimGray))
-            {
-                e.Graphics.DrawRectangle(backBrush, e.Bounds);
-            }
-            using (SolidBrush foreBrush = new SolidBrush(CurrentForeColor))
-            {
-                //Since e.Header.TextAlign returns 'HorizontalAlignment' with values of (Right, Center, Left).  
-                //DrawString uses 'StringAlignment' with values of (Near, Center, Far). 
-                //We must translate these and setup a vertical alignment that doesn't exist in DrawListViewColumnHeaderEventArgs.
-                StringFormat stringFormat = GetStringFormat(e.Header.TextAlign);
-
-                //Do some padding, since these draws right up next to the border for Left/Near.  Will need to change this if you use Right/Far
-                Rectangle rect = e.Bounds; rect.X += 2;
-                e.Graphics.DrawString(e.Header.Text, e.Font, foreBrush, rect, stringFormat);
-            }
-        }
-
-        private static StringFormat GetStringFormat(HorizontalAlignment ha)
-        {
-            StringAlignment align;
-
-            switch (ha)
-            {
-                case HorizontalAlignment.Right:
-                    align = StringAlignment.Far;
-                    break;
-                case HorizontalAlignment.Center:
-                    align = StringAlignment.Center;
-                    break;
-                default:
-                    align = StringAlignment.Near;
-                    break;
-            }
-
-            return new StringFormat()
-            {
-                Alignment = align,
-                LineAlignment = StringAlignment.Center
-            };
-        }
-
         public static bool IsForegroundFullScreenAndDisabledNotifications(Screen screen = null)
         {
             return IsNotificationDisabled() && IsForegroundFullScreen(screen);
