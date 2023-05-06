@@ -259,7 +259,7 @@ namespace ColorControl.Services.AMD
 
         private void btnChangeAmd_Click(object sender, EventArgs e)
         {
-            mnuAmdPresets.Show(btnChangeAmd, btnChangeAmd.PointToClient(Cursor.Position));
+            mnuAmdPresets.ShowCustom(btnChangeAmd);
         }
 
         private void edtAmdShortcut_TextChanged(object sender, EventArgs e)
@@ -366,7 +366,7 @@ namespace ColorControl.Services.AMD
                         var display = displays[i];
                         var name = _amdService.GetFullDisplayName(display);
 
-                        var item = mnuAmdDisplay.DropDownItems.Add(name);
+                        var item = mnuAmdDisplay.DropDownItems.AddCustom(name);
                         item.Tag = display;
                         item.Click += displayMenuItemAmd_Click;
                     }
@@ -390,7 +390,7 @@ namespace ColorControl.Services.AMD
 
                     foreach (var refreshRate in refreshRates)
                     {
-                        var item = mnuAmdRefreshRate.DropDownItems.Add(refreshRate.ToString() + "Hz");
+                        var item = mnuAmdRefreshRate.DropDownItems.AddCustom(refreshRate.ToString() + "Hz");
                         item.Tag = refreshRate;
                         item.Click += refreshRateMenuItemAmd_Click;
                     }

@@ -41,6 +41,7 @@
             lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            chkOptionsUseDarkMode = new System.Windows.Forms.CheckBox();
             chkAutoInstallUpdates = new System.Windows.Forms.CheckBox();
             btnStartStopService = new System.Windows.Forms.Button();
             btnElevationInfo = new System.Windows.Forms.Button();
@@ -112,7 +113,7 @@
             // 
             grpOptionsModules.Controls.Add(label1);
             grpOptionsModules.Controls.Add(chkModules);
-            grpOptionsModules.Location = new System.Drawing.Point(7, 187);
+            grpOptionsModules.Location = new System.Drawing.Point(7, 210);
             grpOptionsModules.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpOptionsModules.Name = "grpOptionsModules";
             grpOptionsModules.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -147,7 +148,7 @@
             grpMiscellaneousOptions.Controls.Add(edtBlankScreenSaverShortcut);
             grpMiscellaneousOptions.Controls.Add(lblFixChromeFontsDescription);
             grpMiscellaneousOptions.Controls.Add(chkFixChromeFonts);
-            grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 324);
+            grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 347);
             grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -212,6 +213,7 @@
             // 
             // grpGeneralOptions
             // 
+            grpGeneralOptions.Controls.Add(chkOptionsUseDarkMode);
             grpGeneralOptions.Controls.Add(chkAutoInstallUpdates);
             grpGeneralOptions.Controls.Add(btnStartStopService);
             grpGeneralOptions.Controls.Add(btnElevationInfo);
@@ -230,10 +232,22 @@
             grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpGeneralOptions.Name = "grpGeneralOptions";
             grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpGeneralOptions.Size = new System.Drawing.Size(522, 174);
+            grpGeneralOptions.Size = new System.Drawing.Size(522, 197);
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
+            // 
+            // chkOptionsUseDarkMode
+            // 
+            chkOptionsUseDarkMode.AutoSize = true;
+            chkOptionsUseDarkMode.Location = new System.Drawing.Point(216, 47);
+            chkOptionsUseDarkMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkOptionsUseDarkMode.Name = "chkOptionsUseDarkMode";
+            chkOptionsUseDarkMode.Size = new System.Drawing.Size(164, 19);
+            chkOptionsUseDarkMode.TabIndex = 67;
+            chkOptionsUseDarkMode.Text = "Dark Mode (experimental)";
+            chkOptionsUseDarkMode.UseVisualStyleBackColor = true;
+            chkOptionsUseDarkMode.CheckedChanged += chkOptionsUseDarkMode_CheckedChanged;
             // 
             // chkAutoInstallUpdates
             // 
@@ -250,7 +264,7 @@
             // btnStartStopService
             // 
             btnStartStopService.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnStartStopService.Location = new System.Drawing.Point(474, 103);
+            btnStartStopService.Location = new System.Drawing.Point(474, 129);
             btnStartStopService.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnStartStopService.Name = "btnStartStopService";
             btnStartStopService.Size = new System.Drawing.Size(40, 27);
@@ -262,7 +276,7 @@
             // btnElevationInfo
             // 
             btnElevationInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnElevationInfo.Location = new System.Drawing.Point(329, 41);
+            btnElevationInfo.Location = new System.Drawing.Point(329, 67);
             btnElevationInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnElevationInfo.Name = "btnElevationInfo";
             btnElevationInfo.Size = new System.Drawing.Size(22, 27);
@@ -274,7 +288,7 @@
             // rbElevationService
             // 
             rbElevationService.AutoSize = true;
-            rbElevationService.Location = new System.Drawing.Point(216, 107);
+            rbElevationService.Location = new System.Drawing.Point(216, 133);
             rbElevationService.Name = "rbElevationService";
             rbElevationService.Size = new System.Drawing.Size(136, 19);
             rbElevationService.TabIndex = 63;
@@ -287,7 +301,7 @@
             // rbElevationProcess
             // 
             rbElevationProcess.AutoSize = true;
-            rbElevationProcess.Location = new System.Drawing.Point(216, 128);
+            rbElevationProcess.Location = new System.Drawing.Point(216, 154);
             rbElevationProcess.Name = "rbElevationProcess";
             rbElevationProcess.Size = new System.Drawing.Size(189, 19);
             rbElevationProcess.TabIndex = 62;
@@ -300,7 +314,7 @@
             // rbElevationAdmin
             // 
             rbElevationAdmin.AutoSize = true;
-            rbElevationAdmin.Location = new System.Drawing.Point(216, 86);
+            rbElevationAdmin.Location = new System.Drawing.Point(216, 112);
             rbElevationAdmin.Name = "rbElevationAdmin";
             rbElevationAdmin.Size = new System.Drawing.Size(97, 19);
             rbElevationAdmin.TabIndex = 61;
@@ -313,7 +327,7 @@
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new System.Drawing.Point(216, 47);
+            label8.Location = new System.Drawing.Point(216, 73);
             label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label8.Name = "label8";
             label8.Size = new System.Drawing.Size(105, 15);
@@ -323,7 +337,7 @@
             // rbElevationNone
             // 
             rbElevationNone.AutoSize = true;
-            rbElevationNone.Location = new System.Drawing.Point(216, 65);
+            rbElevationNone.Location = new System.Drawing.Point(216, 91);
             rbElevationNone.Name = "rbElevationNone";
             rbElevationNone.Size = new System.Drawing.Size(54, 19);
             rbElevationNone.TabIndex = 10;
@@ -655,6 +669,7 @@
         private System.Windows.Forms.GroupBox grpOptionsModules;
         private System.Windows.Forms.CheckedListBox chkModules;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
     }
 }
 

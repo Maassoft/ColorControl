@@ -56,7 +56,7 @@ namespace ColorControl.Common
 
                 foreach (var ni in interfaces)
                 {
-                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback || ni.Name.Contains("VirtualBox") || ni.Name.Contains("vEthernet") || ni.Description.Contains("Virtual"))
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback/* || ni.Name.Contains("VirtualBox") || ni.Name.Contains("vEthernet") || ni.Description.Contains("Virtual")*/)
                     {
                         continue;
                     }

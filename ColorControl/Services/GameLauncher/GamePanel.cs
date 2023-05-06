@@ -325,7 +325,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void btnGameAddStep_Click(object sender, EventArgs e)
         {
-            mnuGameAddStep.Show(btnGameAddStep, btnGameAddStep.PointToClient(Cursor.Position));
+            mnuGameAddStep.ShowCustom(btnGameAddStep);
         }
 
         private void mnuGameStartProgram_Click(object sender, EventArgs e)
@@ -356,7 +356,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void btnGameActions_Click(object sender, EventArgs e)
         {
-            mnuGameActions.Show(btnGameSettings, btnGameSettings.PointToClient(Cursor.Position));
+            mnuGameActions.ShowCustom(btnGameSettings);
         }
 
         private void mnuGameNvInspector_Click(object sender, EventArgs e)
@@ -426,7 +426,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void btnGameOptions_Click(object sender, EventArgs e)
         {
-            mnuGameOptions.Show(btnGameOptions, btnGameOptions.PointToClient(Cursor.Position));
+            mnuGameOptions.ShowCustom(btnGameOptions);
         }
 
         private void miGameProcessPriority_Click(object sender, EventArgs e)

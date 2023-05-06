@@ -141,9 +141,9 @@ namespace ColorControl.Services.NVIDIA
                     item = lvNvPresets.Items.Add(display.Name);
                     item.ImageIndex = id;
                     item.Font = new Font(item.Font, item.Font.Style | FontStyle.Bold);
-                    item.BackColor = Color.LightGray;
+                    //item.BackColor = Color.LightGray;
                 }
-                //item.BackColor = _appContextProvider.GetAppContext().Config.UseDarkMode ? Color.DimGray : Color.LightGray;
+                item.BackColor = _appContextProvider.GetAppContext().Config.UseDarkMode ? Color.DimGray : Color.LightGray;
 
                 var values = displayInfo.Values;
 
@@ -285,7 +285,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void btnChange_Click(object sender, EventArgs e)
         {
-            mnuNvPresets.Show(btnChange, btnChange.PointToClient(Cursor.Position));
+            mnuNvPresets.ShowCustom(btnChange);
         }
 
         private void includedToolStripMenuItem_Click(object sender, EventArgs e)
@@ -348,7 +348,7 @@ namespace ColorControl.Services.NVIDIA
                     var display = displays[i];
                     var name = FormUtils.ExtendedDisplayName(display.Name);
 
-                    var item = mnuNvDisplay.DropDownItems.Add(name);
+                    var item = mnuNvDisplay.DropDownItems.AddCustom(name);
                     item.Tag = display;
                     item.Click += displayMenuItem_Click;
                 }
@@ -489,7 +489,7 @@ namespace ColorControl.Services.NVIDIA
 
                 foreach (var refreshRate in refreshRates)
                 {
-                    var item = mnuRefreshRate.DropDownItems.Add(refreshRate.ToString() + "Hz");
+                    var item = mnuRefreshRate.DropDownItems.AddCustom(refreshRate.ToString() + "Hz");
                     item.Tag = refreshRate;
                     item.Click += refreshRateMenuItem_Click;
                 }
@@ -501,7 +501,7 @@ namespace ColorControl.Services.NVIDIA
 
                 foreach (var mode in modes)
                 {
-                    var item = mnuNvResolution.DropDownItems.Add($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
+                    var item = mnuNvResolution.DropDownItems.AddCustom($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
                     item.Tag = mode;
                     item.Click += resolutionNvMenuItem_Click;
                 }
@@ -1116,7 +1116,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void btnNvSettings_Click(object sender, EventArgs e)
         {
-            mnuNvSettings.Show(btnNvSettings, btnNvSettings.PointToClient(Cursor.Position));
+            mnuNvSettings.ShowCustom(btnNvSettings);
         }
 
         private ListViewItem _lastItem;

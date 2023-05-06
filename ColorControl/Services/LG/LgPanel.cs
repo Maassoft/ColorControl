@@ -65,7 +65,7 @@ namespace ColorControl.Services.LG
                     text = text.Substring(1);
                 }
 
-                var item = mnuLgRcButtons.DropDownItems.Add(text);
+                var item = mnuLgRcButtons.DropDownItems.AddCustom(text);
                 item.Click += miLgAddButton_Click;
             }
         }
@@ -318,6 +318,11 @@ namespace ColorControl.Services.LG
                 var rcPanel = new RemoteControlPanel(_lgService, _lgService.GetRemoteControlButtons());
                 rcPanel.Parent = scLgController.Panel2;
                 rcPanel.Dock = DockStyle.Fill;
+
+                if (DarkModeUtils.UseDarkMode)
+                {
+                    DarkModeUtils.SetControlTheme(rcPanel);
+                }
             }
             chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
             scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
@@ -515,7 +520,7 @@ namespace ColorControl.Services.LG
 
         private void btnLgAddButton_Click(object sender, EventArgs e)
         {
-            mnuLgButtons.Show(btnLgAddButton, btnLgAddButton.PointToClient(Cursor.Position));
+            mnuLgButtons.ShowCustom(btnLgAddButton);
         }
 
         private void miLgAddButton_Click(object sender, EventArgs e)
@@ -871,7 +876,7 @@ Do you want to continue?"
                     {
                         var text = action.Title ?? action.Name;
 
-                        var item = catMenuItem.DropDownItems.Add(text);
+                        var item = catMenuItem.DropDownItems.AddCustom(text);
                         item.Tag = action;
                         item.Click += clickEvent;
                         continue;
@@ -897,6 +902,7 @@ Do you want to continue?"
                         gameBarItem.Checked = activatedGameBarActions.Contains(action);
                         gameBarItem.Name = itemName;
                         gameBarItem.Tag = action.Name;
+                        gameBarItem.ForeColor = FormUtils.MenuItemForeColor;
                     }
                 }
             }
@@ -944,7 +950,7 @@ Do you want to continue?"
 
         private void btnLgExpert_Click(object sender, EventArgs e)
         {
-            mnuLgExpert.Show(btnLgExpert, btnLgExpert.PointToClient(Cursor.Position));
+            mnuLgExpert.ShowCustom(btnLgExpert);
         }
 
         private async void btnLgExpertColorGamut_Click(object sender, EventArgs e)
@@ -1125,7 +1131,7 @@ Do you want to continue?"
 
         private void btnLgSettings_Click(object sender, EventArgs e)
         {
-            mnuLgSettings.Show(btnLgSettings, btnLgSettings.PointToClient(Cursor.Position));
+            mnuLgSettings.ShowCustom(btnLgSettings);
         }
 
         private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)

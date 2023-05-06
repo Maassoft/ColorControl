@@ -434,6 +434,8 @@ namespace ColorControl.Forms
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
+            prompt.UpdateTheme(onlyIfDark: true);
+
             prompt.ShowDialog(MainForm);
 
             return values;

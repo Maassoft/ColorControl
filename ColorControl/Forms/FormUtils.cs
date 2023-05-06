@@ -1,5 +1,4 @@
 ﻿using ColorControl.Common;
-using ColorControl.Native;
 using ColorControl.Services.Common;
 using NStandard;
 using NWin32;
@@ -35,6 +34,12 @@ namespace ColorControl.Forms
             UserNotificationState.QUNS_PRESENTATION_MODE,
         };
 
+        public static Color DarkModeForeColor { get; set; } = Color.FromArgb(255, 255, 255);
+        public static Color DarkModeBackColor { get; set; } = Color.FromArgb(28, 28, 28);
+        public static Color MenuItemForeColor { get; set; } = Color.Black;
+        public static Color CurrentForeColor { get; set; } = SystemColors.ControlText;
+        public static Color CurrentBackColor { get; set; } = Color.White;
+
         [DllImport("shell32.dll")]
         public static extern int SHQueryUserNotificationState(out UserNotificationState pquns);
 
@@ -46,14 +51,22 @@ namespace ColorControl.Forms
 
         public static void SetNotifyIconText(NotifyIcon ni, string text)
         {
-            ni.Text = text;
+            ni.Text = text.Substring(0, Math.Min(text.Length, 127));
+        }
 
-            //text = text.Substring(0, Math.Min(text.Length, 127));
-            //Type t = typeof(NotifyIcon);
-            //BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
-            //t.GetField("text", hidden).SetValue(ni, text);
-            //if ((bool)t.GetField("added", hidden).GetValue(ni))
-            //    t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
+        public static ToolStripItem AddCustom(this ToolStripItemCollection collection, string text)
+        {
+            var item = collection.Add(text);
+            item.ForeColor = MenuItemForeColor;
+
+            return item;
+        }
+
+        public static void ShowCustom(this ContextMenuStrip contextMenu, Control control)
+        {
+            DarkModeUtils.SetContextMenuForeColor(contextMenu, MenuItemForeColor);
+
+            contextMenu.Show(control, control.PointToClient(Cursor.Position));
         }
 
         public static ToolStripMenuItem BuildDropDownMenuEx(ToolStripItemCollection items, string parentName, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0, bool noSubItems = false)
@@ -67,7 +80,7 @@ namespace ColorControl.Forms
             }
 
             ToolStripMenuItem subMenuItem;
-            subMenuItem = (ToolStripMenuItem)items.Add(name);
+            subMenuItem = (ToolStripMenuItem)items.AddCustom(name);
             subMenuItem.Name = subMenuName;
 
             if (noSubItems)
@@ -83,7 +96,7 @@ namespace ColorControl.Forms
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
                     var itemText = (enumValue as IConvertible).GetDescription() ?? enumValue.ToString();
-                    var item = subMenuItem.DropDownItems.Add(itemText);
+                    var item = subMenuItem.DropDownItems.AddCustom(itemText);
                     item.Tag = tag;
                     var strValue = enumValue.ToString();
                     if (strValue.EndsWith("_"))
@@ -115,7 +128,7 @@ namespace ColorControl.Forms
                 {
                     var subSubItemName = $"{subMenuName}_{value}";
 
-                    var item = subMenuItem.DropDownItems.Add(value.ToString());
+                    var item = subMenuItem.DropDownItems.AddCustom(value.ToString());
                     item.Name = subSubItemName;
                     item.Tag = tag;
                     item.Click += clickEvent;
@@ -137,7 +150,7 @@ namespace ColorControl.Forms
             ToolStripMenuItem subMenuItem;
             if (subMenuItems.Length == 0)
             {
-                subMenuItem = (ToolStripMenuItem)mnuParent.DropDownItems.Add(name);
+                subMenuItem = (ToolStripMenuItem)mnuParent.DropDownItems.AddCustom(name);
                 subMenuItem.Name = "miColorSettings_" + name;
                 if (font != null)
                 {
@@ -152,7 +165,7 @@ namespace ColorControl.Forms
 
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
-                    var item = subMenuItem.DropDownItems.Add(enumValue.ToString());
+                    var item = subMenuItem.DropDownItems.AddCustom(enumValue.ToString());
                     item.Tag = enumValue;
                     item.Click += clickEvent;
 
@@ -165,6 +178,7 @@ namespace ColorControl.Forms
             else
             {
                 subMenuItem = (ToolStripMenuItem)subMenuItems[0];
+                subMenuItem.ForeColor = MenuItemForeColor;
                 property = (PropertyInfo)subMenuItem.Tag;
             }
 
@@ -195,6 +209,7 @@ namespace ColorControl.Forms
             if (item == null)
             {
                 item = new ToolStripMenuItem(text) { Name = name, Tag = tag };
+                item.ForeColor = MenuItemForeColor;
                 itemCollection.Add(item);
 
                 if (onClick != null)
@@ -206,6 +221,7 @@ namespace ColorControl.Forms
             {
                 item.Text = text;
                 item.Tag = tag;
+                item.ForeColor = MenuItemForeColor;
             }
             //else if (onClick != null)
             //{
@@ -350,6 +366,55 @@ namespace ColorControl.Forms
             }
         }
 
+        public static void ListView_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
+        {
+            //Fills one solid background for each cell.
+            using (SolidBrush backBrush = new SolidBrush(CurrentBackColor))
+            {
+                e.Graphics.FillRectangle(backBrush, e.Bounds);
+            }
+            //Draw the borders for the header around each cell.
+            using (Pen backBrush = new Pen(Color.DimGray))
+            {
+                e.Graphics.DrawRectangle(backBrush, e.Bounds);
+            }
+            using (SolidBrush foreBrush = new SolidBrush(CurrentForeColor))
+            {
+                //Since e.Header.TextAlign returns 'HorizontalAlignment' with values of (Right, Center, Left).  
+                //DrawString uses 'StringAlignment' with values of (Near, Center, Far). 
+                //We must translate these and setup a vertical alignment that doesn't exist in DrawListViewColumnHeaderEventArgs.
+                StringFormat stringFormat = GetStringFormat(e.Header.TextAlign);
+
+                //Do some padding, since these draws right up next to the border for Left/Near.  Will need to change this if you use Right/Far
+                Rectangle rect = e.Bounds; rect.X += 2;
+                e.Graphics.DrawString(e.Header.Text, e.Font, foreBrush, rect, stringFormat);
+            }
+        }
+
+        private static StringFormat GetStringFormat(HorizontalAlignment ha)
+        {
+            StringAlignment align;
+
+            switch (ha)
+            {
+                case HorizontalAlignment.Right:
+                    align = StringAlignment.Far;
+                    break;
+                case HorizontalAlignment.Center:
+                    align = StringAlignment.Center;
+                    break;
+                default:
+                    align = StringAlignment.Near;
+                    break;
+            }
+
+            return new StringFormat()
+            {
+                Alignment = align,
+                LineAlignment = StringAlignment.Center
+            };
+        }
+
         public static bool IsForegroundFullScreenAndDisabledNotifications(Screen screen = null)
         {
             return IsNotificationDisabled() && IsForegroundFullScreen(screen);
@@ -433,49 +498,6 @@ namespace ColorControl.Forms
                     control.Enabled = enable;
                 }
             }
-        }
-
-        private static Dictionary<Type, Color> _defaultColors = new Dictionary<Type, Color>();
-
-        public static void SetControlTheme(Control control, Color backColor, Color foreColor)
-        {
-            var controlType = control.GetType();
-
-            var controlBackColor = backColor;
-
-            if (backColor == SystemColors.Control)
-            {
-                if (_defaultColors.TryGetValue(controlType, out var newBackColor))
-                {
-                    controlBackColor = newBackColor;
-                }
-            }
-            else
-            {
-                if (!_defaultColors.ContainsKey(controlType))
-                {
-                    _defaultColors.Add(controlType, control.BackColor);
-                }
-            }
-
-            //control.BackColor = controlBackColor;
-            //control.ForeColor = foreColor;
-
-            //var result = WinApi.SetWindowTheme(control.Handle, "Explorer", null);
-            var result = WinApi.AllowDarkModeForWindow(control.Handle, true);
-            //var result2 = NativeMethods.SendMessageW(control.Handle, NativeConstants.WM_THEMECHANGED, 0, 0);
-
-            for (var i = 0; i < control.Controls.Count; i++)
-            {
-                var childControl = control.Controls[i];
-
-                SetControlTheme(childControl, backColor, foreColor);
-            }
-        }
-
-        public static bool IsColorLight(Windows.UI.Color color)
-        {
-            return ((5 * color.G) + (2 * color.R) + color.B) > (8 * 128);
         }
 
         public static void AddStepToTextBox(TextBox textBox, string step)
@@ -666,7 +688,7 @@ namespace ColorControl.Forms
 
                 if (!string.IsNullOrEmpty(text))
                 {
-                    var item = menu.DropDownItems.Add(text);
+                    var item = menu.DropDownItems.AddCustom(text);
                     item.Tag = nvPreset;
                     item.Click += eventHandler;
                 }

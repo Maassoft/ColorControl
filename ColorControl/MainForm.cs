@@ -22,7 +22,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Windows.UI.ViewManagement;
 
 namespace ColorControl
 {
@@ -74,6 +73,7 @@ namespace ColorControl
         public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager)
         {
             InitializeComponent();
+
             StartUpParams = appContextProvider.GetAppContext().StartUpParams;
             appContextProvider.GetAppContext().SynchronizationContext = AsyncOperationManager.SynchronizationContext;
 
@@ -131,15 +131,7 @@ namespace ColorControl
 
             _shortcuts.Add(SHORTCUTID_SCREENSAVER, StartScreenSaver);
 
-            //Utils.StartService();
-
             InitModules();
-
-            //InitNvService();
-            //InitAmdService();
-            //InitLgService();
-            //InitGameService();
-
             InitInfo();
             UpdateServiceInfo();
 
@@ -149,11 +141,12 @@ namespace ColorControl
 
             _initialized = true;
 
-            //Task.Run(() => Utils.StartPipeAsync());
-
-            //SwitchTheme();
-
             AfterInitialized();
+
+            if (_config.UseDarkMode)
+            {
+                SetTheme(_config.UseDarkMode);
+            }
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -614,6 +607,7 @@ namespace ColorControl
             chkAutoInstallUpdates.Enabled = _config.CheckForUpdates && _config.ElevationMethod == ElevationMethod.UseService;
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
             chkGdiScaling.Checked = _config.UseGdiScaling;
+            chkOptionsUseDarkMode.Checked = _config.UseDarkMode;
 
             if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
             {
@@ -695,7 +689,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         protected override void SetVisibleCore(bool value)
         {
-            if (!_setVisibleCalled && _config.StartMinimized && !Debugger.IsAttached)
+            if (!_setVisibleCalled && _config.StartMinimized/* && !Debugger.IsAttached*/)
             {
                 _setVisibleCalled = true;
                 if (_config.MinimizeToTray)
@@ -811,6 +805,7 @@ NOTE: installing the service may cause a User Account Control popup.");
                 var item = new ToolStripMenuItem(name, null, null, keys);
                 item.Tag = preset;
                 item.Click += eventHandler;
+                item.ForeColor = FormUtils.MenuItemForeColor;
                 menu.DropDownItems.Add(item);
             }
         }
@@ -1307,10 +1302,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void MainForm_Click(object sender, EventArgs e)
         {
-            //_config.UseDarkMode = !_config.UseDarkMode;
-
-            //SetTheme(_config.UseDarkMode);
-
             //_powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
             //PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
             //Program.Restart();
@@ -1320,28 +1311,13 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void SetTheme(bool toDark)
         {
-            var settings = new UISettings();
+            this.UpdateTheme(toDark);
 
-            var foregroundColorValue = settings.GetColorValue(UIColorType.Foreground);
-            var isDarkMode = FormUtils.IsColorLight(foregroundColorValue);
+            WinApi.RefreshImmersiveColorPolicyState();
 
-            var backroundColorValue = settings.GetColorValue(UIColorType.Background);
+            DarkModeUtils.SetContextMenuForeColor(_trayIcon.ContextMenuStrip, FormUtils.CurrentForeColor);
 
-            //var toDark = isDarkMode;
-
-            const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-            var value = toDark ? 1 : 0;
-
-            var result = WinApi.DwmSetWindowAttribute(Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, 4);
-
-            //var toDark = BackColor == SystemColors.Control;
-
-            BackColor = toDark ? Color.FromArgb(backroundColorValue.R, backroundColorValue.G, backroundColorValue.B) : SystemColors.Control;
-            ForeColor = toDark ? Color.FromArgb(foregroundColorValue.R, foregroundColorValue.G, foregroundColorValue.B) : SystemColors.ControlText;
-
-            FormUtils.SetControlTheme(this, BackColor, ForeColor);
-
-            WinApi.FlushMenuThemes();
+            InitSelectedTab();
         }
 
         private void chkAutoInstallUpdates_CheckedChanged(object sender, EventArgs e)
@@ -1417,6 +1393,18 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void chkOptionsUseDarkMode_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            _config.UseDarkMode = chkOptionsUseDarkMode.Checked;
+
+            SetTheme(_config.UseDarkMode);
         }
     }
 }
