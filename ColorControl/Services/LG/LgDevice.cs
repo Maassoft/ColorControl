@@ -237,6 +237,14 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("freesyncOLEDHDMI2", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
             AddGenericPictureAction("freesyncOLEDHDMI3", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
             AddGenericPictureAction("freesyncOLEDHDMI4", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+
+            AddGenericPictureAction("444BypassHDMI1", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI1", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("444BypassHDMI2", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI2", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("444BypassHDMI3", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI3", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("444BypassHDMI4", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI4", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("444BypassHDMINone", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through Non-HDMI", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("qmsVrr", typeof(OffToOn), category: "other", title: "QMS-VRR", fromModelYear: ModelYear.Series2023);
+
             //AddGenericPictureAction("freesyncSupport", typeof(OffToOn), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi1", typeof(FalseToTrue), category: "other");
             AddGenericPictureAction("hdmiPcMode_hdmi2", typeof(FalseToTrue), category: "other");
@@ -1015,6 +1023,13 @@ namespace ColorControl.Services.LG
             await CheckConnectionAsync();
 
             await _lgTvApi.SetConfig("tv.model.motionProMode", mode);
+        }
+
+        public async Task SetSvcMenuFlag(bool enabled)
+        {
+            await CheckConnectionAsync();
+
+            await _lgTvApi.SetSystemSettings("svcMenuFlag", enabled, "other");
         }
 
         internal async Task SetConfig(string key, object value)

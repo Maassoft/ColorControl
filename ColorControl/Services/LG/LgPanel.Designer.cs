@@ -53,6 +53,9 @@
             mnuLgOLEDMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             miLgEnableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
             miLgDisableMotionPro = new System.Windows.Forms.ToolStripMenuItem();
+            mnuLgSetSvcMenuFlag = new System.Windows.Forms.ToolStripMenuItem();
+            miLgFullServiceMenuEnable = new System.Windows.Forms.ToolStripMenuItem();
+            miLgFullServiceMenuDisable = new System.Windows.Forms.ToolStripMenuItem();
             miLgExpertSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             chkLgRemoteControlShow = new System.Windows.Forms.CheckBox();
             label3 = new System.Windows.Forms.Label();
@@ -384,17 +387,17 @@
             // mnuLgExpert
             // 
             mnuLgExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuLgExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { mnuLgOLEDMotionPro, miLgExpertSeparator1 });
+            mnuLgExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { mnuLgOLEDMotionPro, mnuLgSetSvcMenuFlag, miLgExpertSeparator1 });
             mnuLgExpert.Name = "mnuLgButtons";
-            mnuLgExpert.Size = new System.Drawing.Size(359, 32);
+            mnuLgExpert.Size = new System.Drawing.Size(321, 76);
             mnuLgExpert.Opening += mnuLgExpert_Opening;
             // 
             // mnuLgOLEDMotionPro
             // 
             mnuLgOLEDMotionPro.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miLgEnableMotionPro, miLgDisableMotionPro });
             mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
-            mnuLgOLEDMotionPro.Size = new System.Drawing.Size(358, 22);
-            mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9/C2/G2 only)";
+            mnuLgOLEDMotionPro.Size = new System.Drawing.Size(320, 22);
+            mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9 only)";
             // 
             // miLgEnableMotionPro
             // 
@@ -410,10 +413,31 @@
             miLgDisableMotionPro.Text = "Disable OLED Motion Pro";
             miLgDisableMotionPro.Click += miLgDisableMotionPro_Click;
             // 
+            // mnuLgSetSvcMenuFlag
+            // 
+            mnuLgSetSvcMenuFlag.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miLgFullServiceMenuEnable, miLgFullServiceMenuDisable });
+            mnuLgSetSvcMenuFlag.Name = "mnuLgSetSvcMenuFlag";
+            mnuLgSetSvcMenuFlag.Size = new System.Drawing.Size(320, 22);
+            mnuLgSetSvcMenuFlag.Text = "Enable Full Service Menu (C3/G3 only)";
+            // 
+            // miLgFullServiceMenuEnable
+            // 
+            miLgFullServiceMenuEnable.Name = "miLgFullServiceMenuEnable";
+            miLgFullServiceMenuEnable.Size = new System.Drawing.Size(112, 22);
+            miLgFullServiceMenuEnable.Text = "Enable";
+            miLgFullServiceMenuEnable.Click += miLgFullServiceMenuEnable_Click;
+            // 
+            // miLgFullServiceMenuDisable
+            // 
+            miLgFullServiceMenuDisable.Name = "miLgFullServiceMenuDisable";
+            miLgFullServiceMenuDisable.Size = new System.Drawing.Size(112, 22);
+            miLgFullServiceMenuDisable.Text = "Disable";
+            miLgFullServiceMenuDisable.Click += miLgFullServiceMenuDisable_Click;
+            // 
             // miLgExpertSeparator1
             // 
             miLgExpertSeparator1.Name = "miLgExpertSeparator1";
-            miLgExpertSeparator1.Size = new System.Drawing.Size(355, 6);
+            miLgExpertSeparator1.Size = new System.Drawing.Size(317, 6);
             // 
             // chkLgRemoteControlShow
             // 
@@ -908,5 +932,8 @@
         private System.Windows.Forms.ToolStripMenuItem miTestPowerOffOn;
         private System.Windows.Forms.ToolStripMenuItem miNvSettings;
         private System.Windows.Forms.Button btnLgDeviceOptionsSettings;
+        private System.Windows.Forms.ToolStripMenuItem mnuLgSetSvcMenuFlag;
+        private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuEnable;
+        private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuDisable;
     }
 }

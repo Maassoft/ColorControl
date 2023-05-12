@@ -844,7 +844,12 @@ Do you want to continue?"
             var enableVisible = eligibleModelsEnable.Any(m => device?.ModelName?.Contains(m) == true);
             mnuLgOLEDMotionPro.Visible = visible;
             miLgEnableMotionPro.Visible = enableVisible;
-            miLgExpertSeparator1.Visible = visible;
+
+            var svcMenuFlagVisible = new[] { "C3", "G3" }.Any(m => device?.ModelName?.Contains(m) == true);
+
+            mnuLgSetSvcMenuFlag.Visible = svcMenuFlagVisible;
+
+            miLgExpertSeparator1.Visible = visible || svcMenuFlagVisible;
 
             BuildLgActionMenu(device, mnuLgExpert.Items, mnuLgExpert.Name, btnLgExpertColorGamut_Click, _lgService.Config.ShowAdvancedActions, true);
         }
@@ -999,19 +1004,19 @@ Do you want to continue?"
             await _lgService.ApplyPreset(preset);
         }
 
-        private void miLgEnableMotionPro_Click(object sender, EventArgs e)
+        private async void miLgEnableMotionPro_Click(object sender, EventArgs e)
         {
             if (MessageForms.QuestionYesNo("Are you sure you want to enable OLED Motion Pro? This app and its creator are in no way accountable for any damages it may cause to your tv.") == DialogResult.Yes)
             {
-                _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion Pro");
+                await _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion Pro");
 
                 MessageForms.InfoOk("Setting applied.");
             }
         }
 
-        private void miLgDisableMotionPro_Click(object sender, EventArgs e)
+        private async void miLgDisableMotionPro_Click(object sender, EventArgs e)
         {
-            _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion");
+            await _lgService.SelectedDevice?.SetOLEDMotionPro("OLED Motion");
 
             MessageForms.InfoOk("Setting applied.");
         }
@@ -1314,6 +1319,23 @@ The InStart, EzAdjust and Software Update items are now visible under the Expert
             device.TurnScreenOffOnScreenSaver = turnOffField.ValueAsBool;
             device.TurnScreenOnAfterScreenSaver = turnOnField.ValueAsBool;
             device.HandleManualScreenSaver = manualField.ValueAsBool;
+        }
+
+        private async void miLgFullServiceMenuEnable_Click(object sender, EventArgs e)
+        {
+            if (MessageForms.QuestionYesNo("Are you sure you want to enable the full service menu (instead of the simplified one)? This app and its creator are in no way accountable for any damages it may cause to your tv.") == DialogResult.Yes)
+            {
+                await _lgService.SelectedDevice?.SetSvcMenuFlag(false);
+
+                MessageForms.InfoOk("Setting applied.");
+            }
+        }
+
+        private async void miLgFullServiceMenuDisable_Click(object sender, EventArgs e)
+        {
+            await _lgService.SelectedDevice?.SetSvcMenuFlag(true);
+
+            MessageForms.InfoOk("Setting applied.");
         }
     }
 }

@@ -110,16 +110,18 @@ namespace LgTv
 
                 _messageWriter.WriteString(message);
 
-                using (var cancellationTokenSource = new CancellationTokenSource(5000))
-                {
-                    await _messageWriter.StoreAsync().AsTask(cancellationTokenSource.Token).ContinueWith((antecedent) =>
-                    {
-                        if (antecedent.Status != TaskStatus.RanToCompletion)
-                        {
-                            throw new Exception("SendMessageAsync cancelled due to timeout");
-                        }
-                    });
-                }
+                await _messageWriter.StoreAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+                //using (var cancellationTokenSource = new CancellationTokenSource(5000))
+                //{
+                //    await _messageWriter.StoreAsync().AsTask(cancellationTokenSource.Token).ContinueWith((antecedent) =>
+                //    {
+                //        if (antecedent.Status != TaskStatus.RanToCompletion)
+                //        {
+                //            throw new Exception("SendMessageAsync cancelled due to timeout");
+                //        }
+                //    });
+                //}
             }
             catch (Exception e)
             {
@@ -187,24 +189,23 @@ namespace LgTv
             ConnectionClosed = true;
         }
 
-        private void Connection_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
+        private async void Connection_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
         {
             try
             {
-                var task = new Task<DataReader>(new Func<DataReader>(args.GetDataReader));
+                var task = new Task<DataReader>(args.GetDataReader);
                 task.Start();
-                var result = task.Wait(5000);
+                var dataReader = await task.WaitAsync(TimeSpan.FromSeconds(5));
 
-                var dr = result ? task.Result : null;
-                if (!result)
-                {
-                    throw new Exception("Timeout while reading response, possible disconnect");
-                }
+                //if (!result)
+                //{
+                //    throw new Exception("Timeout while reading response, possible disconnect");
+                //}
 
-                using (dr)
+                using (dataReader)
                 {
-                    dr.UnicodeEncoding = UnicodeEncoding.Utf8;
-                    var message = dr.ReadString(dr.UnconsumedBufferLength);
+                    dataReader.UnicodeEncoding = UnicodeEncoding.Utf8;
+                    var message = dataReader.ReadString(dataReader.UnconsumedBufferLength);
                     var obj = JsonConvert.DeserializeObject<dynamic>(message);
                     var id = (string)obj.id;
                     var type = (string)obj.type;
