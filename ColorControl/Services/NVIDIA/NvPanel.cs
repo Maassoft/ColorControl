@@ -2,6 +2,7 @@
 using ColorControl.Forms;
 using ColorControl.Native;
 using ColorControl.Services.Common;
+using novideo_srgb;
 using nspector;
 using nspector.Common;
 using nspector.Common.Meta;
@@ -48,10 +49,13 @@ namespace ColorControl.Services.NVIDIA
             FormUtils.InitSortState(lvNvPresets, _config.NvPresetsSortState);
 
             _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
-        }
 
-        private void RemoteControlPanel_Load(object sender, EventArgs e)
-        {
+            MainViewModel.ConfigPath = _appContextProvider.GetAppContext().DataPath;
+
+            if (_nvService.Config.ApplyNovideoOnStartup)
+            {
+                MainWindow.CreateAndShow(false);
+            }
         }
 
         private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -562,7 +566,7 @@ namespace ColorControl.Services.NVIDIA
                 var groupName = $"mnuNvDriverSettingGroup_{driverSetting.GroupName}";
                 var groupItem = FormUtils.BuildMenuItem(contextMenuStrip?.Items ?? parent.DropDownItems, groupName, driverSetting.GroupName);
 
-                var itemName = $"mnuNvDriverSettingItem_{driverSetting.SettingText}";
+                var itemName = $"mnuNvDriverSettingItem_{driverSetting.SettingId}";
                 var item = FormUtils.BuildMenuItem(groupItem.DropDownItems, itemName, driverSetting.SettingText, driverSetting);
                 var settingMeta = _nvService.GetSettingMeta(driverSetting.SettingId);
 
@@ -618,11 +622,18 @@ namespace ColorControl.Services.NVIDIA
 
                 if (settingMeta.SettingType == nspector.Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE)
                 {
+                    var index = 0;
+
                     foreach (var settingValue in settingMeta.DwordValues)
                     {
                         var text = settingValue.ValueName;
                         if (text.IndexOf(" (") == 10)
                         {
+                            if (settingMeta.DwordValues.Take(index).Any(v => v.Value == settingValue.Value))
+                            {
+                                continue;
+                            }
+
                             text = text.Substring(0, 10);
                         }
 
@@ -631,6 +642,8 @@ namespace ColorControl.Services.NVIDIA
 
                         subItem.Checked = presetSetting == settingValue.Value;
                         subItem.Font = _menuItemFonts[subItem.Checked];
+
+                        index++;
                     }
                 }
 
@@ -1081,27 +1094,38 @@ namespace ColorControl.Services.NVIDIA
 
         private void EditNvSettings()
         {
+            var quickAccessField = new MessageForms.FieldDefinition
+            {
+                Label = "Quick Access shortcut",
+                FieldType = MessageForms.FieldType.Shortcut,
+                Value = _config.NvQuickAccessShortcut
+            };
+
+            var enableOcField = new MessageForms.FieldDefinition
+            {
+                Label = "Enable overclocking",
+                FieldType = MessageForms.FieldType.CheckBox,
+                Value = _nvService.Config.ShowOverclocking
+            };
+
+            var enableNovideoField = new MessageForms.FieldDefinition
+            {
+                Label = "Apply Novideo sRGB settings on startup",
+                FieldType = MessageForms.FieldType.CheckBox,
+                Value = _nvService.Config.ApplyNovideoOnStartup
+            };
+
             var values = MessageForms.ShowDialog("NVIDIA controller settings", new[] {
-                new MessageForms.FieldDefinition
-                {
-                    Label = "Quick Access shortcut",
-                    FieldType = MessageForms.FieldType.Shortcut,
-                    Value = _config.NvQuickAccessShortcut
-                },
-                new MessageForms.FieldDefinition
-                {
-                    Label = "Enable overclocking",
-                    FieldType = MessageForms.FieldType.CheckBox,
-                    Value = _nvService.Config.ShowOverclocking
-                }
+                quickAccessField,
+                enableOcField,
+                enableNovideoField
             });
             if (!values.Any())
             {
                 return;
             }
 
-            var shortcut = values[0].Value.ToString();
-            var enableOc = (bool)values[1].Value;
+            var shortcut = (string)quickAccessField.Value;
 
             var clear = !string.IsNullOrEmpty(_config.NvQuickAccessShortcut);
 
@@ -1109,7 +1133,8 @@ namespace ColorControl.Services.NVIDIA
 
             Utils.RegisterShortcut(_mainHandle, SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, clear);
 
-            _nvService.Config.ShowOverclocking = enableOc;
+            _nvService.Config.ShowOverclocking = enableOcField.ValueAsBool;
+            _nvService.Config.ApplyNovideoOnStartup = enableNovideoField.ValueAsBool;
 
             UpdateInfo();
         }
@@ -1498,6 +1523,11 @@ namespace ColorControl.Services.NVIDIA
         public void UpdateInfo()
         {
             UpdateDisplayInfoItems();
+        }
+
+        private void miNvNovideo_Click(object sender, EventArgs e)
+        {
+            MainWindow.CreateAndShow();
         }
     }
 }

@@ -269,6 +269,49 @@ namespace LgTv
         wisa_speaker,
     }
 
+    public enum MasterLuminanceLevel
+    {
+        [Description("540 nits")]
+        _540nit,
+        [Description("1000 nits")]
+        _1000nit,
+        [Description("4000 nits")]
+        _4000nit
+    }
+
+    public enum MasteringColor
+    {
+        auto,
+        [Description("0")]
+        _0,
+        p3D65,
+        bt2020D65,
+        bt709D65,
+    }
+
+    public enum MasteringNits
+    {
+        auto,
+        [Description("0")]
+        _0,
+        [Description("400")]
+        _400,
+        [Description("540")]
+        _540,
+        [Description("700")]
+        _700,
+        [Description("1000")]
+        _1000,
+        [Description("2000")]
+        _2000,
+        [Description("3000")]
+        _3000,
+        [Description("4000")]
+        _4000,
+        [Description("10000")]
+        _10000,
+    }
+
     public class LgTvApi : IDisposable
     {
         public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
@@ -435,6 +478,7 @@ namespace LgTv
         {
             await SetMute(!await IsMuted());
         }
+
         public async Task<bool> IsMuted()
         {
             var requestMessage = new RequestMessage("status", "ssap://audio/getStatus");
@@ -454,6 +498,7 @@ namespace LgTv
         {
             await _connection.SendCommandAsync(new RequestMessage("", "ssap://system/turnOff"));
         }
+
         public async Task Reboot()
         {
             await ExecuteRequest("luna://com.webos.service.tv.power/reboot", new { reason = "" });
@@ -704,6 +749,10 @@ namespace LgTv
             string jsonValue;
             var valueType = value.GetType();
             var intType = typeof(int);
+            if (value.ToString().StartsWith("_"))
+            {
+                value = value.ToString().Substring(1);
+            }
             if (value.ToString().StartsWith("bool_"))
             {
                 value = bool.Parse(value.ToString().Substring(5));

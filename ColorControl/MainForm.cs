@@ -10,6 +10,7 @@ using ColorControl.Services.NVIDIA;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
+using novideo_srgb;
 using NvAPIWrapper.Display;
 using NWin32;
 using System;
@@ -48,6 +49,7 @@ namespace ColorControl
         private LgPanel _lgPanel;
 
         private ToolStripMenuItem _nvTrayMenu;
+        private ToolStripMenuItem _novideoTrayMenu;
         private ToolStripMenuItem _amdTrayMenu;
         private ToolStripMenuItem _lgTrayMenu;
         private ToolStripMenuItem _gameTrayMenu;
@@ -89,6 +91,7 @@ namespace ColorControl
             MessageForms.MainForm = this;
 
             _nvTrayMenu = new ToolStripMenuItem("NVIDIA presets");
+            _novideoTrayMenu = new ToolStripMenuItem("Novideo sRGB");
             _amdTrayMenu = new ToolStripMenuItem("AMD presets");
             _lgTrayMenu = new ToolStripMenuItem("LG presets");
             _gameTrayMenu = new ToolStripMenuItem("Game Launcher");
@@ -102,6 +105,7 @@ namespace ColorControl
 
             _trayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[] {
                     _nvTrayMenu,
+                    _novideoTrayMenu,
                     _amdTrayMenu,
                     _lgTrayMenu,
                     _gameTrayMenu,
@@ -355,7 +359,7 @@ namespace ColorControl
 
         private void InitInfo()
         {
-            _currentVersionInfo = FileVersionInfo.GetVersionInfo(Path.GetFileName(Application.ExecutablePath));
+            _currentVersionInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
 
             Text = Application.ProductName + " " + Application.ProductVersion;
 
@@ -374,6 +378,7 @@ namespace ColorControl
             lbPlugins.Items.Add("TaskScheduler by David Hall");
             lbPlugins.Items.Add("NVIDIA Profile Inspector by Orbmu2k");
             lbPlugins.Items.Add("NvidiaML wrapper by LibreHardwareMonitor");
+            lbPlugins.Items.Add("Novideo sRGB by ledoge");
         }
 
         private void OpenForm(object sender, EventArgs e)
@@ -842,6 +847,12 @@ NOTE: installing the service may cause a User Account Control popup.");
                 var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
 
                 UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
+            }
+
+            _novideoTrayMenu.Visible = _serviceManager.NvService != null && MainWindow.IsInitialized();
+            if (_novideoTrayMenu.Visible)
+            {
+                MainWindow.UpdateContextMenu(_novideoTrayMenu);
             }
 
             _amdTrayMenu.Visible = _serviceManager.AmdService != null;

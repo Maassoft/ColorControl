@@ -89,6 +89,7 @@ namespace ColorControl.Services.NVIDIA
             miNvProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
             lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
+            miNvNovideo = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvPresets.SuspendLayout();
             mnuNvSettings.SuspendLayout();
             SuspendLayout();
@@ -601,9 +602,9 @@ namespace ColorControl.Services.NVIDIA
             // mnuNvSettings
             // 
             mnuNvSettings.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuNvSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvProfileInspector, miNvSettings });
+            mnuNvSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvProfileInspector, miNvNovideo, miNvSettings });
             mnuNvSettings.Name = "mnuLgButtons";
-            mnuNvSettings.Size = new System.Drawing.Size(202, 48);
+            mnuNvSettings.Size = new System.Drawing.Size(202, 92);
             // 
             // miNvProfileInspector
             // 
@@ -618,6 +619,13 @@ namespace ColorControl.Services.NVIDIA
             miNvSettings.Size = new System.Drawing.Size(201, 22);
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
+            // 
+            // miNvNovideo
+            // 
+            miNvNovideo.Name = "miNvNovideo";
+            miNvNovideo.Size = new System.Drawing.Size(201, 22);
+            miNvNovideo.Text = "Novideo sRGB";
+            miNvNovideo.Click += miNvNovideo_Click;
             // 
             // NvPanel
             // 
@@ -648,7 +656,6 @@ namespace ColorControl.Services.NVIDIA
             Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             Name = "NvPanel";
             Size = new System.Drawing.Size(1114, 539);
-            Load += RemoteControlPanel_Load;
             mnuNvPresets.ResumeLayout(false);
             mnuNvSettings.ResumeLayout(false);
             ResumeLayout(false);
@@ -716,5 +723,6 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.TextBox edtNvOverclock;
         private System.Windows.Forms.ToolStripMenuItem mnuNvOverclocking;
         private System.Windows.Forms.ToolStripMenuItem miNvOverclockingIncluded;
+        private System.Windows.Forms.ToolStripMenuItem miNvNovideo;
     }
 }

@@ -1,0 +1,22 @@
+﻿<Window x:Class="novideo_srgb.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        Title="About"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        SnapsToDevicePixels="True">
+    <StackPanel Margin="6">
+        <TextBlock FontSize="15" HorizontalAlignment="Center" TextAlignment="Center">
+            novideo_srgb v4.0 by ledoge
+        </TextBlock>
+        <TextBlock HorizontalAlignment="Center" TextAlignment="Center">
+            Licensed under GPLv3 <LineBreak /> <LineBreak />
+            Source code and releases hosted at <LineBreak />
+            <Hyperlink RequestNavigate="OnRequestNavigate" NavigateUri="https://github.com/ledoge/novideo_srgb">https://github.com/ledoge/novideo_srgb</Hyperlink>
+        </TextBlock>
+    </StackPanel>
+</Window>

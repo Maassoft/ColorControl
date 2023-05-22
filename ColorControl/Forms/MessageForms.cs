@@ -150,21 +150,27 @@ namespace ColorControl.Forms
             var boxes = new List<Control>();
             var counter = 1;
             const int DefaultLeft = 20;
+            var currentLeft = DefaultLeft;
+
+            var columns = fields.Count() > 10 ? 2 : 1;
+            var currentColumn = 0;
 
             foreach (var field in fields)
             {
+                var lastTop = top;
+
                 var label = field.Label;
 
                 if (field.FieldType != FieldType.CheckBox)
                 {
-                    var textLabel = new Label() { Left = DefaultLeft, Top = top, Text = label, AutoSize = true };
+                    var textLabel = new Label() { Left = currentLeft, Top = top, Text = label, AutoSize = true };
                     top += 20;
                     groupBox.Controls.Add(textLabel);
                 }
 
                 if (field.SubLabel != null)
                 {
-                    var textSubLabel = new Label() { Left = DefaultLeft, Top = top, Text = field.SubLabel, AutoSize = true };
+                    var textSubLabel = new Label() { Left = currentLeft, Top = top, Text = field.SubLabel, AutoSize = true };
                     top += 20;
                     groupBox.Controls.Add(textSubLabel);
                 }
@@ -174,7 +180,7 @@ namespace ColorControl.Forms
                 switch (field.FieldType)
                 {
                     case FieldType.Text:
-                        var textBox = new MaskedTextBox() { Left = DefaultLeft, Top = top, Width = 400 };
+                        var textBox = new MaskedTextBox() { Left = currentLeft, Top = top, Width = 400 };
 
                         if (label.Contains("Ip-address"))
                         {
@@ -194,7 +200,7 @@ namespace ColorControl.Forms
                     case FieldType.Shortcut:
                         var shortcutTextBox = new TextBox()
                         {
-                            Left = DefaultLeft,
+                            Left = currentLeft,
                             Top = top,
                             Width = 200,
                             Name = $"edtShortcut_{counter}",
@@ -213,7 +219,7 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.Numeric:
-                        var numericEdit = new NumericUpDown() { Left = DefaultLeft, Top = top, Width = 200 };
+                        var numericEdit = new NumericUpDown() { Left = currentLeft, Top = top, Width = 200 };
 
                         if (field.MinValue != field.MaxValue)
                         {
@@ -232,7 +238,7 @@ namespace ColorControl.Forms
                     case FieldType.DropDown:
                         var comboBox = new ComboBox
                         {
-                            Left = DefaultLeft,
+                            Left = currentLeft,
                             Top = top,
                             Width = 400,
                             DropDownStyle = ComboBoxStyle.DropDownList
@@ -258,7 +264,7 @@ namespace ColorControl.Forms
 
                         var checkBox = new CheckBox
                         {
-                            Left = DefaultLeft,
+                            Left = currentLeft,
                             Top = top,
                             AutoSize = true,
                             Text = label
@@ -272,7 +278,7 @@ namespace ColorControl.Forms
                     case FieldType.Flags:
                         var checkedListBox = new CheckedListBox
                         {
-                            Left = DefaultLeft,
+                            Left = currentLeft,
                             Top = top,
                             Width = 400,
                             Height = 100,
@@ -300,7 +306,7 @@ namespace ColorControl.Forms
                         break;
 
                     case FieldType.TrackBar:
-                        var trackBar = new TrackBar { Left = DefaultLeft, Top = top, Width = 300 };
+                        var trackBar = new TrackBar { Left = currentLeft, Top = top, Width = 300 };
                         var trackBarEdit = new NumericUpDown() { Left = trackBar.Left + trackBar.Width + 10, Top = top + 10, Width = 90 };
 
                         trackBarEdit.ValueChanged += prompt.TrackBarEdit_ValueChanged;
@@ -349,14 +355,26 @@ namespace ColorControl.Forms
                         continue;
                 }
 
-                top += 30;
+                if (currentColumn + 1 < columns)
+                {
+                    currentColumn++;
+                    top = lastTop;
+                    currentLeft = control.Left + control.Width + DefaultLeft;
+                }
+                else
+                {
+                    top += 30;
+                    currentColumn = 0;
+                    currentLeft = DefaultLeft;
+                }
+
                 groupBox.Controls.Add(control);
                 boxes.Add(control);
                 control.Tag = field;
                 counter++;
             }
 
-            var maxWidth = boxes.Max(c => c.Width + c.Left) + 20;
+            var maxWidth = boxes.Max(c => c.Width + c.Left) + 36;
 
             if (groupBox.Width < maxWidth)
             {

@@ -28,6 +28,7 @@ namespace ColorControl.Services.LG
             public bool Advanced { get; set; }
             public ModelYear FromModelYear { get; set; } = ModelYear.None;
             public ModelYear ToModelYear { get; set; } = ModelYear.None;
+            public List<string> ValueLabels { get; set; }
         }
 
         public class LgDevicePictureSettings
@@ -69,6 +70,8 @@ namespace ColorControl.Services.LG
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
+
+        private static List<string> IreValueLabels = new() { "IRE 2.5", "IRE 5", "IRE 7.5", "IRE 10", "IRE 15", "IRE 20", "IRE 25", "IRE 30", "IRE 35", "IRE 40", "IRE 45", "IRE 50", "IRE 55", "IRE 60", "IRE 65", "IRE 70", "IRE 75", "IRE 80", "IRE 85", "IRE 90", "IRE 95", "IRE 100" };
 
         public string Name { get; private set; }
         public string IpAddress { get; private set; }
@@ -171,6 +174,7 @@ namespace ColorControl.Services.LG
             TriggersEnabled = true;
 
             AddInvokableAction("WOL", WakeAction);
+            AddInvokableAction("Reboot", RebootAction);
             AddGenericPictureAction("backlight", minValue: 0, maxValue: 100);
             AddGenericPictureAction("brightness", minValue: 0, maxValue: 100, title: "Brightness/Black Level");
             AddGenericPictureAction("contrast", minValue: 0, maxValue: 100);
@@ -214,47 +218,35 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("motionPro", typeof(OffToOn), title: "Motion Pro");
             AddGenericPictureAction("realCinema", typeof(OffToOn), title: "Real Cinema");
 
-            AddGenericPictureAction("uhdDeepColorHDMI1", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("uhdDeepColorHDMI2", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("uhdDeepColorHDMI3", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("uhdDeepColorHDMI4", typeof(OffToOn), category: "other");
+            AddHdmiPictureAction("uhdDeepColorHDMI", typeof(OffToOn), category: "other");
             AddGenericPictureAction("lowLevelAdjustment", minValue: -30, maxValue: 30, category: "other", title: "Fine Tune Dark Areas", fromModelYear: ModelYear.Series2019);
             AddGenericPictureAction("blackStabilizer", minValue: -30, maxValue: 30, category: "other", title: "Black Stabilizer", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("whiteStabilizer", minValue: -30, maxValue: 30, category: "other", title: "White Stabilizer", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("blueLight", typeof(BlueLight), category: "other", title: "Reduce Blue Light", fromModelYear: ModelYear.Series2021);
-            AddGenericPictureAction("gameMode_hdmi1", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI1", fromModelYear: ModelYear.Series2021);
-            AddGenericPictureAction("gameMode_hdmi2", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI2", fromModelYear: ModelYear.Series2021);
-            AddGenericPictureAction("gameMode_hdmi3", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI3", fromModelYear: ModelYear.Series2021);
-            AddGenericPictureAction("gameMode_hdmi4", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI4", fromModelYear: ModelYear.Series2021);
+
+            AddHdmiPictureAction("gameMode_hdmi", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI1", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("gameOptimization", typeof(OffToOn), category: "other", title: "VRR & G-Sync", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("inputOptimization", typeof(InputOptimization), category: "other", title: "Prevent Input Delay(Input Lag)", fromModelYear: ModelYear.Series2021);
-            AddGenericPictureAction("gameOptimizationHDMI1", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("gameOptimizationHDMI2", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("gameOptimizationHDMI3", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("gameOptimizationHDMI4", typeof(OffToOn), category: "other");
+            AddHdmiPictureAction("gameOptimizationHDMI", typeof(OffToOn), category: "other");
             AddGenericPictureAction("freesync", typeof(OffToOn), category: "other", title: "AMD FreeSync Premium", fromModelYear: ModelYear.Series2020);
-            AddGenericPictureAction("freesyncOLEDHDMI1", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
-            AddGenericPictureAction("freesyncOLEDHDMI2", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
-            AddGenericPictureAction("freesyncOLEDHDMI3", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
-            AddGenericPictureAction("freesyncOLEDHDMI4", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+            AddHdmiPictureAction("freesyncOLEDHDMI", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
 
-            AddGenericPictureAction("444BypassHDMI1", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI1", fromModelYear: ModelYear.Series2023);
-            AddGenericPictureAction("444BypassHDMI2", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI2", fromModelYear: ModelYear.Series2023);
-            AddGenericPictureAction("444BypassHDMI3", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI3", fromModelYear: ModelYear.Series2023);
-            AddGenericPictureAction("444BypassHDMI4", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMI4", fromModelYear: ModelYear.Series2023);
+            AddHdmiPictureAction("444BypassHDMI", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMIX", fromModelYear: ModelYear.Series2023);
             AddGenericPictureAction("444BypassHDMINone", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through Non-HDMI", fromModelYear: ModelYear.Series2023);
             AddGenericPictureAction("qmsVrr", typeof(OffToOn), category: "other", title: "QMS-VRR", fromModelYear: ModelYear.Series2023);
 
-            //AddGenericPictureAction("freesyncSupport", typeof(OffToOn), category: "other");
-            AddGenericPictureAction("hdmiPcMode_hdmi1", typeof(FalseToTrue), category: "other");
-            AddGenericPictureAction("hdmiPcMode_hdmi2", typeof(FalseToTrue), category: "other");
-            AddGenericPictureAction("hdmiPcMode_hdmi3", typeof(FalseToTrue), category: "other");
-            AddGenericPictureAction("hdmiPcMode_hdmi4", typeof(FalseToTrue), category: "other");
-            AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50, numberOfValues: 22);
-            AddGenericPictureAction("whiteBalanceBlue", minValue: -50, maxValue: 50, numberOfValues: 22);
-            AddGenericPictureAction("whiteBalanceGreen", minValue: -50, maxValue: 50, numberOfValues: 22);
-            AddGenericPictureAction("whiteBalanceRed", minValue: -50, maxValue: 50, numberOfValues: 22);
-            //AddGenericPictureAction("wb20PointsGammaValue", minValue: -50, maxValue: 50);
+            AddGenericPictureAction("masterLuminanceLevel", typeof(MasterLuminanceLevel), category: "other");
+            AddHdmiPictureAction("colorimetryHDMI", typeof(MasteringColor), category: "other", fromModelYear: ModelYear.Series2020);
+            AddHdmiPictureAction("masteringColorHDMI", typeof(MasteringColor), category: "other", fromModelYear: ModelYear.Series2020);
+            AddHdmiPictureAction("masteringPeakHDMI", typeof(MasteringNits), category: "other", fromModelYear: ModelYear.Series2020);
+            AddHdmiPictureAction("maxCLLHDMI", typeof(MasteringNits), category: "other", fromModelYear: ModelYear.Series2020);
+            AddHdmiPictureAction("maxFALLHDMI", typeof(MasteringNits), category: "other", fromModelYear: ModelYear.Series2020);
+
+            AddHdmiPictureAction("hdmiPcMode_hdmi", typeof(FalseToTrue), category: "other");
+            AddGenericPictureAction("adjustingLuminance", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
+            AddGenericPictureAction("whiteBalanceBlue", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
+            AddGenericPictureAction("whiteBalanceGreen", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
+            AddGenericPictureAction("whiteBalanceRed", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
             AddInvokableAction("turnScreenOff", TurnScreenOffAction);
             AddInvokableAction("turnScreenOn", TurnScreenOnAction);
 
@@ -307,7 +299,17 @@ namespace ColorControl.Services.LG
             _invokableActions.Add(action);
         }
 
-        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1, ModelYear fromModelYear = ModelYear.None)
+        private void AddHdmiPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1, ModelYear fromModelYear = ModelYear.None)
+        {
+            for (var i = 1; i <= 4; i++)
+            {
+                var replacedTitle = title?.Replace("HDMIX", $"HDMI{i}");
+
+                AddGenericPictureAction($"{name}{i}", type, minValue, maxValue, category, replacedTitle, numberOfValues, fromModelYear);
+            }
+        }
+
+        private void AddGenericPictureAction(string name, Type type = null, decimal minValue = 0, decimal maxValue = 0, string category = "picture", string title = null, int numberOfValues = 1, ModelYear fromModelYear = ModelYear.None, List<string> valueLabels = null)
         {
             var action = new InvokableAction
             {
@@ -319,7 +321,8 @@ namespace ColorControl.Services.LG
                 NumberOfValues = numberOfValues,
                 Category = category,
                 Title = title == null ? Utils.FirstCharUpperCase(name) : title,
-                FromModelYear = fromModelYear
+                FromModelYear = fromModelYear,
+                ValueLabels = valueLabels
             };
 
             _invokableActions.Add(action);
@@ -1076,6 +1079,15 @@ namespace ColorControl.Services.LG
             await CheckConnectionAsync();
 
             await _lgTvApi.TurnScreenOn();
+
+            return true;
+        }
+
+        private async Task<bool> RebootAction(Dictionary<string, object> _)
+        {
+            await CheckConnectionAsync();
+
+            await _lgTvApi.Reboot();
 
             return true;
         }

@@ -497,6 +497,21 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return null; // could also return string.Empty
         }
 
+        public static string RemoveFirstUnderscore(this string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            if (text[0] == '_')
+            {
+                return text.Substring(1);
+            }
+
+            return text;
+        }
+
         public static string GetEnumNameByDescription(Type enumType, string description)
         {
             if (enumType.BaseType == typeof(Enum))
@@ -505,7 +520,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
                 {
                     if (description.Equals(GetDescription(enumType, enumValue as IConvertible), StringComparison.Ordinal))
                     {
-                        return Enum.GetName(enumType, enumValue);
+                        return Enum.GetName(enumType, enumValue).RemoveFirstUnderscore();
                     }
                 }
             }
@@ -879,7 +894,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
         public static FileInfo SelectFile(string ext = "*.exe", string filter = "Application EXE Name|*.exe|Application Absolute Path|*.exe")
         {
-            var openDialog = new OpenFileDialog();
+            var openDialog = new System.Windows.Forms.OpenFileDialog();
             openDialog.DefaultExt = ext;
             openDialog.Filter = filter;
 

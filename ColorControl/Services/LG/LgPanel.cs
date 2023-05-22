@@ -576,7 +576,7 @@ namespace ColorControl.Services.LG
 
                         fields.AddRange(array.Select(i => new MessageForms.FieldDefinition
                         {
-                            Label = "Value for " + i,
+                            Label = "Value for " + (action.ValueLabels != null ? action.ValueLabels[i] : i.ToString()),
                             FieldType = MessageForms.FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
