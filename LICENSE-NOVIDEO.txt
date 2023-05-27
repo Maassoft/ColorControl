@@ -1,0 +1,3 @@
+ColorControl (this application) contains customized code of the app "Novideo sRGB" by ledoge (https://github.com/ledoge/novideo_srgb)
+
+The included license of ColorControl (GNU General Public License v3.0) covers all rights.
