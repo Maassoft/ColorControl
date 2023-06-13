@@ -10,7 +10,6 @@ using NStandard;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -724,14 +723,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
 
             var preset = GetSelectedLgPreset();
 
-            if (preset == null || string.IsNullOrEmpty(text))
-            {
-                edtShortcutLg.ForeColor = SystemColors.WindowText;
-            }
-            else
-            {
-                //edtShortcutLg.ForeColor = ShortCutExists(text, preset.id) ? Color.Red : SystemColors.WindowText;
-            }
+            FormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
         }
 
         private async void btnLgAddDevice_Click(object sender, EventArgs e)
@@ -747,7 +739,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 Enabled = false;
                 try
                 {
-                    await device.TestConnection();
+                    result = await device.TestConnection();
                 }
                 finally
                 {
@@ -1185,7 +1177,7 @@ Do you want to continue?";
                 new()
                 {
                     FieldType = MessageForms.FieldType.Numeric,
-                    Label = "Delay when shutting down/restarting PC (milli seconds).",
+                    Label = "Delay when shutting down/restarting PC (milliseconds).",
                     SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
                     MinValue = 0,
                     MaxValue = 5000,

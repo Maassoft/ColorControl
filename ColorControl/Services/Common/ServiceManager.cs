@@ -3,6 +3,7 @@ using ColorControl.Services.AMD;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Services.Samsung;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace ColorControl.Services.Common
         internal LgService LgService { get; set; }
         internal AmdService AmdService { get; set; }
         internal GameService GameService { get; set; }
+        internal SamsungService SamsungService { get; set; }
 
         public async Task<bool> HandleExternalServiceAsync(string serviceName, string[] parameters)
         {
@@ -58,6 +60,7 @@ namespace ColorControl.Services.Common
             AmdService?.GlobalSave();
             LgService?.GlobalSave();
             GameService?.GlobalSave();
+            SamsungService?.GlobalSave();
         }
     }
 }

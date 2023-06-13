@@ -309,6 +309,11 @@ namespace ColorControl.Services.NVIDIA
                 SetHDRState(display, newHdrEnabled);
             }
 
+            if (hdrEnabled)
+            {
+                //CCD.SetSDRWhiteLevel(1000, display.Name);
+            }
+
             if (preset.applyRefreshRate || preset.applyResolution)
             {
                 if (!SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true))
@@ -619,7 +624,7 @@ namespace ColorControl.Services.NVIDIA
                 resolutionHeight = (uint)desktopRect.Height;
             }
 
-            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
+            var portrait = IsDisplayInPortraitMode(display);
 
             return SetRefreshRateInternal(display.Name, (int)refreshRate, portrait, (int)resolutionWidth, (int)resolutionHeight, updateRegistry);
         }
@@ -637,10 +642,22 @@ namespace ColorControl.Services.NVIDIA
                 return new List<uint>();
             }
 
-            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
+            var portrait = IsDisplayInPortraitMode(display);
             var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
 
             return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+        }
+
+        private bool IsDisplayInPortraitMode(NvAPIWrapper.Display.Display display)
+        {
+            try
+            {
+                return new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public List<DEVMODEA> GetAvailableResolutions(NvPreset preset = null)

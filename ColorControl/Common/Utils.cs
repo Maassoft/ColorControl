@@ -388,6 +388,22 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return value;
         }
 
+        public static void SetBrightness(IntPtr handle)
+        {
+            var displays = Windows.Graphics.Display.DisplayServices.FindAll();
+
+            var folderPicker = new Windows.Storage.Pickers.FolderPicker();
+
+            // Initialize the folder picker with the window handle (HWND).
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, handle);
+
+            folderPicker.FileTypeFilter.Add("*");
+            var folder = folderPicker.PickSingleFolderAsync().GetAwaiter();
+
+            //var info = Windows.Graphics.Display.DisplayInformation.GetForCurrentView();
+            //var colorInfo = info.GetAdvancedColorInfo();
+        }
+
         public static async Task<List<PnpDev>> GetPnpDevices(string deviceName)
         {
             var devices = new List<PnpDev>();
@@ -698,11 +714,22 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             if (!WinApi.AttachConsole(-1))
             {
                 WinApi.AllocConsole();
+
+                SetConsoleWriter();
+
                 return true;
             }
             ConsoleOpened = true;
 
+            SetConsoleWriter();
+
             return false;
+        }
+
+        private static void SetConsoleWriter()
+        {
+            var writer = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+            Console.SetOut(writer);
         }
 
         public static bool CloseConsole()

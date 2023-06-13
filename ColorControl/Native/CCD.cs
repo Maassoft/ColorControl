@@ -8,6 +8,8 @@ namespace ColorControl
     // This class takes care of wrapping "Connecting and Configuring Displays(CCD) Win32 API"
     internal static class CCD
     {
+        private static bool? IsHDRActive = null;
+
         public enum DisplayTopology
         {
             Internal,
@@ -59,7 +61,7 @@ namespace ColorControl
             }
         }
 
-        public static void SetHDRState(bool enabled, string displayName = null)
+        public static void SetHDRState(bool enabled, string displayName = null, float? SDRWhiteLevelInNits = null)
         {
             uint pathCount, modeCount;
 
@@ -76,21 +78,7 @@ namespace ColorControl
                 {
                     foreach (var path in pathsArray)
                     {
-                        // get display name
-                        var info = new DISPLAYCONFIG_SOURCE_DEVICE_NAME();
-                        info.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
-                        info.header.size = Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DEVICE_NAME>();
-                        info.header.adapterId = path.sourceInfo.adapterId;
-                        info.header.id = path.sourceInfo.id;
-
-                        err = NativeMethods.DisplayConfigGetDeviceInfo(ref info);
-                        if (err != NativeConstants.ERROR_SUCCESS)
-                        {
-                            break;
-                        }
-
-                        var deviceName = info.viewGdiDeviceName;
-                        if (displayName != null && !EqualDisplayNames(deviceName, displayName))
+                        if (!MatchDisplayNames(path, displayName))
                         {
                             continue;
                         }
@@ -98,12 +86,12 @@ namespace ColorControl
                         var setpacket = new DISPLAYCONFIG_SET_ADVANCED_COLOR_INFO();
                         setpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
                         setpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
-                        setpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_INFO>(); ;
+                        setpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_INFO>();
 
                         var requestpacket = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
                         requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
                         requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
-                        requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>(); ;
+                        requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
 
                         for (int i = 0; i < modeCount; i++)
                         {
@@ -114,23 +102,186 @@ namespace ColorControl
                                 requestpacket.header.adapterId = modesArray[i].adapterId;
                                 requestpacket.header.id = modesArray[i].id;
 
-                                if (NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket) == NativeConstants.ERROR_SUCCESS)
+                                if (NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket) == NativeConstants.ERROR_SUCCESS && requestpacket.advancedColorSupported)
                                 {
-                                    if (requestpacket.advancedColorSupported)
-                                    {
-                                        setpacket.enableAdvancedColor = enabled ? 1U : 0;
-                                        NativeMethods.DisplayConfigSetDeviceInfo(ref setpacket);
-                                    }
+                                    setpacket.enableAdvancedColor = enabled ? 1U : 0;
+                                    NativeMethods.DisplayConfigSetDeviceInfo(ref setpacket);
+
+                                    IsHDRActive = enabled;
+
+                                    //if (enabled && SDRWhiteLevelInNits.HasValue)
+                                    //{
+                                    //    SetSDRWhiteLevel(modesArray[i], SDRWhiteLevelInNits.Value);
+                                    //}
                                 }
                             }
                         }
                     }
                 }
             }
-            
+
             if (err != NativeConstants.ERROR_SUCCESS)
             {
                 throw new Win32Exception(err);
+            }
+        }
+
+        public static void SetSDRWhiteLevel(float SDRWhiteLevelInNits, string displayName = null)
+        {
+            uint pathCount, modeCount;
+
+            var err = NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.OnlyActivePaths, out pathCount, out modeCount);
+            if (err == NativeConstants.ERROR_SUCCESS)
+            {
+                var pathsArray = new DisplayConfigPathInfo[pathCount];
+                var modesArray = new DisplayConfigModeInfo[modeCount];
+
+                DisplayConfigTopologyId displayTopology;
+
+                err = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.DatabaseCurrent, ref pathCount, pathsArray, ref modeCount, modesArray, out displayTopology);
+                if (err == NativeConstants.ERROR_SUCCESS)
+                {
+                    foreach (var path in pathsArray)
+                    {
+                        if (!MatchDisplayNames(path, displayName))
+                        {
+                            continue;
+                        }
+
+                        var requestpacket = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+                        requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                        requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+                        requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
+
+                        for (int i = 0; i < modeCount; i++)
+                        {
+                            if (modesArray[i].infoType == DisplayConfigModeInfoType.Target)
+                            {
+                                requestpacket.header.adapterId = modesArray[i].adapterId;
+                                requestpacket.header.id = modesArray[i].id;
+
+                                err = NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket);
+
+                                if (err == NativeConstants.ERROR_SUCCESS && requestpacket.advancedColorSupported)
+                                {
+                                    SetSDRWhiteLevel(modesArray[i], SDRWhiteLevelInNits);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (err != NativeConstants.ERROR_SUCCESS)
+            {
+                throw new Win32Exception(err);
+            }
+        }
+
+        public static bool IsHDREnabled(string displayName = null)
+        {
+            if (IsHDRActive.HasValue)
+            {
+                return IsHDRActive.Value;
+            }
+
+            uint pathCount, modeCount;
+
+            var err = NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.OnlyActivePaths, out pathCount, out modeCount);
+            if (err == NativeConstants.ERROR_SUCCESS)
+            {
+                var pathsArray = new DisplayConfigPathInfo[pathCount];
+                var modesArray = new DisplayConfigModeInfo[modeCount];
+
+                err = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.DatabaseCurrent, ref pathCount, pathsArray, ref modeCount, modesArray, out _);
+                if (err == NativeConstants.ERROR_SUCCESS)
+                {
+                    foreach (var path in pathsArray)
+                    {
+                        if (!MatchDisplayNames(path, displayName))
+                        {
+                            continue;
+                        }
+
+                        var requestpacket = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+                        requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                        requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+                        requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>();
+
+                        for (int i = 0; i < modeCount; i++)
+                        {
+                            if (modesArray[i].infoType == DisplayConfigModeInfoType.Target)
+                            {
+                                requestpacket.header.adapterId = modesArray[i].adapterId;
+                                requestpacket.header.id = modesArray[i].id;
+
+                                err = NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket);
+
+                                IsHDRActive = err == NativeConstants.ERROR_SUCCESS && requestpacket.advancedColorEnabled;
+
+                                return IsHDRActive.Value;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool MatchDisplayNames(DisplayConfigPathInfo path, string displayName)
+        {
+            if (displayName == null)
+            {
+                return true;
+            }
+
+            // get display name
+            var info = new DISPLAYCONFIG_SOURCE_DEVICE_NAME();
+            info.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+            info.header.size = Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DEVICE_NAME>();
+            info.header.adapterId = path.sourceInfo.adapterId;
+            info.header.id = path.sourceInfo.id;
+
+            var err = NativeMethods.DisplayConfigGetDeviceInfo(ref info);
+            if (err != NativeConstants.ERROR_SUCCESS)
+            {
+                return false;
+            }
+
+            var deviceName = info.viewGdiDeviceName;
+            if (!EqualDisplayNames(deviceName, displayName))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void SetSDRWhiteLevel(DisplayConfigModeInfo displayConfigModeInfo, float value)
+        {
+            var setpacket = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
+            setpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+            setpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL;
+            setpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
+
+            var requestpacket = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
+            requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+            requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+            requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
+            requestpacket.header.adapterId = displayConfigModeInfo.adapterId;
+            requestpacket.header.id = displayConfigModeInfo.id;
+
+            var error = NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket);
+
+            if (error == NativeConstants.ERROR_SUCCESS)
+            {
+                setpacket.header.adapterId = displayConfigModeInfo.adapterId;
+                setpacket.header.id = displayConfigModeInfo.id;
+                setpacket.SDRWhiteLevel = 2000;
+
+                error = NativeMethods.DisplayConfigSetDeviceInfo(ref setpacket);
+
             }
         }
 
@@ -162,6 +313,7 @@ namespace ColorControl
             DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO = 9,
             DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE = 10,
             DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL = 11,
+            DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL = 12,
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -506,6 +658,13 @@ namespace ColorControl
             public uint enableAdvancedColor;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DISPLAYCONFIG_SDR_WHITE_LEVEL
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public uint SDRWhiteLevel;
+        }
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct DISPLAYCONFIG_TARGET_DEVICE_NAME_FLAGS
         {
@@ -559,6 +718,12 @@ namespace ColorControl
 
             [DllImport("user32")]
             public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DEVICE_NAME requestPacket);
+
+            [DllImport("user32")]
+            public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SDR_WHITE_LEVEL requestPacket);
+
+            [DllImport("user32")]
+            public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SDR_WHITE_LEVEL setPacket);
         }
     }
 }

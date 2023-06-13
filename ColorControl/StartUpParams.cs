@@ -13,6 +13,7 @@ namespace ColorControl
         public const string ExecuteNvidiaPresetParam = "--nvpreset";
         public const string ExecuteAmdPresetParam = "--amdpreset";
         public const string ExecuteLgPresetParam = "--lgpreset";
+        public const string ExecuteSamsungPresetParam = "--sampreset";
         public const string NoGuiParam = "--nogui";
         public const string EnableAutoStartParam = "--enable-auto-start";
         public const string DisableAutoStartParam = "--disable-auto-start";
@@ -36,6 +37,8 @@ namespace ColorControl
         public string AmdPresetIdOrName { get; private set; }
         public bool ExecuteLgPreset { get; private set; }
         public string LgPresetName { get; private set; }
+        public bool ExecuteSamsungPreset { get; private set; }
+        public string SamsungPresetName { get; private set; }
         public bool NoGui { get; set; }
         public bool EnableAutoStart { get; private set; }
         public TaskRunLevel AutoStartRunLevel { get; private set; } = TaskRunLevel.LUA;
@@ -83,6 +86,11 @@ namespace ColorControl
                         case ExecuteLgPresetParam:
                             {
                                 settings.LgPresetName = arg;
+                                break;
+                            }
+                        case ExecuteSamsungPresetParam:
+                            {
+                                settings.SamsungPresetName = arg;
                                 break;
                             }
                         case SetProcessAffinityParam:
@@ -170,6 +178,12 @@ namespace ColorControl
                         {
                             settings.ExecuteLgPreset = true;
                             parseNameParam = ExecuteLgPresetParam;
+                            break;
+                        }
+                    case ExecuteSamsungPresetParam:
+                        {
+                            settings.ExecuteSamsungPreset = true;
+                            parseNameParam = ExecuteSamsungPresetParam;
                             break;
                         }
                     case NoGuiParam:

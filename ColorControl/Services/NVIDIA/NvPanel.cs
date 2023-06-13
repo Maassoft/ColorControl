@@ -946,14 +946,7 @@ namespace ColorControl.Services.NVIDIA
 
             var preset = GetSelectedNvPreset();
 
-            if (preset == null || string.IsNullOrEmpty(text))
-            {
-                edtShortcut.ForeColor = SystemColors.WindowText;
-            }
-            else
-            {
-                //edtShortcut.ForeColor = ShortCutExists(text, preset.id) ? Color.Red : SystemColors.WindowText;
-            }
+            FormUtils.UpdateShortcutTextBox(edtShortcut, preset);
         }
 
         private void miNvResolutionIncluded_Click(object sender, EventArgs e)

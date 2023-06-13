@@ -44,6 +44,7 @@ namespace ColorControl
         public bool UseDedicatedElevatedProcess { get; set; }
         public ElevationMethod ElevationMethod { get; set; }
         public bool ElevationMethodAsked { get; set; }
+        public int ProcessMonitorPollingInterval { get; set; }
         public List<Module> Modules { get; set; }
 
         public Config()
@@ -59,6 +60,7 @@ namespace ColorControl
             UseDedicatedElevatedProcess = false;
             ElevationMethod = ElevationMethod.None;
             ElevationMethodAsked = false;
+            ProcessMonitorPollingInterval = 1000;
             LgPresetsSortState = new ListViewSortState();
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();

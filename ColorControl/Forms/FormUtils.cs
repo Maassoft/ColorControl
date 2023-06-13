@@ -680,6 +680,18 @@ namespace ColorControl.Forms
             sortState.SortOrder = sorter.Order;
             sortState.SortIndex = sorter.SortColumn;
         }
+
+        public static void UpdateShortcutTextBox(TextBox edtShortcut, PresetBase preset)
+        {
+            if (preset == null || string.IsNullOrEmpty(edtShortcut.Text))
+            {
+                edtShortcut.ForeColor = CurrentForeColor;
+            }
+            else
+            {
+                //edtShortcutLg.ForeColor = ShortCutExists(text, preset.id) ? Color.Red : SystemColors.WindowText;
+            }
+        }
     }
 
     public class EnumComboBoxItem

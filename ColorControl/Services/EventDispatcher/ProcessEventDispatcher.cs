@@ -1,5 +1,6 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
+using ColorControl.Services.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,9 +32,12 @@ namespace ColorControl.Services.EventDispatcher
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         private ProcessChangedEventArgs MonitorContext { get; set; }
+        private AppContextProvider _appContextProvider { get; }
 
-        public ProcessEventDispatcher()
+        public ProcessEventDispatcher(AppContextProvider appContextProvider)
         {
+            _appContextProvider = appContextProvider;
+
             IsRunning = true;
 
             //Task.Run(async () => await CheckProcesses());
@@ -53,7 +57,7 @@ namespace ColorControl.Services.EventDispatcher
 
             while (IsRunning)
             {
-                await Task.Delay(1000);
+                await Task.Delay(_appContextProvider.GetAppContext().Config.ProcessMonitorPollingInterval);
 
                 if (!HasHandlers(Event_ProcessChanged))
                 {

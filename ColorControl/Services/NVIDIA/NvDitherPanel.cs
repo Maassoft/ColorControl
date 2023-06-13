@@ -42,6 +42,7 @@ namespace ColorControl.Services.NVIDIA
             var primaryDisplayInfo = displays.FirstOrDefault(d => d.Display == primaryDisplay);
             var index = primaryDisplayInfo != null ? displays.IndexOf(primaryDisplayInfo) : 0;
 
+            cbxDitheringDisplay.Items.Clear();
             cbxDitheringDisplay.Items.AddRange(displays.ToArray());
 
             if (cbxDitheringDisplay.SelectedIndex == -1)

@@ -9,7 +9,7 @@ namespace ColorControl.Services.GameLauncher
 {
     class GameService : ServiceBase<GamePreset>
     {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        //private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public override string ServiceName => "Game";
 

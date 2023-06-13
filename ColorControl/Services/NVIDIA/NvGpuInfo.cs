@@ -192,6 +192,11 @@ namespace ColorControl.Services.NVIDIA
 
                 var powerLimits = GetPowerLimits();
 
+                if (!DefaultPowerInMilliWatts.HasValue)
+                {
+                    return;
+                }
+
                 MinPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item1);
                 MaxPowerInMilliWatts = (int)((decimal)DefaultPowerInMilliWatts / 100000 * powerLimits.Item2);
             }
@@ -245,10 +250,13 @@ namespace ColorControl.Services.NVIDIA
         {
             if (DefaultPowerInMilliWatts.HasValue)
             {
-                var powerInPCM = GPU.PowerTopologyInformation.PowerTopologyEntries.FirstOrDefault(e => e.Domain == PowerTopologyDomain.Board);
-                var power = (uint)((decimal)powerInPCM.PowerUsageInPCM / 100000 * DefaultPowerInMilliWatts);
+                return Logger.Swallow(() =>
+                {
+                    var powerInPCM = GPU.PowerTopologyInformation.PowerTopologyEntries.FirstOrDefault(e => e.Domain == PowerTopologyDomain.Board);
+                    var power = (uint)((decimal)powerInPCM.PowerUsageInPCM / 100000 * DefaultPowerInMilliWatts);
 
-                return power;
+                    return power;
+                });
             }
 
             return 0;

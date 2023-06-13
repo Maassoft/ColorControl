@@ -1,0 +1,42 @@
+﻿namespace ColorControl.Services.Samsung
+{
+    public enum ButtonType
+    {
+        KEY_POWER,
+        KEY_UP,
+        KEY_DOWN,
+        KEY_LEFT,
+        KEY_RIGHT,
+        KEY_CHUP,
+        KEY_CHDOWN,
+        KEY_ENTER,
+        KEY_RETURN,
+        KEY_CH_LIST,
+        KEY_MENU,
+        KEY_SOURCE,
+        KEY_GUIDE,
+        KEY_TOOLS,
+        KEY_INFO,
+        KEY_RED,
+        KEY_GREEN,
+        KEY_YELLOW,
+        KEY_BLUE,
+        KEY_PANNEL_CHDOWN,
+        KEY_VOLUP,
+        KEY_VOLDOWN,
+        KEY_MUTE,
+        KEY_0,
+        KEY_1,
+        KEY_2,
+        KEY_3,
+        KEY_4,
+        KEY_5,
+        KEY_6,
+        KEY_7,
+        KEY_8,
+        KEY_9,
+        KEY_DTV,
+        KEY_HDMI,
+        KEY_CONTENTS
+    }
+}

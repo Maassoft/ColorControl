@@ -75,7 +75,7 @@ namespace ColorControl.Services.LG
         private RestartDetector _restartDetector;
         private SynchronizationContext _syncContext;
 
-        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
+        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector) : base(appContextProvider)
         {
             _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
             _powerEventDispatcher = powerEventDispatcher;
@@ -84,7 +84,7 @@ namespace ColorControl.Services.LG
             _serviceManager = serviceManager;
             LgPreset.LgApps = _lgApps;
 
-            _restartDetector = new RestartDetector();
+            _restartDetector = restartDetector;
             _syncContext = appContextProvider.GetAppContext().SynchronizationContext;
             LgTvApiCore.SyncContext = _syncContext;
 

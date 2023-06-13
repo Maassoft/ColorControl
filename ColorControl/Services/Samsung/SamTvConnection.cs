@@ -1,6 +1,5 @@
 ﻿using ColorControl.Common;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Concurrent;
@@ -10,7 +9,7 @@ using Windows.Networking.Sockets;
 using Windows.Security.Cryptography.Certificates;
 using Windows.Storage.Streams;
 
-namespace LgTv
+namespace ColorControl.Services.Samsung
 {
     public class SendMessageException : Exception
     {
@@ -20,30 +19,32 @@ namespace LgTv
         }
     }
 
-    public delegate void IsConnectedDelegate(bool status);
+    public delegate void ConnectedDelegate(string token, bool disconnect);
 
-    public class LgTvApiCore : IDisposable
+    public class SamTvConnection : IDisposable
     {
         public static SynchronizationContext SyncContext { get; set; }
 
         public bool ConnectionClosed { get; private set; }
+        public bool ClosedByDispose { get; private set; }
 
         private MessageWebSocket _connection;
         private DataWriter _messageWriter;
         private int _commandCount;
+        private int _readTimeout;
 
-        public event IsConnectedDelegate IsConnected;
+        public event ConnectedDelegate Connected;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<dynamic>> _tokens = new ConcurrentDictionary<string, TaskCompletionSource<dynamic>>();
         private readonly ConcurrentDictionary<string, Func<dynamic, bool>> _callbacks = new ConcurrentDictionary<string, Func<dynamic, bool>>();
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public async Task<bool> Connect(Uri uri, bool ignoreReceiver = false)
+        public async Task<bool> Connect(Uri uri, int readTimeout = 5000)
         {
+            _readTimeout = readTimeout;
+
             try
             {
-                //Logger.Debug($"Connecting from thread: {Environment.CurrentManagedThreadId}");
-
                 _connection?.Dispose();
 
                 ConnectionClosed = false;
@@ -65,7 +66,6 @@ namespace LgTv
 
                     _messageWriter = new DataWriter(_connection.OutputStream);
 
-                    IsConnected?.Invoke(true);
                     return true;
                 }
                 catch (TimeoutException te)
@@ -122,25 +122,34 @@ namespace LgTv
             }
         }
 
-        public async Task<dynamic> SendCommandAsync(string message)
-        {
-            var obj = JsonConvert.DeserializeObject<dynamic>(message);
-            return await SendCommandAsync((string)obj.id, message);
-        }
-
-        private async Task<dynamic> SendCommandAsync(string id, string message)
+        private async Task<dynamic> SendCommandAsync(string id, string message, bool waitForAnswer = true)
         {
             try
             {
-                var taskSource = new TaskCompletionSource<dynamic>();
-                _tokens.TryAdd(id, taskSource);
-                await SendMessageAsync(message);
-                if (ConnectionClosed)
+                if (waitForAnswer)
                 {
-                    throw new Exception("Connection closed");
+                    var taskSource = new TaskCompletionSource<dynamic>();
+                    _tokens.TryAdd(id, taskSource);
+
+                    await SendMessageAsync(message);
+                    if (ConnectionClosed)
+                    {
+                        throw new Exception("Connection closed");
+                    }
+
+                    return await taskSource.Task;
+                }
+                else
+                {
+                    await SendMessageAsync(message);
+                    if (ConnectionClosed)
+                    {
+                        throw new Exception("Connection closed");
+                    }
+
+                    return null;
                 }
 
-                return await taskSource.Task;
             }
             catch (Exception e)
             {
@@ -148,15 +157,15 @@ namespace LgTv
             }
         }
 
-        public async Task<dynamic> SendCommandAsync(RequestMessage message)
+        public async Task<dynamic> SendCommandAsync(RequestMessage message, bool waitForAnswer = true)
         {
             var rawMessage = new RawRequestMessage(message, ++_commandCount);
             var serialized = JsonConvert.SerializeObject(rawMessage, new JsonSerializerSettings()
             {
                 NullValueHandling = NullValueHandling.Ignore,
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                //ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
-            return await SendCommandAsync(rawMessage.Id, serialized);
+            return await SendCommandAsync(rawMessage.Id, serialized, waitForAnswer);
         }
 
         public async Task<dynamic> SubscribeAsync(RequestMessage message, Func<dynamic, bool> callback)
@@ -175,10 +184,21 @@ namespace LgTv
 
         private void Connection_Closed(IWebSocket sender, WebSocketClosedEventArgs args)
         {
-            MessageWebSocket webSocket = Interlocked.Exchange(ref _connection, null);
+            var webSocket = Interlocked.Exchange(ref _connection, null);
             webSocket?.Dispose();
             ConnectionClosed = true;
+
+            Logger.Debug("Connection closed");
+
+            Connected?.Invoke(null, true);
         }
+
+        private const string MS_CHANNEL_CONNECT_EVENT = "ms.channel.connect";
+        private const string MS_CHANNEL_CLIENT_CONNECT_EVENT = "ms.channel.clientConnect";
+        private const string MS_CHANNEL_CLIENT_DISCONNECT_EVENT = "ms.channel.clientDisconnect";
+        private const string MS_CHANNEL_READY_EVENT = "ms.channel.ready";
+        private const string MS_CHANNEL_UNAUTHORIZED = "ms.channel.unauthorized";
+        private const string MS_ERROR_EVENT = "ms.error";
 
         private async void Connection_MessageReceived(MessageWebSocket sender, MessageWebSocketMessageReceivedEventArgs args)
         {
@@ -186,7 +206,7 @@ namespace LgTv
             {
                 var task = new Task<DataReader>(args.GetDataReader);
                 task.Start();
-                var dataReader = await task.WaitAsync(TimeSpan.FromSeconds(5));
+                var dataReader = await task.WaitAsync(TimeSpan.FromMilliseconds(_readTimeout));
 
                 using (dataReader)
                 {
@@ -194,43 +214,62 @@ namespace LgTv
                     var message = dataReader.ReadString(dataReader.UnconsumedBufferLength);
                     var obj = JsonConvert.DeserializeObject<dynamic>(message);
                     var id = (string)obj.id;
-                    var type = (string)obj.type;
+                    var type = (string)obj.@event;
 
-                    TaskCompletionSource<dynamic> taskCompletion;
-                    if (type == "registered")
+                    Logger.Debug($"Received message: {message}");
+
+                    // Response:
+                    // {"data":{"clients":[{"attributes":{"name":"c2Ftc3VuZ2N0bA=="},"connectTime":1685302606520,"deviceName":"c2Ftc3VuZ2N0bA==","id":"92e0cbc1-6f86-4013-9b9b-65a47afb2236","isHost":false}],"id":"92e0cbc1-6f86-4013-9b9b-65a47afb2236","token":"16224598"},"event":"ms.channel.connect"}
+                    // Second response:
+                    // {"data":{"clients":[{"attributes":{"name":"c2Ftc3VuZ2N0bA==","token":"16224598"},"connectTime":1685303321571,"deviceName":"c2Ftc3VuZ2N0bA==","id":"58589451-2ecf-44f0-9267-31983a5466","isHost":false}],"id":"58589451-2ecf-44f0-9267-31983a5466"},"event":"ms.channel.connect"}
+
+                    //TaskCompletionSource<dynamic> taskCompletion;
+                    if (type == MS_CHANNEL_CONNECT_EVENT)
                     {
-                        if (_tokens.TryRemove(id, out taskCompletion))
+                        var token = (string)obj.data?.token;
+
+                        if (token == null)
                         {
-                            var key = (string)JObject.Parse(message)["payload"]["client-key"];
-                            taskCompletion.TrySetResult(new { clientKey = key });
+                            token = (string)obj.data?.clients[0]?.attributes?.token;
                         }
 
-                    }
-                    else if (_tokens.TryGetValue(id, out taskCompletion))
-                    {
-                        if (id == "register_0") return;
-                        if (obj.type == "error")
+                        if (token != null)
                         {
-                            taskCompletion.SetException(new Exception(obj.error?.ToString()));
+                            Connected?.Invoke(token, false);
                         }
-                        //else if (args.Cancelled)
+
+                        //if (_tokens.TryRemove(id, out taskCompletion))
                         //{
-                        //    taskSource.SetCanceled();
+                        //    var key = (string)JObject.Parse(message)["payload"]["client-key"];
+                        //    taskCompletion.TrySetResult(new { clientKey = key });
                         //}
-                        taskCompletion.TrySetResult(obj.payload);
 
-                        if (_callbacks.TryGetValue(id, out Func<dynamic, bool> callback))
-                        {
-                            try
-                            {
-                                callback(obj.payload);
-                            }
-                            catch (Exception callbackException)
-                            {
-                                Logger.Error($"Connection_MessageReceived: the callback threw an exception: {callbackException.ToLogString()}");
-                            }
-                        }
                     }
+                    //else if (_tokens.TryGetValue(id, out taskCompletion))
+                    //{
+                    //    if (id == "register_0") return;
+                    //    if (obj.type == "error")
+                    //    {
+                    //        taskCompletion.SetException(new Exception(obj.error?.ToString()));
+                    //    }
+                    //    //else if (args.Cancelled)
+                    //    //{
+                    //    //    taskSource.SetCanceled();
+                    //    //}
+                    //    taskCompletion.TrySetResult(obj.payload);
+
+                    //    if (_callbacks.TryGetValue(id, out Func<dynamic, bool> callback))
+                    //    {
+                    //        try
+                    //        {
+                    //            callback(obj.payload);
+                    //        }
+                    //        catch (Exception callbackException)
+                    //        {
+                    //            Logger.Error($"Connection_MessageReceived: the callback threw an exception: {callbackException.ToLogString()}");
+                    //        }
+                    //    }
+                    //}
                 }
             }
             catch (Exception ex)
@@ -241,6 +280,7 @@ namespace LgTv
                 SetExceptionOnAllTokens(ex);
 
                 ConnectionClosed = true;
+
                 _messageWriter?.Dispose();
             }
         }
@@ -270,11 +310,13 @@ namespace LgTv
 
         public void Close()
         {
-            _connection?.Close(1, "");
+            _connection?.Close(1000, "");
         }
 
         public void Dispose()
         {
+            ClosedByDispose = true;
+            Close();
             _connection?.Dispose();
         }
     }

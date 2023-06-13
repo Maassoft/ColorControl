@@ -70,6 +70,7 @@
             label7 = new System.Windows.Forms.Label();
             lblInfo = new System.Windows.Forms.Label();
             btnUpdate = new System.Windows.Forms.Button();
+            btnOptionsAdvanced = new System.Windows.Forms.Button();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
@@ -113,7 +114,7 @@
             // 
             grpOptionsModules.Controls.Add(label1);
             grpOptionsModules.Controls.Add(chkModules);
-            grpOptionsModules.Location = new System.Drawing.Point(7, 210);
+            grpOptionsModules.Location = new System.Drawing.Point(11, 223);
             grpOptionsModules.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpOptionsModules.Name = "grpOptionsModules";
             grpOptionsModules.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -134,8 +135,10 @@
             // 
             // chkModules
             // 
+            chkModules.ColumnWidth = 200;
             chkModules.FormattingEnabled = true;
             chkModules.Location = new System.Drawing.Point(7, 40);
+            chkModules.MultiColumn = true;
             chkModules.Name = "chkModules";
             chkModules.Size = new System.Drawing.Size(507, 76);
             chkModules.TabIndex = 0;
@@ -148,7 +151,7 @@
             grpMiscellaneousOptions.Controls.Add(edtBlankScreenSaverShortcut);
             grpMiscellaneousOptions.Controls.Add(lblFixChromeFontsDescription);
             grpMiscellaneousOptions.Controls.Add(chkFixChromeFonts);
-            grpMiscellaneousOptions.Location = new System.Drawing.Point(7, 347);
+            grpMiscellaneousOptions.Location = new System.Drawing.Point(11, 360);
             grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -213,6 +216,7 @@
             // 
             // grpGeneralOptions
             // 
+            grpGeneralOptions.Controls.Add(btnOptionsAdvanced);
             grpGeneralOptions.Controls.Add(chkOptionsUseDarkMode);
             grpGeneralOptions.Controls.Add(chkAutoInstallUpdates);
             grpGeneralOptions.Controls.Add(btnStartStopService);
@@ -232,7 +236,7 @@
             grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpGeneralOptions.Name = "grpGeneralOptions";
             grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpGeneralOptions.Size = new System.Drawing.Size(522, 197);
+            grpGeneralOptions.Size = new System.Drawing.Size(522, 210);
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
@@ -587,6 +591,17 @@
             btnUpdate.Visible = false;
             btnUpdate.Click += btnUpdate_Click;
             // 
+            // btnOptionsAdvanced
+            // 
+            btnOptionsAdvanced.Location = new System.Drawing.Point(7, 172);
+            btnOptionsAdvanced.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnOptionsAdvanced.Name = "btnOptionsAdvanced";
+            btnOptionsAdvanced.Size = new System.Drawing.Size(88, 27);
+            btnOptionsAdvanced.TabIndex = 11;
+            btnOptionsAdvanced.Text = "Advanced...";
+            btnOptionsAdvanced.UseVisualStyleBackColor = true;
+            btnOptionsAdvanced.Click += btnOptionsAdvanced_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -670,6 +685,7 @@
         private System.Windows.Forms.CheckedListBox chkModules;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
+        private System.Windows.Forms.Button btnOptionsAdvanced;
     }
 }
 

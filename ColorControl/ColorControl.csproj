@@ -62,6 +62,9 @@
 	<Compile Update="Services\NVIDIA\NvPanel.cs">
 	  <SubType>UserControl</SubType>
 	</Compile>
+	<Compile Update="Services\Samsung\SamsungPanel.cs">
+	  <SubType>UserControl</SubType>
+	</Compile>
 	<EmbeddedResource Include="Resources\LG_register.json" />
 	<EmbeddedResource Include="Resources\RC_coords.txt" />
 	<EmbeddedResource Include="Resources\LG_remote.jpg" />
@@ -104,6 +107,11 @@
 	<ProjectReference Include="..\novideo_srgb\novideo_srgb.csproj" />
 	<ProjectReference Include="..\Nspector\Nspector.csproj" />
 	<ProjectReference Include="..\NvAPIWrapper\NvAPIWrapper.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Services\Samsung\SamsungPanel.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
 	<None Update="Properties\Settings.settings">

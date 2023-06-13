@@ -7,6 +7,7 @@ using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Services.Samsung;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
@@ -47,11 +48,13 @@ namespace ColorControl
         private bool _setVisibleCalled = false;
 
         private LgPanel _lgPanel;
+        private SamsungPanel _samsungPanel;
 
         private ToolStripMenuItem _nvTrayMenu;
         private ToolStripMenuItem _novideoTrayMenu;
         private ToolStripMenuItem _amdTrayMenu;
         private ToolStripMenuItem _lgTrayMenu;
+        private ToolStripMenuItem _samsungTrayMenu;
         private ToolStripMenuItem _gameTrayMenu;
 
         private StartUpParams StartUpParams { get; }
@@ -94,6 +97,7 @@ namespace ColorControl
             _novideoTrayMenu = new ToolStripMenuItem("Novideo sRGB");
             _amdTrayMenu = new ToolStripMenuItem("AMD presets");
             _lgTrayMenu = new ToolStripMenuItem("LG presets");
+            _samsungTrayMenu = new ToolStripMenuItem("Samsung presets");
             _gameTrayMenu = new ToolStripMenuItem("Game Launcher");
             _trayIcon = new NotifyIcon()
             {
@@ -108,6 +112,7 @@ namespace ColorControl
                     _novideoTrayMenu,
                     _amdTrayMenu,
                     _lgTrayMenu,
+                    _samsungTrayMenu,
                     _gameTrayMenu,
                     new ToolStripSeparator(),
                     new ToolStripMenuItem("Open", null, OpenForm),
@@ -163,6 +168,7 @@ namespace ColorControl
             _modules.Add("AMD controller", InitAmdService);
             _modules.Add("LG controller", InitLgService);
             _modules.Add("Game launcher", InitGameService);
+            _modules.Add("Samsung controller", InitSamsungService);
 
             foreach (var keyValue in _modules)
             {
@@ -347,6 +353,31 @@ namespace ColorControl
             }
         }
 
+        private UserControl InitSamsungService()
+        {
+            try
+            {
+                _serviceManager.SamsungService = Program.ServiceProvider.GetRequiredService<SamsungService>();
+
+                //_serviceManager.SamsungService.Init();
+
+                _samsungPanel = new SamsungPanel(_serviceManager.SamsungService, _serviceManager.NvService, _serviceManager.AmdService, Handle);
+                _samsungPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+                _samsungPanel.Init();
+
+                InitShortcut(SamsungPanel.SHORTCUTID_SAMSUNGQA, _serviceManager.SamsungService.Config.QuickAccessShortcut, _serviceManager.SamsungService.ToggleQuickAccessForm);
+
+                return _samsungPanel;
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error initializing SamsungService: " + e.ToLogString());
+
+                return null;
+            }
+        }
+
         private void TestKey()
         {
             BeginInvoke(async () =>
@@ -498,6 +529,12 @@ namespace ColorControl
                     if (lgPreset != null)
                     {
                         _lgPanel?.ApplyLgPreset(lgPreset);
+                    }
+
+                    var samsungPreset = _serviceManager.SamsungService?.GetPresets().FirstOrDefault(x => x.id == id);
+                    if (samsungPreset != null)
+                    {
+                        _samsungPanel?.ApplyPreset(samsungPreset);
                     }
                 }
             }
@@ -873,6 +910,16 @@ NOTE: installing the service may cause a User Account Control popup.");
                 UpdateTrayMenu(_lgTrayMenu, presets, TrayMenuItemLg_Click);
             }
 
+            _samsungTrayMenu.Visible = _serviceManager.SamsungService != null;
+            if (_samsungTrayMenu.Visible)
+            {
+                var presets = _serviceManager.SamsungService.GetPresets().Where(x => x.Steps.Any());
+
+                _samsungTrayMenu.DropDownItems.Clear();
+
+                UpdateTrayMenu(_samsungTrayMenu, presets, TrayMenuItemSamsung_Click);
+            }
+
             _gameTrayMenu.Visible = _serviceManager.GameService != null;
             if (_gameTrayMenu.Visible)
             {
@@ -890,6 +937,14 @@ NOTE: installing the service may cause a User Account Control popup.");
             var preset = (LgPreset)item.Tag;
 
             await _lgPanel?.ApplyLgPreset(preset);
+        }
+
+        private async void TrayMenuItemSamsung_Click(object sender, EventArgs e)
+        {
+            var item = sender as ToolStripMenuItem;
+            var preset = (SamsungPreset)item.Tag;
+
+            await _samsungPanel?.ApplyPreset(preset);
         }
 
         private void LoadLog()
@@ -1311,13 +1366,20 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             LoadLog();
         }
 
-        private void MainForm_Click(object sender, EventArgs e)
+        private async void MainForm_Click(object sender, EventArgs e)
         {
             //_powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
             //PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
             //Program.Restart();
             //Environment.Exit(0);
             //InstallUpdate("");
+            //await Test();
+
+            //Utils.SetBrightness(Handle);
+        }
+
+        private async Task Test()
+        {
         }
 
         private void SetTheme(bool toDark)
@@ -1416,6 +1478,28 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             _config.UseDarkMode = chkOptionsUseDarkMode.Checked;
 
             SetTheme(_config.UseDarkMode);
+        }
+
+        private void btnOptionsAdvanced_Click(object sender, EventArgs e)
+        {
+            var processPollingIntervalField = new MessageForms.FieldDefinition
+            {
+                FieldType = MessageForms.FieldType.Numeric,
+                Label = "Polling interval of process monitor (milliseconds).",
+                SubLabel = "Decreasing this delay may execute triggered presets sooner but can cause a higher CPU load",
+                MinValue = 50,
+                MaxValue = 5000,
+                Value = _config.ProcessMonitorPollingInterval
+            };
+
+            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField });
+
+            if (values?.Any() != true)
+            {
+                return;
+            }
+
+            _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
         }
     }
 }

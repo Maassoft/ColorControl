@@ -268,14 +268,7 @@ namespace ColorControl.Services.AMD
 
             var preset = GetSelectedAmdPreset();
 
-            if (preset == null || string.IsNullOrEmpty(text))
-            {
-                edtAmdShortcut.ForeColor = SystemColors.WindowText;
-            }
-            else
-            {
-                //                edtAmdShortcut.ForeColor = ShortCutExists(text, preset.id) ? Color.Red : SystemColors.WindowText;
-            }
+            FormUtils.UpdateShortcutTextBox(edtAmdShortcut, preset);
         }
 
         private void btnSetAmdShortcut_Click(object sender, EventArgs e)

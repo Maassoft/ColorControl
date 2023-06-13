@@ -6,6 +6,7 @@ using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Services.Samsung;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -290,6 +291,7 @@ namespace ColorControl
                 Console.WriteLine("--nvpreset  <preset name or id>: execute NVIDIA-preset");
                 Console.WriteLine("--amdpreset <preset name or id>: execute AMD-preset");
                 Console.WriteLine("--lgpreset  <preset name>      : execute LG-preset");
+                Console.WriteLine("--sampreset  <preset name>     : execute Samsung-preset");
                 Console.WriteLine("--help                         : displays this help info");
                 Console.WriteLine("Options:");
                 Console.WriteLine("--nogui: starts command from the command line and will not open GUI (is forced when GUI is already running)");
@@ -303,6 +305,18 @@ namespace ColorControl
 
                 Console.WriteLine($"Executing LG-preset '{startUpParams.LgPresetName}'...");
                 await LgService.ExecutePresetAsync(startUpParams.LgPresetName);
+
+                Console.WriteLine("Done.");
+
+                result = true;
+            }
+
+            if (startUpParams.ExecuteSamsungPreset)
+            {
+                Utils.OpenConsole();
+
+                Console.WriteLine($"Executing Samsung-preset '{startUpParams.SamsungPresetName}'...");
+                await SamsungService.ExecutePresetAsync(startUpParams.SamsungPresetName);
 
                 Console.WriteLine("Done.");
 
@@ -358,10 +372,12 @@ namespace ColorControl
                     services.RegisterSharedServices();
                     services.AddSingleton<LgService>();
                     services.AddSingleton<GameService>();
+                    services.AddSingleton<SamsungService>();
                     services.AddSingleton<PowerEventDispatcher>();
                     services.AddSingleton<ProcessEventDispatcher>();
                     services.AddSingleton<MainForm>();
                     services.AddSingleton<ServiceManager>();
+                    services.AddSingleton<RestartDetector>();
                 });
         }
         private static async Task RunService(string[] args)
