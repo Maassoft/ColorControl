@@ -1,0 +1,213 @@
+﻿<UserControl x:Class="DJ.NLogViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dj="clr-namespace:DJ"
+             xmlns:nLog="clr-namespace:NLog;assembly=NLog"
+             xmlns:listViewLayoutManager="clr-namespace:DJ.Helper.ListViewLayoutManager"
+             xmlns:xamlMultiValueConverter="clr-namespace:DJ.XamlMultiValueConverter"
+             xmlns:helper="clr-namespace:DJ.Helper"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel
+            Grid.Row="1"
+            Orientation="Horizontal"
+            Margin="0,5,0,5">
+            <ToggleButton
+                Width="120"
+                Height="20"
+                IsChecked="{Binding Path=AutoScroll, Mode=TwoWay}">
+                <ToggleButton.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images/Small/ScrollDown.png"
+                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="Uniform" />
+                        <TextBlock Text="Auto-Scroll" VerticalAlignment="Center" Margin="5,0,0,0" />
+                    </StackPanel>
+                </ToggleButton.Content>
+            </ToggleButton>
+            <Button
+                Margin="5,0,0,0"
+                Width="120"
+                Height="20"
+                Command="{Binding Path=ClearCommand}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images/Small/Clear.png"
+                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="Uniform" />
+                        <TextBlock Text="Clear" VerticalAlignment="Center" Margin="5,0,0,0" />
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+            <ToggleButton
+                Margin="5,0,0,0"
+                Width="120"
+                Height="20"
+                IsChecked="{Binding Path=Pause, Mode=TwoWay}">
+                <ToggleButton.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="Images/Small/Pause.png"
+                               RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Uniform" />
+                        <TextBlock Text="Pause" VerticalAlignment="Center" Margin="5,0,0,0" />
+                    </StackPanel>
+                </ToggleButton.Content>
+            </ToggleButton>
+        </StackPanel>
+
+        <ListView
+            x:Name="ListView"
+            Grid.Row="2"
+            ItemsSource="{Binding Path=LogEvents.View, IsAsync=True}"
+            BorderThickness="0"
+            ScrollViewer.CanContentScroll="True"
+            listViewLayoutManager:ListViewLayoutManager.Enabled="true">
+            <ListView.Resources>
+                <xamlMultiValueConverter:ILogEventResolverToStringConverter x:Key="ILogEventResolverToStringConverter"/>
+            </ListView.Resources>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="BorderBrush" Value="Black" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Trace}">
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=TraceBackground}" />
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=TraceForeground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Debug}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=DebugForeground}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=DebugBackground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Info}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=InfoForeground}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=InfoBackground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Warn}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=WarnForeground}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=WarnBackground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Error}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=ErrorForeground}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=ErrorBackground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=Level}"
+                                     Value="{x:Static nLog:LogLevel.Fatal}">
+                            <Setter Property="Foreground"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=FatalForeground}" />
+                            <Setter Property="Background"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}, Path=FatalBackground}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <helper:AutoSizedGridView>
+                    <GridViewColumn Header="ID" Width="40">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                <Binding Path="."/>
+                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="IdResolver"/>
+                            </MultiBinding>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Level" Width="Auto">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image x:Name="Image" RenderOptions.BitmapScalingMode="Linear"
+                                       Height="18" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Trace}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Trace.png" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Debug}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Debug.png" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Info}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Info.png" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Warn}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Warning.png" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Error}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Error.png" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Path=Level}"
+                                                 Value="{x:Static nLog:LogLevel.Fatal}">
+                                        <Setter TargetName="Image" Property="Source"
+                                                Value="Images/Small/Fatal.png" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="TimeStamp" Width="Auto">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                <Binding Path="."/>
+                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="TimeStampResolver"/>
+                            </MultiBinding>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="LoggerName" Width="Auto">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                <Binding Path="."/>
+                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="LoggerNameResolver"/>
+                            </MultiBinding>
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Message" Width="Auto" listViewLayoutManager:RangeColumn.IsFillColumn="True">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox
+                                    IsReadOnly="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    TextWrapping="Wrap"
+                                    Foreground="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListViewItem}, Path=Foreground}">
+                                    <TextBox.Text>
+                                        <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                            <Binding Path="." Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="MessageResolver"/>
+                                        </MultiBinding>
+                                    </TextBox.Text>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </helper:AutoSizedGridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

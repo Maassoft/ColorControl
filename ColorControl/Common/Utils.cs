@@ -1117,6 +1117,46 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return null;
         }
 
+        public static List<string> ReadLines(string fileName, bool reverse = false)
+        {
+            var exists = File.Exists(fileName);
+
+            if (!exists)
+            {
+                return null;
+            }
+
+            try
+            {
+                var lines = new List<string>();
+
+                using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                using var reader = new StreamReader(fs);
+
+                string line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (reverse)
+                    {
+                        lines.Insert(0, line + "\r\n");
+                        continue;
+                    }
+
+                    lines.Add(line);
+                }
+
+                return lines;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.ToLogString());
+            }
+
+            return null;
+        }
+
         public static bool WriteObject(string fileName, object value)
         {
             var data = JsonConvert.SerializeObject(value);

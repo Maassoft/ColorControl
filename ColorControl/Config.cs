@@ -45,10 +45,12 @@ namespace ColorControl
         public ElevationMethod ElevationMethod { get; set; }
         public bool ElevationMethodAsked { get; set; }
         public int ProcessMonitorPollingInterval { get; set; }
+        public string LogLevel { get; set; }
         public List<Module> Modules { get; set; }
 
         public Config()
         {
+            LogLevel = "DEBUG";
             DisplaySettingsDelay = 1000;
             ScreenSaverShortcut = string.Empty;
             FormWidth = 900;

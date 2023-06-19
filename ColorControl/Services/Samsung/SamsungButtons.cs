@@ -37,6 +37,8 @@
         KEY_9,
         KEY_DTV,
         KEY_HDMI,
-        KEY_CONTENTS
+        KEY_CONTENTS,
+        KEY_TV_MODE,
+        KEY_PC_MODE
     }
 }

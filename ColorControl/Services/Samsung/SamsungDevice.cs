@@ -39,6 +39,8 @@ namespace ColorControl.Services.Samsung
         External
     }
 
+    public delegate void GenericDelegate(object sender);
+
     class SamsungDevice
     {
         public class InvokableAction
@@ -71,8 +73,12 @@ namespace ColorControl.Services.Samsung
 
         [JsonIgnore]
         public bool PoweredOn { get; private set; }
+        [JsonIgnore]
         public DateTimeOffset PoweredOffAt { get; private set; }
+        [JsonIgnore]
         public PowerOffSource PoweredOffBy { get; internal set; }
+
+        public event GenericDelegate Connected;
 
         [JsonIgnore]
         private SamTvConnection _samTvConnection;
@@ -188,6 +194,11 @@ namespace ColorControl.Services.Samsung
             finally
             {
                 _connectSemaphore.Release();
+
+                if (true)
+                {
+                    Connected?.Invoke(this);
+                }
             }
         }
 
@@ -336,7 +347,7 @@ namespace ColorControl.Services.Samsung
 
             var powerState = (string)json.device?.PowerState;
 
-            Logger.Error($"Current power state: {powerState}");
+            Logger.Debug($"Current power state: {powerState}");
 
             return powerState;
         }
@@ -562,6 +573,21 @@ namespace ColorControl.Services.Samsung
             }
 
             return await WakeAndConnectWithRetries(powerOnRetries);
+        }
+
+        internal async Task<IEnumerable<SamsungApp>> GetAppsAsync(bool force)
+        {
+            var dynamic = new
+            {
+                @event = "ed.installedApp.get",
+                to = "host",
+            };
+
+            var message = new RequestMessage("ms.channel.emit", dynamic);
+
+            var result = await _samTvConnection.SendCommandAsync(message, true);
+
+            return new List<SamsungApp>();
         }
     }
 }

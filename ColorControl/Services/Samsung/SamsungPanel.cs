@@ -364,10 +364,10 @@ namespace ColorControl.Services.Samsung
                 }
             }
 
-            if (cbxSamsungApps.Items.Count == 0 && device != null)
-            {
-                //_samsungService.RefreshApps().ContinueWith((task) => BeginInvoke(() => FillLgApps(false)));
-            }
+            //if (cbxSamsungApps.Items.Count == 0 && device != null)
+            //{
+            //    _samsungService.RefreshAppsAsync().ContinueWith((task) => BeginInvoke(() => FillApps(false)));
+            //}
 
             btnSamsungDeviceConvertToCustom.Enabled = devices.Any();
 
@@ -402,7 +402,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        private void FillLgApps(bool forced)
+        private void FillApps(bool forced)
         {
             var lgApps = _samsungService?.GetApps();
             if (forced && (lgApps == null || !lgApps.Any()))
@@ -410,10 +410,10 @@ namespace ColorControl.Services.Samsung
                 MessageForms.WarningOk("Could not refresh the apps. Check the log for details.");
                 return;
             }
-            InitLgApps();
+            InitApps();
         }
 
-        private void InitLgApps()
+        private void InitApps()
         {
             var lgApps = _samsungService?.GetApps();
 

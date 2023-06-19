@@ -37,6 +37,7 @@ namespace ColorControl.Services.Samsung
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
         private object _lastTriggeredPreset;
+        private List<SamsungApp> _samsungApps = new List<SamsungApp>();
 
         public List<SamsungDevice> Devices { get; private set; }
 
@@ -184,6 +185,8 @@ namespace ColorControl.Services.Samsung
                 var preferredDevice = Devices.FirstOrDefault(x => x.MacAddress != null && x.MacAddress.Equals(Config.PreferredMacAddress)) ?? Devices[0];
 
                 SelectedDevice = preferredDevice;
+
+                SelectedDevice.Connected += SelectedDevice_Connected;
             }
             else
             {
@@ -214,6 +217,16 @@ namespace ColorControl.Services.Samsung
                     var _ = SelectedDevice.ConnectAsync();
                 }
             }
+        }
+
+        private async void SelectedDevice_Connected(object sender)
+        {
+            if (_samsungApps.Any())
+            {
+                return;
+            }
+
+            //await RefreshAppsAsync();
         }
 
         protected override List<SamsungPreset> GetDefaultPresets()
@@ -430,11 +443,27 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        internal List<SamsungApp> GetApps()
+        public async Task RefreshAppsAsync(bool force = false)
         {
-            return new List<SamsungApp>();
+            if (SelectedDevice == null)
+            {
+                Logger.Debug("Cannot refresh apps: no device has been selected");
+                return;
+            }
+
+            var apps = await SelectedDevice.GetAppsAsync(force);
+
+            if (apps.Any())
+            {
+                _samsungApps.Clear();
+                _samsungApps.AddRange(apps);
+            }
         }
 
+        internal List<SamsungApp> GetApps()
+        {
+            return _samsungApps;
+        }
 
         public async Task ProcessChanged(object sender, ProcessChangedEventArgs args, CancellationToken token)
         {

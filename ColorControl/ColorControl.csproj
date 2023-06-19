@@ -48,6 +48,9 @@
 	<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="XForms\LogWindow.xaml" />
+  </ItemGroup>
+  <ItemGroup>
 	<Compile Update="Properties\Settings.Designer.cs">
 	  <DesignTimeSharedInput>True</DesignTimeSharedInput>
 	  <AutoGen>True</AutoGen>
@@ -93,8 +96,6 @@
 	<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 	<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
 	<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-  </ItemGroup>
-  <ItemGroup>
 	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	<PackageReference Include="NLog" Version="5.1.2" />
 	<PackageReference Include="NStandard" Version="0.24.0" />
@@ -104,6 +105,12 @@
 	<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.13" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="XForms\LogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+	<ProjectReference Include="..\NLogViewer\NLogViewer.csproj" />
 	<ProjectReference Include="..\novideo_srgb\novideo_srgb.csproj" />
 	<ProjectReference Include="..\Nspector\Nspector.csproj" />
 	<ProjectReference Include="..\NvAPIWrapper\NvAPIWrapper.csproj" />

@@ -9,6 +9,7 @@ using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Svc;
+using ColorControl.XForms;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using novideo_srgb;
@@ -1500,6 +1501,11 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
 
             _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
+        }
+
+        private void btnOptionsLog_Click(object sender, EventArgs e)
+        {
+            LogWindow.CreateAndShow();
         }
     }
 }

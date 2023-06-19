@@ -41,6 +41,7 @@
             lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            btnOptionsAdvanced = new System.Windows.Forms.Button();
             chkOptionsUseDarkMode = new System.Windows.Forms.CheckBox();
             chkAutoInstallUpdates = new System.Windows.Forms.CheckBox();
             btnStartStopService = new System.Windows.Forms.Button();
@@ -70,7 +71,7 @@
             label7 = new System.Windows.Forms.Label();
             lblInfo = new System.Windows.Forms.Label();
             btnUpdate = new System.Windows.Forms.Button();
-            btnOptionsAdvanced = new System.Windows.Forms.Button();
+            btnOptionsLog = new System.Windows.Forms.Button();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
@@ -216,6 +217,7 @@
             // 
             // grpGeneralOptions
             // 
+            grpGeneralOptions.Controls.Add(btnOptionsLog);
             grpGeneralOptions.Controls.Add(btnOptionsAdvanced);
             grpGeneralOptions.Controls.Add(chkOptionsUseDarkMode);
             grpGeneralOptions.Controls.Add(chkAutoInstallUpdates);
@@ -240,6 +242,17 @@
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
+            // 
+            // btnOptionsAdvanced
+            // 
+            btnOptionsAdvanced.Location = new System.Drawing.Point(7, 172);
+            btnOptionsAdvanced.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnOptionsAdvanced.Name = "btnOptionsAdvanced";
+            btnOptionsAdvanced.Size = new System.Drawing.Size(88, 27);
+            btnOptionsAdvanced.TabIndex = 11;
+            btnOptionsAdvanced.Text = "Advanced...";
+            btnOptionsAdvanced.UseVisualStyleBackColor = true;
+            btnOptionsAdvanced.Click += btnOptionsAdvanced_Click;
             // 
             // chkOptionsUseDarkMode
             // 
@@ -591,16 +604,16 @@
             btnUpdate.Visible = false;
             btnUpdate.Click += btnUpdate_Click;
             // 
-            // btnOptionsAdvanced
+            // btnOptionsLog
             // 
-            btnOptionsAdvanced.Location = new System.Drawing.Point(7, 172);
-            btnOptionsAdvanced.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            btnOptionsAdvanced.Name = "btnOptionsAdvanced";
-            btnOptionsAdvanced.Size = new System.Drawing.Size(88, 27);
-            btnOptionsAdvanced.TabIndex = 11;
-            btnOptionsAdvanced.Text = "Advanced...";
-            btnOptionsAdvanced.UseVisualStyleBackColor = true;
-            btnOptionsAdvanced.Click += btnOptionsAdvanced_Click;
+            btnOptionsLog.Location = new System.Drawing.Point(103, 172);
+            btnOptionsLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnOptionsLog.Name = "btnOptionsLog";
+            btnOptionsLog.Size = new System.Drawing.Size(88, 27);
+            btnOptionsLog.TabIndex = 68;
+            btnOptionsLog.Text = "Logging...";
+            btnOptionsLog.UseVisualStyleBackColor = true;
+            btnOptionsLog.Click += btnOptionsLog_Click;
             // 
             // MainForm
             // 
@@ -686,6 +699,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
         private System.Windows.Forms.Button btnOptionsAdvanced;
+        private System.Windows.Forms.Button btnOptionsLog;
     }
 }
 

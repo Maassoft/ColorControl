@@ -245,6 +245,10 @@ namespace ColorControl.Services.Samsung
                         //}
 
                     }
+                    else
+                    {
+
+                    }
                     //else if (_tokens.TryGetValue(id, out taskCompletion))
                     //{
                     //    if (id == "register_0") return;
