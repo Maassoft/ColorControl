@@ -26,6 +26,16 @@ namespace ColorControl.Services.Samsung
             Steps.AddRange(preset.Steps);
         }
 
+        public SamsungPreset(string name, string appId, IEnumerable<string> steps = null) : this()
+        {
+            this.name = name;
+            AppId = appId;
+            if (steps != null)
+            {
+                Steps.AddRange(steps);
+            }
+        }
+
         public SamsungPreset Clone()
         {
             var preset = new SamsungPreset(this);

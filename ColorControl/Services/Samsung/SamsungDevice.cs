@@ -55,6 +55,7 @@ namespace ColorControl.Services.Samsung
             public int CurrentValue { get; set; }
             public int NumberOfValues { get; set; }
             public bool Advanced { get; set; }
+            public SamsungPreset Preset { get; set; }
             public List<string> ValueLabels { get; set; }
         }
 
@@ -92,6 +93,9 @@ namespace ColorControl.Services.Samsung
         [JsonIgnore]
         private TaskCompletionSource<string> _taskCompletionSource;
 
+        [JsonIgnore]
+        private List<InvokableAction> _invokableActions = new List<InvokableAction>();
+
         public SamsungDevice(string name, string ipAddress, string macAddress, bool isCustom = true, bool isDummy = false)
         {
             Options = new SamsungDeviceOptions();
@@ -101,6 +105,10 @@ namespace ColorControl.Services.Samsung
             MacAddress = macAddress;
             IsCustom = isCustom;
             IsDummy = isDummy;
+
+            AddInvokableAction("WOL", WakeAction);
+            AddInternalPresetAction(new SamsungPreset("PictureOff", null, new[] { "KEY_AD:1200", "KEY_DOWN:300", "KEY_DOWN:300", "KEY_ENTER" }));
+            AddInternalPresetAction(new SamsungPreset("PictureOn", null, new[] { "KEY_RETURN:1000", "KEY_RETURN", "KEY_RETURN" }));
 
             _serviceManager = Program.ServiceProvider.GetRequiredService<ServiceManager>();
         }
@@ -112,7 +120,10 @@ namespace ColorControl.Services.Samsung
 
         public async Task<bool> ConnectAsync(bool force = false, bool retryToken = false)
         {
-            await _connectSemaphore.WaitAsync();
+            if (!retryToken)
+            {
+                await _connectSemaphore.WaitAsync();
+            }
             try
             {
                 if (force)
@@ -127,7 +138,7 @@ namespace ColorControl.Services.Samsung
 
                 _samTvConnection = new SamTvConnection();
                 _samTvConnection.Connected += Connection_Connected;
-                var b64 = Utils.Base64Encode("samsungctl");
+                var b64 = Utils.Base64Encode("ColorControl");
 
                 var firstTime = Token == null;
                 var readTimeout = firstTime ? 60000 : 5000;
@@ -159,20 +170,6 @@ namespace ColorControl.Services.Samsung
 
                     _taskCompletionSource = null;
 
-                    //if (Token != null)
-                    //{
-                    //    await Task.Delay(1500);
-                    //}
-                    //else
-                    //{
-                    //    var seconds = 60;
-                    //    while (seconds > 0 && Token == null)
-                    //    {
-                    //        await Task.Delay(1000);
-                    //        seconds--;
-                    //    }
-                    //}
-
                     if (firstTime && Token != null && !retryToken)
                     {
                         _samTvConnection.Dispose();
@@ -193,7 +190,10 @@ namespace ColorControl.Services.Samsung
             }
             finally
             {
-                _connectSemaphore.Release();
+                if (!retryToken)
+                {
+                    _connectSemaphore.Release();
+                }
 
                 if (true)
                 {
@@ -322,7 +322,6 @@ namespace ColorControl.Services.Samsung
             if (MacAddress != null)
             {
                 result = WOL.WakeFunctionCheckAdmin(MacAddress, IpAddress);
-                //_justWokeUp = true;
             }
             else
             {
@@ -379,8 +378,14 @@ namespace ColorControl.Services.Samsung
             return $"{(IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: "))}{Name}{(!string.IsNullOrEmpty(IpAddress) ? ", " + IpAddress : string.Empty)}";
         }
 
-        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, AppContext appContext, SamsungServiceConfig config)
+        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, AppContext appContext = null, SamsungServiceConfig config = null)
         {
+            if (config == null)
+            {
+                var service = Program.ServiceProvider.GetRequiredService<SamsungService>();
+                config = service.Config;
+            }
+
             var hasApp = !string.IsNullOrEmpty(preset.AppId);
 
             var hasWOL = preset.Steps.Any(s => s.Equals("WOL", StringComparison.OrdinalIgnoreCase));
@@ -430,7 +435,7 @@ namespace ColorControl.Services.Samsung
                     }
                     try
                     {
-                        await ExecuteStepsAsync(preset, config);
+                        await ExecuteStepsAsync(preset, appContext, config);
                     }
                     catch (Exception ex)
                     {
@@ -451,7 +456,7 @@ namespace ColorControl.Services.Samsung
             return true;
         }
 
-        private async Task ExecuteStepsAsync(SamsungPreset preset, SamsungServiceConfig config)
+        private async Task ExecuteStepsAsync(SamsungPreset preset, AppContext appContext, SamsungServiceConfig config)
         {
             foreach (var step in preset.Steps)
             {
@@ -478,6 +483,14 @@ namespace ColorControl.Services.Samsung
                 }
 
                 var executeKey = true;
+                var action = _invokableActions.FirstOrDefault(a => a.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (action != null)
+                {
+                    await ExecuteActionAsync(action, parameters, appContext, config);
+
+                    executeKey = false;
+                }
+
                 if (parameters != null && await _serviceManager.HandleExternalServiceAsync(key, parameters))
                 {
                     executeKey = false;
@@ -493,6 +506,16 @@ namespace ColorControl.Services.Samsung
                 {
                     await Task.Delay(delay);
                 }
+            }
+        }
+
+        private async Task ExecuteActionAsync(InvokableAction action, string[] parameters, AppContext appContext, SamsungServiceConfig config)
+        {
+            if (action.Preset != null)
+            {
+                await ExecutePresetAsync(action.Preset, appContext, config);
+
+                return;
             }
         }
 
@@ -543,7 +566,7 @@ namespace ColorControl.Services.Samsung
             if (Options.TurnScreenOffOnScreenSaver)
             {
                 Logger.Debug("Turning screen off on screen saver");
-                //await _lgTvApi.TurnScreenOff();
+                await TurnPictureOff();
 
                 return true;
             }
@@ -555,6 +578,26 @@ namespace ColorControl.Services.Samsung
             return true;
         }
 
+        private async Task TurnPictureOff()
+        {
+            var action = _invokableActions.FirstOrDefault(a => a.Name == "PictureOff");
+
+            if (action?.Preset != null)
+            {
+                await ExecutePresetAsync(action.Preset);
+            }
+        }
+
+        private async Task TurnPictureOn()
+        {
+            var action = _invokableActions.FirstOrDefault(a => a.Name == "PictureOn");
+
+            if (action?.Preset != null)
+            {
+                await ExecutePresetAsync(action.Preset);
+            }
+        }
+
         public async Task<bool> PerformActionAfterScreenSaver(int powerOnRetries)
         {
             if (Options.TurnScreenOffOnScreenSaver && IsConnected())
@@ -564,7 +607,7 @@ namespace ColorControl.Services.Samsung
                     try
                     {
                         Logger.Debug("Turning screen on after screen saver");
-                        //await _lgTvApi.TurnScreenOn();
+                        await TurnPictureOn();
                     }
                     catch (Exception) { }
                 }
@@ -588,6 +631,40 @@ namespace ColorControl.Services.Samsung
             var result = await _samTvConnection.SendCommandAsync(message, true);
 
             return new List<SamsungApp>();
+        }
+
+        private void AddInternalPresetAction(SamsungPreset preset)
+        {
+            var action = new InvokableAction
+            {
+                Name = preset.name,
+                Preset = preset
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        private void AddInvokableAction(string name, Func<Dictionary<string, object>, Task<bool>> function)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                AsyncFunction = function,
+                Category = "misc",
+                Title = name
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        internal IEnumerable<InvokableAction> GetInvokableActions(bool showAdvanced)
+        {
+            return _invokableActions;
+        }
+
+        private async Task<bool> WakeAction(Dictionary<string, object> _)
+        {
+            return await WakeAndConnect();
         }
     }
 }

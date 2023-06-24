@@ -14,6 +14,7 @@ namespace ColorControl
         public const string ExecuteAmdPresetParam = "--amdpreset";
         public const string ExecuteLgPresetParam = "--lgpreset";
         public const string ExecuteSamsungPresetParam = "--sampreset";
+        public const string NoDeviceRefreshParam = "--no-refresh";
         public const string NoGuiParam = "--nogui";
         public const string EnableAutoStartParam = "--enable-auto-start";
         public const string DisableAutoStartParam = "--disable-auto-start";
@@ -39,6 +40,7 @@ namespace ColorControl
         public string LgPresetName { get; private set; }
         public bool ExecuteSamsungPreset { get; private set; }
         public string SamsungPresetName { get; private set; }
+        public bool NoDeviceRefresh { get; private set; }
         public bool NoGui { get; set; }
         public bool EnableAutoStart { get; private set; }
         public TaskRunLevel AutoStartRunLevel { get; private set; } = TaskRunLevel.LUA;
@@ -243,6 +245,11 @@ namespace ColorControl
                     case StopServiceParam:
                         {
                             settings.StopService = true;
+                            break;
+                        }
+                    case NoDeviceRefreshParam:
+                        {
+                            settings.NoDeviceRefresh = true;
                             break;
                         }
                 }

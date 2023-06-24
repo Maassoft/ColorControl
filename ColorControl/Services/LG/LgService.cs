@@ -277,17 +277,21 @@ namespace ColorControl.Services.LG
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
         {
             Devices = Config.Devices;
-            var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-            var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
+            if (!_appContextProvider.GetAppContext().StartUpParams.NoDeviceRefresh)
+            {
+                var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-            var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new LgDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
-            var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
+                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
 
-            Devices.RemoveAll(d => !d.IsCustom && !autoIpAddresses.Contains(d.IpAddress));
+                var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new LgDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
+                var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
 
-            var newAutoDevices = autoDevices.Where(ad => ad.IpAddress != null && !Devices.Any(d => d.IpAddress != null && d.IpAddress.Equals(ad.IpAddress)));
-            Devices.AddRange(newAutoDevices);
+                Devices.RemoveAll(d => !d.IsCustom && !autoIpAddresses.Contains(d.IpAddress));
+
+                var newAutoDevices = autoDevices.Where(ad => ad.IpAddress != null && !Devices.Any(d => d.IpAddress != null && d.IpAddress.Equals(ad.IpAddress)));
+                Devices.AddRange(newAutoDevices);
+            }
 
             if (Devices.Any())
             {

@@ -1,7 +1,6 @@
 ﻿using ColorControl.Common;
 using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
-using ColorControl.Services.LG;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NWin32;
@@ -32,7 +31,6 @@ namespace ColorControl.Services.Samsung
         private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
         private readonly RestartDetector _restartDetector;
         private readonly ProcessEventDispatcher _processEventDispatcher;
-        private SamTvConnection _samTvConnection;
         private string _configFilename;
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
@@ -111,17 +109,6 @@ namespace ColorControl.Services.Samsung
             }
             Config ??= new SamsungServiceConfig();
 
-            //if (!Config.Devices.Any())
-            //{
-            //    var device = new SamsungDevice("S95C", "192.168.178.40", "BC-45-5B-A4-70-A4", true);
-            //    device.Options.PowerOffOnShutdown = true;
-            //    device.Options.PowerOffOnStandby = true;
-            //    device.Options.PowerOnAfterResume = true;
-            //    device.Options.PowerOnAfterStartup = true;
-
-            //    Config.Devices.Add(device);
-            //}
-
             SamsungPreset.SamsungDevices = Config.Devices;
         }
 
@@ -168,17 +155,21 @@ namespace ColorControl.Services.Samsung
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
         {
             Devices = Config.Devices;
-            var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-            var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
+            if (!_appContextProvider.GetAppContext().StartUpParams.NoDeviceRefresh)
+            {
+                var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-            var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new SamsungDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
-            var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
+                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
 
-            Devices.RemoveAll(d => !d.IsCustom && !autoIpAddresses.Contains(d.IpAddress));
+                var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new SamsungDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
+                var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
 
-            var newAutoDevices = autoDevices.Where(ad => ad.IpAddress != null && !Devices.Any(d => d.IpAddress != null && d.IpAddress.Equals(ad.IpAddress)));
-            Devices.AddRange(newAutoDevices);
+                Devices.RemoveAll(d => !d.IsCustom && !autoIpAddresses.Contains(d.IpAddress));
+
+                var newAutoDevices = autoDevices.Where(ad => ad.IpAddress != null && !Devices.Any(d => d.IpAddress != null && d.IpAddress.Equals(ad.IpAddress)));
+                Devices.AddRange(newAutoDevices);
+            }
 
             if (Devices.Any())
             {
@@ -197,7 +188,7 @@ namespace ColorControl.Services.Samsung
             {
                 Logger.Debug("No device has been found, trying to wake it first...");
 
-                var tempDevice = new LgDevice("Test", string.Empty, Config.PreferredMacAddress);
+                var tempDevice = new SamsungDevice("Test", string.Empty, Config.PreferredMacAddress);
                 tempDevice.Wake();
 
                 await Task.Delay(4000);
@@ -319,7 +310,7 @@ namespace ColorControl.Services.Samsung
 
         internal void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
-            //Devices.ForEach(d => d.ClearPowerOffTask());
+            Devices.ForEach(d => d.ClearPowerOffTask());
 
             var wakeDevices = Devices.Where(d => state == PowerOnOffState.StartUp && d.Options.PowerOnAfterStartup ||
                                                  state == PowerOnOffState.Resume && d.Options.PowerOnAfterResume ||
@@ -425,11 +416,11 @@ namespace ColorControl.Services.Samsung
                     continue;
                 }
 
-                //if (state == PowerOnOffState.ScreenSaver)
-                //{
-                //    tasks.Add(device.PerformActionAfterScreenSaver(Config.PowerOnRetries));
-                //    continue;
-                //}
+                if (state == PowerOnOffState.ScreenSaver)
+                {
+                    tasks.Add(device.PerformActionAfterScreenSaver(Config.PowerOnRetries));
+                    continue;
+                }
 
                 var task = device.WakeAndConnectWithRetries(Config.PowerOnRetries);
                 tasks.Add(task);

@@ -202,6 +202,7 @@
             cbxSamsungPcHdmiPort.Name = "cbxSamsungPcHdmiPort";
             cbxSamsungPcHdmiPort.Size = new System.Drawing.Size(86, 23);
             cbxSamsungPcHdmiPort.TabIndex = 62;
+            cbxSamsungPcHdmiPort.Visible = false;
             cbxSamsungPcHdmiPort.SelectedIndexChanged += cbxSamsungPcHdmiPort_SelectedIndexChanged;
             // 
             // lblSamsungPcHdmiPort
@@ -213,6 +214,7 @@
             lblSamsungPcHdmiPort.Size = new System.Drawing.Size(84, 15);
             lblSamsungPcHdmiPort.TabIndex = 61;
             lblSamsungPcHdmiPort.Text = "PC HDMI port:";
+            lblSamsungPcHdmiPort.Visible = false;
             // 
             // edtSamsungPresetDescription
             // 

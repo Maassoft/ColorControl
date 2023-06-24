@@ -27,7 +27,7 @@ namespace ColorControl.Services.Samsung
         private AmdService _amdService;
         private IntPtr _mainHandle;
 
-        private string _lgTabMessage;
+        private string _tabMessage;
         private bool _disableEvents = false;
 
         internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, IntPtr handle)
@@ -43,9 +43,9 @@ namespace ColorControl.Services.Samsung
 
             scSamsungController.Panel2Collapsed = true;
 
-            FillLgPresets();
+            FillPresets();
 
-            FormUtils.InitSortState(lvSamsungPresets, _config.LgPresetsSortState);
+            FormUtils.InitSortState(lvSamsungPresets, _config.SamsungPresetsSortState);
 
             //_samsungService.AfterApplyPreset += SamsungServiceAfterApplyPreset;
             //_samsungService.SelectedDeviceChangedEvent += _samsungService_SelectedDeviceChangedEvent;
@@ -95,15 +95,15 @@ namespace ColorControl.Services.Samsung
 
             var startUpParams = AppContext.CurrentContext.StartUpParams;
 
-            if (startUpParams.ExecuteLgPreset)
+            if (startUpParams.ExecuteSamsungPreset)
             {
-                var _ = _samsungService.ApplyPreset(startUpParams.LgPresetName);
+                var _ = _samsungService.ApplyPreset(startUpParams.SamsungPresetName);
             }
         }
 
         internal void Save()
         {
-            FormUtils.SaveSortState(lvSamsungPresets.ListViewItemSorter, _config.LgPresetsSortState);
+            FormUtils.SaveSortState(lvSamsungPresets.ListViewItemSorter, _config.SamsungPresetsSortState);
         }
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
@@ -116,31 +116,31 @@ namespace ColorControl.Services.Samsung
             Utils.HandleKeyboardShortcutUp(e);
         }
 
-        private void FillLgPresets()
+        private void FillPresets()
         {
             FormUtils.InitListView(lvSamsungPresets, SamsungPreset.GetColumnNames());
 
             foreach (var preset in _samsungService.GetPresets())
             {
-                AddOrUpdateItemLg(preset);
+                AddOrUpdateItem(preset);
                 Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
             }
         }
 
-        private void AddOrUpdateItemLg(SamsungPreset preset = null, ListViewItem specItem = null)
+        private void AddOrUpdateItem(SamsungPreset preset = null, ListViewItem specItem = null)
         {
             FormUtils.AddOrUpdateListItem(lvSamsungPresets, _samsungService.GetPresets(), _config, preset, specItem);
         }
 
         private void btnCloneLg_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             var newPreset = preset.Clone();
-            AddOrUpdateItemLg(newPreset);
+            AddOrUpdateItem(newPreset);
         }
 
-        private SamsungPreset GetSelectedLgPreset()
+        private SamsungPreset GetSelectedPreset()
         {
             if (lvSamsungPresets.SelectedItems.Count > 0)
             {
@@ -175,7 +175,7 @@ namespace ColorControl.Services.Samsung
             edtSamsungPresetIncludedProcesses.Enabled = enabled;
             edtSamsungPresetExcludedProcesses.Enabled = enabled;
 
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             if (preset != null)
             {
@@ -230,7 +230,7 @@ namespace ColorControl.Services.Samsung
 
         private async void btnApplyLg_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             await ApplyPreset(preset);
         }
@@ -243,7 +243,7 @@ namespace ColorControl.Services.Samsung
                 return;
             }
 
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             var name = edtNameLg.Text.Trim();
 
@@ -275,8 +275,8 @@ namespace ColorControl.Services.Samsung
             }
             else
             {
-                var lgApp = (SamsungApp)cbxSamsungApps.SelectedItem;
-                preset.AppId = lgApp.AppId;
+                var app = (SamsungApp)cbxSamsungApps.SelectedItem;
+                preset.AppId = app.AppId;
             }
 
             var triggerType = FormUtils.GetComboBoxEnumItem<PresetTriggerType>(cbxSamsungPresetTrigger);
@@ -295,7 +295,7 @@ namespace ColorControl.Services.Samsung
 
             Utils.ParseWords(preset.Steps, text);
 
-            AddOrUpdateItemLg();
+            AddOrUpdateItem();
 
             if (shortcutChanged)
             {
@@ -326,10 +326,10 @@ namespace ColorControl.Services.Samsung
 
             FormUtils.BuildComboBox(cbxSamsungPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
 
-            if (!string.IsNullOrEmpty(_lgTabMessage))
+            if (!string.IsNullOrEmpty(_tabMessage))
             {
-                MessageForms.WarningOk(_lgTabMessage);
-                _lgTabMessage = null;
+                MessageForms.WarningOk(_tabMessage);
+                _tabMessage = null;
             }
         }
 
@@ -354,15 +354,15 @@ namespace ColorControl.Services.Samsung
 
             if (!devices.Any())
             {
-                var message = "It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.";
+                var message = "It seems there's no Samsung TV available! Please make sure it's connected to the same network as this PC.";
 
-                if (Visible /*tcMain.SelectedTab == tabLG*/)
+                if (Visible)
                 {
                     MessageForms.WarningOk(message);
                 }
                 else
                 {
-                    _lgTabMessage = message;
+                    _tabMessage = message;
                 }
             }
 
@@ -406,8 +406,8 @@ namespace ColorControl.Services.Samsung
 
         private void FillApps(bool forced)
         {
-            var lgApps = _samsungService?.GetApps();
-            if (forced && (lgApps == null || !lgApps.Any()))
+            var apps = _samsungService?.GetApps();
+            if (forced && (apps == null || !apps.Any()))
             {
                 MessageForms.WarningOk("Could not refresh the apps. Check the log for details.");
                 return;
@@ -417,30 +417,30 @@ namespace ColorControl.Services.Samsung
 
         private void InitApps()
         {
-            var lgApps = _samsungService?.GetApps();
+            var apps = _samsungService?.GetApps();
 
             cbxSamsungApps.Items.Clear();
-            if (lgApps != null)
+            if (apps != null)
             {
-                cbxSamsungApps.Items.AddRange(lgApps.ToArray());
+                cbxSamsungApps.Items.AddRange(apps.ToArray());
             }
 
             for (var i = 0; i < lvSamsungPresets.Items.Count; i++)
             {
                 var item = lvSamsungPresets.Items[i];
-                AddOrUpdateItemLg((SamsungPreset)item.Tag, item);
+                AddOrUpdateItem((SamsungPreset)item.Tag, item);
             }
 
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
             if (preset != null)
             {
-                cbxSamsungApps.SelectedIndex = lgApps == null ? -1 : lgApps.FindIndex(x => x.AppId.Equals(preset.AppId));
+                cbxSamsungApps.SelectedIndex = apps == null ? -1 : apps.FindIndex(x => x.AppId.Equals(preset.AppId));
             }
         }
 
         private void btnDeleteLg_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             if (preset == null)
             {
@@ -460,7 +460,7 @@ namespace ColorControl.Services.Samsung
 
         private void btnAddLg_Click(object sender, EventArgs e)
         {
-            AddOrUpdateItemLg(_samsungService.CreateNewPreset());
+            AddOrUpdateItem(_samsungService.CreateNewPreset());
         }
 
         internal async Task ApplyPreset(SamsungPreset preset)
@@ -504,12 +504,12 @@ namespace ColorControl.Services.Samsung
 
         private void lvSamsungPresets_DoubleClick(object sender, EventArgs e)
         {
-            ApplySelectedLgPreset();
+            ApplySelectedPreset();
         }
 
-        private async void ApplySelectedLgPreset()
+        private async void ApplySelectedPreset()
         {
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
             await ApplyPreset(preset);
         }
 
@@ -530,7 +530,7 @@ namespace ColorControl.Services.Samsung
             var item = sender as ToolStripItem;
             var action = item.Tag as SamsungDevice.InvokableAction;
 
-            var value = ShowLgActionForm(action);
+            var value = ShowActionForm(action);
 
             var text = action.Name;
 
@@ -542,7 +542,7 @@ namespace ColorControl.Services.Samsung
             FormUtils.AddStepToTextBox(edtStepsLg, text);
         }
 
-        private string ShowLgActionForm(SamsungDevice.InvokableAction action)
+        private string ShowActionForm(SamsungDevice.InvokableAction action)
         {
             var text = action.Name;
             var title = action.Title ?? action.Name;
@@ -718,7 +718,7 @@ Use 'Settings > Test power off/on' to test this functionality."
         {
             var text = edtShortcutLg.Text;
 
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             FormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
         }
@@ -786,7 +786,7 @@ Use 'Settings > Test power off/on' to test this functionality."
         {
             mnuLgActions.DropDownItems.Clear();
 
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             if (preset == null)
             {
@@ -795,7 +795,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
             var device = _samsungService.GetPresetDevice(preset);
 
-            BuildLgActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
+            BuildActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
             FormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
             FormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
@@ -822,49 +822,24 @@ Do you want to continue?"
             //_samsungService.Config.ShowRemoteControl = chkSamsungRemoteControlShow.Checked;
         }
 
-        private void BuildLgActionMenu(SamsungDevice device, ToolStripItemCollection parent, string parentName, EventHandler clickEvent, bool showAdvanced = false, bool showGameBar = false)
+        private void BuildActionMenu(SamsungDevice device, ToolStripItemCollection parent, string parentName, EventHandler clickEvent, bool showAdvanced = false)
         {
             if (device == null)
             {
                 return;
             }
 
-            var actions = new List<SamsungDevice.InvokableAction>();// device.GetInvokableActions(showAdvanced);
-            var gameBarActions = new List<SamsungDevice.InvokableAction>();// device.GetInvokableActionsForGameBar();
-            var activatedGameBarActions = new List<SamsungDevice.InvokableAction>();// device.GetActionsForGameBar();
+            var actions = device.GetInvokableActions(showAdvanced);
 
-            var expertActions = actions.Where(a => a.EnumType != null || a.MaxValue > a.MinValue || a.AsyncFunction != null).ToList();
-
-            var categories = expertActions.Select(a => a.Category ?? "misc").Where(c => !string.IsNullOrEmpty(c)).Distinct();
-
-            foreach (var category in categories)
+            foreach (var action in actions)
             {
-                var catMenuItem = FormUtils.BuildDropDownMenuEx(parent, parentName, Utils.FirstCharUpperCase(category), null, null, category);
+                var text = action.Title ?? action.Name;
 
-                foreach (var action in expertActions.Where(a => (a.Category ?? "misc") == category))
-                {
-                    if (!showGameBar)
-                    {
-                        var text = action.Title ?? action.Name;
+                var item = parent.AddCustom(text);
+                item.Tag = action;
+                item.Click += clickEvent;
 
-                        var item = catMenuItem.DropDownItems.AddCustom(text);
-                        item.Tag = action;
-                        item.Click += clickEvent;
-                        continue;
-                    }
-
-                    var menu = FormUtils.BuildDropDownMenuEx(catMenuItem.DropDownItems, catMenuItem.Name, action.Title, action.EnumType, clickEvent, action, (int)action.MinValue, (int)action.MaxValue, action.NumberOfValues > 1);
-
-                    if (!gameBarActions.Contains(action))
-                    {
-                        continue;
-                    }
-                }
-            }
-
-            if (!showAdvanced)
-            {
-                return;
+                //var menu = FormUtils.BuildDropDownMenuEx(catMenuItem.DropDownItems, catMenuItem.Name, action.Title, action.EnumType, clickEvent, action, (int)action.MinValue, (int)action.MaxValue, action.NumberOfValues > 1);
             }
         }
 
@@ -878,7 +853,7 @@ Do you want to continue?"
 
         private void btnSamsungPresetEditTriggerConditions_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedLgPreset();
+            var preset = GetSelectedPreset();
 
             if (preset == null)
             {
@@ -979,8 +954,6 @@ For waking up to work, you need to activate the following setting on the TV:
 Connection > Network > Expert Settings:
 1) Power On with Mobile
 2) IP Remote
-
-It will also work over a wired connection.
 
 Do you want to continue?";
 
@@ -1085,6 +1058,7 @@ Do you want to continue?";
             var turnOffField = new MessageForms.FieldDefinition
             {
                 Label = "Turn screen off instead of power off",
+                SubLabel = "NOTE: turning the screen off might not work correctly on all models",
                 FieldType = MessageForms.FieldType.CheckBox,
                 Value = device.Options.TurnScreenOffOnScreenSaver
             };

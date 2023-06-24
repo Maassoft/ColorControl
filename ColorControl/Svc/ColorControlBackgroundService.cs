@@ -130,7 +130,7 @@ namespace ColorControl.Svc
 
             var startUpParams = StartUpParams.Parse(args);
 
-            return SvcResultMessage.FromResult(await Program.HandleStartupParams(startUpParams, null));
+            return SvcResultMessage.FromResult(await CommandLineHandler.HandleStartupParams(startUpParams, null));
         }
 
         private SvcResultMessage HandleSetLgConfigMessage(SvcMessage message)

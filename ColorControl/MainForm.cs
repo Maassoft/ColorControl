@@ -411,6 +411,8 @@ namespace ColorControl
             lbPlugins.Items.Add("NVIDIA Profile Inspector by Orbmu2k");
             lbPlugins.Items.Add("NvidiaML wrapper by LibreHardwareMonitor");
             lbPlugins.Items.Add("Novideo sRGB by ledoge");
+            lbPlugins.Items.Add("NLogViewer by dojo90");
+            lbPlugins.Items.Add("WPFDarkTheme by AngryCarrot789");
         }
 
         private void OpenForm(object sender, EventArgs e)
@@ -1022,7 +1024,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             BeginInvoke(() => HandleCheckForUpdates(latest));
         }
 
-        private void HandleCheckForUpdates(dynamit)
+        private void HandleCheckForUpdates(dynamic latest)
         {
             if (latest?.tag_name == null)
             {

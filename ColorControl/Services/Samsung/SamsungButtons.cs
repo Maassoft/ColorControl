@@ -39,6 +39,10 @@
         KEY_HDMI,
         KEY_CONTENTS,
         KEY_TV_MODE,
-        KEY_PC_MODE
+        KEY_PC_MODE,
+        KEY_SUB_TITLE,
+        KEY_AD,
+        KEY_PMODE,
+        KEY_ASPECT,
     }
 }
