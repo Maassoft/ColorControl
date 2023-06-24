@@ -41,6 +41,8 @@ namespace ColorControl.Services.Samsung
 
             InitializeComponent();
 
+            scSamsungController.Panel2Collapsed = true;
+
             FillLgPresets();
 
             FormUtils.InitSortState(lvSamsungPresets, _config.LgPresetsSortState);
@@ -816,7 +818,7 @@ Do you want to continue?"
 
         private void chkSamsungRemoteControlShow_CheckedChanged(object sender, EventArgs e)
         {
-            scSamsungController.Panel2Collapsed = !chkSamsungRemoteControlShow.Checked;
+            //scSamsungController.Panel2Collapsed = !chkSamsungRemoteControlShow.Checked;
             //_samsungService.Config.ShowRemoteControl = chkSamsungRemoteControlShow.Checked;
         }
 

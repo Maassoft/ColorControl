@@ -16,7 +16,7 @@ namespace ColorControl.Forms
         private static Dictionary<string, Tuple<Color, Color, Color, Color>> _defaultColors = new Dictionary<string, Tuple<Color, Color, Color, Color>>();
         private static ToolStripRenderer _defaultRenderer;
         private static Type[] _windowColorTypes = new[] { typeof(GroupBox), typeof(TabPage), typeof(UserControl) };
-        private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
         public class DarkModeToolStripRenderer : ToolStripProfessionalRenderer
         {

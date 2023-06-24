@@ -762,11 +762,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void InitSelectedTab()
         {
-            if (tcMain.SelectedTab == tabLog)
-            {
-                LoadLog();
-            }
-            else if (tcMain.SelectedTab == tabInfo)
+            if (tcMain.SelectedTab == tabInfo)
             {
                 LoadInfo();
             }
@@ -948,48 +944,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             await _samsungPanel?.ApplyPreset(preset);
         }
 
-        private void LoadLog()
-        {
-            var logType = cbxLogType.SelectedIndex;
-
-            if (logType == -1)
-            {
-                cbxLogType.SelectedIndex = 0;
-                return;
-            }
-
-            string text;
-
-            if (logType == 0)
-            {
-                var filename = Path.Combine(_dataDir, "LogFile.txt");
-
-                text = Utils.ReadText(filename);
-
-                text ??= "No log file found";
-            }
-            else
-            {
-                if (Utils.IsServiceRunning())
-                {
-                    var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
-
-                    var result = PipeUtils.SendMessage(message);
-
-                    text = result?.Data ?? "Cannot get log from service";
-                }
-                else
-                {
-                    text = "The service is not installed or not running";
-                }
-            }
-
-            edtLog.Text = text;
-
-            edtLog.SelectionStart = text.Length;
-            edtLog.ScrollToCaret();
-        }
-
         private void LoadInfo()
         {
             grpNVIDIAInfo.Visible = _serviceManager.NvService != null;
@@ -1035,38 +989,10 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void MainForm_Activated(object sender, EventArgs e)
         {
-            if (tcMain.SelectedTab == tabLog)
-            {
-                LoadLog();
-            }
-            else if (tcMain.SelectedTab?.Controls.Count > 0 && tcMain.SelectedTab.Controls[0] is IModulePanel panel)
+            if (tcMain.SelectedTab?.Controls.Count > 0 && tcMain.SelectedTab.Controls[0] is IModulePanel panel)
             {
                 panel.UpdateInfo();
             }
-        }
-
-        private void btnClearLog_Click(object sender, EventArgs e)
-        {
-            var logType = cbxLogType.SelectedIndex;
-
-            if (logType == -1)
-            {
-                return;
-            }
-
-            if (logType == 0)
-            {
-                var filename = Program.LogFilename;
-                if (File.Exists(filename))
-                {
-                    File.Delete(filename);
-                }
-            }
-            else
-            {
-                PipeUtils.SendMessage(SvcMessageType.ClearLog);
-            }
-            edtLog.Clear();
         }
 
         private void AfterInitialized()
@@ -1096,7 +1022,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             BeginInvoke(() => HandleCheckForUpdates(latest));
         }
 
-        private void HandleCheckForUpdates(dynamic latest)
+        private void HandleCheckForUpdates(dynamit)
         {
             if (latest?.tag_name == null)
             {
@@ -1104,9 +1030,33 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
 
             var currentVersion = Application.ProductVersion;
+            var cvParts = currentVersion.Split(".");
 
-            var newVersion = latest.tag_name.Value.Substring(1);
-            if (newVersion.CompareTo(currentVersion) > 0)
+            var newVersion = (string)latest.tag_name.Value.Substring(1);
+            var nvParts = newVersion.Split(".");
+
+            bool CompareVersions()
+            {
+                var result = true;
+
+                for (var i = 0; i < nvParts.Length; i++)
+                {
+                    var part = nvParts[i];
+                    var cvPart = cvParts[i];
+
+                    if (Utils.ParseInt(part) >= Utils.ParseInt(cvPart))
+                    {
+                        continue;
+                    }
+
+                    result = false;
+                    break;
+                }
+
+                return result;
+            }
+
+            if (nvParts.Length != cvParts.Length || CompareVersions())
             {
                 _updateHtmlUrl = latest.html_url.Value;
 
@@ -1360,11 +1310,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
 
             UpdateServiceInfo();
-        }
-
-        private void cbxLogType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadLog();
         }
 
         private async void MainForm_Click(object sender, EventArgs e)

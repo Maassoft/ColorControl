@@ -360,6 +360,7 @@
             chkSamsungRemoteControlShow.TabIndex = 43;
             chkSamsungRemoteControlShow.Text = "Remote Control";
             chkSamsungRemoteControlShow.UseVisualStyleBackColor = true;
+            chkSamsungRemoteControlShow.Visible = false;
             chkSamsungRemoteControlShow.CheckedChanged += chkSamsungRemoteControlShow_CheckedChanged;
             // 
             // label3

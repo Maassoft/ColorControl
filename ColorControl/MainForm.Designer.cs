@@ -41,6 +41,7 @@
             lblFixChromeFontsDescription = new System.Windows.Forms.Label();
             chkFixChromeFonts = new System.Windows.Forms.CheckBox();
             grpGeneralOptions = new System.Windows.Forms.GroupBox();
+            btnOptionsLog = new System.Windows.Forms.Button();
             btnOptionsAdvanced = new System.Windows.Forms.Button();
             chkOptionsUseDarkMode = new System.Windows.Forms.CheckBox();
             chkAutoInstallUpdates = new System.Windows.Forms.CheckBox();
@@ -57,11 +58,6 @@
             chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
             chkStartMinimized = new System.Windows.Forms.CheckBox();
             chkStartAfterLogin = new System.Windows.Forms.CheckBox();
-            tabLog = new System.Windows.Forms.TabPage();
-            lblShowLog = new System.Windows.Forms.Label();
-            cbxLogType = new System.Windows.Forms.ComboBox();
-            btnClearLog = new System.Windows.Forms.Button();
-            edtLog = new System.Windows.Forms.TextBox();
             tabInfo = new System.Windows.Forms.TabPage();
             grpNVIDIAInfo = new System.Windows.Forms.GroupBox();
             btnRefreshNVIDIAInfo = new System.Windows.Forms.Button();
@@ -71,13 +67,11 @@
             label7 = new System.Windows.Forms.Label();
             lblInfo = new System.Windows.Forms.Label();
             btnUpdate = new System.Windows.Forms.Button();
-            btnOptionsLog = new System.Windows.Forms.Button();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
-            tabLog.SuspendLayout();
             tabInfo.SuspendLayout();
             grpNVIDIAInfo.SuspendLayout();
             groupBox3.SuspendLayout();
@@ -87,7 +81,6 @@
             // 
             tcMain.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             tcMain.Controls.Add(tabOptions);
-            tcMain.Controls.Add(tabLog);
             tcMain.Controls.Add(tabInfo);
             tcMain.Location = new System.Drawing.Point(14, 14);
             tcMain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -242,6 +235,17 @@
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
+            // 
+            // btnOptionsLog
+            // 
+            btnOptionsLog.Location = new System.Drawing.Point(103, 172);
+            btnOptionsLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnOptionsLog.Name = "btnOptionsLog";
+            btnOptionsLog.Size = new System.Drawing.Size(88, 27);
+            btnOptionsLog.TabIndex = 68;
+            btnOptionsLog.Text = "Logging...";
+            btnOptionsLog.UseVisualStyleBackColor = true;
+            btnOptionsLog.Click += btnOptionsLog_Click;
             // 
             // btnOptionsAdvanced
             // 
@@ -435,67 +439,6 @@
             chkStartAfterLogin.UseVisualStyleBackColor = true;
             chkStartAfterLogin.CheckedChanged += chkStartAfterLogin_CheckedChanged;
             // 
-            // tabLog
-            // 
-            tabLog.Controls.Add(lblShowLog);
-            tabLog.Controls.Add(cbxLogType);
-            tabLog.Controls.Add(btnClearLog);
-            tabLog.Controls.Add(edtLog);
-            tabLog.Location = new System.Drawing.Point(4, 24);
-            tabLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            tabLog.Name = "tabLog";
-            tabLog.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            tabLog.Size = new System.Drawing.Size(1114, 539);
-            tabLog.TabIndex = 3;
-            tabLog.Text = "Log";
-            tabLog.UseVisualStyleBackColor = true;
-            // 
-            // lblShowLog
-            // 
-            lblShowLog.AutoSize = true;
-            lblShowLog.Location = new System.Drawing.Point(8, 14);
-            lblShowLog.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            lblShowLog.Name = "lblShowLog";
-            lblShowLog.Size = new System.Drawing.Size(88, 15);
-            lblShowLog.TabIndex = 33;
-            lblShowLog.Text = "Show log from:";
-            // 
-            // cbxLogType
-            // 
-            cbxLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            cbxLogType.FormattingEnabled = true;
-            cbxLogType.Items.AddRange(new object[] { "Main application", "Service" });
-            cbxLogType.Location = new System.Drawing.Point(102, 9);
-            cbxLogType.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            cbxLogType.Name = "cbxLogType";
-            cbxLogType.Size = new System.Drawing.Size(189, 23);
-            cbxLogType.TabIndex = 32;
-            cbxLogType.SelectedIndexChanged += cbxLogType_SelectedIndexChanged;
-            // 
-            // btnClearLog
-            // 
-            btnClearLog.Location = new System.Drawing.Point(299, 6);
-            btnClearLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            btnClearLog.Name = "btnClearLog";
-            btnClearLog.Size = new System.Drawing.Size(88, 27);
-            btnClearLog.TabIndex = 2;
-            btnClearLog.Text = "Clear log";
-            btnClearLog.UseVisualStyleBackColor = true;
-            btnClearLog.Click += btnClearLog_Click;
-            // 
-            // edtLog
-            // 
-            edtLog.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            edtLog.Location = new System.Drawing.Point(7, 40);
-            edtLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            edtLog.MaxLength = 327670;
-            edtLog.Multiline = true;
-            edtLog.Name = "edtLog";
-            edtLog.ReadOnly = true;
-            edtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            edtLog.Size = new System.Drawing.Size(1098, 478);
-            edtLog.TabIndex = 0;
-            // 
             // tabInfo
             // 
             tabInfo.Controls.Add(grpNVIDIAInfo);
@@ -604,17 +547,6 @@
             btnUpdate.Visible = false;
             btnUpdate.Click += btnUpdate_Click;
             // 
-            // btnOptionsLog
-            // 
-            btnOptionsLog.Location = new System.Drawing.Point(103, 172);
-            btnOptionsLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            btnOptionsLog.Name = "btnOptionsLog";
-            btnOptionsLog.Size = new System.Drawing.Size(88, 27);
-            btnOptionsLog.TabIndex = 68;
-            btnOptionsLog.Text = "Logging...";
-            btnOptionsLog.UseVisualStyleBackColor = true;
-            btnOptionsLog.Click += btnOptionsLog_Click;
-            // 
             // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -646,8 +578,6 @@
             grpMiscellaneousOptions.PerformLayout();
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
-            tabLog.ResumeLayout(false);
-            tabLog.PerformLayout();
             tabInfo.ResumeLayout(false);
             grpNVIDIAInfo.ResumeLayout(false);
             groupBox3.ResumeLayout(false);
@@ -662,8 +592,6 @@
         private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
-        private System.Windows.Forms.TabPage tabLog;
-        private System.Windows.Forms.TextBox edtLog;
         private System.Windows.Forms.TabPage tabInfo;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.ListBox lbPlugins;
@@ -679,7 +607,6 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox edtBlankScreenSaverShortcut;
         private System.Windows.Forms.CheckBox chkMinimizeOnClose;
-        private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.CheckBox chkMinimizeToSystemTray;
         private System.Windows.Forms.CheckBox chkCheckForUpdates;
         private System.Windows.Forms.CheckBox chkGdiScaling;
@@ -690,8 +617,6 @@
         private System.Windows.Forms.RadioButton rbElevationNone;
         private System.Windows.Forms.Button btnElevationInfo;
         private System.Windows.Forms.Button btnStartStopService;
-        private System.Windows.Forms.Label lblShowLog;
-        private System.Windows.Forms.ComboBox cbxLogType;
         private System.Windows.Forms.CheckBox chkAutoInstallUpdates;
         private System.Windows.Forms.Button btnUpdate;
         private System.Windows.Forms.GroupBox grpOptionsModules;

@@ -123,14 +123,6 @@
             </ListView.ItemContainerStyle>
             <ListView.View>
                 <helper:AutoSizedGridView>
-                    <GridViewColumn Header="ID" Width="40">
-                        <GridViewColumn.DisplayMemberBinding>
-                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
-                                <Binding Path="."/>
-                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="IdResolver"/>
-                            </MultiBinding>
-                        </GridViewColumn.DisplayMemberBinding>
-                    </GridViewColumn>
                     <GridViewColumn Header="Level" Width="Auto">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -172,20 +164,40 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="TimeStamp" Width="Auto">
-                        <GridViewColumn.DisplayMemberBinding>
-                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
-                                <Binding Path="."/>
-                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="TimeStampResolver"/>
-                            </MultiBinding>
-                        </GridViewColumn.DisplayMemberBinding>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox
+                                    IsReadOnly="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListViewItem}, Path=Foreground}">
+                                    <TextBox.Text>
+                                        <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                            <Binding Path="."/>
+                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="TimeStampResolver"/>
+                                        </MultiBinding>
+                                    </TextBox.Text>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="LoggerName" Width="Auto">
-                        <GridViewColumn.DisplayMemberBinding>
-                            <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
-                                <Binding Path="."/>
-                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="LoggerNameResolver"/>
-                            </MultiBinding>
-                        </GridViewColumn.DisplayMemberBinding>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox
+                                    IsReadOnly="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Foreground="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListViewItem}, Path=Foreground}">
+                                    <TextBox.Text>
+                                        <MultiBinding Converter="{StaticResource ILogEventResolverToStringConverter}">
+                                            <Binding Path="."/>
+                                            <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=dj:NLogViewer}" Path="LoggerNameResolver"/>
+                                        </MultiBinding>
+                                    </TextBox.Text>
+                                </TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Message" Width="Auto" listViewLayoutManager:RangeColumn.IsFillColumn="True">
                         <GridViewColumn.CellTemplate>

@@ -1,7 +1,11 @@
-﻿using System;
+﻿using ColorControl.Native;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using static ColorControl.Native.WinApi;
 
 namespace ColorControl.Common
 {
@@ -46,6 +50,18 @@ namespace ColorControl.Common
 
         public static Process Parent(this Process process, IEnumerable<Process> processes = null)
         {
+            if (Utils.IsAdministrator())
+            {
+                try
+                {
+                    return GetParentProcess(process.Handle);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
             var indexedProcessName = FindIndexedProcessName(process.Id, process.ProcessName, processes);
             if (indexedProcessName == null)
             {
@@ -54,5 +70,25 @@ namespace ColorControl.Common
 
             return FindPidFromIndexedProcessName(indexedProcessName, processes);
         }
+
+        public static Process GetParentProcess(IntPtr handle)
+        {
+            var pbi = new ParentProcessUtilities();
+            int returnLength;
+            int status = WinApi.NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out returnLength);
+            if (status != 0)
+                throw new Win32Exception(status);
+
+            try
+            {
+                return Process.GetProcessById(pbi.InheritedFromUniqueProcessId.ToInt32());
+            }
+            catch (ArgumentException)
+            {
+                // not found
+                return null;
+            }
+        }
+
     }
 }

@@ -1,9 +1,16 @@
 ﻿using ColorControl.Common;
+using ColorControl.Forms;
+using ColorControl.Native;
+using ColorControl.Svc;
+using DJ;
 using NLog;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Navigation;
 
 namespace ColorControl.XForms
@@ -36,9 +43,9 @@ namespace ColorControl.XForms
 
         public static void CreateAndShow(bool show = true)
         {
-            if (Application.Current == null)
+            if (System.Windows.Application.Current == null)
             {
-                new Application();
+                new System.Windows.Application();
             }
 
             _window ??= new LogWindow();
@@ -46,9 +53,44 @@ namespace ColorControl.XForms
             if (show)
             {
                 _window.WindowState = WindowState.Normal;
+                _window.InitTheme();
                 _window.Show();
+                _window.InitThemeAfterShow();
                 _window.Topmost = true;
                 _window.Topmost = false;
+            }
+        }
+
+        protected void InitThemeAfterShow()
+        {
+            var useDarkTheme = DarkModeUtils.UseDarkMode;
+
+            var handle = new WindowInteropHelper(_window).Handle;
+
+            var value = useDarkTheme ? 1 : 0;
+
+            // Takes care of title bar
+            WinApi.DwmSetWindowAttribute(handle, DarkModeUtils.DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, 4);
+        }
+
+        protected void InitTheme()
+        {
+            if (DarkModeUtils.UseDarkMode)
+            {
+                var dict = new ResourceDictionary { Source = new Uri($"Themes/DarkTheme.xaml", UriKind.Relative) };
+
+                if (Application.Current.Resources.MergedDictionaries.Any())
+                {
+                    Application.Current.Resources.MergedDictionaries[0] = dict;
+                }
+                else
+                {
+                    Application.Current.Resources.MergedDictionaries.Add(dict);
+                }
+            }
+            else
+            {
+                Application.Current.Resources.MergedDictionaries.Clear();
             }
         }
 
@@ -72,19 +114,47 @@ namespace ColorControl.XForms
         private void RawLog_Click(object sender, RoutedEventArgs e)
         {
             var context = AppContext.CurrentContext;
-            var logFile = Path.Combine(context.DataPath, "LogFile.txt");
+
+            string logFile;
+            if (tabControl.SelectedIndex == 0)
+            {
+                logFile = Program.LogFilename;
+            }
+            else
+            {
+                if (!Utils.IsServiceRunning())
+                {
+                    MessageForms.WarningOk("Service is not running");
+                    return;
+                }
+
+                var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
+
+                var result = PipeUtils.SendMessage(message);
+
+                var logData = result?.Data ?? "Cannot get log from service";
+
+                logFile = Path.Combine(Path.GetTempPath(), "CCServiceLogFile.txt");
+
+                Utils.WriteText(logFile, logData);
+            }
+
+            if (!File.Exists(logFile))
+            {
+                MessageForms.WarningOk("Log file not found.");
+                return;
+            }
 
             Utils.StartProcess(logFile);
         }
 
         private void LoadOlder_Click(object sender, RoutedEventArgs e)
         {
-            var context = AppContext.CurrentContext;
-            var logFile = Path.Combine(context.DataPath, "LogFile.txt");
+            var viewer = GetCurrentViewer();
 
-            var lines = Utils.ReadLines(logFile);
+            var lines = LoadLog();
 
-            logViewer.LoadLines(lines);
+            viewer.LoadLines(lines);
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
@@ -103,17 +173,72 @@ namespace ColorControl.XForms
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (logViewer.HasEvents())
+            var viewer = GetCurrentViewer();
+
+            if (viewer.HasEvents())
             {
                 return;
             }
 
             var context = AppContext.CurrentContext;
-            var logFile = Path.Combine(context.DataPath, "LogFile.txt");
 
-            var lines = Utils.ReadLines(logFile);
+            var lines = LoadLog();
 
-            logViewer.LoadLines(lines, context.StartTime);
+            viewer.LoadLines(lines, context.StartTime);
+        }
+
+        private List<string> LoadLog()
+        {
+            string logFile;
+
+            if (tabControl.SelectedIndex == 0)
+            {
+                return Utils.ReadLines(Program.LogFilename);
+            }
+
+            if (Utils.IsServiceRunning())
+            {
+                var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
+
+                var result = PipeUtils.SendMessage(message);
+
+                logFile = result?.Data ?? "Cannot get log from service";
+            }
+            else
+            {
+                logFile = "The service is not installed or not running";
+            }
+
+            return logFile.Split("\r\n").ToList();
+        }
+
+        private NLogViewer GetCurrentViewer()
+        {
+            return tabControl.SelectedIndex == 0 ? logViewerApplication : logViewerService;
+        }
+
+        private void DeleteLog_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageForms.QuestionYesNo("Are you sure you want to delete the log? This will clear all logging.") != System.Windows.Forms.DialogResult.Yes)
+            {
+                return;
+            }
+
+            if (tabControl.SelectedIndex == 0)
+            {
+                var filename = Program.LogFilename;
+                if (File.Exists(filename))
+                {
+                    File.Delete(filename);
+                }
+
+                logViewerApplication.ClearCommand.Execute(null);
+            }
+            else
+            {
+                PipeUtils.SendMessage(SvcMessageType.ClearLog);
+                logViewerService.ClearCommand.Execute(null);
+            }
         }
     }
 }

@@ -562,9 +562,16 @@ namespace DJ
                     if (lastEventInfo != null && !string.IsNullOrWhiteSpace(line))
                     {
                         lastEventInfo.Message += "\r\n" + line;
+
+                        continue;
                     }
 
-                    continue;
+                    if (lines.Count > 1)
+                    {
+                        continue;
+                    }
+
+                    parts = new string[] { DateTime.Now.ToString(), "info", "", line };
                 }
 
                 var timeStamp = DateTime.Parse(parts[0]);

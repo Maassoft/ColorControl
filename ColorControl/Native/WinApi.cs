@@ -96,6 +96,18 @@ namespace ColorControl.Native
             public MessageFilterInfo info;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ParentProcessUtilities
+        {
+            // These members must match PROCESS_BASIC_INFORMATION
+            internal IntPtr Reserved1;
+            internal IntPtr PebBaseAddress;
+            internal IntPtr Reserved2_0;
+            internal IntPtr Reserved2_1;
+            internal IntPtr UniqueProcessId;
+            internal IntPtr InheritedFromUniqueProcessId;
+        }
+
         public const int ENUM_CURRENT_SETTINGS = -1;
         public const int ENUM_REGISTRY_SETTINGS = -2;
 
@@ -149,5 +161,8 @@ namespace ColorControl.Native
 
         [DllImport("dwmapi.dll", PreserveSig = true)]
         public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+        [DllImport("ntdll.dll")]
+        public static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, int processInformationLength, out int returnLength);
     }
 }

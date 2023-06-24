@@ -11,11 +11,12 @@
         Height="600"
         WindowStartupLocation="CenterOwner"
         SnapsToDevicePixels="True"
+        Style="{DynamicResource CustomWindowStyle}"
         d:DesignHeight="450" d:DesignWidth="800" Loaded="Window_Loaded">
     <DockPanel Margin="6 0 6 6" LastChildFill="True">
         <GroupBox DockPanel.Dock="Top" HorizontalAlignment="Stretch" Margin="0,6,0,0" VerticalAlignment="Bottom" Header="Log settings" Padding="6">
             <StackPanel Orientation="Horizontal">
-                <TextBlock>Log level:</TextBlock>
+                <TextBlock VerticalAlignment="Center">Log level:</TextBlock>
                 <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
                     <ComboBoxItem>Trace</ComboBoxItem>
                     <ComboBoxItem>Debug</ComboBoxItem>
@@ -30,11 +31,19 @@
             <StackPanel Orientation="Horizontal">
                 <Button Click="LoadOlder_Click" Content="Load older..." Width="75" Margin="0,0,6,0"/>
                 <Button Width="75" Click="RawLog_Click" Margin="0,0,6,0">View raw log</Button>
+                <Button Width="75" Click="DeleteLog_Click" Margin="0,0,6,0">Delete log</Button>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Width="75" Click="Close_Click" IsCancel="True">Close</Button>
             </StackPanel>
         </DockPanel>
-        <dj:NLogViewer x:Name="logViewer" />
+        <TabControl x:Name="tabControl">
+            <TabItem Header="Application">
+                <dj:NLogViewer x:Name="logViewerApplication" />
+            </TabItem>
+            <TabItem Header="Service">
+                <dj:NLogViewer x:Name="logViewerService" />
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>
