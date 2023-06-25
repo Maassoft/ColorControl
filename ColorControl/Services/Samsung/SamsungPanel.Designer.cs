@@ -837,8 +837,5 @@
         private System.Windows.Forms.ToolStripMenuItem miTestPowerOffOn;
         private System.Windows.Forms.ToolStripMenuItem miNvSettings;
         private System.Windows.Forms.Button btnSamsungDeviceOptionsSettings;
-        private System.Windows.Forms.ToolStripMenuItem mnuLgSetSvcMenuFlag;
-        private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuEnable;
-        private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuDisable;
     }
 }
