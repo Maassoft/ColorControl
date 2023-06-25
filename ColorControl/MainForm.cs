@@ -168,8 +168,8 @@ namespace ColorControl
             _modules.Add("NVIDIA controller", InitNvService);
             _modules.Add("AMD controller", InitAmdService);
             _modules.Add("LG controller", InitLgService);
-            _modules.Add("Game launcher", InitGameService);
             _modules.Add("Samsung controller", InitSamsungService);
+            _modules.Add("Game launcher", InitGameService);
 
             foreach (var keyValue in _modules)
             {
@@ -185,6 +185,10 @@ namespace ColorControl
                     existingModule.InitAction = keyValue.Value;
                 }
             }
+
+            var names = _modules.Select(m => m.Key).ToList();
+
+            _config.Modules = _config.Modules.OrderBy(m => names.IndexOf(m.DisplayName)).ToList();
         }
 
         private void InitModules()
@@ -297,7 +301,7 @@ namespace ColorControl
             {
                 _serviceManager.GameService = Program.ServiceProvider.GetRequiredService<GameService>();
 
-                _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _trayIcon, Handle);
+                _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _serviceManager.SamsungService, _trayIcon, Handle);
                 _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _serviceManager.GameService.ToggleQuickAccessForm);

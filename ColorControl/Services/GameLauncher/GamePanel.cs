@@ -5,7 +5,7 @@ using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
-using NLog;
+using ColorControl.Services.Samsung;
 using nspector;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace ColorControl.Services.GameLauncher
     {
         public static readonly int SHORTCUTID_GAMEQA = -203;
 
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        //private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private GameService _gameService;
@@ -31,8 +31,9 @@ namespace ColorControl.Services.GameLauncher
         private NvService _nvService;
         private AmdService _amdService;
         private LgService _lgService;
+        private SamsungService _samsungService;
 
-        internal GamePanel(GameService gameService, NvService nvService, AmdService amdService, LgService lgService, NotifyIcon trayIcon, IntPtr handle)
+        internal GamePanel(GameService gameService, NvService nvService, AmdService amdService, LgService lgService, SamsungService samsungService, NotifyIcon trayIcon, IntPtr handle)
         {
             _gameService = gameService;
             _trayIcon = trayIcon;
@@ -40,7 +41,7 @@ namespace ColorControl.Services.GameLauncher
             _nvService = nvService;
             _amdService = amdService;
             _lgService = lgService;
-
+            _samsungService = samsungService;
             _config = AppContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -311,6 +312,7 @@ namespace ColorControl.Services.GameLauncher
             FormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
             FormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
             FormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
+            FormUtils.BuildServicePresetsMenu(mnuGameSamsungPresets, _samsungService, "Samsung", miGameAddPreset_Click);
         }
 
         private void miGameAddPreset_Click(object sender, EventArgs e)

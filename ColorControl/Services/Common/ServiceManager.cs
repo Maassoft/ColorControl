@@ -43,6 +43,12 @@ namespace ColorControl.Services.Common
 
                 return true;
             }
+            if (SamsungService != null && serviceName.Equals("SamsungPreset", StringComparison.OrdinalIgnoreCase))
+            {
+                await SamsungService.ApplyPreset(parameters[0]);
+
+                return true;
+            }
 
             if (serviceName.Equals("StartProgram", StringComparison.OrdinalIgnoreCase))
             {
