@@ -187,6 +187,7 @@ namespace ColorControl
             var logfile = new NLog.Targets.FileTarget("logfile") { FileName = LogFilename };
 
             _loggingRule = new LoggingRule("*", LogLevel.Trace, LogLevel.Fatal, logfile);
+            _loggingRule.RuleName = "ColorControl";
 
             // Rules for mapping loggers to targets            
             config.AddRule(_loggingRule);
@@ -217,7 +218,11 @@ namespace ColorControl
 
             var minLogLevel = LogLevel.FromString(Config.LogLevel);
 
-            _loggingRule.SetLoggingLevels(minLogLevel, LogLevel.Fatal);
+            if (minLogLevel != LogLevel.Trace)
+            {
+                _loggingRule.SetLoggingLevels(minLogLevel, LogLevel.Fatal);
+                LogManager.ReconfigExistingLoggers();
+            }
         }
 
         public static IServiceProvider ServiceProvider { get; private set; }

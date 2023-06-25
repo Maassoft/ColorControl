@@ -160,7 +160,7 @@ namespace ColorControl.Services.Samsung
             {
                 var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
+                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey, Utils.DEV_CLASS_DISPLAY_TV_LCD);
 
                 var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new SamsungDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
                 var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);

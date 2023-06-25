@@ -1206,6 +1206,15 @@ Do you want to continue?";
                     FieldType = MessageForms.FieldType.CheckBox,
                     Label = "Automatically set selected device to last powered on",
                     Value = _lgService.Config.SetSelectedDeviceByPowerOn
+                },
+                new()
+                {
+                    FieldType = MessageForms.FieldType.Numeric,
+                    Label = "Default delay between remote control button presses (milliseconds).",
+                    SubLabel = "Increasing this delay may prevent skipped button presses.",
+                    MinValue = 100,
+                    MaxValue = 2000,
+                    Value = _lgService.Config.DefaultButtonDelay
                 }
             };
 
@@ -1240,6 +1249,7 @@ Do you want to continue?";
 
             _lgService.Config.ShowAdvancedActions = values[4].ValueAsBool;
             _lgService.Config.SetSelectedDeviceByPowerOn = values[5].ValueAsBool;
+            _lgService.Config.DefaultButtonDelay = values[6].ValueAsInt;
 
             if (!advancedWasEnabled && _lgService.Config.ShowAdvancedActions)
             {

@@ -18,6 +18,7 @@ namespace ColorControl.Services.LG
         public int ShutdownDelay { get; set; }
         public bool SetSelectedDeviceByPowerOn { get; set; }
         public string QuickAccessShortcut { get; set; }
+        public int DefaultButtonDelay { get; set; }
 
         public LgServiceConfig()
         {
@@ -28,6 +29,7 @@ namespace ColorControl.Services.LG
             Devices = new List<LgDevice>();
             GameBarTop = 100;
             GameBarLeft = 100;
+            DefaultButtonDelay = 200;
         }
     }
 }

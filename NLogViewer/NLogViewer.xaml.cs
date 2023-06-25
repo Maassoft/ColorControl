@@ -517,7 +517,11 @@ namespace DJ
                 if (Pause) return;
                 using (LogEvents.DeferRefresh())
                 {
-                    foreach (LogEventInfo info in infos)
+                    var ccRule = LogManager.Configuration.FindRuleByName("ColorControl");
+
+                    var filteredInfos = infos.Where(i => ccRule == null || ccRule.Levels.Contains(i.Level)).ToList();
+
+                    foreach (LogEventInfo info in filteredInfos)
                     {
                         _LogEventInfos.Add(info);
                     }

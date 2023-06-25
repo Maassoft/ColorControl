@@ -996,8 +996,8 @@ Do you want to continue?";
                 FieldType = MessageForms.FieldType.Numeric,
                 Label = "Default delay between remote control button presses (milliseconds).",
                 SubLabel = "Increasing this delay may prevent skipped button presses.",
-                MinValue = 200,
-                MaxValue = 1000,
+                MinValue = 100,
+                MaxValue = 2000,
                 Value = _samsungService.Config.DefaultButtonDelay
             };
 

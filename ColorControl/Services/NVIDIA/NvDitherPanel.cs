@@ -27,6 +27,11 @@ namespace ColorControl.Services.NVIDIA
             UpdateDitherSettings();
 
             _initialized = true;
+
+            if (DarkModeUtils.UseDarkMode)
+            {
+                grpNvidiaOptions.ForeColor = FormUtils.CurrentForeColor;
+            }
         }
 
         private void RefreshDisplays()

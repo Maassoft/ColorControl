@@ -557,6 +557,7 @@
             btnSamsungRefreshApps.TabIndex = 29;
             btnSamsungRefreshApps.Text = "Refresh";
             btnSamsungRefreshApps.UseVisualStyleBackColor = true;
+            btnSamsungRefreshApps.Visible = false;
             btnSamsungRefreshApps.Click += btnSamsungRefreshApps_Click;
             // 
             // label2

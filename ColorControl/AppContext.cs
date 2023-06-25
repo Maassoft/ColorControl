@@ -1,4 +1,5 @@
 ﻿using ColorControl.Common;
+using NLog;
 using NLog.Config;
 using System;
 using System.ComponentModel;
@@ -33,10 +34,11 @@ namespace ColorControl
             return Utils.IsServiceRunning();
         }
 
-        public void SetLogLevel(NLog.LogLevel logLevel)
+        public void SetLogLevel(LogLevel logLevel)
         {
             Config.LogLevel = logLevel.ToString();
-            LoggingRule.SetLoggingLevels(logLevel, NLog.LogLevel.Fatal);
+            LoggingRule.SetLoggingLevels(logLevel, LogLevel.Fatal);
+            LogManager.ReconfigExistingLoggers();
         }
     }
 }

@@ -648,7 +648,7 @@ namespace ColorControl.Services.LG
                     }
                     try
                     {
-                        await ExecuteSteps(_lgTvApi, preset);
+                        await ExecuteSteps(_lgTvApi, preset, config);
                     }
                     catch (Exception ex)
                     {
@@ -669,7 +669,7 @@ namespace ColorControl.Services.LG
             return true;
         }
 
-        private async Task ExecuteSteps(LgTvApi api, LgPreset preset)
+        private async Task ExecuteSteps(LgTvApi api, LgPreset preset, LgServiceConfig config)
         {
             LgWebOsMouseService mouse = null;
 
@@ -714,7 +714,7 @@ namespace ColorControl.Services.LG
                 {
                     mouse ??= await api.GetMouse();
                     await SendKey(mouse, key);
-                    delay = delay == 0 ? 100 : delay;
+                    delay = delay <= 10 ? config.DefaultButtonDelay : delay;
                 }
 
                 if (delay > 0)

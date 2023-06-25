@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NStandard;
 using NWin32;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,8 @@ namespace ColorControl.Common
 
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
         public static string PKEY_PNPX_PhysicalAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12294";
+        public static string PKEY_DEVICE_CATEGORY = "{78c34fc8-104a-4aca-9ea4-524d52996e57} 90";
+        public static string DEV_CLASS_DISPLAY_TV_LCD = "Display.TV.LCD";
         public static Guid GUID_CONSOLE_DISPLAY_STATE = Guid.Parse("6FE69556-704A-47A0-8F24-C28D936FDA47");
 
         public static bool ConsoleOpened { get; private set; }
@@ -355,10 +358,10 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return false;
         }
 
-        public static string GetDeviceProperty(PnpObject device, string propertyName)
+        public static string[] GetDeviceProperty(PnpObject device, string propertyName)
         {
             object objValue;
-            string value = null;
+            string[] values = null;
 
             //foreach (var key in device.Properties.Keys)
             //{
@@ -367,25 +370,21 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
             if (device.Properties.TryGetValue(propertyName, out objValue))
             {
-                if (objValue is string[])
+                if (objValue is string[] strValues)
                 {
-                    var arr = objValue as string[];
-                    if (arr.Length > 0)
-                    {
-                        value = arr[0];
-                    }
+                    values = strValues.Where(s => !s.IsNullOrWhiteSpace()).ToArray();
                 }
                 else if (objValue is byte[])
                 {
-                    value = BitConverter.ToString((byte[])objValue);
+                    values = new[] { BitConverter.ToString((byte[])objValue) };
                 }
                 else
                 {
-                    value = objValue?.ToString();
+                    values = new[] { objValue?.ToString() };
                 }
             }
 
-            return value;
+            return values;
         }
 
         public static void SetBrightness(IntPtr handle)
@@ -404,7 +403,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             //var colorInfo = info.GetAdvancedColorInfo();
         }
 
-        public static async Task<List<PnpDev>> GetPnpDevices(string deviceName)
+        public static async Task<List<PnpDev>> GetPnpDevices(string deviceName, string category = null)
         {
             var devices = new List<PnpDev>();
 
@@ -413,7 +412,8 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             var reqs = new List<string>
             {
                 PKEY_PNPX_IpAddress,
-                PKEY_PNPX_PhysicalAddress
+                PKEY_PNPX_PhysicalAddress,
+                PKEY_DEVICE_CATEGORY
             };
 
             foreach (var dev in list)
@@ -428,8 +428,18 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
                     foreach (var dev2 in list2)
                     {
-                        var ipAddress = GetDeviceProperty(dev2, "System.Devices.IpAddress");
-                        var macAddress = GetDeviceProperty(dev2, PKEY_PNPX_PhysicalAddress);
+                        var devCategories = GetDeviceProperty(dev2, PKEY_DEVICE_CATEGORY);
+
+                        if (category != null && devCategories?.Any(c => c == category) == false)
+                        {
+                            continue;
+                        }
+
+                        var ipAddresses = GetDeviceProperty(dev2, "System.Devices.IpAddress");
+                        var macAddresses = GetDeviceProperty(dev2, PKEY_PNPX_PhysicalAddress);
+
+                        var ipAddress = ipAddresses?.FirstOrDefault();
+                        var macAddress = macAddresses?.FirstOrDefault();
 
                         if (!devices.Any(x => x.Name.Equals(name) && x.IpAddress != null && x.IpAddress.Equals(ipAddress)))
                         {
