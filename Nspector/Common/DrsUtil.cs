@@ -1,7 +1,5 @@
 ﻿using nspector.Common.Meta;
-using System;
 using System.Globalization;
-using System.Linq;
 
 namespace nspector.Common
 {
@@ -17,7 +15,7 @@ namespace nspector.Common
         public static uint ParseDwordByInputSafe(string input)
         {
             uint result = 0;
-            if (input.ToLower().StartsWith("0x"))
+            if (input.ToLowerInvariant().StartsWith("0x"))
             {
                 try
                 {
@@ -53,7 +51,7 @@ namespace nspector.Common
 
         internal static string ParseStringSettingValue(SettingMeta meta, string text)
         {
-            var valueByName = meta.StringValues.FirstOrDefault(x => x.ValueName != null && x.ValueName.Equals(text));
+            var valueByName = meta.StringValues?.FirstOrDefault(x => x.ValueName != null && x.ValueName.Equals(text));
             if (valueByName != null)
                 return valueByName.Value;
 
@@ -62,8 +60,7 @@ namespace nspector.Common
 
         internal static string GetStringSettingValueName(SettingMeta meta, string stringValue)
         {
-            var settingValue = meta.StringValues
-                       .FirstOrDefault(x => x.Value.Equals(stringValue));
+            var settingValue = meta.StringValues.FirstOrDefault(x => x.Value.Equals(stringValue));
 
             return settingValue == null ? stringValue : settingValue.ValueName;
         }

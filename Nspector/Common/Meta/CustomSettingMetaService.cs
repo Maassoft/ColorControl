@@ -1,7 +1,5 @@
 ﻿using nspector.Common.CustomSettings;
 using nspector.Native.NVAPI2;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace nspector.Common.Meta
 {
@@ -104,6 +102,22 @@ namespace nspector.Common.Meta
         public SettingMetaSource Source
         {
             get { return _source; }
+        }
+
+        public bool IsSettingHidden(uint settingId)
+        {
+            var setting = customSettings.Settings
+               .FirstOrDefault(x => x.SettingId.Equals(settingId));
+
+            return setting?.Hidden ?? false;
+        }
+
+        public string GetDescription(uint settingId)
+        {
+            var setting = customSettings.Settings
+               .FirstOrDefault(x => x.SettingId.Equals(settingId));
+
+            return setting?.Description;
         }
     }
 }

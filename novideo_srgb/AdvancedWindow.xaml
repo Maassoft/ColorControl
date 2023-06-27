@@ -37,7 +37,7 @@
                         <ComboBoxItem>BT.2020</ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
-                <RadioButton IsChecked="{Binding UseEdid}" Margin="0,0,0, 6">
+                <RadioButton IsChecked="{Binding UseEdid}" Margin="0,0,0,6">
                     <StackPanel IsEnabled="{Binding UseEdid}">
                         <TextBlock Text="Use EDID primaries" Margin="0,0,0,0" />
                         <Grid>

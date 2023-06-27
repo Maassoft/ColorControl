@@ -1,5 +1,4 @@
-﻿using System.IO;
-using nspector.Native.WINAPI;
+﻿using nspector.Native.WINAPI;
 
 namespace nspector.Common.Helper
 {
@@ -30,7 +29,7 @@ namespace nspector.Common.Helper
 
             try
             {
-                switch (fileInfo.Extension.ToLower())
+                switch (fileInfo.Extension.ToLowerInvariant())
                 {
                     case ".lnk": return ResolveFromShellLinkFile(fileInfo.FullName);
                     case ".url": return ResolveFromUrlFile(fileInfo.FullName);
@@ -54,7 +53,7 @@ namespace nspector.Common.Helper
             }
 
             var targetInfo = new FileInfo(shellLink.Target);
-            if (targetInfo.Name.ToLower() == SteamAppResolver.SteamExeName)
+            if (targetInfo.Name.ToLowerInvariant() == SteamAppResolver.SteamExeName)
             {
                 if (shellLink.Arguments.Contains(SteamAppResolver.SteamArgumentPattern))
                 {
@@ -63,7 +62,7 @@ namespace nspector.Common.Helper
                 }
             }
 
-            if (targetInfo.Extension.ToLower().Equals(".exe"))
+            if (targetInfo.Extension.ToLowerInvariant().Equals(".exe"))
             {
                 return targetInfo.Name;
             }

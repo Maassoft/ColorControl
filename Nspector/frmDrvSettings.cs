@@ -5,7 +5,6 @@ using nspector.Native.WINAPI;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
-using System.Security.Principal;
 using System.Text;
 
 namespace nspector
@@ -32,7 +31,7 @@ namespace nspector
 
         public string _CurrentProfile = "";
 
-        private bool _highlightUnexposedSettings;
+        private bool isDevMode = false;
 
         protected override void WndProc(ref Message m)
         {
@@ -71,9 +70,12 @@ namespace nspector
         {
             var group = FindOrCreateGroup(setting.GroupName);
 
-            var item = new ListViewItem(setting.SettingText);
+            var settingName = isDevMode ? $"0x{setting.SettingId:X8} {setting.SettingText}" : setting.SettingText;
+
+            var item = new ListViewItem(settingName);
             item.Tag = setting.SettingId;
             item.Group = group;
+
             item.SubItems.Add(setting.ValueText);
             item.SubItems.Add(setting.ValueRaw);
 
@@ -145,8 +147,10 @@ namespace nspector
 
                 foreach (var settingItem in _currentProfileSettingItems)
                 {
+                    if (settingItem.IsSettingHidden) continue;
+
                     var itm = lvSettings.Items.Add(CreateListViewItem(settingItem));
-                    if (_highlightUnexposedSettings && !settingItem.IsApiExposed)
+                    if (Debugger.IsAttached && !settingItem.IsApiExposed)
                     {
                         itm.ForeColor = Color.LightCoral;
                     }
@@ -205,6 +209,8 @@ namespace nspector
 
                     cbValues.BeginUpdate();
 
+                    tsbBitValueEditor.Enabled = false;
+
                     cbValues.Items.Clear();
                     cbValues.Tag = lvSettings.SelectedItems[0].Tag;
                     uint settingid = (uint)lvSettings.SelectedItems[0].Tag;
@@ -226,6 +232,10 @@ namespace nspector
                                 cbValues.Items.Add(itm);
 
                             }
+
+                            tsbBitValueEditor.Enabled = valueNames.Count > 0;
+
+
                         }
 
                         if (settingMeta.SettingType == Native.NVAPI2.NVDRS_SETTING_TYPE.NVDRS_WSTRING_TYPE && settingMeta.StringValues != null)
@@ -241,13 +251,6 @@ namespace nspector
                             foreach (string v in valueNames)
                                 cbValues.Items.Add(v);
                         }
-
-                        var scannedCount = settingMeta?.DwordValues?
-                            .Where(x => x.ValueSource == Common.Meta.SettingMetaSource.ScannedSettings)
-                            .Count();
-
-                        tsbBitValueEditor.Enabled = scannedCount > 0;
-
                     }
 
                     if (cbValues.Items.Count < 1)
@@ -256,6 +259,21 @@ namespace nspector
                         cbValues.Items.RemoveAt(0);
                     }
 
+
+                    var referenceSettings = DrsServiceLocator.ReferenceSettings?.Settings.FirstOrDefault(s => s.SettingId == settingid);
+
+                    if (string.IsNullOrEmpty(settingMeta.Description) && !(referenceSettings?.HasConstraints ?? false))
+                    {
+                        tbSettingDescription.Text = "";
+                        tbSettingDescription.Visible = false;
+                        tbSettingDescription.BackColor = SystemColors.Control;
+                    }
+                    else
+                    {
+                        tbSettingDescription.Text = settingMeta.Description;
+                        tbSettingDescription.Visible = true;
+                        tbSettingDescription.BackColor = (referenceSettings?.HasConstraints ?? false) ? Color.LightCoral : SystemColors.Control;
+                    }
 
                     cbValues.Text = lvSettings.SelectedItems[0].SubItems[1].Text;
                     cbValues.EndUpdate();
@@ -308,12 +326,7 @@ namespace nspector
 
         private void UpdateItemByComboValue()
         {
-            if (cbValues.Tag == null)
-            {
-                return;
-            }
             var settingId = (uint)cbValues.Tag;
-
             var activeImages = new[] { 0, 2 };
 
             int idx = GetListViewIndexOfSetting(settingId);
@@ -334,6 +347,7 @@ namespace nspector
                     var stringBehind = DrsUtil.ParseStringSettingValue(settingMeta, cbValueText);
                     valueHasChanged = currentProfileItem.ValueRaw != stringBehind;
                 }
+
 
                 if (valueHasChanged || activeImages.Contains(lvItem.ImageIndex))
                 {
@@ -422,6 +436,22 @@ namespace nspector
             }
         }
 
+        private void DeleteSelectedValue()
+        {
+            if (lvSettings.SelectedItems != null && lvSettings.SelectedItems.Count > 0)
+            {
+                var settingId = (uint)lvSettings.SelectedItems[0].Tag;
+
+                bool removeFromModified;
+                _drs.DeleteValue(_CurrentProfile, settingId, out removeFromModified);
+
+                if (removeFromModified)
+                    RemoveFromModifiedProfiles(_CurrentProfile);
+
+                RefreshCurrentProfile();
+            }
+        }
+
         private void InitTaskbarList()
         {
             if (Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 1)
@@ -479,7 +509,7 @@ namespace nspector
         }
 
         public frmDrvSettings() : this(false, false) { }
-        public frmDrvSettings(bool showCsnOnly, bool skipScan)
+        internal frmDrvSettings(bool showCsnOnly, bool skipScan)
         {
             _skipScan = skipScan;
             InitializeComponent();
@@ -492,8 +522,12 @@ namespace nspector
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         }
 
+        public static double ScaleFactor = 1;
+
         private void SetupDpiAdjustments()
         {
+            ScaleFactor = lblWidth330.Width / 330;
+
             chSettingID.Width = lblWidth330.Width;
             chSettingValueHex.Width = lblWidth96.Width;
         }
@@ -540,8 +574,6 @@ namespace nspector
 
         private void frmDrvSettings_Load(object sender, EventArgs e)
         {
-            _highlightUnexposedSettings = !IsAdministrator() && !_drs.ExternalApplySettings;
-
             SetupLayout();
             SetTitleVersion();
             LoadSettings();
@@ -580,7 +612,10 @@ namespace nspector
 
         private void btnResetValue_Click(object sender, EventArgs e)
         {
-            ResetSelectedValue();
+            if (Control.ModifierKeys == Keys.Control)
+                DeleteSelectedValue();
+            else
+                ResetSelectedValue();
         }
 
         private void ChangeCurrentProfile(string profileName)
@@ -1115,7 +1150,7 @@ namespace nspector
             if (files.Length == 1)
             {
                 var fileInfo = new FileInfo(files[0]);
-                if (fileInfo.Extension.ToLower().Equals(".nip"))
+                if (fileInfo.Extension.ToLowerInvariant().Equals(".nip"))
                 {
                     ImportProfiles(fileInfo.FullName);
                     return;
@@ -1151,11 +1186,12 @@ namespace nspector
 
         private void lvSettings_DoubleClick(object sender, EventArgs e)
         {
-            if (Debugger.IsAttached && lvSettings.SelectedItems != null && lvSettings.SelectedItems.Count == 1)
+            if (isDevMode && lvSettings.SelectedItems != null && lvSettings.SelectedItems.Count == 1)
             {
                 var settingId = ((uint)lvSettings.SelectedItems[0].Tag);
                 var settingName = lvSettings.SelectedItems[0].Text;
-                Clipboard.SetText(string.Format($"0x{settingId:X8} {settingName}"));
+                //Clipboard.SetText(string.Format($"0x{settingId:X8} {settingName}"));
+                Clipboard.SetText(string.Format($"{settingName}"));
             }
         }
 
@@ -1222,7 +1258,115 @@ namespace nspector
             {
                 CopyModifiedSettingsToClipBoard();
             }
+
+            if (e.Control && e.Alt && e.KeyCode == Keys.D)
+            {
+                EnableDevmode();
+            }
+
+            if (Debugger.IsAttached && e.Control && e.KeyCode == Keys.T)
+            {
+                TestStoreSettings();
+            }
+
+            if (e.Control && e.KeyCode == Keys.F)
+            {
+                SearchSetting();
+            }
+
+            if (e.KeyCode == Keys.Escape)
+            {
+                RefreshCurrentProfile();
+            }
+
+
         }
+
+        private void SearchSetting()
+        {
+            string inputString = "";
+            if (InputBox.Show("Search Setting", "Please enter setting name:", ref inputString, new List<string>(), "", 2048) == System.Windows.Forms.DialogResult.OK)
+            {
+                var lowerInput = inputString.Trim().ToLowerInvariant();
+                lvSettings.BeginUpdate();
+                foreach (ListViewItem itm in lvSettings.Items)
+                {
+                    if (!itm.Text.ToLowerInvariant().Contains(lowerInput))
+                    {
+                        itm.Remove();
+                    }
+                }
+                lvSettings.EndUpdate();
+            }
+
+        }
+
+        private void EnableDevmode()
+        {
+            isDevMode = true;
+            lvSettings.Font = new Font("Consolas", 9);
+            cbValues.Font = new Font("Consolas", 9);
+            lvSettings.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            RefreshCurrentProfile();
+        }
+
+        private void TestStoreSettings()
+        {
+            var sbSettings = new StringBuilder();
+            sbSettings.AppendFormat("{0,-40} {1}\r\n", "### Inspector Store Failed ###", _CurrentProfile);
+
+            pbMain.Minimum = 0;
+            pbMain.Maximum = lvSettings.Items.Count;
+            int cntIndex = 0;
+
+            foreach (ListViewGroup group in lvSettings.Groups)
+            {
+                bool groupTitleAdded = false;
+                foreach (ListViewItem item in group.Items)
+                {
+
+                    try
+                    {
+                        pbMain.Value = cntIndex++;
+
+                        var settingId = (uint)item.Tag;
+                        var meta = _meta.GetSettingMeta(settingId);
+                        if (meta.SettingType != NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE) continue;
+
+                        var wasNotSet = new int[] { 1, 2, 3 }.Contains(item.ImageIndex);
+
+                        if (wasNotSet)
+                        {
+                            _drs.SetDwordValueToProfile(_CurrentProfile, settingId, 0x0);
+                            _drs.ResetValue(_CurrentProfile, settingId, out var rm);
+                        }
+                        else
+                        {
+                            var tmpValue = _drs.GetDwordValueFromProfile(_CurrentProfile, settingId);
+                            _drs.SetDwordValueToProfile(_CurrentProfile, settingId, 0x0);
+                            _drs.SetDwordValueToProfile(_CurrentProfile, settingId, tmpValue);
+                        }
+
+                    }
+                    catch (NvapiException ne)
+                    {
+                        if (!groupTitleAdded)
+                        {
+                            sbSettings.AppendFormat("\r\n[{0}]\r\n", group.Header);
+                            groupTitleAdded = true;
+                        }
+                        sbSettings.AppendFormat("{0,-40} SettingId: {1} Failed: {2}\r\n", item.Text, DrsUtil.GetDwordString((uint)item.Tag), ne.Status);
+                    }
+                }
+            }
+
+            pbMain.Value = 0;
+
+            Clipboard.SetText(sbSettings.ToString());
+            MessageBox.Show("Failed Settings Stored to Clipboard");
+
+        }
+
 
         private void CopyModifiedSettingsToClipBoard()
         {
@@ -1248,16 +1392,5 @@ namespace nspector
             Clipboard.SetText(sbSettings.ToString());
 
         }
-
-        private static bool IsAdministrator()
-        {
-            return (new WindowsPrincipal(WindowsIdentity.GetCurrent()))
-                      .IsInRole(WindowsBuiltInRole.Administrator);
-        }
     }
 }
-
-
-
-
-

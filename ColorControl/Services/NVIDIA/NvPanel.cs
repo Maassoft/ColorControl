@@ -4,6 +4,7 @@ using ColorControl.Shared.Contracts.NVIDIA;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
+using NLog;
 using novideo_srgb;
 using nspector;
 using nspector.Common;
@@ -27,7 +28,7 @@ namespace ColorControl.Services.NVIDIA
     {
         public static readonly int SHORTCUTID_NVQA = -200;
 
-        //private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private NvService _nvService;
@@ -897,6 +898,8 @@ namespace ColorControl.Services.NVIDIA
             }
             catch (Exception e)
             {
+                Logger.Error(e);
+
                 MessageForms.ErrorOk($"Error applying NVIDIA-preset ({e.TargetSite.Name}): {e.Message}");
                 return false;
             }

@@ -1,13 +1,5 @@
-﻿using System;
+﻿using nspector.Common;
 using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using nspector.Common;
-using nspector.Common.CustomSettings;
 
 namespace nspector
 {
@@ -52,12 +44,14 @@ namespace nspector
             var referenceSettings = DrsServiceLocator.ReferenceSettings?.Settings.FirstOrDefault(s => s.SettingId == _Settingid);
 
             var settingsCache = DrsServiceLocator.ScannerService.CachedSettings.FirstOrDefault(x => x.SettingId == _Settingid);
-            if (settingsCache != null)
+
+            for (int bit = 0; bit < 32; bit++)
             {
-                for (int bit = 0; bit < 32; bit++)
+                string profileNames = "";
+                uint profileCount = 0;
+
+                if (settingsCache != null)
                 {
-                    string profileNames = "";
-                    uint profileCount = 0;
 
                     for (int i = 0; i < settingsCache.SettingValues.Count; i++)
                     {
@@ -74,7 +68,7 @@ namespace nspector
                                 {
                                     for (int f = 0; f < filters.Length; f++)
                                     {
-                                        if (settingProfileNames[p].ToLower().Contains(filters[f].ToLower()))
+                                        if (settingProfileNames[p].ToLowerInvariant().Contains(filters[f].ToLower()))
                                         {
                                             profileNames += settingProfileNames[p] + ",";
                                         }
@@ -84,31 +78,32 @@ namespace nspector
                             profileCount += settingsCache.SettingValues[i].ValueProfileCount;
                         }
                     }
-            
-                    uint mask = (uint)1 << bit;
-                    string maskStr="";
-                    
-                    if (referenceSettings != null)
+                }
+
+                uint mask = (uint)1 << bit;
+                string maskStr = "";
+
+                if (referenceSettings != null)
+                {
+                    var maskValue = referenceSettings.SettingValues.FirstOrDefault(v => v.SettingValue == mask);
+                    if (maskValue != null)
                     {
-                        var maskValue = referenceSettings.SettingValues.FirstOrDefault(v => v.SettingValue == mask);
-                        if (maskValue != null)
+                        maskStr = maskValue.UserfriendlyName;
+                        if (maskStr.Contains("("))
                         {
-                            maskStr = maskValue.UserfriendlyName;
-                            if (maskStr.Contains("("))
-                            {
-                                maskStr = maskStr.Substring(0, maskStr.IndexOf("(") - 1);
-                            }
+                            maskStr = maskStr.Substring(0, maskStr.IndexOf("(") - 1);
                         }
                     }
+                }
 
-                    clbBits.Items.Add(new ListViewItem(new string[] {
+                clbBits.Items.Add(new ListViewItem(new string[] {
                         string.Format("#{0:00}",bit),
                         maskStr,
                         profileCount.ToString(),
                         profileNames,
                     }));
-                    
-                }
+
+
             }
 
             SetValue(lastValue);

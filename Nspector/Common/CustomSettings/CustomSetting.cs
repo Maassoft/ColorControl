@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace nspector.Common.CustomSettings
@@ -15,6 +13,9 @@ namespace nspector.Common.CustomSettings
         public string GroupName { get; set; }
         public string OverrideDefault { get; set; }
         public float MinRequiredDriverVersion { get; set; }
+        public bool Hidden { get; set; }
+        public bool HasConstraints { get; set; }
+        public string DataType { get; set; }
 
         public List<CustomSettingValue> SettingValues { get; set; }
 

@@ -18,6 +18,10 @@ namespace nspector.Common.Meta
 
         public bool IsApiExposed { get; set; }
 
+        public bool IsSettingHidden { get; set; }
+
+        public string Description { get; set; }
+
         public List<SettingValue<string>> StringValues { get; set; }
 
         public List<SettingValue<uint>> DwordValues { get; set; }
