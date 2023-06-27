@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Windows.Forms;
-
-namespace ColorControl
+﻿namespace ColorControl.Shared.Contracts
 {
     public enum ElevationMethod
     {
@@ -9,12 +6,6 @@ namespace ColorControl
         RunAsAdmin = 1,
         UseService = 2,
         UseElevatedProcess = 3
-    }
-
-    public class ListViewSortState
-    {
-        public SortOrder SortOrder { get; set; }
-        public int SortIndex { get; set; }
     }
 
     public class Config

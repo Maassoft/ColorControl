@@ -1,5 +1,6 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Services;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;

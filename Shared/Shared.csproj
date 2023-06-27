@@ -1,20 +1,45 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
-	<ImplicitUsings>enable</ImplicitUsings>
-	<Nullable>enable</Nullable>
-	 <UseWPF>true</UseWPF>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>disable</Nullable>
+		<UseWPF>true</UseWPF>
+		<UseWindowsForms>true</UseWindowsForms>
+	</PropertyGroup>
 
-  <ItemGroup>
-	<None Remove="Themes\DarkTheme.xaml" />
-  </ItemGroup>
+	<ItemGroup>
+		<COMReference Include="IWshRuntimeLibrary">
+			<Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
+			<VersionMajor>1</VersionMajor>
+			<VersionMinor>0</VersionMinor>
+			<Lcid>0</Lcid>
+			<WrapperTool>tlbimp</WrapperTool>
+			<Isolated>False</Isolated>
+			<EmbedInteropTypes>True</EmbedInteropTypes>
+		</COMReference>
+	</ItemGroup>
 
-  <ItemGroup>
-	<Resource Include="Themes\DarkTheme.xaml">
-	  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	</Resource>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="NLog" Version="5.1.2" />
+		<PackageReference Include="NStandard" Version="0.24.0" />
+		<PackageReference Include="NWin32" Version="1.2.6" />
+		<PackageReference Include="System.Management" Version="7.0.0" />
+		<PackageReference Include="TaskScheduler" Version="2.10.1" />
+		<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Themes\DarkTheme.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="Themes\DarkTheme.xaml">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+	</ItemGroup>
 
 </Project>

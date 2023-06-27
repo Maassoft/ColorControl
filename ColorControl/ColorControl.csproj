@@ -51,6 +51,9 @@
 	<None Remove="XForms\LogWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
+	<Compile Update="Forms\ElevatedForm.cs">
+	  <SubType>Form</SubType>
+	</Compile>
 	<Compile Update="Services\Common\QuickAccessForm.cs">
 	  <SubType>Form</SubType>
 	</Compile>

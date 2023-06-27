@@ -1,7 +1,9 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
-using ColorControl.Svc;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using LgTv;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

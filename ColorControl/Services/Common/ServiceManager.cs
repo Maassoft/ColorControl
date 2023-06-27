@@ -1,9 +1,9 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
 using System;
 using System.Linq;
 using System.Threading.Tasks;

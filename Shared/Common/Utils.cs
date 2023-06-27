@@ -1,20 +1,17 @@
-﻿using ColorControl.Forms;
-using ColorControl.Native;
+﻿using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
 using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NStandard;
 using NWin32;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
@@ -23,16 +20,13 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
 using Task = System.Threading.Tasks.Task;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
-    static class Utils
+    public static class Utils
     {
         [Flags]
         public enum ModKeys : int
@@ -212,7 +206,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return _IsAdministrator.Value;
         }
 
-        internal static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false, bool skipService = false)
+        public static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false, bool skipService = false)
         {
             if (!skipService && IsServiceRunning())
             {
@@ -264,13 +258,13 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return 0;
         }
 
-        private static IntPtr ElevatedProcessWindowHandle = IntPtr.Zero;
+        private static nint ElevatedProcessWindowHandle = nint.Zero;
 
-        internal static void CheckElevatedProcess()
+        public static void CheckElevatedProcess()
         {
             ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
 
-            if (ElevatedProcessWindowHandle == IntPtr.Zero)
+            if (ElevatedProcessWindowHandle == nint.Zero)
             {
                 ExecuteElevated(StartUpParams.StartElevatedParam, false, true, true);
 
@@ -282,7 +276,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
                     ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
 
-                    if (ElevatedProcessWindowHandle != IntPtr.Zero)
+                    if (ElevatedProcessWindowHandle != nint.Zero)
                     {
                         Thread.Sleep(500);
                         break;
@@ -293,13 +287,13 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             }
         }
 
-        internal static bool IsChromeFixInstalled()
+        public static bool IsChromeFixInstalled()
         {
             var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
             return key != null && key.GetValue(null).ToString().Contains("--disable-lcd-text");
         }
 
-        internal static bool InstallChromeFix(bool install, string applicationDataFolder)
+        public static bool InstallChromeFix(bool install, string applicationDataFolder)
         {
             var argument = "--disable-lcd-text";
 
@@ -326,13 +320,13 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return true;
         }
 
-        internal static bool IsChromeInstalled()
+        public static bool IsChromeInstalled()
         {
             var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
             return key != null;
         }
 
-        internal static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
+        public static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
         {
             if (File.Exists(path))
             {
@@ -387,7 +381,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return values;
         }
 
-        public static void SetBrightness(IntPtr handle)
+        public static void SetBrightness(nint handle)
         {
             var displays = Windows.Graphics.Display.DisplayServices.FindAll();
 
@@ -453,7 +447,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return devices;
         }
 
-        internal static Image GenerateGradientBitmap(int width, int height)
+        public static Image GenerateGradientBitmap(int width, int height)
         {
             var bitmap = new Bitmap(512, height);
 
@@ -624,7 +618,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             }
         }
 
-        public static bool RegisterShortcut(IntPtr handle, int id, string shortcut, bool clear = false)
+        public static bool RegisterShortcut(nint handle, int id, string shortcut, bool clear = false)
         {
             if (clear)
             {
@@ -660,7 +654,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
             //Debug.WriteLine("KD: " + e.Modifiers + ", " + e.KeyCode);
 
-            var shortcutString = (pressedModifiers > 0 ? pressedModifiers.ToString() : "");
+            var shortcutString = pressedModifiers > 0 ? pressedModifiers.ToString() : "";
             if (keyEvent.KeyCode == Keys.LWin || WinKeyDown)
             {
                 WinKeyDown = true;
@@ -797,7 +791,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return process;
         }
 
-        internal static void SetProcessAffinity(int processId, uint affinityMask)
+        public static void SetProcessAffinity(int processId, uint affinityMask)
         {
             if (!IsAdministrator())
             {
@@ -808,7 +802,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
             var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
 
-            if (hProcess == IntPtr.Zero)
+            if (hProcess == nint.Zero)
             {
                 CheckWin32Error($"Unable to set processor affinity on process {processId}");
             }
@@ -820,7 +814,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             //process.ProcessorAffinity = (IntPtr)AffinityMask;
         }
 
-        internal static void SetProcessPriority(int processId, uint priorityClass)
+        public static void SetProcessPriority(int processId, uint priorityClass)
         {
             if (!IsAdministrator())
             {
@@ -831,7 +825,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
             var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
 
-            if (hProcess == IntPtr.Zero)
+            if (hProcess == nint.Zero)
             {
                 CheckWin32Error($"Unable to set process priority on process {processId}");
             }
@@ -1008,7 +1002,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             }
         }
 
-        internal static void InstallService()
+        public static void InstallService()
         {
             if (!IsAdministrator())
             {
@@ -1027,7 +1021,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             StartService();
         }
 
-        internal static void UninstallService()
+        public static void UninstallService()
         {
             if (!IsAdministrator())
             {

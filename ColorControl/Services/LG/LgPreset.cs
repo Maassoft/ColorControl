@@ -1,4 +1,5 @@
 ﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Contracts;
 using LgTv;
 using Newtonsoft.Json;
 using System.Collections.Generic;

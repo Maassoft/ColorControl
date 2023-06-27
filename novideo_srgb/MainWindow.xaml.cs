@@ -101,7 +101,7 @@ namespace novideo_srgb
 
         private void AdvancedButton_Click(object sender, RoutedEventArgs e)
         {
-            if (System.Windows.Application.Current.Windows.Cast<Window>().Any(x => x is AdvancedWindow)) return;
+            if (System.Windows.Application.Current.Windows.Cast<System.Windows.Window>().Any(x => x is AdvancedWindow)) return;
             var monitor = ((FrameworkElement)sender).DataContext as MonitorData;
             var window = new AdvancedWindow(monitor)
             {

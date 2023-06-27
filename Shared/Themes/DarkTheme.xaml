@@ -4086,83 +4086,6 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="ResizeMode" Value="NoResize" />
         <Setter Property="WindowStyle" Value="SingleBorderWindow" />
-        <Setter Property="WindowChrome.WindowChrome">
-            <Setter.Value>
-                <WindowChrome CaptionHeight="26"
-                              ResizeBorderThickness="0"
-                              CornerRadius="0"
-                              GlassFrameThickness="1"
-                              NonClientFrameEdges="None"
-                              UseAeroCaptionButtons="False" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Window}">
-                    <Grid>
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <Grid>
-                                <AdornerDecorator Margin="0,30,0,0">
-                                    <ContentPresenter />
-                                </AdornerDecorator>
-                                <Grid Height="30" x:Name="titlebar"
-                                      Background="{TemplateBinding BorderBrush}"
-                                      VerticalAlignment="Top" Margin="0">
-                                    <DockPanel Margin="0,0,130,0">
-                                        <Image HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,4,0,0" Source="{Binding Icon, RelativeSource={RelativeSource TemplatedParent}}" Height="24" />
-                                        <TextBlock Margin="5,3"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Stretch"
-                                                   FontSize="14" Width="Auto"
-                                                   Foreground="{StaticResource ControlDefaultForeground}"
-                                                   Text="{Binding Title, RelativeSource={RelativeSource TemplatedParent}}"
-                                                   Grid.Column="1" TextAlignment="Left" />
-                                    </DockPanel>
-                                    <StackPanel Orientation="Horizontal"
-                                                Grid.Column="0" HorizontalAlignment="Right">
-                                        <Button x:Name="btnMinimize"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                Width="40"
-                                                VerticalContentAlignment="Bottom"
-                                                WindowChrome.IsHitTestVisibleInChrome="True"
-                                                Click="Minimize_Event">
-                                            <Rectangle Width="10"
-                                                       VerticalAlignment="Center"
-                                                       Margin="1 1 0 0"
-                                                       Stroke="{StaticResource ControlGlythColour}"
-                                                       StrokeThickness="2" />
-                                        </Button>
-                                        <Button x:Name="btnClose"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                Template="{DynamicResource CloseWindowButton}"
-                                                Width="40"
-                                                WindowChrome.IsHitTestVisibleInChrome="True"
-                                                Click="CloseWindow_Event">
-                                            <Grid Margin="0 1 0 0">
-                                                <Line X1="0" Y1="0" X2="11" Y2="11" Stroke="{StaticResource ControlGlythColour}" StrokeThickness="2" />
-                                                <Line X1="0" Y2="0" Y1="11" X2="11" Stroke="{StaticResource ControlGlythColour}" StrokeThickness="2" />
-                                            </Grid>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </Grid>
-                        </Border>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property="WindowState" Value="Maximized">
-                <Setter Property="BorderThickness" Value="8" />
-            </Trigger>
-            <Trigger Property="WindowState" Value="Normal">
-                <Setter Property="BorderThickness" Value="1" />
-            </Trigger>
-        </Style.Triggers>
     </Style>
 
     <!-- Gives the button red colour properties when mouseover/clicked -->
@@ -4410,65 +4333,11 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="RowDetailsVisibilityMode" Value="VisibleWhenSelected"/>
         <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
-        <Setter Property="Template">
+        <Setter Property="RowStyle">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type DataGrid}">
-                    <Border x:Name="border" SnapsToDevicePixels="True" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
-                        <Border.Background>
-                            <SolidColorBrush Color="{DynamicResource ControlLightColor}" />
-                        </Border.Background>
-                        <ScrollViewer x:Name="DG_ScrollViewer" Focusable="false" Background="Black">
-                            <ScrollViewer.Template>
-                                <ControlTemplate TargetType="{x:Type ScrollViewer}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="*" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <Button Focusable="false"
-                                                Command="{x:Static DataGrid.SelectAllCommand}"
-                                                Style="{DynamicResource {ComponentResourceKey ResourceId=DataGridSelectAllButtonStyle, TypeInTargetAssembly={x:Type DataGrid}}}"
-                                                Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.All}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
-                                                Width="{Binding CellsPanelHorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
-
-                                        <DataGridColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter" Grid.Column="1" Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.Column}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
-
-                                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.ColumnSpan="2" Grid.Row="1" CanContentScroll="{TemplateBinding CanContentScroll}" />
-                                        <ScrollBar x:Name="PART_VerticalScrollBar"
-                                                   Grid.Column="2"
-                                                   Grid.Row="1"
-                                                   Orientation="Vertical"
-                                                   ViewportSize="{TemplateBinding ViewportHeight}"
-                                                   Maximum="{TemplateBinding ScrollableHeight}"
-                                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                                                   Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-
-                                        <Grid Grid.Column="1" Grid.Row="2">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="{Binding NonFrozenColumnsViewportHorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <ScrollBar x:Name="PART_HorizontalScrollBar"
-                                                       Grid.Column="1"
-                                                       Orientation="Horizontal"
-                                                       ViewportSize="{TemplateBinding ViewportWidth}"
-                                                       Maximum="{TemplateBinding ScrollableWidth}"
-                                                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
-                                                       Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                                        </Grid>
-                                    </Grid>
-                                </ControlTemplate>
-                            </ScrollViewer.Template>
-                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </ScrollViewer>
-                    </Border>
-                </ControlTemplate>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="{StaticResource ControlDefaultBackground}" />
+                </Style>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
@@ -4497,6 +4366,11 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type DataGridColumnHeader}"  >
+        <Setter Property="Background" Value="{StaticResource ControlDefaultBackground}" />
+        <Setter Property="Padding" Value="2,4,4,2" />
     </Style>
 
     <Style TargetType="{x:Type Button}" x:Key="{ComponentResourceKey ResourceId=DataGridSelectAllButtonStyle, TypeInTargetAssembly={x:Type DataGrid}}">

@@ -1,6 +1,6 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Services.Common;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

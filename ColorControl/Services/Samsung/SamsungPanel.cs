@@ -1,9 +1,10 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
 using NLog;
 using NStandard;
 using System;
@@ -37,7 +38,7 @@ namespace ColorControl.Services.Samsung
             _amdService = amdService;
             _mainHandle = handle;
 
-            _config = AppContext.CurrentContext.Config;
+            _config = Shared.Common.AppContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -93,7 +94,7 @@ namespace ColorControl.Services.Samsung
         {
             FillSamsungDevices();
 
-            var startUpParams = AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
 
             if (startUpParams.ExecuteSamsungPreset)
             {
@@ -129,7 +130,7 @@ namespace ColorControl.Services.Samsung
 
         private void AddOrUpdateItem(SamsungPreset preset = null, ListViewItem specItem = null)
         {
-            FormUtils.AddOrUpdateListItem(lvSamsungPresets, _samsungService.GetPresets(), _config, preset, specItem);
+            ServiceFormUtils.AddOrUpdateListItem(lvSamsungPresets, _samsungService.GetPresets(), _config, preset, specItem);
         }
 
         private void btnCloneLg_Click(object sender, EventArgs e)
@@ -720,7 +721,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
             var preset = GetSelectedPreset();
 
-            FormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
+            ServiceFormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
         }
 
         private async void btnSamsungAddDevice_Click(object sender, EventArgs e)
@@ -796,8 +797,8 @@ Use 'Settings > Test power off/on' to test this functionality."
             var device = _samsungService.GetPresetDevice(preset);
 
             BuildActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
-            FormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
 
         private void btnSamsungDeviceConvertToCustom_Click(object sender, EventArgs e)
@@ -935,7 +936,7 @@ Do you want to continue?"
 
         private void lvSamsungPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            FormUtils.ListViewItemChecked<SamsungPreset>(lvSamsungPresets, e);
+            ServiceFormUtils.ListViewItemChecked<SamsungPreset>(lvSamsungPresets, e);
         }
 
         private async void miTestPowerOffOn_Click(object sender, EventArgs e)

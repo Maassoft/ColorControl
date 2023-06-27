@@ -1,9 +1,10 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
 using LgTv;
 using NLog;
 using NStandard;
@@ -42,7 +43,7 @@ namespace ColorControl.Services.LG
             _trayIcon = trayIcon;
             _mainHandle = handle;
 
-            _config = AppContext.CurrentContext.Config;
+            _config = Shared.Common.AppContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -95,7 +96,7 @@ namespace ColorControl.Services.LG
         {
             FillLgDevices();
 
-            var startUpParams = AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
 
             if (startUpParams.ExecuteLgPreset)
             {
@@ -131,7 +132,7 @@ namespace ColorControl.Services.LG
 
         private void AddOrUpdateItemLg(LgPreset preset = null, ListViewItem specItem = null)
         {
-            FormUtils.AddOrUpdateListItem(lvLgPresets, _lgService.GetPresets(), _config, preset, specItem);
+            ServiceFormUtils.AddOrUpdateListItem(lvLgPresets, _lgService.GetPresets(), _config, preset, specItem);
         }
 
         private void btnCloneLg_Click(object sender, EventArgs e)
@@ -723,7 +724,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
 
             var preset = GetSelectedLgPreset();
 
-            FormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
+            ServiceFormUtils.UpdateShortcutTextBox(edtShortcutLg, preset);
         }
 
         private async void btnLgAddDevice_Click(object sender, EventArgs e)
@@ -799,8 +800,8 @@ You can also activate this option by using the Expert-button and selecting Wake-
             var device = _lgService.GetPresetDevice(preset);
 
             BuildLgActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
-            FormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
 
         private void btnLgDeviceConvertToCustom_Click(object sender, EventArgs e)
@@ -1133,7 +1134,7 @@ Do you want to continue?"
 
         private void lvLgPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            FormUtils.ListViewItemChecked<LgPreset>(lvLgPresets, e);
+            ServiceFormUtils.ListViewItemChecked<LgPreset>(lvLgPresets, e);
         }
 
         private async void miTestPowerOffOn_Click(object sender, EventArgs e)

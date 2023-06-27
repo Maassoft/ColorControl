@@ -1,5 +1,5 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
 using LgTv;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;

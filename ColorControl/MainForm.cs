@@ -1,14 +1,15 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
-using ColorControl.Svc;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using ColorControl.XForms;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
@@ -1346,6 +1347,8 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             this.UpdateTheme(toDark);
 
             WinApi.RefreshImmersiveColorPolicyState();
+
+            DarkModeUtils.InitWpfTheme();
 
             DarkModeUtils.SetContextMenuForeColor(_trayIcon.ContextMenuStrip, FormUtils.CurrentForeColor);
 

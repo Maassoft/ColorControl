@@ -1,4 +1,4 @@
-﻿namespace ColorControl.Svc
+﻿namespace ColorControl.Shared.Contracts
 {
     public class SvcResultMessage
     {

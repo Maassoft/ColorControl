@@ -1,10 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System.Collections.Generic;
-using System.Windows.Forms;
 
-namespace ColorControl
+namespace ColorControl.Shared.Forms
 {
     public class TreeNodeBuilder
     {
@@ -15,14 +13,15 @@ namespace ColorControl
         public static TreeNode CreateTree(object obj, string text)
         {
             var serialized = JsonConvert.SerializeObject(obj, Formatting.None,
-                new JsonSerializerSettings {
+                new JsonSerializerSettings
+                {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     Error = delegate (object sender, ErrorEventArgs args)
                     {
                         //errors.Add(args.ErrorContext.Error.Message);
                         args.ErrorContext.Handled = true;
                     },
-                    Converters = new [] { new Newtonsoft.Json.Converters.StringEnumConverter() }
+                    Converters = new[] { new Newtonsoft.Json.Converters.StringEnumConverter() }
                 });
             var dic = JsonConvert.DeserializeObject<Dictionary<string, object>>(serialized);
             var root = new TreeNode();

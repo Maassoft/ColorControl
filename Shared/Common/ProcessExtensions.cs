@@ -1,13 +1,9 @@
-﻿using ColorControl.Native;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using static ColorControl.Native.WinApi;
+using static ColorControl.Shared.Native.WinApi;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
     public static class ProcessExtensions
     {
@@ -71,11 +67,11 @@ namespace ColorControl.Common
             return FindPidFromIndexedProcessName(indexedProcessName, processes);
         }
 
-        public static Process GetParentProcess(IntPtr handle)
+        public static Process GetParentProcess(nint handle)
         {
             var pbi = new ParentProcessUtilities();
             int returnLength;
-            int status = WinApi.NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out returnLength);
+            int status = NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out returnLength);
             if (status != 0)
                 throw new Win32Exception(status);
 

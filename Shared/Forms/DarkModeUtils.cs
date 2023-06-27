@@ -1,14 +1,9 @@
-﻿using ColorControl.Native;
+﻿using ColorControl.Shared.Native;
 using NWin32;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 
-namespace ColorControl.Forms
+namespace ColorControl.Shared.Forms
 {
-    static class DarkModeUtils
+    public static class DarkModeUtils
     {
         public static bool UseDarkMode = false;
 
@@ -56,6 +51,29 @@ namespace ColorControl.Forms
             { get { return Color.FromArgb(40, 40, 40); } }
             public override Color ImageMarginGradientEnd
             { get { return FormUtils.DarkModeBackColor; } }
+        }
+
+        public static void InitWpfTheme()
+        {
+            var resources = System.Windows.Application.Current.Resources;
+
+            if (DarkModeUtils.UseDarkMode)
+            {
+                var dict = new System.Windows.ResourceDictionary { Source = new Uri($"pack://application:,,,/Shared;component/Themes/DarkTheme.xaml", UriKind.Absolute) };
+
+                if (resources.MergedDictionaries.Any())
+                {
+                    resources.MergedDictionaries[0] = dict;
+                }
+                else
+                {
+                    resources.MergedDictionaries.Add(dict);
+                }
+            }
+            else
+            {
+                resources.MergedDictionaries.Clear();
+            }
         }
 
         public static void UpdateTheme(this Form form, bool? useDarkMode = null, bool onlyIfDark = false)

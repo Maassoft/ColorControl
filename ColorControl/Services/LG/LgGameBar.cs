@@ -1,4 +1,4 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Shared.Common;
 using NWin32;
 using System;
 using System.Collections.Generic;

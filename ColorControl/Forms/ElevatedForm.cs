@@ -1,4 +1,5 @@
-﻿using ColorControl.Native;
+﻿using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Native;
 using NWin32;
 using System;
 using System.Drawing;
@@ -70,7 +71,7 @@ namespace ColorControl.Forms
 
         private void CheckMutexAsync()
         {
-            var mutex = new Mutex(false, Program.MutexId, out var created);
+            var mutex = new Mutex(false, Shared.Common.AppContext.CurrentContext.MutexId, out var created);
             try
             {
                 mutex.WaitOne();

@@ -1,4 +1,5 @@
 ﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Contracts;
 using NWin32;
 using System.Collections.Generic;
 using System.ComponentModel;

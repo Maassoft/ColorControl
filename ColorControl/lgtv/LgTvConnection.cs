@@ -1,4 +1,4 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Shared.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;

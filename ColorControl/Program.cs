@@ -1,9 +1,12 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,9 +31,7 @@ namespace ColorControl
         public static string ConfigFilename { get; private set; }
         public static string LogFilename { get; private set; }
         public static Config Config { get; private set; }
-        public static AppContext AppContext { get; private set; }
-
-        public static string MutexId { get; private set; }
+        public static Shared.Common.AppContext AppContext { get; private set; }
 
         public static bool IsRestarting { get; private set; }
 
@@ -67,15 +68,18 @@ namespace ColorControl
             var host = CreateHostBuilder().Build();
             ServiceProvider = host.Services;
 
+            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
+
             if (runAsService)
             {
-                AppContext = new AppContext(null, new StartUpParams(), DataDir, _loggingRule);
+                AppContext = new Shared.Common.AppContext(null, new StartUpParams(), DataDir, _loggingRule);
+                appContextProvider.SetAppContext(AppContext);
 
                 await RunService(args);
                 return;
             }
 
-            MutexId = $"Global\\{typeof(MainForm).GUID}";
+            var mutexId = $"Global\\{typeof(MainForm).GUID}";
 
             var currentDomain = AppDomain.CurrentDomain;
             // Handler for unhandled exceptions.
@@ -92,7 +96,8 @@ namespace ColorControl
 
             var startUpParams = StartUpParams.Parse(args);
 
-            AppContext = new AppContext(Config, startUpParams, DataDir, _loggingRule);
+            AppContext = new Shared.Common.AppContext(Config, startUpParams, DataDir, _loggingRule, mutexId);
+            appContextProvider.SetAppContext(AppContext);
 
             var existingProcess = Utils.GetProcessByName("ColorControl");
 
@@ -108,7 +113,7 @@ namespace ColorControl
                 Utils.CloseConsole();
             }
 
-            _mutex = new Mutex(true, MutexId, out var mutexCreated);
+            _mutex = new Mutex(true, AppContext.MutexId, out var mutexCreated);
             try
             {
                 if (!mutexCreated)
@@ -280,7 +285,7 @@ namespace ColorControl
             GlobalHandleException((Exception)e.ExceptionObject, "Unhandled exception");
         }
 
-        private static void GlobalThreadExceptionHandler(object sender, System.Threading.ThreadExceptionEventArgs e)
+        private static void GlobalThreadExceptionHandler(object sender, ThreadExceptionEventArgs e)
         {
             GlobalHandleException(e.Exception, "Exception in thread");
         }

@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
 
     /// <summary>
     ///  Extension methods for Exception class.
     /// </summary>
-    static class ExceptionExtensions
+    public static class ExceptionExtensions
     {
         /// <summary>
         ///  Provides full stack trace for the exception that occurred.
@@ -24,10 +21,10 @@ namespace ColorControl.Common
                 environmentStackTraceLines.RemoveAt(0);
             }
 
-            List<string> stackTraceLines = ExceptionExtensions.GetStackTraceLines(exception.StackTrace);
+            List<string> stackTraceLines = GetStackTraceLines(exception.StackTrace);
             stackTraceLines.AddRange(environmentStackTraceLines);
 
-            string fullStackTrace = String.Join(Environment.NewLine, stackTraceLines);
+            string fullStackTrace = string.Join(Environment.NewLine, stackTraceLines);
 
             string logMessage = exception.Message + Environment.NewLine;
 
@@ -35,7 +32,7 @@ namespace ColorControl.Common
             {
                 logMessage += $"Inner exception: {exception.InnerException.Message}{Environment.NewLine}";
             }
-                
+
             logMessage += fullStackTrace;
             return logMessage;
         }

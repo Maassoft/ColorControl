@@ -1,8 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
     public class StreamString
     {

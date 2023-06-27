@@ -1,6 +1,8 @@
 ﻿using ATI.ADL;
-using ColorControl.Common;
 using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;

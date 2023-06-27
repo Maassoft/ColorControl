@@ -1,11 +1,8 @@
 ﻿using Microsoft.Win32;
 using NLog;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
-using System.Linq;
 
-namespace ColorControl
+namespace ColorControl.Shared.Native
 {
     public class RestartDetector : IDisposable
     {
@@ -58,14 +55,14 @@ namespace ColorControl
                 // Make sure there was no error reading the event.
                 if (arg.EventRecord != null)
                 {
-                    foreach (EventProperty x in ((EventLogRecord)arg.EventRecord).Properties) 
+                    foreach (EventProperty x in ((EventLogRecord)arg.EventRecord).Properties)
                     {
                         var strValue = x.Value.ToString();
                         Logger.Debug("Event value: " + strValue);
                         if (RestartNames.Any(n => n.Equals(strValue, StringComparison.OrdinalIgnoreCase)))
                         {
-                            RestartDetected = true; 
-                            break; 
+                            RestartDetected = true;
+                            break;
                         }
                         if (PowerOffNames.Any(n => n.Equals(strValue, StringComparison.OrdinalIgnoreCase)))
                         {

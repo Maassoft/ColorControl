@@ -1,12 +1,11 @@
 ﻿using NWin32;
-using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace ColorControl
+namespace ColorControl.Shared.Native
 {
     // This class takes care of wrapping "Connecting and Configuring Displays(CCD) Win32 API"
-    internal static class CCD
+    public static class CCD
     {
         private static bool? IsHDRActive = null;
 

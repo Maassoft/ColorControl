@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Windows.Forms;
 
-namespace ColorControl
+namespace ColorControl.Shared.Contracts
 {
     public class Module
     {

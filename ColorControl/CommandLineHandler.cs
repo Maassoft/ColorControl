@@ -1,9 +1,10 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
+﻿using ColorControl.Forms;
 using ColorControl.Services.AMD;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;

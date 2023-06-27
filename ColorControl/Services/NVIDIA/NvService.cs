@@ -1,7 +1,10 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Services.Common;
-using ColorControl.Svc;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.NVIDIA;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using nspector.Common;

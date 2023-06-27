@@ -1,11 +1,12 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
 using nspector;
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,7 @@ namespace ColorControl.Services.GameLauncher
             _amdService = amdService;
             _lgService = lgService;
             _samsungService = samsungService;
-            _config = AppContext.CurrentContext.Config;
+            _config = Shared.Common.AppContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -64,7 +65,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void AddOrUpdateItemGame(GamePreset preset = null)
         {
-            FormUtils.AddOrUpdateListItem(lvGamePresets, _gameService.GetPresets(), _config, preset);
+            ServiceFormUtils.AddOrUpdateListItem(lvGamePresets, _gameService.GetPresets(), _config, preset);
         }
 
         internal void Save()
@@ -309,10 +310,10 @@ namespace ColorControl.Services.GameLauncher
 
         private void mnuGameAddStep_Opening(object sender, CancelEventArgs e)
         {
-            FormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
-            FormUtils.BuildServicePresetsMenu(mnuGameSamsungPresets, _samsungService, "Samsung", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameSamsungPresets, _samsungService, "Samsung", miGameAddPreset_Click);
         }
 
         private void miGameAddPreset_Click(object sender, EventArgs e)
@@ -390,7 +391,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void lvGamePresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            FormUtils.ListViewItemChecked<GamePreset>(lvGamePresets, e);
+            ServiceFormUtils.ListViewItemChecked<GamePreset>(lvGamePresets, e);
         }
 
         private void btnGameProcessAffinity_Click(object sender, EventArgs e)

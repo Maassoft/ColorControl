@@ -8,6 +8,7 @@
         SizeToContent="WidthAndHeight"
         xmlns:src="clr-namespace:ColorControl.Shared.XForms;assembly=Shared"
         ResizeMode="NoResize"
+        Style="{DynamicResource CustomWindowStyle}"
         WindowStartupLocation="CenterOwner"
         SnapsToDevicePixels="True">
     <StackPanel Margin="6">

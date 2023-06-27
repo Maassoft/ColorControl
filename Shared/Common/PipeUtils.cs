@@ -1,10 +1,9 @@
-﻿using ColorControl.Svc;
+﻿using ColorControl.Shared.Contracts;
 using Newtonsoft.Json;
-using System;
 using System.IO.Pipes;
 using System.Security.Principal;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
     public static class PipeUtils
     {

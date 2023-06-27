@@ -1,7 +1,8 @@
 ﻿using ATI.ADL;
-using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -29,7 +30,7 @@ namespace ColorControl.Services.AMD
             _trayIcon = trayIcon;
             _mainHandle = handle;
 
-            _config = AppContext.CurrentContext.Config;
+            _config = Shared.Common.AppContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -116,7 +117,7 @@ namespace ColorControl.Services.AMD
 
         private void AddOrUpdateItemAmd(AmdPreset preset = null)
         {
-            FormUtils.AddOrUpdateListItem(lvAmdPresets, _amdService.GetPresets(), _config, preset);
+            ServiceFormUtils.AddOrUpdateListItem(lvAmdPresets, _amdService.GetPresets(), _config, preset);
         }
 
         public void AfterInitialized()
@@ -126,7 +127,7 @@ namespace ColorControl.Services.AMD
 
         private async Task ApplyAmdPresetOnStartup(int attempts = 5)
         {
-            var startUpParams = AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.AmdPresetIdOrName) ? startUpParams.AmdPresetIdOrName : _config.AmdPresetId_ApplyOnStartup.ToString();
 
             if (!string.IsNullOrEmpty(presetIdOrName))
@@ -268,7 +269,7 @@ namespace ColorControl.Services.AMD
 
             var preset = GetSelectedAmdPreset();
 
-            FormUtils.UpdateShortcutTextBox(edtAmdShortcut, preset);
+            ServiceFormUtils.UpdateShortcutTextBox(edtAmdShortcut, preset);
         }
 
         private void btnSetAmdShortcut_Click(object sender, EventArgs e)
@@ -594,7 +595,7 @@ namespace ColorControl.Services.AMD
 
         private void lvAmdPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            FormUtils.ListViewItemChecked<AmdPreset>(lvAmdPresets, e);
+            ServiceFormUtils.ListViewItemChecked<AmdPreset>(lvAmdPresets, e);
         }
 
         private void btnAmdSettings_Click(object sender, EventArgs e)

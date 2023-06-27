@@ -1,5 +1,5 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NLog;
@@ -378,7 +378,7 @@ namespace ColorControl.Services.Samsung
             return $"{(IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: "))}{Name}{(!string.IsNullOrEmpty(IpAddress) ? ", " + IpAddress : string.Empty)}";
         }
 
-        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, AppContext appContext = null, SamsungServiceConfig config = null)
+        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, Shared.Common.AppContext appContext = null, SamsungServiceConfig config = null)
         {
             if (config == null)
             {
@@ -456,7 +456,7 @@ namespace ColorControl.Services.Samsung
             return true;
         }
 
-        private async Task ExecuteStepsAsync(SamsungPreset preset, AppContext appContext, SamsungServiceConfig config)
+        private async Task ExecuteStepsAsync(SamsungPreset preset, Shared.Common.AppContext appContext, SamsungServiceConfig config)
         {
             foreach (var step in preset.Steps)
             {
@@ -509,7 +509,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        private async Task ExecuteActionAsync(InvokableAction action, string[] parameters, AppContext appContext, SamsungServiceConfig config)
+        private async Task ExecuteActionAsync(InvokableAction action, string[] parameters, Shared.Common.AppContext appContext, SamsungServiceConfig config)
         {
             if (action.Preset != null)
             {

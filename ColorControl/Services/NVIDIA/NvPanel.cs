@@ -1,7 +1,9 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
-using ColorControl.Services.Common;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.NVIDIA;
+using ColorControl.Shared.Forms;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using novideo_srgb;
 using nspector;
 using nspector.Common;
@@ -34,13 +36,13 @@ namespace ColorControl.Services.NVIDIA
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, Common.AppContextProvider appContextProvider)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
             _mainHandle = handle;
             _appContextProvider = appContextProvider;
-            _config = AppContext.CurrentContext.Config;
+            _config = appContextProvider.GetAppContext().Config;
 
             InitializeComponent();
 
@@ -188,7 +190,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void AddOrUpdateItem(NvPreset preset = null)
         {
-            FormUtils.AddOrUpdateListItem(lvNvPresets, _nvService.GetPresets(), _config, preset);
+            ServiceFormUtils.AddOrUpdateListItem(lvNvPresets, _nvService.GetPresets(), _config, preset);
         }
 
         private async void btnApply_Click(object sender, EventArgs e)
@@ -198,7 +200,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void lvNvPresets_ItemChecked(object sender, ItemCheckedEventArgs e)
         {
-            FormUtils.ListViewItemChecked<NvPreset>(lvNvPresets, e);
+            ServiceFormUtils.ListViewItemChecked<NvPreset>(lvNvPresets, e);
         }
 
         private void lvNvPresets_SelectedIndexChanged(object sender, EventArgs e)
@@ -398,7 +400,7 @@ namespace ColorControl.Services.NVIDIA
             miHDRIncluded.Checked = preset.applyHDR;
             miHDREnabled.Checked = preset.HDREnabled;
             miToggleHDR.Checked = preset.toggleHDR;
-
+            miNvOtherIncluded.Checked = preset.applyOther;
             miNvDriverSettingsIncluded.Checked = preset.applyDriverSettings;
 
             mnuNvPresetsColorSettings.Font = _menuItemFonts[preset.applyColorData];
@@ -407,6 +409,7 @@ namespace ColorControl.Services.NVIDIA
             miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
             miNvHDR.Font = _menuItemFonts[preset.applyHDR];
             mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
+            mnuNvOtherSettings.Font = _menuItemFonts[preset.applyOther];
 
             FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Content type", typeof(InfoFrameVideoContentType), preset, "contentType", nvPresetContentTypeMenuItem_Click);
 
@@ -971,7 +974,7 @@ namespace ColorControl.Services.NVIDIA
 
             var preset = GetSelectedNvPreset();
 
-            FormUtils.UpdateShortcutTextBox(edtShortcut, preset);
+            ServiceFormUtils.UpdateShortcutTextBox(edtShortcut, preset);
         }
 
         private void miNvResolutionIncluded_Click(object sender, EventArgs e)
@@ -1455,7 +1458,7 @@ namespace ColorControl.Services.NVIDIA
 
         private async Task ApplyNvPresetOnStartup(int attempts = 5)
         {
-            var startUpParams = AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
 
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.NvidiaPresetIdOrName) ? startUpParams.NvidiaPresetIdOrName : _config.NvPresetId_ApplyOnStartup.ToString();
 

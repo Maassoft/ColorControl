@@ -1,5 +1,5 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
 using System;
 using System.Linq;
 using System.Windows.Forms;

@@ -7,6 +7,7 @@
         xmlns:local="clr-namespace:novideo_srgb"
         Title="Advanced"
         xmlns:src="clr-namespace:ColorControl.Shared.XForms;assembly=Shared"
+        Style="{DynamicResource CustomWindowStyle}"
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner">

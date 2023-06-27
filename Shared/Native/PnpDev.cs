@@ -1,14 +1,11 @@
-﻿using Newtonsoft.Json;
-using Windows.Devices.Enumeration;
+﻿using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
 
-namespace ColorControl
+namespace ColorControl.Shared.Native
 {
-    class PnpDev
+    public class PnpDev
     {
-        [JsonIgnore]
         public DeviceInformation DevInfo { get; private set; }
-        [JsonIgnore]
         public PnpObject PnpObject { get; private set; }
 
         public string Name { get; private set; }
@@ -16,7 +13,6 @@ namespace ColorControl
 
         public string MacAddress { get; private set; }
 
-        [JsonConstructor]
         public PnpDev(string name, string ipAddress, string macAddress)
         {
             Name = name;

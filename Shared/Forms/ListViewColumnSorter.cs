@@ -1,7 +1,6 @@
 ﻿using System.Collections;
-using System.Windows.Forms;
 
-namespace ColorControl
+namespace ColorControl.Shared.Forms
 {
     /// <summary>
     /// This class is an implementation of the 'IComparer' interface.

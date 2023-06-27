@@ -1,15 +1,10 @@
-﻿using ColorControl.Common;
-using System;
-using System.Collections.Generic;
+﻿using ColorControl.Shared.Common;
 using System.Data;
-using System.Drawing;
 using System.Globalization;
-using System.Linq;
-using System.Windows.Forms;
 
-namespace ColorControl.Forms
+namespace ColorControl.Shared.Forms
 {
-    class MessageForms
+    public class MessageForms
     {
         public enum FieldType
         {

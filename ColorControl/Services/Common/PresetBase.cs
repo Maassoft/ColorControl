@@ -1,4 +1,5 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

@@ -1,4 +1,5 @@
-﻿using ColorControl.Native;
+﻿using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using NWin32;
 using NWin32.NativeTypes;
 using System;

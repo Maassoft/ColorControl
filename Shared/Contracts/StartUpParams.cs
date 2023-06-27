@@ -1,8 +1,7 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Shared.Common;
 using Microsoft.Win32.TaskScheduler;
-using System.Collections.Generic;
 
-namespace ColorControl
+namespace ColorControl.Shared.Contracts
 {
     public class StartUpParams
     {

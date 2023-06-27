@@ -1,13 +1,12 @@
 ﻿using NWin32.NativeTypes;
-using System;
 using System.Runtime.InteropServices;
 
-namespace ColorControl.Native
+namespace ColorControl.Shared.Native
 {
     public static class WinApi
     {
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
-        internal struct POWERBROADCAST_SETTING
+        public struct POWERBROADCAST_SETTING
         {
             public Guid PowerSetting;
             public uint DataLength;

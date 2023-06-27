@@ -1,8 +1,7 @@
-﻿using ColorControl.Common;
-using ColorControl.Forms;
-using ColorControl.Native;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
 using ColorControl.Shared.XForms;
-using ColorControl.Svc;
 using DJ;
 using NLog;
 using System;
@@ -11,7 +10,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Navigation;
 
 namespace ColorControl.XForms
@@ -28,7 +26,7 @@ namespace ColorControl.XForms
         {
             InitializeComponent();
 
-            LogLevelIndex = LogLevel.FromString(AppContext.CurrentContext.Config.LogLevel).Ordinal;
+            LogLevelIndex = LogLevel.FromString(Shared.Common.AppContext.CurrentContext.Config.LogLevel).Ordinal;
 
             DataContext = this;
         }
@@ -44,9 +42,9 @@ namespace ColorControl.XForms
 
         public static void CreateAndShow(bool show = true)
         {
-            if (System.Windows.Application.Current == null)
+            if (Application.Current == null)
             {
-                new System.Windows.Application();
+                new Application();
             }
 
             _window ??= new LogWindow();
@@ -54,44 +52,9 @@ namespace ColorControl.XForms
             if (show)
             {
                 _window.WindowState = WindowState.Normal;
-                _window.InitTheme();
                 _window.Show();
-                _window.InitThemeAfterShow();
                 _window.Topmost = true;
                 _window.Topmost = false;
-            }
-        }
-
-        protected void InitThemeAfterShow()
-        {
-            var useDarkTheme = DarkModeUtils.UseDarkMode;
-
-            var handle = new WindowInteropHelper(_window).Handle;
-
-            var value = useDarkTheme ? 1 : 0;
-
-            // Takes care of title bar
-            WinApi.DwmSetWindowAttribute(handle, DarkModeUtils.DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, 4);
-        }
-
-        protected void InitTheme()
-        {
-            if (DarkModeUtils.UseDarkMode)
-            {
-                var dict = new ResourceDictionary { Source = new Uri($"pack://application:,,,/Shared;component/Themes/DarkTheme.xaml", UriKind.Absolute) };
-
-                if (Application.Current.Resources.MergedDictionaries.Any())
-                {
-                    Application.Current.Resources.MergedDictionaries[0] = dict;
-                }
-                else
-                {
-                    Application.Current.Resources.MergedDictionaries.Add(dict);
-                }
-            }
-            else
-            {
-                Application.Current.Resources.MergedDictionaries.Clear();
             }
         }
 
@@ -114,7 +77,7 @@ namespace ColorControl.XForms
 
         private void RawLog_Click(object sender, RoutedEventArgs e)
         {
-            var context = AppContext.CurrentContext;
+            var context = Shared.Common.AppContext.CurrentContext;
 
             string logFile;
             if (tabControl.SelectedIndex == 0)
@@ -165,7 +128,7 @@ namespace ColorControl.XForms
 
         private void LogLevel_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            var context = AppContext.CurrentContext;
+            var context = Shared.Common.AppContext.CurrentContext;
 
             var logLevel = LogLevel.FromOrdinal(_logLevelIndex);
 
@@ -181,7 +144,7 @@ namespace ColorControl.XForms
                 return;
             }
 
-            var context = AppContext.CurrentContext;
+            var context = Shared.Common.AppContext.CurrentContext;
 
             var lines = LoadLog();
 

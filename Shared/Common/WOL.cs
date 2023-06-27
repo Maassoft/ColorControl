@@ -1,15 +1,14 @@
-﻿using NLog;
-using System;
-using System.Linq;
+﻿using ColorControl.Shared.Contracts;
+using NLog;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.IpHlpApi;
 
-namespace ColorControl.Common
+namespace ColorControl.Shared.Common
 {
-    class WOL
+    public class WOL
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -134,7 +133,7 @@ namespace ColorControl.Common
 
             if (password.Length > 0)
             {
-                for (offset = 16 * 6 + 6; offset < (17 * 6 + password.Length); offset += 6)
+                for (offset = 16 * 6 + 6; offset < 17 * 6 + password.Length; offset += 6)
                     for (i = 0; i < 6; ++i)
                         packet[i + offset] = password[i];
             }

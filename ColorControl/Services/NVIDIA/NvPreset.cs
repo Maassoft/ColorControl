@@ -1,5 +1,7 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.NVIDIA;
 using Newtonsoft.Json;
 using nspector.Common;
 using NvAPIWrapper.Display;

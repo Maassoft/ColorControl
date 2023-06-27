@@ -1,11 +1,10 @@
-﻿using ColorControl.Common;
+﻿using ColorControl.Shared.Contracts;
 using NLog;
 using NLog.Config;
-using System;
 using System.ComponentModel;
-using System.Threading;
 
-namespace ColorControl
+namespace ColorControl.Shared.Common
+
 {
     public class AppContext
     {
@@ -18,13 +17,15 @@ namespace ColorControl
         public SynchronizationContext SynchronizationContext { get; set; } = AsyncOperationManager.SynchronizationContext;
         public LoggingRule LoggingRule { get; private set; }
         public DateTime StartTime { get; private set; } = DateTime.Now;
+        public string MutexId { get; private set; }
 
-        public AppContext(Config config, StartUpParams startUpParams, string dataPath, LoggingRule loggingRule)
+        public AppContext(Config config, StartUpParams startUpParams, string dataPath, LoggingRule loggingRule, string mutexId = null)
         {
             Config = config;
             StartUpParams = startUpParams;
             DataPath = dataPath;
             LoggingRule = loggingRule;
+            MutexId = mutexId;
 
             CurrentContext = this;
         }

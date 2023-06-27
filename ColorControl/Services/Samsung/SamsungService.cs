@@ -1,6 +1,8 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.Common;
+﻿using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NWin32;
@@ -36,18 +38,20 @@ namespace ColorControl.Services.Samsung
         private int _poweredOffByScreenSaverProcessId;
         private object _lastTriggeredPreset;
         private List<SamsungApp> _samsungApps = new List<SamsungApp>();
+        private Shared.Common.AppContext _appContext;
 
         public List<SamsungDevice> Devices { get; private set; }
 
         public SamsungService(AppContextProvider appContextProvider, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher) : base(appContextProvider)
         {
-            _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
+            _appContext = appContextProvider.GetAppContext();
+            _allowPowerOn = _appContext.StartUpParams.RunningFromScheduledTask;
             _serviceManager = serviceManager;
             _powerEventDispatcher = powerEventDispatcher;
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
             _restartDetector = restartDetector;
             _processEventDispatcher = processEventDispatcher;
-            SamTvConnection.SyncContext = _appContextProvider.GetAppContext().SynchronizationContext;
+            SamTvConnection.SyncContext = _appContext.SynchronizationContext;
 
             LoadConfig();
             LoadPresets();
@@ -256,7 +260,7 @@ namespace ColorControl.Services.Samsung
             var preset = GetPresetByIdOrName(idOrName);
             if (preset != null)
             {
-                return await ApplyPreset(preset, Program.AppContext);
+                return await ApplyPreset(preset, _appContext);
             }
             else
             {
@@ -266,10 +270,10 @@ namespace ColorControl.Services.Samsung
 
         public override async Task<bool> ApplyPreset(SamsungPreset preset)
         {
-            return await ApplyPreset(preset, Program.AppContext);
+            return await ApplyPreset(preset, _appContext);
         }
 
-        public async Task<bool> ApplyPreset(SamsungPreset preset, AppContext appContext)
+        public async Task<bool> ApplyPreset(SamsungPreset preset, Shared.Common.AppContext appContext)
         {
             var result = true;
 

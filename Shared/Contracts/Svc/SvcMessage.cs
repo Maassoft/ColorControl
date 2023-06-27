@@ -1,7 +1,6 @@
-﻿using ColorControl.Services.NVIDIA;
-using System.Collections.Generic;
+﻿using ColorControl.Shared.Contracts.NVIDIA;
 
-namespace ColorControl.Svc
+namespace ColorControl.Shared.Contracts
 {
     public enum SvcMessageType
     {

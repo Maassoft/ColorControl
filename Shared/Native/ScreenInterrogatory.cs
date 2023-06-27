@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
-namespace ColorControl
+namespace ColorControl.Shared.Native
 {
     public static class ScreenInterrogatory
     {

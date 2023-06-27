@@ -1,7 +1,8 @@
-﻿using ColorControl.Common;
-using ColorControl.Services.EventDispatcher;
+﻿using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using NLog;
