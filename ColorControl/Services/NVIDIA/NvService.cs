@@ -322,6 +322,11 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
+            if (preset.applyOther)
+            {
+                SetHDMIContentType(display, preset.contentType);
+            }
+
             if (preset.applyDithering)
             {
                 if (!SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, preset: preset))
@@ -648,7 +653,7 @@ namespace ColorControl.Services.NVIDIA
             return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
         }
 
-        private bool IsDisplayInPortraitMode(NvAPIWrapper.Display.Display display)
+        private bool IsDisplayInPortraitMode(Display display)
         {
             try
             {
@@ -690,6 +695,30 @@ namespace ColorControl.Services.NVIDIA
             var displayDevice = display.DisplayDevice;
             var hdr = displayDevice.HDRColorData;
             return hdr?.HDRMode == ColorDataHDRMode.UHDA;
+        }
+
+        public void SetHDMIContentType(Display display, InfoFrameVideoContentType contentType)
+        {
+            var displayDevice = display.DisplayDevice;
+
+            var info = displayDevice.HDMIVideoFrameCurrentInformation;
+
+            if (info.HasValue)
+            {
+                var infoValue = info.Value;
+
+                infoValue.SetContentType(contentType);
+
+                displayDevice.SetHDMIVideoFrameInformation(infoValue);
+            }
+        }
+        public InfoFrameVideoContentType GetHDMIContentType(Display display)
+        {
+            var displayDevice = display.DisplayDevice;
+
+            var info = displayDevice.HDMIVideoFrameCurrentInformation;
+
+            return info.HasValue ? info.Value.ContentType : InfoFrameVideoContentType.Auto;
         }
 
         public Display[] GetDisplays()
@@ -799,6 +828,8 @@ namespace ColorControl.Services.NVIDIA
 
                     values.Add(string.Join(", ", drsValues));
 
+                    values.Add($"Content type: {GetHDMIContentType(display)}");
+
                     var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
 
                     var displayInfo = new NvDisplayInfo(display, values, infoLine, name);
@@ -831,6 +862,7 @@ namespace ColorControl.Services.NVIDIA
 
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
+            preset.contentType = GetHDMIContentType(display);
 
             var mode = GetCurrentMode(display.Name);
 

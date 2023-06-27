@@ -1044,13 +1044,20 @@ NOTE: installing the service may cause a User Account Control popup.");
             bool CompareVersions()
             {
                 var result = true;
+                var aNumberIsLarger = false;
 
                 for (var i = 0; i < nvParts.Length; i++)
                 {
-                    var part = nvParts[i];
-                    var cvPart = cvParts[i];
+                    var part = Utils.ParseInt(nvParts[i]);
+                    var cvPart = Utils.ParseInt(cvParts[i]);
 
-                    if (Utils.ParseInt(part) >= Utils.ParseInt(cvPart))
+                    if (part > cvPart)
+                    {
+                        aNumberIsLarger = true;
+                        break;
+                    }
+
+                    if (part == cvPart)
                     {
                         continue;
                     }
@@ -1059,7 +1066,7 @@ NOTE: installing the service may cause a User Account Control popup.");
                     break;
                 }
 
-                return result;
+                return result && aNumberIsLarger;
             }
 
             if (nvParts.Length != cvParts.Length || CompareVersions())

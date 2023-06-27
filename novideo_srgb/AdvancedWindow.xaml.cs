@@ -1,8 +1,9 @@
-﻿using System.Windows;
+﻿using ColorControl.Shared.XForms;
+using System.Windows;
 
 namespace novideo_srgb
 {
-    public partial class AdvancedWindow
+    public partial class AdvancedWindow : BaseWindow
     {
         private AdvancedViewModel _viewModel;
 

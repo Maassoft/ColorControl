@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using NvAPIWrapper.Native.Helpers;
+﻿using NvAPIWrapper.Native.Helpers;
+using System.Runtime.InteropServices;
 
 namespace NvAPIWrapper.Native.Display.Structures
 {
@@ -10,7 +10,7 @@ namespace NvAPIWrapper.Native.Display.Structures
     public struct InfoFrameVideo
     {
         [FieldOffset(0)] private readonly uint _WordAt0;
-        [FieldOffset(4)] private readonly uint _WordAt4;
+        [FieldOffset(4)] private uint _WordAt4;
         [FieldOffset(8)] private readonly uint _WordAt8;
         [FieldOffset(12)] private readonly uint _WordAt12;
         [FieldOffset(16)] private readonly uint _WordAt16;
@@ -62,27 +62,41 @@ namespace NvAPIWrapper.Native.Display.Structures
         {
             _WordAt0 = 0u
                 .SetBits(0, 8, videoIdentificationCode)
-                .SetBits(8, 5, (uint) pixelRepetition)
-                .SetBits(13, 3, (uint) colorFormat)
-                .SetBits(16, 3, (uint) colorimetry)
-                .SetBits(19, 4, (uint) extendedColorimetry)
-                .SetBits(23, 3, (uint) rgbQuantization)
-                .SetBits(26, 3, (uint) yccQuantization)
-                .SetBits(29, 2, (uint) contentMode);
+                .SetBits(8, 5, (uint)pixelRepetition)
+                .SetBits(13, 3, (uint)colorFormat)
+                .SetBits(16, 3, (uint)colorimetry)
+                .SetBits(19, 4, (uint)extendedColorimetry)
+                .SetBits(23, 3, (uint)rgbQuantization)
+                .SetBits(26, 3, (uint)yccQuantization)
+                .SetBits(29, 2, (uint)contentMode);
 
             _WordAt4 = 0u
-                .SetBits(0, 3, (uint) contentType)
-                .SetBits(3, 3, (uint) scanInfo)
-                .SetBits(6, 2, (uint) isActiveFormatInfoPresent)
-                .SetBits(8, 5, (uint) activeFormatAspectRatio)
-                .SetBits(13, 3, (uint) pictureAspectRatio)
-                .SetBits(16, 3, (uint) nonUniformPictureScaling)
-                .SetBits(19, 3, (uint) barInfo);
+                .SetBits(0, 3, (uint)contentType)
+                .SetBits(3, 3, (uint)scanInfo)
+                .SetBits(6, 2, (uint)isActiveFormatInfoPresent)
+                .SetBits(8, 5, (uint)activeFormatAspectRatio)
+                .SetBits(13, 3, (uint)pictureAspectRatio)
+                .SetBits(16, 3, (uint)nonUniformPictureScaling)
+                .SetBits(19, 3, (uint)barInfo);
 
             _WordAt8 = topBar == null ? 0x1FFFF : 0u.SetBits(0, 17, topBar.Value);
             _WordAt12 = bottomBar == null ? 0x1FFFF : 0u.SetBits(0, 17, bottomBar.Value);
             _WordAt16 = leftBar == null ? 0x1FFFF : 0u.SetBits(0, 17, leftBar.Value);
             _WordAt20 = rightBar == null ? 0x1FFFF : 0u.SetBits(0, 17, rightBar.Value);
+        }
+
+        public void SetContentType(InfoFrameVideoContentType contentType)
+        {
+            var newWord = 0u
+                .SetBits(0, 3, (uint)contentType)
+                .SetBits(3, 3, (uint)ScanInfo)
+                .SetBits(6, 2, (uint)IsActiveFormatInfoPresent)
+                .SetBits(8, 5, (uint)ActiveFormatAspectRatio)
+                .SetBits(13, 3, (uint)PictureAspectRatio)
+                .SetBits(16, 3, (uint)NonUniformPictureScaling)
+                .SetBits(19, 3, (uint)BarInfo);
+
+            _WordAt4 = newWord;
         }
 
         /// <summary>
@@ -93,7 +107,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         {
             get
             {
-                var value = (byte) _WordAt0.GetBits(0, 8);
+                var value = (byte)_WordAt0.GetBits(0, 8);
 
                 if (value == 0xFF)
                 {
@@ -109,7 +123,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoPixelRepetition PixelRepetition
         {
-            get => (InfoFrameVideoPixelRepetition) _WordAt0.GetBits(8, 5);
+            get => (InfoFrameVideoPixelRepetition)_WordAt0.GetBits(8, 5);
         }
 
         /// <summary>
@@ -117,7 +131,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoColorFormat ColorFormat
         {
-            get => (InfoFrameVideoColorFormat) _WordAt0.GetBits(13, 3);
+            get => (InfoFrameVideoColorFormat)_WordAt0.GetBits(13, 3);
         }
 
         /// <summary>
@@ -125,7 +139,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoColorimetry Colorimetry
         {
-            get => (InfoFrameVideoColorimetry) _WordAt0.GetBits(16, 3);
+            get => (InfoFrameVideoColorimetry)_WordAt0.GetBits(16, 3);
         }
 
         /// <summary>
@@ -141,7 +155,7 @@ namespace NvAPIWrapper.Native.Display.Structures
                     return null;
                 }
 
-                return (InfoFrameVideoExtendedColorimetry) _WordAt0.GetBits(19, 4);
+                return (InfoFrameVideoExtendedColorimetry)_WordAt0.GetBits(19, 4);
             }
         }
 
@@ -150,7 +164,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoRGBQuantization RGBQuantization
         {
-            get => (InfoFrameVideoRGBQuantization) _WordAt0.GetBits(23, 3);
+            get => (InfoFrameVideoRGBQuantization)_WordAt0.GetBits(23, 3);
         }
 
         /// <summary>
@@ -158,7 +172,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoYCCQuantization YCCQuantization
         {
-            get => (InfoFrameVideoYCCQuantization) _WordAt0.GetBits(26, 3);
+            get => (InfoFrameVideoYCCQuantization)_WordAt0.GetBits(26, 3);
         }
 
         /// <summary>
@@ -166,7 +180,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoITC ContentMode
         {
-            get => (InfoFrameVideoITC) _WordAt0.GetBits(29, 2);
+            get => (InfoFrameVideoITC)_WordAt0.GetBits(29, 2);
         }
 
         /// <summary>
@@ -174,7 +188,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoContentType ContentType
         {
-            get => (InfoFrameVideoContentType) _WordAt4.GetBits(0, 3);
+            get => (InfoFrameVideoContentType)_WordAt4.GetBits(0, 3);
         }
 
         /// <summary>
@@ -182,7 +196,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoScanInfo ScanInfo
         {
-            get => (InfoFrameVideoScanInfo) _WordAt4.GetBits(3, 3);
+            get => (InfoFrameVideoScanInfo)_WordAt4.GetBits(3, 3);
         }
 
         /// <summary>
@@ -190,7 +204,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameBoolean IsActiveFormatInfoPresent
         {
-            get => (InfoFrameBoolean) _WordAt4.GetBits(6, 2);
+            get => (InfoFrameBoolean)_WordAt4.GetBits(6, 2);
         }
 
         /// <summary>
@@ -198,7 +212,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoAspectRatioActivePortion ActiveFormatAspectRatio
         {
-            get => (InfoFrameVideoAspectRatioActivePortion) _WordAt4.GetBits(8, 5);
+            get => (InfoFrameVideoAspectRatioActivePortion)_WordAt4.GetBits(8, 5);
         }
 
         /// <summary>
@@ -206,7 +220,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoAspectRatioCodedFrame PictureAspectRatio
         {
-            get => (InfoFrameVideoAspectRatioCodedFrame) _WordAt4.GetBits(13, 3);
+            get => (InfoFrameVideoAspectRatioCodedFrame)_WordAt4.GetBits(13, 3);
         }
 
         /// <summary>
@@ -214,7 +228,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoNonUniformPictureScaling NonUniformPictureScaling
         {
-            get => (InfoFrameVideoNonUniformPictureScaling) _WordAt4.GetBits(16, 3);
+            get => (InfoFrameVideoNonUniformPictureScaling)_WordAt4.GetBits(16, 3);
         }
 
         /// <summary>
@@ -222,7 +236,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         /// </summary>
         public InfoFrameVideoBarData BarInfo
         {
-            get => (InfoFrameVideoBarData) _WordAt4.GetBits(19, 3);
+            get => (InfoFrameVideoBarData)_WordAt4.GetBits(19, 3);
         }
 
         /// <summary>
@@ -244,7 +258,7 @@ namespace NvAPIWrapper.Native.Display.Structures
                     return null;
                 }
 
-                return (uint) val;
+                return (uint)val;
             }
         }
 
@@ -267,7 +281,7 @@ namespace NvAPIWrapper.Native.Display.Structures
                     return null;
                 }
 
-                return (uint) val;
+                return (uint)val;
             }
         }
 
@@ -290,7 +304,7 @@ namespace NvAPIWrapper.Native.Display.Structures
                     return null;
                 }
 
-                return (uint) val;
+                return (uint)val;
             }
         }
 
@@ -313,7 +327,7 @@ namespace NvAPIWrapper.Native.Display.Structures
                     return null;
                 }
 
-                return (uint) val;
+                return (uint)val;
             }
         }
     }

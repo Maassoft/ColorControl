@@ -1,9 +1,9 @@
-﻿using System.Windows;
+﻿using ColorControl.Shared.XForms;
 using System.Windows.Navigation;
 
 namespace novideo_srgb
 {
-    public partial class AboutWindow : Window
+    public partial class AboutWindow : BaseWindow
     {
         public AboutWindow()
         {

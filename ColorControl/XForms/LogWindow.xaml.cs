@@ -1,6 +1,7 @@
 ﻿using ColorControl.Common;
 using ColorControl.Forms;
 using ColorControl.Native;
+using ColorControl.Shared.XForms;
 using ColorControl.Svc;
 using DJ;
 using NLog;
@@ -15,7 +16,7 @@ using System.Windows.Navigation;
 
 namespace ColorControl.XForms
 {
-    public partial class LogWindow : Window
+    public partial class LogWindow : BaseWindow
     {
         private static LogWindow _window;
 
@@ -77,7 +78,7 @@ namespace ColorControl.XForms
         {
             if (DarkModeUtils.UseDarkMode)
             {
-                var dict = new ResourceDictionary { Source = new Uri($"Themes/DarkTheme.xaml", UriKind.Relative) };
+                var dict = new ResourceDictionary { Source = new Uri($"pack://application:,,,/Shared;component/Themes/DarkTheme.xaml", UriKind.Absolute) };
 
                 if (Application.Current.Resources.MergedDictionaries.Any())
                 {

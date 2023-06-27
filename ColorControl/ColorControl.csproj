@@ -48,7 +48,6 @@
 	<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-	<None Remove="Themes\DarkTheme.xaml" />
 	<None Remove="XForms\LogWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -70,9 +69,6 @@
 	<Content Include="LgPresets.json">
 	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	</Content>
-	<Resource Include="Themes\DarkTheme.xaml">
-	  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-	</Resource>
   </ItemGroup>
   <ItemGroup>
 	<Content Include="pngbarn.ico" />
@@ -113,6 +109,7 @@
 	<ProjectReference Include="..\novideo_srgb\novideo_srgb.csproj" />
 	<ProjectReference Include="..\Nspector\Nspector.csproj" />
 	<ProjectReference Include="..\NvAPIWrapper\NvAPIWrapper.csproj" />
+	<ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
 	<EmbeddedResource Update="Services\Samsung\SamsungPanel.resx">

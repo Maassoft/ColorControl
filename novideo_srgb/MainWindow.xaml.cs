@@ -1,10 +1,11 @@
-﻿using Microsoft.Win32;
+﻿using ColorControl.Shared.XForms;
+using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows;
 
 namespace novideo_srgb
 {
-    public partial class MainWindow
+    public partial class MainWindow : BaseWindow
     {
         private readonly MainViewModel _viewModel;
 

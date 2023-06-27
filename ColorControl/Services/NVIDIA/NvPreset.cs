@@ -30,6 +30,8 @@ namespace ColorControl.Services.NVIDIA
         public string displayName { get; set; }
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
+        public bool applyOther { get; set; }
+        public InfoFrameVideoContentType contentType { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
         public bool applyOverclocking { get; set; }
@@ -55,6 +57,7 @@ namespace ColorControl.Services.NVIDIA
             primaryDisplay = true;
             ditheringBits = 1;
             ditheringMode = 4;
+            contentType = InfoFrameVideoContentType.Auto;
             applyDriverSettings = false;
             driverSettings = new Dictionary<uint, uint>();
             ocSettings = new List<NvGpuOcSettings>();
@@ -89,6 +92,9 @@ namespace ColorControl.Services.NVIDIA
             resolutionHeight = preset.resolutionHeight;
             applyDriverSettings = preset.applyDriverSettings;
             driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
+
+            contentType = preset.contentType;
+            applyOther = preset.applyOther;
         }
 
         public NvPreset Clone()
@@ -100,7 +106,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Overclocking|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -132,6 +138,8 @@ namespace ColorControl.Services.NVIDIA
             values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
 
             values.Add(string.Format("{0}: {1}", applyDriverSettings ? "Included" : "Excluded", GetDriverSettingsDescription()));
+
+            values.Add(string.Format("{0}: {1}", applyOther ? "Included" : "Excluded", $"Content type: {contentType}"));
 
             values.Add(string.Format("{0}: {1}", applyOverclocking ? "Included" : "Excluded", GetOverclockingSettingsDescription()));
 

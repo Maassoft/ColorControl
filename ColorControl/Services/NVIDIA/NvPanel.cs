@@ -326,6 +326,8 @@ namespace ColorControl.Services.NVIDIA
             miNvDriverSettingsIncluded.Visible = presetItemsVisible;
             mnuNvDriverSettings.Enabled = preset != null;
             mnuNvOverclocking.Visible = preset != null && _nvService.Config.ShowOverclocking;
+            mnuNvOtherSettings.Enabled = preset != null;
+            miNvOtherIncluded.Visible = presetItemsVisible;
 
             if (preset == null)
             {
@@ -405,6 +407,8 @@ namespace ColorControl.Services.NVIDIA
             miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
             miNvHDR.Font = _menuItemFonts[preset.applyHDR];
             mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
+
+            FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Content type", typeof(InfoFrameVideoContentType), preset, "contentType", nvPresetContentTypeMenuItem_Click);
 
             BuildNvOverclockingMenu(preset);
 
@@ -706,6 +710,27 @@ namespace ColorControl.Services.NVIDIA
             }
 
             preset.colorData = colorData;
+
+            AddOrUpdateItem();
+        }
+
+        private void nvPresetContentTypeMenuItem_Click(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+
+            var value = (InfoFrameVideoContentType)menuItem.Tag;
+
+            var preset = GetSelectedNvPreset(true);
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetHDMIContentType(preset.Display, value);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.contentType = value;
 
             AddOrUpdateItem();
         }
@@ -1521,6 +1546,15 @@ namespace ColorControl.Services.NVIDIA
         private void miNvNovideo_Click(object sender, EventArgs e)
         {
             MainWindow.CreateAndShow();
+        }
+
+        private void miNvOtherIncluded_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            preset.applyOther = !preset.applyOther;
+
+            AddOrUpdateItem();
         }
     }
 }
