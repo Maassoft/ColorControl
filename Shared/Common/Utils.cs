@@ -609,7 +609,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
         public static bool TaskExists(string taskName)
         {
-            var file = Assembly.GetExecutingAssembly().Location;
             using (TaskService ts = new TaskService())
             {
                 var task = ts.RootFolder.Tasks.FirstOrDefault(x => x.Name.Equals(taskName));
@@ -837,7 +836,7 @@ The best and suggested method to provide this is via a Windows Service. Only whe
         {
             resourceName = "ColorControl.Resources." + resourceName;
 
-            var assembly = Assembly.GetExecutingAssembly();
+            var assembly = Assembly.GetEntryAssembly();
 
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             using (StreamReader reader = new StreamReader(stream))

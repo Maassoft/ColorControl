@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using nspector.Native.NvApi.DriverSettings;
+﻿using nspector.Native.NvApi.DriverSettings;
 using nspector.Native.NVAPI2;
+using System.Reflection;
 
 namespace nspector.Common.Meta
 {
