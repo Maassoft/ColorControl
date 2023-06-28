@@ -644,7 +644,7 @@ namespace nspector.Native.NVAPI2
             NvAPI_Status res;
             var settingIdArray = new uint[maxCount];
             var pSettingIds = IntPtr.Zero;
-            NativeArrayHelper.SetArrayData(settingIdArray, out pSettingIds);
+            NativeArrayHelper.SetArrayDataNative(settingIdArray, out pSettingIds);
             try
             {
                 res = DRS_EnumAvailableSettingIdsInternal(pSettingIds, ref maxCount);
@@ -662,9 +662,17 @@ namespace nspector.Native.NVAPI2
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate NvAPI_Status DRS_EnumAvailableSettingValuesDelegate(uint settingId, ref uint pMaxNumValues, IntPtr pSettingValues);
         private static readonly DRS_EnumAvailableSettingValuesDelegate DRS_EnumAvailableSettingValuesInternal;
+
+        [ThreadStatic]
+        private static IntPtr pSettingValues;
+
         public static NvAPI_Status DRS_EnumAvailableSettingValues(uint settingId, ref uint pMaxNumValues, ref NVDRS_SETTING_VALUES settingValues)
         {
-            var pSettingValues = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NVDRS_SETTING_VALUES)));
+            if (pSettingValues == IntPtr.Zero)
+            {
+                pSettingValues = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NVDRS_SETTING_VALUES)));
+            }
+
             NvAPI_Status res;
             try
             {
@@ -675,7 +683,7 @@ namespace nspector.Native.NVAPI2
             }
             finally
             {
-                Marshal.FreeHGlobal(pSettingValues);
+                //Marshal.FreeHGlobal(pSettingValues);
             }
             return res;
         }

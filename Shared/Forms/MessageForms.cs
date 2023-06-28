@@ -143,6 +143,7 @@ namespace ColorControl.Shared.Forms
 
             var top = 10;
             var boxes = new List<Control>();
+            var labels = new List<Label>();
             var counter = 1;
             const int DefaultLeft = 20;
             var currentLeft = DefaultLeft;
@@ -159,6 +160,7 @@ namespace ColorControl.Shared.Forms
                 if (field.FieldType != FieldType.CheckBox)
                 {
                     var textLabel = new Label() { Left = currentLeft, Top = top, Text = label, AutoSize = true };
+                    labels.Add(textLabel);
                     top += 20;
                     groupBox.Controls.Add(textLabel);
                 }
@@ -166,6 +168,7 @@ namespace ColorControl.Shared.Forms
                 if (field.SubLabel != null)
                 {
                     var textSubLabel = new Label() { Left = currentLeft, Top = top, Text = field.SubLabel, AutoSize = true };
+                    labels.Add(textSubLabel);
                     top += 20;
                     groupBox.Controls.Add(textSubLabel);
                 }
@@ -369,7 +372,7 @@ namespace ColorControl.Shared.Forms
                 counter++;
             }
 
-            var maxWidth = boxes.Max(c => c.Width + c.Left) + 36;
+            var maxWidth = Math.Max(boxes.Max(c => c.Width + c.Left), labels.Max(l => l.Width + l.Left)) + 36;
 
             if (groupBox.Width < maxWidth)
             {

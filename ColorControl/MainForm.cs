@@ -1014,7 +1014,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private async Task CheckForUpdates()
         {
-            if (!_config.CheckForUpdates || _checkedForUpdates || Debugger.IsAttached)
+            if (!_config.CheckForUpdates || _checkedForUpdates/* || Debugger.IsAttached*/)
             {
                 return;
             }

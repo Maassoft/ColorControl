@@ -712,14 +712,15 @@ namespace ColorControl.Services.NVIDIA
 
                 infoValue.SetContentType(contentType);
 
-                displayDevice.SetHDMIVideoFrameInformation(infoValue);
+                displayDevice.SetHDMIVideoFrameInformation(infoValue, true);
             }
         }
+
         public InfoFrameVideoContentType GetHDMIContentType(Display display)
         {
             var displayDevice = display.DisplayDevice;
 
-            var info = displayDevice.HDMIVideoFrameCurrentInformation;
+            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
 
             return info.HasValue ? info.Value.ContentType : InfoFrameVideoContentType.Auto;
         }
@@ -989,7 +990,7 @@ namespace ColorControl.Services.NVIDIA
                 _settings.AddRange(normalSettings);
 
                 _driverSettingIds.Clear();
-                _driverSettingIds.AddRange(_settings.Where(s => !s.IsStringValue && !s.SettingText.Contains("SLI")).Select(s => s.SettingId));
+                _driverSettingIds.AddRange(_settings.Where(s => !s.IsStringValue && !s.SettingText.Contains("SLI") && s.GroupName != null && s.GroupName != "Unknown").Select(s => s.SettingId));
 
                 if (firstTime)
                 {
