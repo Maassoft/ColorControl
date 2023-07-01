@@ -72,13 +72,13 @@ namespace ColorControl.Services.LG
 
         public void Init()
         {
-            _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterLgServiceRefreshDevices()));
+            _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, () => AfterLgServiceRefreshDevices()));
             _lgService.InstallEventHandlers();
         }
 
         private void _lgService_SelectedDeviceChangedEvent(object sender, EventArgs e)
         {
-            BeginInvoke(() => SetLgDevicesSelectedIndex(sender));
+            FormUtils.BeginInvokeCheck(this, () => SetLgDevicesSelectedIndex(sender));
         }
 
         private void SetLgDevicesSelectedIndex(object sender)
@@ -695,7 +695,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
 
                 if (e.Index == 10)
                 {
-                    _lgService.RefreshDevices().ContinueWith((_) => BeginInvoke(() => FillLgDevices()));
+                    _lgService.RefreshDevices().ContinueWith((_) => FormUtils.BeginInvokeCheck(this, () => FillLgDevices()));
                 }
             });
         }
@@ -715,7 +715,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
 
         private void RefreshLgDevices()
         {
-            _lgService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(() => FillLgDevices()));
+            _lgService.RefreshDevices(false).ContinueWith((task) => FormUtils.BeginInvokeCheck(this, () => FillLgDevices()));
         }
 
         private void edtShortcutLg_TextChanged(object sender, EventArgs e)

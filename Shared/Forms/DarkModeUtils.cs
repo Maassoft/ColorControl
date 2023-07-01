@@ -55,6 +55,11 @@ namespace ColorControl.Shared.Forms
 
         public static void InitWpfTheme()
         {
+            if (System.Windows.Application.Current == null)
+            {
+                new System.Windows.Application();
+            }
+
             var resources = System.Windows.Application.Current.Resources;
 
             if (DarkModeUtils.UseDarkMode)

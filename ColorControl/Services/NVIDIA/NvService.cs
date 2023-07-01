@@ -14,6 +14,7 @@ using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.GPU.Structures;
+using NWin32;
 using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
@@ -103,6 +104,9 @@ namespace ColorControl.Services.NVIDIA
         private DrsSettingsService _drs;
         private DrsSettingsMetaService _meta;
         private List<SettingItem> _settings = new List<SettingItem>();
+
+        private int _lastSetSDRBrightness = -1;
+        private int _lastReadSDRBrightness = -1;
 
         private Semaphore _semaphore = new Semaphore(1, 1);
 
@@ -312,11 +316,6 @@ namespace ColorControl.Services.NVIDIA
                 SetHDRState(display, newHdrEnabled);
             }
 
-            if (hdrEnabled)
-            {
-                //CCD.SetSDRWhiteLevel(1000, display.Name);
-            }
-
             if (preset.applyRefreshRate || preset.applyResolution)
             {
                 if (!SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true))
@@ -327,7 +326,15 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyOther)
             {
-                SetHDMIContentType(display, preset.contentType);
+                if (preset.contentType.HasValue)
+                {
+                    SetHDMIContentType(display, preset.contentType.Value);
+                }
+
+                if (preset.SDRBrightness.HasValue)
+                {
+                    SetSDRBrightness(display, preset.SDRBrightness.Value);
+                }
             }
 
             if (preset.applyDithering)
@@ -526,6 +533,43 @@ namespace ColorControl.Services.NVIDIA
         public void SetHDRState(Display display, bool enabled)
         {
             CCD.SetHDRState(enabled, display.Name);
+        }
+
+        public void SetSDRBrightness(Display display, int brightnessPercent)
+        {
+            var hmon = FormUtils.GetMonitorForDisplayName(display.Name);
+
+            if (hmon == IntPtr.Zero)
+            {
+                hmon = NativeMethods.MonitorFromWindow(0, 1);
+            }
+
+            var brightness = 1 + (double)brightnessPercent / 20;
+
+            WinApi.DwmpSDRToHDRBoostPtr(hmon, brightness);
+
+            _lastSetSDRBrightness = brightnessPercent;
+        }
+
+        public int GetSDRBrightness(Display display)
+        {
+            var whiteLevel = CCD.GetSDRWhiteLevel(display.Name);
+
+            if (whiteLevel >= 1000)
+            {
+                var newBrightnessPercent = (int)(whiteLevel - 1000) / 50;
+
+                if (_lastSetSDRBrightness >= 0 && newBrightnessPercent == _lastReadSDRBrightness)
+                {
+                    return _lastSetSDRBrightness;
+                }
+
+                _lastReadSDRBrightness = newBrightnessPercent;
+
+                return newBrightnessPercent;
+            }
+
+            return 0;
         }
 
         public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null)
@@ -832,7 +876,19 @@ namespace ColorControl.Services.NVIDIA
 
                     values.Add(string.Join(", ", drsValues));
 
-                    values.Add($"Content type: {GetHDMIContentType(display)}");
+                    var otherValues = new List<string>
+                    {
+                        $"Content type: {GetHDMIContentType(display)}"
+                    };
+
+                    if (hdrEnabled)
+                    {
+                        var sdrBrightness = GetSDRBrightness(display);
+
+                        otherValues.Add($"SDR brightness: {sdrBrightness}%");
+                    }
+
+                    values.Add(string.Join(", ", otherValues));
 
                     var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
 
@@ -850,7 +906,7 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public NvPreset GetPresetForDisplay(string displayName)
+        public NvPreset GetPresetForDisplay(string displayName, bool driverSettings = false)
         {
             var displays = GetDisplays();
 
@@ -867,6 +923,7 @@ namespace ColorControl.Services.NVIDIA
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
             preset.contentType = GetHDMIContentType(display);
+            preset.SDRBrightness = GetSDRBrightness(display);
 
             var mode = GetCurrentMode(display.Name);
 
@@ -902,6 +959,30 @@ namespace ColorControl.Services.NVIDIA
                     var settings = gpuInfo.GetOverclockSettings();
 
                     preset.ocSettings.Add(settings);
+                }
+            }
+
+            if (driverSettings)
+            {
+                var settings = GetVisibleSettings();
+
+                foreach (var setting in settings)
+                {
+                    var settingMeta = GetSettingMeta(setting.SettingId);
+
+                    if (settingMeta == null)
+                    {
+                        continue;
+                    }
+
+                    var (presetSetting, isDefault) = settingMeta.ToIntValue(setting.ValueText);
+
+                    if (isDefault)
+                    {
+                        continue;
+                    }
+
+                    preset.driverSettings.Add(setting.SettingId, presetSetting);
                 }
             }
 

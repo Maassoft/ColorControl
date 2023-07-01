@@ -137,7 +137,7 @@ namespace ColorControl.Services.LG
 
                 if (_mouseService == null)
                 {
-                    await _lgService.GetMouseAsync().ContinueWith((task) => BeginInvoke(new Action<Task<LgWebOsMouseService>>(SetMouseService), new[] { task }));
+                    await _lgService.GetMouseAsync().ContinueWith((task) => BeginInvoke(SetMouseService, new[] { task }));
                 }
             }
             else

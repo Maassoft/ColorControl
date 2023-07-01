@@ -9,6 +9,10 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="System.Resources.Extensions" Version="7.0.0" />
 	</ItemGroup>

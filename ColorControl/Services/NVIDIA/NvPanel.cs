@@ -211,6 +211,8 @@ namespace ColorControl.Services.NVIDIA
 
             FormUtils.EnableControls(this, enabled, new List<Control> { lvNvPresets, btnAddModesNv, btnChange, edtNvGpuInfo, btnNvSetClocks, btnNvSettings, edtNvOverclock, btnNvSetClocks });
 
+            btnClone.Enabled = preset != null || GetSelectedNvPreset(true) != null;
+
             if (enabled)
             {
                 edtNvPresetName.Text = preset.name;
@@ -247,7 +249,12 @@ namespace ColorControl.Services.NVIDIA
 
         private void btnClone_Click(object sender, EventArgs e)
         {
-            var preset = GetSelectedNvPreset();
+            var preset = GetSelectedNvPreset(true, true);
+
+            if (preset == null)
+            {
+                return;
+            }
 
             var newPreset = preset.Clone();
             AddOrUpdateItem(newPreset);
@@ -412,7 +419,15 @@ namespace ColorControl.Services.NVIDIA
             mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
             mnuNvOtherSettings.Font = _menuItemFonts[preset.applyOther];
 
-            FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Content type", typeof(InfoFrameVideoContentType), preset, "contentType", nvPresetContentTypeMenuItem_Click);
+            var contentTypeItem = FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Content type", typeof(InfoFrameVideoContentType), preset, "contentType", nvPresetContentTypeMenuItem_Click, unchanged: true);
+            contentTypeItem.DropDownItems[0].Visible = !isCurrentDisplay;
+
+            var itemName = $"{mnuNvOtherSettings.Name}_SDRBrightness";
+            var brightnessMenu = FormUtils.BuildMenuItem(mnuNvOtherSettings.DropDownItems, itemName, "SDR brightness");
+
+            var subItemName = $"{itemName}_SubItem";
+            var subItem = FormUtils.BuildMenuItem(brightnessMenu.DropDownItems, subItemName, "", onClick: nvPresetBrightnessMenuItem_Click);
+            subItem.Text = (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)";
 
             BuildNvOverclockingMenu(preset);
 
@@ -722,19 +737,59 @@ namespace ColorControl.Services.NVIDIA
         {
             var menuItem = (ToolStripMenuItem)sender;
 
-            var value = (InfoFrameVideoContentType)menuItem.Tag;
+            var value = (InfoFrameVideoContentType?)menuItem.Tag;
 
             var preset = GetSelectedNvPreset(true);
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetHDMIContentType(preset.Display, value);
+                if (!value.HasValue)
+                {
+                    return;
+                }
+
+                _nvService.SetHDMIContentType(preset.Display, value.Value);
 
                 UpdateDisplayInfoItems();
                 return;
             }
 
             preset.contentType = value;
+
+            AddOrUpdateItem();
+        }
+
+        private void nvPresetBrightnessMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+
+            var label = "SDR brightness in %";
+            if (!preset.IsDisplayPreset)
+            {
+                label += " (clear to set to unchanged)";
+            }
+
+            var value = SelectValue(0, 100, preset.SDRBrightness, label);
+
+            if (value == -1)
+            {
+                return;
+            }
+
+            if (preset.IsDisplayPreset)
+            {
+                if (!value.HasValue)
+                {
+                    return;
+                }
+
+                _nvService.SetSDRBrightness(preset.Display, value.Value);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.SDRBrightness = value;
 
             AddOrUpdateItem();
         }
@@ -905,7 +960,7 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        private NvPreset GetSelectedNvPreset(bool currentDisplay = false)
+        private NvPreset GetSelectedNvPreset(bool currentDisplay = false, bool driverSettings = false)
         {
             if (lvNvPresets.SelectedItems.Count > 0)
             {
@@ -914,7 +969,7 @@ namespace ColorControl.Services.NVIDIA
 
                 if (result == null && currentDisplay)
                 {
-                    result = _nvService.GetPresetForDisplay(item.SubItems[1].Text);
+                    result = _nvService.GetPresetForDisplay(item.SubItems[1].Text, driverSettings);
                 }
 
                 return result;
@@ -1096,6 +1151,36 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var settingValue = (uint)Utils.ParseInt((string)resultFields.First().Value);
+
+            return settingValue;
+        }
+
+        private int? SelectValue(int min, int max, int? currentValue, string label)
+        {
+            var field = new MessageForms.FieldDefinition
+            {
+                MinValue = min,
+                MaxValue = max,
+                Label = label,
+                FieldType = MessageForms.FieldType.Numeric,
+                Value = currentValue
+            };
+
+            var resultFields = MessageForms.ShowDialog(field.Label, new[] { field });
+
+            if (!resultFields.Any())
+            {
+                return -1;
+            }
+
+            var strValue = (string)resultFields.First().Value;
+
+            if (string.IsNullOrWhiteSpace(strValue))
+            {
+                return null;
+            }
+
+            var settingValue = Utils.ParseInt(strValue);
 
             return settingValue;
         }

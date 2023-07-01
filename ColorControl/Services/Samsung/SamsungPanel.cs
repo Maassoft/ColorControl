@@ -70,13 +70,13 @@ namespace ColorControl.Services.Samsung
         public void Init()
         {
             var _ = Handle;
-            _samsungService.RefreshDevices(afterStartUp: true).ContinueWith((_) => BeginInvoke(() => AfterSamsungServiceRefreshDevices()));
+            _samsungService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterSamsungServiceRefreshDevices));
             _samsungService.InstallEventHandlers();
         }
 
         private void _samsungService_SelectedDeviceChangedEvent(object sender, EventArgs e)
         {
-            BeginInvoke(() => SetSamsungDevicesSelectedIndex(sender));
+            FormUtils.BeginInvokeCheck(this, () => SetSamsungDevicesSelectedIndex(sender));
         }
 
         private void SetSamsungDevicesSelectedIndex(object sender)
@@ -369,7 +369,7 @@ namespace ColorControl.Services.Samsung
 
             //if (cbxSamsungApps.Items.Count == 0 && device != null)
             //{
-            //    _samsungService.RefreshAppsAsync().ContinueWith((task) => BeginInvoke(() => FillApps(false)));
+            //    _samsungService.RefreshAppsAsync().ContinueWith((task) => FormUtils.BeginInvokeCheck(this, () => FillApps(false)));
             //}
 
             btnSamsungDeviceConvertToCustom.Enabled = devices.Any();
@@ -480,7 +480,7 @@ namespace ColorControl.Services.Samsung
 
         private void btnSamsungRefreshApps_Click(object sender, EventArgs e)
         {
-            //_samsungService.RefreshApps(true).ContinueWith((task) => BeginInvoke(() => FillLgApps(true)));
+            //_samsungService.RefreshApps(true).ContinueWith((task) => FormUtils.BeginInvokeCheck(this, () => FillLgApps(true)));
         }
 
         private void cbxSamsungDevices_SelectedIndexChanged(object sender, EventArgs e)
@@ -676,7 +676,7 @@ Use 'Settings > Test power off/on' to test this functionality."
                 );
             }
 
-            BeginInvoke(() =>
+            FormUtils.BeginInvokeCheck(this, () =>
             {
                 device.Options.PowerOnAfterStartup = clbLgPower.GetItemChecked(0);
                 device.Options.PowerOnAfterResume = clbLgPower.GetItemChecked(1);
@@ -692,7 +692,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
                 if (e.Index == 10)
                 {
-                    _samsungService.RefreshDevices().ContinueWith((_) => BeginInvoke(() => FillSamsungDevices()));
+                    _samsungService.RefreshDevices().ContinueWith((_) => FormUtils.BeginInvokeCheck(this, () => FillSamsungDevices()));
                 }
             });
         }
@@ -712,7 +712,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
         private void RefreshSamsungDevices()
         {
-            _samsungService.RefreshDevices(false).ContinueWith((task) => BeginInvoke(() => FillSamsungDevices()));
+            _samsungService.RefreshDevices(false).ContinueWith((task) => FormUtils.BeginInvokeCheck(this, () => FillSamsungDevices()));
         }
 
         private void edtShortcutLg_TextChanged(object sender, EventArgs e)

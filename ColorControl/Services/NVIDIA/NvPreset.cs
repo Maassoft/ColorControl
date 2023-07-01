@@ -8,6 +8,7 @@ using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ColorControl.Services.NVIDIA
@@ -33,7 +34,8 @@ namespace ColorControl.Services.NVIDIA
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
         public bool applyOther { get; set; }
-        public InfoFrameVideoContentType contentType { get; set; }
+        public InfoFrameVideoContentType? contentType { get; set; }
+        public int? SDRBrightness { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
         public bool applyOverclocking { get; set; }
@@ -96,6 +98,7 @@ namespace ColorControl.Services.NVIDIA
             driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
 
             contentType = preset.contentType;
+            SDRBrightness = preset.SDRBrightness;
             applyOther = preset.applyOther;
         }
 
@@ -141,7 +144,7 @@ namespace ColorControl.Services.NVIDIA
 
             values.Add(string.Format("{0}: {1}", applyDriverSettings ? "Included" : "Excluded", GetDriverSettingsDescription()));
 
-            values.Add(string.Format("{0}: {1}", applyOther ? "Included" : "Excluded", $"Content type: {contentType}"));
+            values.Add(string.Format("{0}: {1}", applyOther ? "Included" : "Excluded", GetOtherDescription()));
 
             values.Add(string.Format("{0}: {1}", applyOverclocking ? "Included" : "Excluded", GetOverclockingSettingsDescription()));
 
@@ -207,6 +210,27 @@ namespace ColorControl.Services.NVIDIA
                 dithering = string.Format("{0} {1}", ditherBitsDescription, ditherModeDescription);
             }
             return dithering;
+        }
+
+        public string GetOtherDescription()
+        {
+            var values = new List<string>();
+
+            if (contentType.HasValue)
+            {
+                values.Add($"Content type: {contentType.Value}");
+            }
+            if (SDRBrightness.HasValue)
+            {
+                values.Add($"SDR brightness: {SDRBrightness.Value}%");
+            }
+
+            if (!values.Any())
+            {
+                values.Add("None");
+            }
+
+            return string.Join(", ", values);
         }
 
         public static List<NvPreset> GetDefaultPresets()

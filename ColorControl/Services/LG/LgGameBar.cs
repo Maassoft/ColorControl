@@ -1,4 +1,5 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
 using NWin32;
 using System;
 using System.Collections.Generic;
@@ -146,7 +147,7 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            BeginInvoke(new Action(UpdateValues));
+            FormUtils.BeginInvokeCheck(this, UpdateValues);
         }
 
         private void UpdateValues()

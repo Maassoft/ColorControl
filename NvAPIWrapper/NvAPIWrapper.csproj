@@ -1,47 +1,50 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
-    <Version>0.8.1.106</Version>
-    <Company>falahati.net</Company>
-    <Description>NvAPIWrapper is a .Net wrapper for NVIDIA public API</Description>
-    <Authors>Soroush Falahati</Authors>
-    <Copyright>Copyright © Soroush Falahati 2018 (falahati.net)</Copyright>
-    <Platforms>AnyCPU</Platforms>
-    <Product>NvAPIWrapper.Net</Product>
-    <PackageProjectUrl>https://github.com/falahati/NvAPIWrapper</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/falahati/NvAPIWrapper/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://github.com/falahati/NvAPIWrapper/blob/master/NvAPIWrapper/Icon.png?raw=true</PackageIconUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <IncludeSource>true</IncludeSource>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Title>NvAPIWrapper (for NVAPI 410)</Title>
-    <PackageId>NvAPIWrapper.Net</PackageId>
-    <AssemblyOriginatorKeyFile>OpenSourceStrongNameSignKey.pfx</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\Debug</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <BumpRevision>False</BumpRevision>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <OutputPath>..\Release</OutputPath>
-    <DocumentationFile>..\Release\NvAPIWrapper.xml</DocumentationFile>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <ItemGroup>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="readme.txt">
-      <Pack>true</Pack>
-      <PackagePath>\</PackagePath>
-    </Content>
-    <Content Include="Icon.png">
-      <Pack>true</Pack>
-      <PackagePath>\</PackagePath>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
+		<Version>0.8.1.106</Version>
+		<Company>falahati.net</Company>
+		<Description>NvAPIWrapper is a .Net wrapper for NVIDIA public API</Description>
+		<Authors>Soroush Falahati</Authors>
+		<Copyright>Copyright © Soroush Falahati 2018 (falahati.net)</Copyright>
+		<Platforms>AnyCPU</Platforms>
+		<Product>NvAPIWrapper.Net</Product>
+		<PackageProjectUrl>https://github.com/falahati/NvAPIWrapper</PackageProjectUrl>
+		<PackageLicenseUrl>https://github.com/falahati/NvAPIWrapper/blob/master/LICENSE</PackageLicenseUrl>
+		<PackageIconUrl>https://github.com/falahati/NvAPIWrapper/blob/master/NvAPIWrapper/Icon.png?raw=true</PackageIconUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<IncludeSource>true</IncludeSource>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Title>NvAPIWrapper (for NVAPI 410)</Title>
+		<PackageId>NvAPIWrapper.Net</PackageId>
+		<AssemblyOriginatorKeyFile>OpenSourceStrongNameSignKey.pfx</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<OutputPath>..\Debug</OutputPath>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<BumpRevision>False</BumpRevision>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<OutputPath>..\Release</OutputPath>
+		<DocumentationFile>..\Release\NvAPIWrapper.xml</DocumentationFile>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<PropertyGroup>
+		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
+	</PropertyGroup>
+	<ItemGroup>
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="readme.txt">
+			<Pack>true</Pack>
+			<PackagePath>\</PackagePath>
+		</Content>
+		<Content Include="Icon.png">
+			<Pack>true</Pack>
+			<PackagePath>\</PackagePath>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
 </Project>

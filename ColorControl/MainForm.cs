@@ -33,7 +33,6 @@ namespace ColorControl
     {
         private static bool SystemShutdown = false;
         private static bool EndSession = false;
-        private static bool UserExit = false;
         private static int SHORTCUTID_SCREENSAVER = -100;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -429,7 +428,7 @@ namespace ColorControl
 
         void Exit(object sender, EventArgs e)
         {
-            UserExit = true;
+            Program.UserExit = true;
             Close();
         }
 
@@ -454,11 +453,11 @@ namespace ColorControl
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (!(SystemShutdown || EndSession || UserExit) && _config.MinimizeOnClose)
+            if (!(SystemShutdown || EndSession || Program.UserExit) && _config.MinimizeOnClose)
             {
                 e.Cancel = true;
                 WindowState = FormWindowState.Minimized;
-                UserExit = false;
+                Program.UserExit = false;
                 return;
             }
 
@@ -480,6 +479,7 @@ namespace ColorControl
             _amdPanel?.Save();
             _lgPanel?.Save();
             _gamePanel?.Save();
+            _samsungPanel?.Save();
 
             SaveConfig();
         }
@@ -1334,8 +1334,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             //Environment.Exit(0);
             //InstallUpdate("");
             //await Test();
-
-            //Utils.SetBrightness(Handle);
         }
 
         private async Task Test()

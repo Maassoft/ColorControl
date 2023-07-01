@@ -107,11 +107,6 @@ namespace ColorControl.Shared.Native
                                     NativeMethods.DisplayConfigSetDeviceInfo(ref setpacket);
 
                                     IsHDRActive = enabled;
-
-                                    //if (enabled && SDRWhiteLevelInNits.HasValue)
-                                    //{
-                                    //    SetSDRWhiteLevel(modesArray[i], SDRWhiteLevelInNits.Value);
-                                    //}
                                 }
                             }
                         }
@@ -125,8 +120,7 @@ namespace ColorControl.Shared.Native
             }
         }
 
-        // Does not work...
-        public static void SetSDRWhiteLevel(float SDRWhiteLevelInNits, string displayName = null)
+        public static uint GetSDRWhiteLevel(string displayName = null)
         {
             uint pathCount, modeCount;
 
@@ -164,7 +158,7 @@ namespace ColorControl.Shared.Native
 
                                 if (err == NativeConstants.ERROR_SUCCESS && requestpacket.advancedColorSupported)
                                 {
-                                    SetSDRWhiteLevel(modesArray[i], SDRWhiteLevelInNits);
+                                    return GetSDRWhiteLevelForDisplayConfig(modesArray[i]);
                                 }
                             }
                         }
@@ -176,6 +170,8 @@ namespace ColorControl.Shared.Native
             {
                 throw new Win32Exception(err);
             }
+
+            return 0;
         }
 
         public static bool IsHDREnabled(string displayName = null)
@@ -258,13 +254,8 @@ namespace ColorControl.Shared.Native
             return true;
         }
 
-        private static void SetSDRWhiteLevel(DisplayConfigModeInfo displayConfigModeInfo, float value)
+        private static uint GetSDRWhiteLevelForDisplayConfig(DisplayConfigModeInfo displayConfigModeInfo)
         {
-            var setpacket = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
-            setpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
-            setpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL;
-            setpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SDR_WHITE_LEVEL>();
-
             var requestpacket = new DISPLAYCONFIG_SDR_WHITE_LEVEL();
             requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
             requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
@@ -276,13 +267,10 @@ namespace ColorControl.Shared.Native
 
             if (error == NativeConstants.ERROR_SUCCESS)
             {
-                setpacket.header.adapterId = displayConfigModeInfo.adapterId;
-                setpacket.header.id = displayConfigModeInfo.id;
-                setpacket.SDRWhiteLevel = 2000;
-
-                error = NativeMethods.DisplayConfigSetDeviceInfo(ref setpacket);
-
+                return requestpacket.SDRWhiteLevel;
             }
+
+            return 0;
         }
 
         private static bool EqualDisplayNames(string displayName1, string displayName2)

@@ -139,7 +139,7 @@ namespace ColorControl.Shared.Forms
             return subMenuItem;
         }
 
-        public static void BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent, Font font = null)
+        public static ToolStripMenuItem BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent, Font font = null, bool unchanged = false)
         {
             PropertyInfo property = null;
             var subMenuItems = mnuParent.DropDownItems.Find("miColorSettings_" + name, false);
@@ -157,6 +157,17 @@ namespace ColorControl.Shared.Forms
                 {
                     property = colorData.GetType().GetDeclaredProperty(propertyName);
                     subMenuItem.Tag = property;
+                }
+
+                if (unchanged)
+                {
+                    var item = subMenuItem.DropDownItems.AddCustom("Unchanged");
+                    item.Click += clickEvent;
+
+                    if (font != null)
+                    {
+                        item.Font = font;
+                    }
                 }
 
                 foreach (var enumValue in Enum.GetValues(enumType))
@@ -180,7 +191,7 @@ namespace ColorControl.Shared.Forms
 
             if (colorData == null)
             {
-                return;
+                return subMenuItem;
             }
             var value = property.GetValue(colorData);
 
@@ -193,8 +204,13 @@ namespace ColorControl.Shared.Forms
                     {
                         menuItem.Checked = menuItem.Tag.Equals(value);
                     }
+                    else
+                    {
+                        menuItem.Checked = value == null;
+                    }
                 }
             }
+            return subMenuItem;
         }
 
         public static ToolStripMenuItem BuildMenuItem(ToolStripItemCollection itemCollection, string name, string text, object tag = null, EventHandler onClick = null)
@@ -489,6 +505,18 @@ namespace ColorControl.Shared.Forms
             return name;
         }
 
+        public static IntPtr GetMonitorForDisplayName(string displayName)
+        {
+            var name = displayName;
+            var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
+            if (screen != null)
+            {
+                return screen.GetHashCode();
+            }
+
+            return IntPtr.Zero;
+        }
+
         public static string EditShortcut(string shortcut, string label = "Shortcut", string title = null)
         {
             var field = new MessageForms.FieldDefinition
@@ -568,6 +596,23 @@ namespace ColorControl.Shared.Forms
 
             sortState.SortOrder = sorter.Order;
             sortState.SortIndex = sorter.SortColumn;
+        }
+
+        public static IAsyncResult BeginInvokeCheck(Control control, Delegate action)
+        {
+            return BeginInvokeCheck(control, action, null);
+        }
+
+        public static IAsyncResult BeginInvokeCheck(Control control, Delegate action, params object[] args)
+        {
+            if (control?.IsHandleCreated != true)
+            {
+                Logger.Debug($"Skipping BeginInvoke due to missing handle of control {control.Name}");
+
+                return null;
+            }
+
+            return control.BeginInvoke(action, args);
         }
     }
 

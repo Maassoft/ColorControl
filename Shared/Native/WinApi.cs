@@ -163,5 +163,8 @@ namespace ColorControl.Shared.Native
 
         [DllImport("ntdll.dll")]
         public static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref ParentProcessUtilities processInformation, int processInformationLength, out int returnLength);
+
+        [DllImport("dwmapi.dll", EntryPoint = "#171")]
+        public static extern void DwmpSDRToHDRBoostPtr(IntPtr monitor, double brightness);
     }
 }

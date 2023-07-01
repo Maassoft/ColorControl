@@ -1,56 +1,60 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
-	  <UseWPF>true</UseWPF>
-	<RootNamespace>DJ</RootNamespace>
-	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	<PackageId>Sentinel.NLogViewer</PackageId>
-	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<RootNamespace>DJ</RootNamespace>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>Sentinel.NLogViewer</PackageId>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
 
-  <ItemGroup>
-	<None Remove="NLogViewer.xaml" />
-  </ItemGroup>
+	<PropertyGroup>
+		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
+	</PropertyGroup>
 
-  <ItemGroup>
-	<PackageReference Include="NLog" Version="5.1.2" />
-	<PackageReference Include="System.Reactive" Version="6.0.0" />
-  </ItemGroup>
-  
-  <ItemGroup>
-	<Resource Include="Images\Glyphs\SortDownArrow.png" />
-	<Resource Include="Images\Glyphs\SortUpArrow.png" />
-	<Resource Include="Images\Small\Add.png" />
-	<Resource Include="Images\Small\Clear.png" />
-	<Resource Include="Images\Small\Clock.png" />
-	<Resource Include="Images\Small\Context.png" />
-	<Resource Include="Images\Small\Debug.png" />
-	<Resource Include="Images\Small\DebugSource.png" />
-	<Resource Include="Images\Small\Error.png" />
-	<Resource Include="Images\Small\Exception.png" />
-	<Resource Include="Images\Small\Exit.png" />
-	<Resource Include="Images\Small\Export.png" />
-	<Resource Include="Images\Small\Fatal.png" />
-	<Resource Include="Images\Small\Info.png" />
-	<Resource Include="Images\Small\Layout.png" />
-	<Resource Include="Images\Small\MonoLightning.png" />
-	<Resource Include="Images\Small\Network.png" />
-	<Resource Include="Images\Small\Open.png" />
-	<Resource Include="Images\Small\Pause.png" />
-	<Resource Include="Images\Small\Save.png" />
-	<Resource Include="Images\Small\ScrollDown.png" />
-	<Resource Include="Images\Small\Settings.png" />
-	<Resource Include="Images\Small\Thread.png" />
-	<Resource Include="Images\Small\Trace.png" />
-	<Resource Include="Images\Small\Unknown.png" />
-	<Resource Include="Images\Small\Warning.png" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="NLogViewer.xaml" />
+	</ItemGroup>
 
-  <ItemGroup>
-	<None Update="NLogView.xaml">
-	  <Generator>MSBuild:Compile</Generator>
-	</None>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="NLog" Version="5.1.2" />
+		<PackageReference Include="System.Reactive" Version="6.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="Images\Glyphs\SortDownArrow.png" />
+		<Resource Include="Images\Glyphs\SortUpArrow.png" />
+		<Resource Include="Images\Small\Add.png" />
+		<Resource Include="Images\Small\Clear.png" />
+		<Resource Include="Images\Small\Clock.png" />
+		<Resource Include="Images\Small\Context.png" />
+		<Resource Include="Images\Small\Debug.png" />
+		<Resource Include="Images\Small\DebugSource.png" />
+		<Resource Include="Images\Small\Error.png" />
+		<Resource Include="Images\Small\Exception.png" />
+		<Resource Include="Images\Small\Exit.png" />
+		<Resource Include="Images\Small\Export.png" />
+		<Resource Include="Images\Small\Fatal.png" />
+		<Resource Include="Images\Small\Info.png" />
+		<Resource Include="Images\Small\Layout.png" />
+		<Resource Include="Images\Small\MonoLightning.png" />
+		<Resource Include="Images\Small\Network.png" />
+		<Resource Include="Images\Small\Open.png" />
+		<Resource Include="Images\Small\Pause.png" />
+		<Resource Include="Images\Small\Save.png" />
+		<Resource Include="Images\Small\ScrollDown.png" />
+		<Resource Include="Images\Small\Settings.png" />
+		<Resource Include="Images\Small\Thread.png" />
+		<Resource Include="Images\Small\Trace.png" />
+		<Resource Include="Images\Small\Unknown.png" />
+		<Resource Include="Images\Small\Warning.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="NLogView.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</None>
+	</ItemGroup>
 
 </Project>

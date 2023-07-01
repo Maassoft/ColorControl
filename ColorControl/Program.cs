@@ -34,6 +34,7 @@ namespace ColorControl
         public static Shared.Common.AppContext AppContext { get; private set; }
 
         public static bool IsRestarting { get; private set; }
+        public static bool UserExit = false;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static Mutex _mutex;
@@ -292,6 +293,11 @@ namespace ColorControl
 
         private static void GlobalHandleException(Exception exception, string type)
         {
+            if (UserExit)
+            {
+                return;
+            }
+
             var trace = exception.ToLogString(Environment.StackTrace);
             var message = $"{type}: {trace}";
 

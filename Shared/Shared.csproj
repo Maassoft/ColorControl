@@ -7,6 +7,9 @@
 		<UseWPF>true</UseWPF>
 		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
+	<PropertyGroup>
+		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<COMReference Include="IWshRuntimeLibrary">

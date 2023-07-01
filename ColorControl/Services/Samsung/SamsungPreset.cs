@@ -48,7 +48,7 @@ namespace ColorControl.Services.Samsung
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Device|120", "App|200", "Steps|400", "Shortcut", "Trigger" };
+            return new[] { "Name", "Device|140", "App|200", "Steps|400", "Shortcut", "Trigger" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
