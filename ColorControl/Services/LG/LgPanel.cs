@@ -111,12 +111,12 @@ namespace ColorControl.Services.LG
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void FillLgPresets()
@@ -126,7 +126,7 @@ namespace ColorControl.Services.LG
             foreach (var preset in _lgService.GetPresets())
             {
                 AddOrUpdateItemLg(preset);
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
+                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -241,7 +241,7 @@ namespace ColorControl.Services.LG
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcutLg.Text.Trim();
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -288,11 +288,7 @@ namespace ColorControl.Services.LG
                                  edtLgPresetIncludedProcesses.Text,
                                  edtLgPresetExcludedProcesses.Text);
 
-            var shortcutChanged = !shortcut.Equals(preset.shortcut);
-            if (shortcutChanged)
-            {
-                preset.shortcut = shortcut;
-            }
+            preset.shortcut = shortcut;
 
             var text = edtStepsLg.Text;
 
@@ -300,10 +296,7 @@ namespace ColorControl.Services.LG
 
             AddOrUpdateItemLg();
 
-            if (shortcutChanged)
-            {
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut, clear);
-            }
+            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         public void UpdateInfo()
@@ -737,7 +730,6 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 var form = MessageForms.ShowProgress("Connecting to device...");
 
                 var result = false;
-                Enabled = false;
                 try
                 {
                     result = await device.TestConnection();
@@ -745,7 +737,6 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 finally
                 {
                     form.Close();
-                    Enabled = true;
                 }
 
                 if (!result && MessageForms.QuestionYesNo("Unable to connect to the device. Are you sure you want to add it?") != DialogResult.Yes)
@@ -1083,12 +1074,12 @@ Do you want to continue?"
 
         private void edtLgGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtLgGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void btnLgDeviceOptionsHelp_Click(object sender, EventArgs e)
@@ -1230,11 +1221,10 @@ Do you want to continue?";
             _lgService.Config.ShutdownDelay = values[1].ValueAsInt;
 
             var shortcutQA = values[2].Value.ToString();
-            var clear = !string.IsNullOrEmpty(_lgService.Config.QuickAccessShortcut);
 
             _lgService.Config.QuickAccessShortcut = shortcutQA;
 
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut);
 
             var shortcutGB = values[3].Value.ToString();
             _lgService.Config.GameBarShortcut = shortcutGB;
@@ -1245,7 +1235,7 @@ Do you want to continue?";
             }
             else
             {
-                Utils.RegisterShortcut(_mainHandle, SHORTCUTID_GAMEBAR, shortcutGB);
+                KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEBAR, shortcutGB);
             }
 
             _lgService.Config.ShowAdvancedActions = values[4].ValueAsBool;

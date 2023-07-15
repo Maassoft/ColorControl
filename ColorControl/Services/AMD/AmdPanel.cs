@@ -55,7 +55,7 @@ namespace ColorControl.Services.AMD
             foreach (var preset in _amdService.GetPresets())
             {
                 AddOrUpdateItemAmd(preset);
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
+                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -171,12 +171,12 @@ namespace ColorControl.Services.AMD
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private AmdPreset GetSelectedAmdPreset()
@@ -276,7 +276,7 @@ namespace ColorControl.Services.AMD
         {
             var shortcut = edtAmdShortcut.Text.Trim();
 
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -297,15 +297,13 @@ namespace ColorControl.Services.AMD
                 return;
             }
 
-            var clear = !string.IsNullOrEmpty(preset.shortcut);
-
             preset.shortcut = shortcut;
             preset.name = name;
             preset.ShowInQuickAccess = chkAmdQuickAccess.Checked;
 
             AddOrUpdateItemAmd();
 
-            Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void btnCloneAmd_Click(object sender, EventArgs e)
@@ -607,11 +605,9 @@ namespace ColorControl.Services.AMD
                 return;
             }
 
-            var clear = !string.IsNullOrEmpty(_config.AmdQuickAccessShortcut);
-
             _config.AmdQuickAccessShortcut = shortcut;
 
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut);
         }
 
         private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)

@@ -30,6 +30,8 @@
         {
             components = new System.ComponentModel.Container();
             scSamsungController = new System.Windows.Forms.SplitContainer();
+            btnExpert = new System.Windows.Forms.Button();
+            mnuExpert = new System.Windows.Forms.ContextMenuStrip(components);
             btnSamsungDeviceOptionsSettings = new System.Windows.Forms.Button();
             btnSamsungSettings = new System.Windows.Forms.Button();
             chkSamsungQuickAccess = new System.Windows.Forms.CheckBox();
@@ -85,9 +87,11 @@
             mnuLgSettings = new System.Windows.Forms.ContextMenuStrip(components);
             miTestPowerOffOn = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
+            miExpertDummy = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)scSamsungController).BeginInit();
             scSamsungController.Panel1.SuspendLayout();
             scSamsungController.SuspendLayout();
+            mnuExpert.SuspendLayout();
             mnuLgButtons.SuspendLayout();
             mnuLgSettings.SuspendLayout();
             SuspendLayout();
@@ -101,6 +105,7 @@
             // 
             // scSamsungController.Panel1
             // 
+            scSamsungController.Panel1.Controls.Add(btnExpert);
             scSamsungController.Panel1.Controls.Add(btnSamsungDeviceOptionsSettings);
             scSamsungController.Panel1.Controls.Add(btnSamsungSettings);
             scSamsungController.Panel1.Controls.Add(chkSamsungQuickAccess);
@@ -153,6 +158,26 @@
             scSamsungController.SplitterDistance = 899;
             scSamsungController.SplitterWidth = 5;
             scSamsungController.TabIndex = 43;
+            // 
+            // btnExpert
+            // 
+            btnExpert.ContextMenuStrip = mnuExpert;
+            btnExpert.Location = new System.Drawing.Point(382, 39);
+            btnExpert.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnExpert.Name = "btnExpert";
+            btnExpert.Size = new System.Drawing.Size(88, 27);
+            btnExpert.TabIndex = 66;
+            btnExpert.Text = "Expert...";
+            btnExpert.UseVisualStyleBackColor = true;
+            btnExpert.Click += btnExpert_Click;
+            // 
+            // mnuExpert
+            // 
+            mnuExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
+            mnuExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miExpertDummy });
+            mnuExpert.Name = "mnuLgButtons";
+            mnuExpert.Size = new System.Drawing.Size(181, 48);
+            mnuExpert.Opening += mnuExpert_Opening;
             // 
             // btnSamsungDeviceOptionsSettings
             // 
@@ -762,6 +787,12 @@
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
             // 
+            // miExpertDummy
+            // 
+            miExpertDummy.Name = "miExpertDummy";
+            miExpertDummy.Size = new System.Drawing.Size(180, 22);
+            miExpertDummy.Text = "Dummy";
+            // 
             // SamsungPanel
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -774,6 +805,7 @@
             scSamsungController.Panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)scSamsungController).EndInit();
             scSamsungController.ResumeLayout(false);
+            mnuExpert.ResumeLayout(false);
             mnuLgButtons.ResumeLayout(false);
             mnuLgSettings.ResumeLayout(false);
             ResumeLayout(false);
@@ -837,5 +869,8 @@
         private System.Windows.Forms.ToolStripMenuItem miTestPowerOffOn;
         private System.Windows.Forms.ToolStripMenuItem miNvSettings;
         private System.Windows.Forms.Button btnSamsungDeviceOptionsSettings;
+        private System.Windows.Forms.Button btnExpert;
+        private System.Windows.Forms.ContextMenuStrip mnuExpert;
+        private System.Windows.Forms.ToolStripMenuItem miExpertDummy;
     }
 }

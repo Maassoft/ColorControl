@@ -14,7 +14,8 @@ namespace ColorControl.Shared.Forms
             Flags,
             Shortcut,
             CheckBox,
-            TrackBar
+            TrackBar,
+            Label
         }
 
         public class FieldDefinition
@@ -41,12 +42,12 @@ namespace ColorControl.Shared.Forms
 
             public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
             {
-                ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+                ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
             }
 
             public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
             {
-                Utils.HandleKeyboardShortcutUp(e);
+                KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
             }
 
             public void TrackBar_Scroll(object sender, EventArgs e)
@@ -146,6 +147,7 @@ namespace ColorControl.Shared.Forms
             var labels = new List<Label>();
             var counter = 1;
             const int DefaultLeft = 20;
+            const int DefaultWidth = 400;
             var currentLeft = DefaultLeft;
 
             var columns = fields.Count() > 10 ? 2 : 1;
@@ -156,21 +158,24 @@ namespace ColorControl.Shared.Forms
                 var lastTop = top;
 
                 var label = field.Label;
+                Label textLabel = null;
 
                 if (field.FieldType != FieldType.CheckBox)
                 {
-                    var textLabel = new Label() { Left = currentLeft, Top = top, Text = label, AutoSize = true };
+                    textLabel = new Label() { Left = currentLeft, Top = top, Text = label, AutoSize = true, MaximumSize = new Size(DefaultWidth, 0) };
                     labels.Add(textLabel);
-                    top += 20;
                     groupBox.Controls.Add(textLabel);
+                    top += textLabel.Height + 4;
                 }
+
+                Label textSubLabel = null;
 
                 if (field.SubLabel != null)
                 {
-                    var textSubLabel = new Label() { Left = currentLeft, Top = top, Text = field.SubLabel, AutoSize = true };
+                    textSubLabel = new Label() { Left = currentLeft, Top = top, Text = field.SubLabel, AutoSize = true, MaximumSize = new Size(DefaultWidth, 0) };
                     labels.Add(textSubLabel);
-                    top += 20;
                     groupBox.Controls.Add(textSubLabel);
+                    top += textSubLabel.Height + 4;
                 }
 
                 Control control;
@@ -178,7 +183,7 @@ namespace ColorControl.Shared.Forms
                 switch (field.FieldType)
                 {
                     case FieldType.Text:
-                        var textBox = new MaskedTextBox() { Left = currentLeft, Top = top, Width = 400 };
+                        var textBox = new MaskedTextBox() { Left = currentLeft, Top = top, Width = DefaultWidth };
 
                         if (label.Contains("Ip-address"))
                         {
@@ -238,7 +243,7 @@ namespace ColorControl.Shared.Forms
                         {
                             Left = currentLeft,
                             Top = top,
-                            Width = 400,
+                            Width = DefaultWidth,
                             DropDownStyle = ComboBoxStyle.DropDownList
                         };
 
@@ -260,6 +265,12 @@ namespace ColorControl.Shared.Forms
 
                         top += 4;
 
+                        if (textSubLabel != null)
+                        {
+                            top -= textSubLabel.Height + 4;
+                            labels.Last().Top = top + 20;
+                        }
+
                         var checkBox = new CheckBox
                         {
                             Left = currentLeft,
@@ -278,7 +289,7 @@ namespace ColorControl.Shared.Forms
                         {
                             Left = currentLeft,
                             Top = top,
-                            Width = 400,
+                            Width = DefaultWidth,
                             Height = 100,
                             MultiColumn = true
                         };
@@ -348,6 +359,12 @@ namespace ColorControl.Shared.Forms
                         control = trackBar;
                         break;
 
+                    case FieldType.Label:
+                        control = textLabel;
+
+                        top += 20;
+
+                        break;
 
                     default:
                         continue;
@@ -380,7 +397,7 @@ namespace ColorControl.Shared.Forms
                 prompt.Width = groupBox.Width;
             }
 
-            var maxHeight = boxes.Max(c => c.Height + c.Top) + 20;
+            var maxHeight = Math.Max(boxes.Max(c => c.Height + c.Top), labels.Max(l => l.Height + l.Top)) + 20;
 
             if (groupBox.Height < maxHeight)
             {
@@ -461,14 +478,16 @@ namespace ColorControl.Shared.Forms
         {
             var prompt = new Form()
             {
-                Width = 300,
-                Height = 100,
-                FormBorderStyle = FormBorderStyle.FixedToolWindow,
-                Text = caption,
+                Width = 400,
+                Height = 120,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
                 StartPosition = FormStartPosition.CenterScreen,
-                ControlBox = false
+                ControlBox = false,
+                BackColor = FormUtils.CurrentBackColor,
+                ForeColor = FormUtils.CurrentForeColor,
+
             };
-            var textLabel = new Label() { Left = 20, Top = 25, Text = caption, AutoSize = true };
+            var textLabel = new Label() { Left = 20, Top = 30, Text = caption, AutoSize = true, MaximumSize = new Size(prompt.Width - 40, 0) };
             prompt.Controls.Add(textLabel);
 
             prompt.Show(MainForm);

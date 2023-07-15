@@ -136,7 +136,7 @@
             chkModules.Name = "chkModules";
             chkModules.Size = new System.Drawing.Size(507, 76);
             chkModules.TabIndex = 0;
-            chkModules.SelectedIndexChanged += chkModules_SelectedIndexChanged;
+            chkModules.ItemCheck += chkModules_ItemCheck;
             // 
             // grpMiscellaneousOptions
             // 

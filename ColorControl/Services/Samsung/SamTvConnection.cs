@@ -47,7 +47,6 @@ namespace ColorControl.Services.Samsung
             {
                 _connection?.Dispose();
 
-                ConnectionClosed = false;
                 _commandCount = 0;
 
                 // Not creating the web socket from main thread can cause a stackoverflow in combase32.dll
@@ -63,6 +62,8 @@ namespace ColorControl.Services.Samsung
                 try
                 {
                     await _connection.ConnectAsync(uri).AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+                    ConnectionClosed = false;
 
                     _messageWriter = new DataWriter(_connection.OutputStream);
 

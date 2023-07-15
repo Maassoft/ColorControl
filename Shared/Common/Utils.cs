@@ -1,5 +1,4 @@
 ﻿using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
@@ -28,15 +27,6 @@ namespace ColorControl.Shared.Common
 {
     public static class Utils
     {
-        [Flags]
-        public enum ModKeys : int
-        {
-            Alt = 1,
-            Control = 2,
-            Shift = 4,
-            Win = 8
-        }
-
         public const int WM_BRINGTOFRONT = NativeConstants.WM_USER + 1;
 
         public static string PKEY_PNPX_IpAddress = "{656a3bb3-ecc0-43fd-8477-4ae0404a96cd} 12297";
@@ -49,8 +39,6 @@ namespace ColorControl.Shared.Common
         public static bool UseDedicatedElevatedProcess = false;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-        private static bool WinKeyDown = false;
-        private static Keys[] KeysWithoutModifiers = new[] { Keys.F13, Keys.F14, Keys.F15, Keys.F16, Keys.F17, Keys.F18, Keys.F19, Keys.F20, Keys.F21, Keys.F22, Keys.F23, Keys.F24 };
 
         public static string SERVICE_NAME = "Color Control Service";
 
@@ -121,73 +109,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
                 }
             }
             return path;
-        }
-
-        public static (int mods, int key) ParseShortcut(string shortcut)
-        {
-            int mods = 0;
-            var key = 0;
-
-            shortcut = shortcut.Replace(",", "");
-            shortcut = shortcut.Replace("+", "");
-            shortcut = shortcut.Replace("  ", " ");
-            var parts = shortcut.Split(' ');
-
-            if (parts.Length > 0)
-            {
-                for (int i = 0; i + 1 < parts.Length; i++)
-                {
-                    switch (parts[i])
-                    {
-                        case "Alt":
-                            mods += (int)ModKeys.Alt;
-                            break;
-                        case "Control":
-                            mods += (int)ModKeys.Control;
-                            break;
-                        case "Shift":
-                            mods += (int)ModKeys.Shift;
-                            break;
-                        case "Win":
-                            mods += (int)ModKeys.Win;
-                            break;
-                    }
-                }
-
-                var keyName = parts[parts.Length - 1];
-
-                key = (int)Enum.Parse(typeof(Keys), keyName);
-            }
-
-            return (mods, key);
-        }
-
-        public static Keys ShortcutToKeys(string shortcut)
-        {
-            var (mods, key) = ParseShortcut(shortcut);
-
-            var keys = Keys.None;
-
-            if (((uint)mods & (uint)ModKeys.Alt) > 0)
-            {
-                keys |= Keys.Alt;
-            }
-            if (((uint)mods & (uint)ModKeys.Control) > 0)
-            {
-                keys |= Keys.Control;
-            }
-            if (((uint)mods & (uint)ModKeys.Shift) > 0)
-            {
-                keys |= Keys.Shift;
-            }
-            if (((uint)mods & (uint)ModKeys.Win) > 0)
-            {
-                keys |= Keys.Control;
-            }
-
-            keys |= (Keys)key;
-
-            return keys;
         }
 
         private static bool? _IsAdministrator;
@@ -601,94 +522,11 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             }
         }
 
-        public static bool RegisterShortcut(nint handle, int id, string shortcut, bool clear = false)
-        {
-            if (clear)
-            {
-                WinApi.UnregisterHotKey(handle, id);
-            }
-
-            if (!string.IsNullOrEmpty(shortcut))
-            {
-                var (mods, key) = ParseShortcut(shortcut);
-                var result = WinApi.RegisterHotKey(handle, id, mods, key);
-                if (!result)
-                {
-                    var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
-                    Logger.Error($"Could not register shortcut {shortcut}: {errorMessage}");
-                }
-
-                return result;
-            }
-
-            return true;
-        }
-
         public static void CheckWin32Error(string message)
         {
             var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
 
             throw new Exception($"{message}: {errorMessage}");
-        }
-
-        public static string FormatKeyboardShortcut(KeyEventArgs keyEvent)
-        {
-            var pressedModifiers = keyEvent.Modifiers;
-
-            //Debug.WriteLine("KD: " + e.Modifiers + ", " + e.KeyCode);
-
-            var shortcutString = pressedModifiers > 0 ? pressedModifiers.ToString() : "";
-            if (keyEvent.KeyCode == Keys.LWin || WinKeyDown)
-            {
-                WinKeyDown = true;
-                if (!string.IsNullOrEmpty(shortcutString))
-                {
-                    shortcutString += ", ";
-                }
-                shortcutString += "Win";
-            }
-
-            var empty = string.IsNullOrEmpty(shortcutString);
-            if ((!empty || KeysWithoutModifiers.Contains(keyEvent.KeyCode)) && keyEvent.KeyCode != Keys.ControlKey && keyEvent.KeyCode != Keys.ShiftKey && keyEvent.KeyCode != Keys.Menu && keyEvent.KeyCode != Keys.LWin)
-            {
-                if (!empty)
-                {
-                    shortcutString += " + ";
-                }
-                shortcutString += keyEvent.KeyCode.ToString();
-            }
-
-            if (string.IsNullOrEmpty(shortcutString))
-            {
-                keyEvent.SuppressKeyPress = true;
-            }
-
-            return shortcutString;
-        }
-
-        public static bool ValidateShortcut(string shortcut)
-        {
-            var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Contains("+") || ShortcutIsAllowedWithoutModifier(shortcut);
-
-            if (!valid)
-            {
-                MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key or be F13-F24.");
-            }
-
-            return valid;
-        }
-
-        public static bool ShortcutIsAllowedWithoutModifier(string shortcut)
-        {
-            return Enum.TryParse<Keys>(shortcut, out var key) && KeysWithoutModifiers.Contains(key);
-        }
-
-        public static void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)
-        {
-            if (keyEvent.KeyCode == Keys.LWin)
-            {
-                WinKeyDown = false;
-            }
         }
 
         public static bool OpenConsole()
@@ -1023,12 +861,13 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             StartProcess("sc.exe", @$"delete ""{SERVICE_NAME}""", wait: true);
         }
 
-        public static bool PingHost(string nameOrAddress)
+        public static async Task<bool> PingHost(string nameOrAddress)
         {
             try
             {
                 using var pinger = new Ping();
-                var reply = pinger.Send(nameOrAddress);
+                var reply = await pinger.SendPingAsync(nameOrAddress, 2000);
+
                 return reply.Status == IPStatus.Success;
             }
             catch (PingException)

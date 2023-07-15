@@ -242,7 +242,7 @@ namespace ColorControl.Svc
 
                     await Task.Delay(1000);
 
-                    var result = Utils.PingHost(wakeDevice.IpAddress);
+                    var result = await Utils.PingHost(wakeDevice.IpAddress);
 
                     if (result)
                     {

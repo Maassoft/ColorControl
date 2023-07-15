@@ -33,6 +33,10 @@
         /// </summary>
         AdobeRGB,
 
+        Unknown1,
+
+        BT2020,
+
         /// <summary>
         ///     Auto (Unspecified)
         /// </summary>

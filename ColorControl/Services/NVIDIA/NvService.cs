@@ -13,6 +13,7 @@ using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.Display;
+using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
 using NWin32;
 using NWin32.NativeTypes;
@@ -767,6 +768,49 @@ namespace ColorControl.Services.NVIDIA
             var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
 
             return info.HasValue ? info.Value.ContentType : InfoFrameVideoContentType.Auto;
+        }
+
+        public void TestResolution()
+        {
+            var display = GetCurrentDisplay();
+            var displayDevice = display.DisplayDevice;
+
+            //var timing = displayDevice.CurrentTiming;
+
+            //var res = new CustomResolution(3840, 2160, ColorFormat.A8R8G8B8, timing);
+
+            //displayDevice.TrialCustomResolution(res);
+
+            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+
+            if (info.HasValue)
+            {
+                var infoValue = info.Value;
+
+                var newInfo = new InfoFrameVideo(
+                    infoValue.VideoIdentificationCode.Value,
+                    InfoFrameVideoPixelRepetition.None,
+                    infoValue.ColorFormat,
+                    InfoFrameVideoColorimetry.UseExtendedColorimetry,
+                    InfoFrameVideoExtendedColorimetry.BT2020,
+                    infoValue.RGBQuantization,
+                    infoValue.YCCQuantization,
+                    InfoFrameVideoITC.ITContent,
+                    infoValue.ContentType,
+                    InfoFrameVideoScanInfo.NoData,
+                    InfoFrameBoolean.Auto,
+                    InfoFrameVideoAspectRatioActivePortion.Auto,
+                    InfoFrameVideoAspectRatioCodedFrame.Auto,
+                    InfoFrameVideoNonUniformPictureScaling.NoData,
+                    InfoFrameVideoBarData.NotPresent,
+                    null,
+                    null,
+                    null,
+                    null
+                    );
+
+                displayDevice.SetHDMIVideoFrameInformation(newInfo, true);
+            }
         }
 
         public Display[] GetDisplays()

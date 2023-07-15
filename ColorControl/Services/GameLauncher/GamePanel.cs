@@ -59,7 +59,7 @@ namespace ColorControl.Services.GameLauncher
             foreach (var preset in _gameService.GetPresets())
             {
                 AddOrUpdateItemGame(preset);
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
+                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -75,12 +75,12 @@ namespace ColorControl.Services.GameLauncher
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private GamePreset GetSelectedGamePreset()
@@ -214,7 +214,7 @@ namespace ColorControl.Services.GameLauncher
         private void SaveGamePreset()
         {
             var shortcut = string.Empty;
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -235,13 +235,7 @@ namespace ColorControl.Services.GameLauncher
             preset.RunAsAdministrator = chkGameRunAsAdmin.Checked;
             preset.ShowInQuickAccess = chkGameQuickAccess.Checked;
 
-            var clear = !string.IsNullOrEmpty(preset.shortcut);
-
-            var shortcutChanged = !shortcut.Equals(preset.shortcut);
-            if (shortcutChanged)
-            {
-                preset.shortcut = shortcut;
-            }
+            preset.shortcut = shortcut;
 
             var text = edtGamePrelaunchSteps.Text;
 
@@ -257,10 +251,7 @@ namespace ColorControl.Services.GameLauncher
 
             AddOrUpdateItemGame();
 
-            if (shortcutChanged)
-            {
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut, clear);
-            }
+            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void btnGameBrowse_Click(object sender, EventArgs e)
@@ -377,11 +368,9 @@ namespace ColorControl.Services.GameLauncher
                 return;
             }
 
-            var clear = !string.IsNullOrEmpty(_config.GameQuickAccessShortcut);
-
             _config.GameQuickAccessShortcut = shortcut;
 
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut);
         }
 
         private void mnuGameActions_Opening(object sender, CancelEventArgs e)

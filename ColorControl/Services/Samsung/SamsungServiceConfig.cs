@@ -13,6 +13,7 @@ namespace ColorControl.Services.Samsung
         public bool SetSelectedDeviceByPowerOn { get; set; }
         public string QuickAccessShortcut { get; set; }
         public int DefaultButtonDelay { get; set; }
+        public bool ShowAdvancedActions { get; set; }
 
         public SamsungServiceConfig()
         {

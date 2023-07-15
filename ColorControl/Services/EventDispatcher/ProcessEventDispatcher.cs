@@ -75,6 +75,7 @@ namespace ColorControl.Services.EventDispatcher
                     }
 
                     await DispatchEventAsync(Event_ProcessChanged, MonitorContext);
+                    DispatchEvent(Event_ProcessChanged, MonitorContext);
                 }
                 catch (Exception ex)
                 {

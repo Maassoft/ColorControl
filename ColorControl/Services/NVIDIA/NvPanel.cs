@@ -112,7 +112,7 @@ namespace ColorControl.Services.NVIDIA
             foreach (var preset in _nvService.GetPresets())
             {
                 AddOrUpdateItem(preset);
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
+                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -982,14 +982,14 @@ namespace ColorControl.Services.NVIDIA
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void btnSetShortcut_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcut.Text.Trim();
 
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -1010,20 +1010,18 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var clear = !string.IsNullOrEmpty(preset.shortcut);
-
             preset.shortcut = shortcut;
             preset.name = name;
             preset.ShowInQuickAccess = chkNvShowInQuickAccess.Checked;
 
             AddOrUpdateItem();
 
-            Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void edtShortcut_TextChanged(object sender, EventArgs e)
@@ -1236,11 +1234,9 @@ namespace ColorControl.Services.NVIDIA
 
             var shortcut = (string)quickAccessField.Value;
 
-            var clear = !string.IsNullOrEmpty(_config.NvQuickAccessShortcut);
-
             _config.NvQuickAccessShortcut = shortcut;
 
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_NVQA, _config.NvQuickAccessShortcut);
 
             _nvService.Config.ShowOverclocking = enableOcField.ValueAsBool;
             _nvService.Config.ApplyNovideoOnStartup = enableNovideoField.ValueAsBool;

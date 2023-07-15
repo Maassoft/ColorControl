@@ -109,12 +109,12 @@ namespace ColorControl.Services.Samsung
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void FillPresets()
@@ -124,7 +124,7 @@ namespace ColorControl.Services.Samsung
             foreach (var preset in _samsungService.GetPresets())
             {
                 AddOrUpdateItem(preset);
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut);
+                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -239,7 +239,7 @@ namespace ColorControl.Services.Samsung
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcutLg.Text.Trim();
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -286,11 +286,7 @@ namespace ColorControl.Services.Samsung
                                  edtSamsungPresetIncludedProcesses.Text,
                                  edtSamsungPresetExcludedProcesses.Text);
 
-            var shortcutChanged = !shortcut.Equals(preset.shortcut);
-            if (shortcutChanged)
-            {
-                preset.shortcut = shortcut;
-            }
+            preset.shortcut = shortcut;
 
             var text = edtStepsLg.Text;
 
@@ -298,10 +294,7 @@ namespace ColorControl.Services.Samsung
 
             AddOrUpdateItem();
 
-            if (shortcutChanged)
-            {
-                Utils.RegisterShortcut(_mainHandle, preset.id, preset.shortcut, clear);
-            }
+            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         public void UpdateInfo()
@@ -734,7 +727,6 @@ Use 'Settings > Test power off/on' to test this functionality."
                 var form = MessageForms.ShowProgress("Connecting to device...");
 
                 var result = false;
-                Enabled = false;
                 try
                 {
                     result = await device.TestConnectionAsync();
@@ -742,7 +734,6 @@ Use 'Settings > Test power off/on' to test this functionality."
                 finally
                 {
                     form.Close();
-                    Enabled = true;
                 }
 
                 if (!result && MessageForms.QuestionYesNo("Unable to connect to the device. Are you sure you want to add it?") != DialogResult.Yes)
@@ -796,7 +787,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
             var device = _samsungService.GetPresetDevice(preset);
 
-            BuildActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
+            BuildActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click, _samsungService.Config.ShowAdvancedActions);
             ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
             ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
         }
@@ -885,12 +876,12 @@ Do you want to continue?"
 
         private void edtSamsungGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void edtSamsungGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void btnSamsungDeviceOptionsHelp_Click(object sender, EventArgs e)
@@ -1016,8 +1007,15 @@ Do you want to continue?";
                 Value = _samsungService.Config.SetSelectedDeviceByPowerOn
             };
 
+            var showAdvancedField = new MessageForms.FieldDefinition
+            {
+                FieldType = MessageForms.FieldType.CheckBox,
+                Label = "Show advanced actions under the Expert-button (Service Menu)",
+                SubLabel = "WARNING: entering the Service Menu is not recommended. This app and its creator are in no way accountable for any damages it may cause to your tv.",
+                Value = _samsungService.Config.ShowAdvancedActions
+            };
 
-            var values = MessageForms.ShowDialog("Samsung controller settings", new[] { powerRetries, shutDownDelayField, buttonDelayField, quickAccessShortcutField, setDeviceField });
+            var values = MessageForms.ShowDialog("Samsung controller settings", new[] { powerRetries, shutDownDelayField, buttonDelayField, quickAccessShortcutField, setDeviceField, showAdvancedField });
 
             if (values?.Any() != true)
             {
@@ -1029,13 +1027,13 @@ Do you want to continue?";
             _samsungService.Config.DefaultButtonDelay = buttonDelayField.ValueAsInt;
 
             var shortcutQA = quickAccessShortcutField.Value.ToString();
-            var clear = !string.IsNullOrEmpty(_samsungService.Config.QuickAccessShortcut);
 
             _samsungService.Config.QuickAccessShortcut = shortcutQA;
 
-            Utils.RegisterShortcut(_mainHandle, SHORTCUTID_SAMSUNGQA, _samsungService.Config.QuickAccessShortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_SAMSUNGQA, _samsungService.Config.QuickAccessShortcut);
 
             _samsungService.Config.SetSelectedDeviceByPowerOn = setDeviceField.ValueAsBool;
+            _samsungService.Config.ShowAdvancedActions = showAdvancedField.ValueAsBool;
         }
 
         private void clbLgPower_SelectedIndexChanged(object sender, EventArgs e)
@@ -1085,6 +1083,45 @@ Do you want to continue?";
             device.Options.TurnScreenOffOnScreenSaver = turnOffField.ValueAsBool;
             device.Options.TurnScreenOnAfterScreenSaver = turnOnField.ValueAsBool;
             device.Options.HandleManualScreenSaver = manualField.ValueAsBool;
+        }
+
+        private void btnExpert_Click(object sender, EventArgs e)
+        {
+            mnuExpert.ShowCustom(btnExpert);
+        }
+
+        private void mnuExpert_Opening(object sender, CancelEventArgs e)
+        {
+            miExpertDummy.Visible = false;
+
+            var device = _samsungService.SelectedDevice;
+
+            if (device == null)
+            {
+                return;
+            }
+
+            var actions = device.GetInvokableActions(_samsungService.Config.ShowAdvancedActions);
+
+            foreach (var action in actions)
+            {
+                FormUtils.BuildMenuItem(mnuExpert.Items, action.Name, action.Name, action, mnuExpertClick);
+            }
+        }
+
+        private async void mnuExpertClick(object sender, EventArgs e)
+        {
+            var item = (ToolStripMenuItem)sender;
+            var action = (SamsungDevice.InvokableAction)item.Tag;
+
+            var device = _samsungService.SelectedDevice;
+
+            if (device == null)
+            {
+                return;
+            }
+
+            await device.ExecuteActionAsync(action, null, Shared.Common.AppContext.CurrentContext, _samsungService.Config);
         }
     }
 }

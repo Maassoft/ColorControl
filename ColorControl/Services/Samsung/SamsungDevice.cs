@@ -1,5 +1,6 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NLog;
@@ -37,6 +38,11 @@ namespace ColorControl.Services.Samsung
         Unknown,
         App,
         External
+    }
+
+    public enum ServiceMenuType
+    {
+        Default,
     }
 
     public delegate void GenericDelegate(object sender);
@@ -107,6 +113,7 @@ namespace ColorControl.Services.Samsung
             IsDummy = isDummy;
 
             AddInvokableAction("WOL", WakeAction);
+            AddInvokableAction("ServiceMenu", ServiceMenuAction, true);
             AddInternalPresetAction(new SamsungPreset("PictureOff", null, new[] { "KEY_AD:1200", "KEY_DOWN:300", "KEY_DOWN:300", "KEY_ENTER" }));
             AddInternalPresetAction(new SamsungPreset("PictureOn", null, new[] { "KEY_RETURN:1000", "KEY_RETURN", "KEY_RETURN" }));
 
@@ -260,7 +267,7 @@ namespace ColorControl.Services.Samsung
         {
             try
             {
-                var result = Utils.PingHost(IpAddress);
+                var result = await Utils.PingHost(IpAddress);
 
                 Logger.Debug($"Ping result: {result}");
 
@@ -353,7 +360,7 @@ namespace ColorControl.Services.Samsung
 
         internal async Task<bool> TestConnectionAsync()
         {
-            var result = Utils.PingHost(IpAddress);
+            var result = await Utils.PingHost(IpAddress);
 
             if (result)
             {
@@ -463,14 +470,19 @@ namespace ColorControl.Services.Samsung
                 var keySpec = step.Split(':');
 
                 var delay = config.DefaultButtonDelay;
+                var cmd = "Click";
                 var key = step;
-                if (keySpec.Length == 2)
+                if (keySpec.Length >= 2)
                 {
                     delay = Utils.ParseInt(keySpec[1]);
                     if (delay > 0)
                     {
                         key = keySpec[0];
                     }
+                }
+                if (keySpec.Length >= 3)
+                {
+                    cmd = keySpec[2];
                 }
 
                 var index = key.IndexOf("(");
@@ -498,7 +510,7 @@ namespace ColorControl.Services.Samsung
 
                 if (executeKey)
                 {
-                    await SendKeyAsync(key);
+                    await SendKeyAsync(key, cmd);
                     delay = delay == 0 ? config.DefaultButtonDelay : delay;
                 }
 
@@ -509,7 +521,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        private async Task ExecuteActionAsync(InvokableAction action, string[] parameters, Shared.Common.AppContext appContext, SamsungServiceConfig config)
+        public async Task ExecuteActionAsync(InvokableAction action, string[] parameters, Shared.Common.AppContext appContext, SamsungServiceConfig config)
         {
             if (action.Preset != null)
             {
@@ -517,13 +529,17 @@ namespace ColorControl.Services.Samsung
 
                 return;
             }
+            if (action.AsyncFunction != null)
+            {
+                await action.AsyncFunction(null);
+            }
         }
 
-        private async Task SendKeyAsync(string key)
+        private async Task SendKeyAsync(string key, string cmd = "Click")
         {
             var dynamic = new
             {
-                Cmd = "Click",
+                Cmd = cmd,
                 DataOfCmd = key,
                 Option = "false",
                 TypeOfRemote = "SendRemoteKey"
@@ -620,15 +636,27 @@ namespace ColorControl.Services.Samsung
 
         internal async Task<IEnumerable<SamsungApp>> GetAppsAsync(bool force)
         {
-            var dynamic = new
+            var messages = new List<RequestMessage>
             {
-                @event = "ed.installedApp.get",
-                to = "host",
+                new RequestMessage("ms.channel.emit", new
+                {
+                    data = "",
+                    @event = "ed.edenApp.get",
+                    to = "host",
+                }),
+                //new RequestMessage("ms.channel.emit", new
+                //{
+                //    data = "",
+                //    @event = "ed.installedApp.get",
+                //    to = "host",
+                //})
             };
 
-            var message = new RequestMessage("ms.channel.emit", dynamic);
+            foreach (var message in messages)
+            {
+                var result = await _samTvConnection.SendCommandAsync(message, true);
+            }
 
-            var result = await _samTvConnection.SendCommandAsync(message, true);
 
             return new List<SamsungApp>();
         }
@@ -644,14 +672,15 @@ namespace ColorControl.Services.Samsung
             _invokableActions.Add(action);
         }
 
-        private void AddInvokableAction(string name, Func<Dictionary<string, object>, Task<bool>> function)
+        private void AddInvokableAction(string name, Func<Dictionary<string, object>, Task<bool>> function, bool advanced = false)
         {
             var action = new InvokableAction
             {
                 Name = name,
                 AsyncFunction = function,
                 Category = "misc",
-                Title = name
+                Title = name,
+                Advanced = advanced
             };
 
             _invokableActions.Add(action);
@@ -659,12 +688,92 @@ namespace ColorControl.Services.Samsung
 
         internal IEnumerable<InvokableAction> GetInvokableActions(bool showAdvanced)
         {
-            return _invokableActions;
+            return _invokableActions.Where(a => showAdvanced || !a.Advanced);
         }
 
         private async Task<bool> WakeAction(Dictionary<string, object> _)
         {
             return await WakeAndConnect();
+        }
+
+        private async Task<bool> ServiceMenuAction(Dictionary<string, object> _)
+        {
+            var preset1 = new SamsungPreset("ServiceMenuStep1", null, new[] { "KEY_MUTE:600", "KEY_1:600", "KEY_1:600", "KEY_9:600", "KEY_ENTER:2000" });
+            var preset2 = new SamsungPreset("ServiceMenuStep2", null, new[] { "KEY_1", "KEY_2", "KEY_3", "KEY_4", "KEY_UP" });
+            var preset3 = new SamsungPreset("ServiceMenuStep3", null, new[] { "KEY_VOLUP:5100:Press", "KEY_VOLUP:500:Release" });
+            var rebootPreset = new SamsungPreset("ServiceMenuStep4", null, new[] { "KEY_POWER:5000", "WOL" });
+
+            var serviceMenuTypes = new[] { ServiceMenuType.Default }.Select(t => Utils.GetDescription(t));
+
+            if (!MessageForms.ShowDialog($"Access Service Menu", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Service Menu Type",
+                        SubLabel = "'Default' will not reset your settings. Click 'Next >' to continue or 'X' to stop",
+                        FieldType = MessageForms.FieldType.DropDown,
+                        Values = serviceMenuTypes,
+                        Value = ServiceMenuType.Default
+                    } }, okButtonText: "Next >").Any())
+            {
+                return true;
+            }
+
+            await ExecutePresetWithProgressAsync(preset1, "Step 1: opening Service Menu. It is normal to see messages like 'Not Available'.");
+
+            if (!MessageForms.ShowDialog($"Access Service Menu - Step 2", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Service Menu opened?",
+                        SubLabel = "If the menu is opened with the 'Hospitality Mode' item highlighted and the rest disabled, click 'Next >' to continue or 'X' to stop",
+                        FieldType = MessageForms.FieldType.Label
+                    } }, okButtonText: "Next >").Any())
+            {
+                return true;
+            }
+
+            await ExecutePresetWithProgressAsync(preset2, "Step 2: accessing Service Menu...");
+
+            var values = MessageForms.ShowDialog($"Access Service Menu - Step 3", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Service Menu - Advanced",
+                        SubLabel = "If the 'Advanced' item is highlighted and you want to access these settings, click 'Next >' or click 'X' to skip",
+                        FieldType = MessageForms.FieldType.Label
+                    } }, okButtonText: "Next >");
+
+            if (values.Any())
+            {
+                await ExecutePresetWithProgressAsync(preset3, "Step 3: accessing Advanced Service Menu...");
+            }
+
+            if (!MessageForms.ShowDialog($"Reboot TV - Final Step", new[] {
+                    new MessageForms.FieldDefinition
+                    {
+                        Label = "Reboot TV",
+                        SubLabel = "After you have made the necessary changes, click 'Reboot TV' to reboot the TV or click 'X' to close. If the TV turns not back on automatically, power it on manually.",
+                        FieldType = MessageForms.FieldType.Label
+                    } }, okButtonText: "Reboot TV").Any())
+            {
+                return true;
+            }
+
+            await ExecutePresetWithProgressAsync(rebootPreset, "Final Step: rebooting TV...");
+
+            return true;
+        }
+
+        private async Task ExecutePresetWithProgressAsync(SamsungPreset preset, string text)
+        {
+            var progressForm = MessageForms.ShowProgress(text);
+            try
+            {
+                //await Task.Delay(5000);
+                await ExecutePresetAsync(preset);
+            }
+            finally
+            {
+                progressForm.Close();
+            }
         }
     }
 }

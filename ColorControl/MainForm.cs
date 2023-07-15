@@ -11,6 +11,7 @@ using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using ColorControl.XForms;
+using Linearstar.Windows.RawInput;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using novideo_srgb;
@@ -70,7 +71,6 @@ namespace ColorControl
 
         private GamePanel _gamePanel;
 
-        //private KeyboardHookManager _keyboardHookManager;
         private IntPtr _screenStateNotify;
 
         private Dictionary<int, Action> _shortcuts = new();
@@ -79,6 +79,8 @@ namespace ColorControl
         public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager)
         {
             InitializeComponent();
+
+            KeyboardShortcutManager.MainHandle = Handle;
 
             StartUpParams = appContextProvider.GetAppContext().StartUpParams;
             appContextProvider.GetAppContext().SynchronizationContext = AsyncOperationManager.SynchronizationContext;
@@ -89,6 +91,8 @@ namespace ColorControl
             _config = Program.Config;
 
             LoadConfig();
+
+            KeyboardShortcutManager.SetUseRawInput(_config.UseRawInput);
 
             LoadModules();
 
@@ -139,7 +143,7 @@ namespace ColorControl
                 chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
             }
 
-            _shortcuts.Add(SHORTCUTID_SCREENSAVER, StartScreenSaver);
+            InitShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut, StartScreenSaver);
 
             InitModules();
             InitInfo();
@@ -322,7 +326,7 @@ namespace ColorControl
 
             if (!string.IsNullOrEmpty(shortcut))
             {
-                Utils.RegisterShortcut(Handle, shortcutId, shortcut);
+                KeyboardShortcutManager.RegisterShortcut(shortcutId, shortcut);
             }
         }
 
@@ -341,14 +345,6 @@ namespace ColorControl
                 InitShortcut(LgPanel.SHORTCUTID_LGQA, _serviceManager.LgService.Config.QuickAccessShortcut, _serviceManager.LgService.ToggleQuickAccessForm);
 
                 return _lgPanel;
-
-                // New shortcut manager, not working yet
-                //if (_keyboardHookManager == null)
-                //{
-                //    _keyboardHookManager = new KeyboardHookManager();
-                //    _keyboardHookManager.Start();
-                //}
-                //_keyboardHookManager.RegisterHotkey(NonInvasiveKeyboardHookLibrary.ModifierKeys.Control | NonInvasiveKeyboardHookLibrary.ModifierKeys.Alt, (int)Keys.F9, new Action(TestKey));
             }
             catch (Exception e)
             {
@@ -381,16 +377,6 @@ namespace ColorControl
 
                 return null;
             }
-        }
-
-        private void TestKey()
-        {
-            BeginInvoke(async () =>
-            {
-                var preset = _serviceManager.LgService.GetPresets().FirstOrDefault(p => p.name == "Backlight 20");
-
-                await _serviceManager.LgService.ApplyPreset(preset);
-            });
         }
 
         private void InitInfo()
@@ -512,7 +498,7 @@ namespace ColorControl
             // 5. Catch when a HotKey is pressed !
             if (m.Msg == NativeConstants.WM_HOTKEY && !IsShortcutControlFocused())
             {
-                var id = m.WParam.ToInt32();
+                var id = (int)m.WParam;
 
                 if (_shortcuts.TryGetValue(id, out var action))
                 {
@@ -544,6 +530,16 @@ namespace ColorControl
                     {
                         _samsungPanel?.ApplyPreset(samsungPreset);
                     }
+                }
+            }
+            else if (m.Msg == NativeConstants.WM_INPUT)
+            {
+                // Create an RawInputData from the handle stored in lParam.
+                var data = RawInputData.FromHandle(m.LParam);
+
+                if (data is RawInputKeyboardData keyboard)
+                {
+                    KeyboardShortcutManager.HandleRawKeyboardInput(keyboard);
                 }
             }
             else if (m.Msg == NativeConstants.WM_QUERYENDSESSION)
@@ -595,7 +591,7 @@ namespace ColorControl
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = Utils.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -658,11 +654,6 @@ namespace ColorControl
             edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
             chkGdiScaling.Checked = _config.UseGdiScaling;
             chkOptionsUseDarkMode.Checked = _config.UseDarkMode;
-
-            if (!string.IsNullOrEmpty(_config.ScreenSaverShortcut))
-            {
-                Utils.RegisterShortcut(Handle, SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut);
-            }
 
             _skipResize = true;
             try
@@ -759,7 +750,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            Utils.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -975,18 +966,14 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             var shortcut = edtBlankScreenSaverShortcut.Text.Trim();
 
-            if (!Utils.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
             {
                 return;
             }
 
-            var oldShortcut = _config.ScreenSaverShortcut;
-
-            var clear = !string.IsNullOrEmpty(oldShortcut);
-
             _config.ScreenSaverShortcut = shortcut;
 
-            Utils.RegisterShortcut(Handle, SHORTCUTID_SCREENSAVER, shortcut, clear);
+            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_SCREENSAVER, shortcut);
         }
 
         private void chkMinimizeOnClose_CheckedChanged(object sender, EventArgs e)
@@ -1334,6 +1321,8 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             //Environment.Exit(0);
             //InstallUpdate("");
             //await Test();
+
+            //_serviceManager.NvService.TestResolution();
         }
 
         private async Task Test()
@@ -1393,23 +1382,6 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
         }
 
-        private void chkModules_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-            for (var i = 0; i < chkModules.Items.Count; i++)
-            {
-                var item = chkModules.Items[i].ToString();
-
-                var module = _config.Modules.First(m => m.DisplayName == item.ToString());
-
-                module.IsActive = chkModules.GetItemChecked(i);
-            }
-        }
-
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if ((keyData == (Keys.Control | Keys.PageUp) || keyData == (Keys.Control | Keys.PageDown)) && IsShortcutControlFocused())
@@ -1420,7 +1392,7 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
                 {
                     var keyEvent = new KeyEventArgs(keyData);
 
-                    control.Text = Utils.FormatKeyboardShortcut(keyEvent);
+                    control.Text = KeyboardShortcutManager.FormatKeyboardShortcut(keyEvent);
                 }
 
                 return true;
@@ -1451,8 +1423,15 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
                 MaxValue = 5000,
                 Value = _config.ProcessMonitorPollingInterval
             };
+            var useRawInputField = new MessageForms.FieldDefinition
+            {
+                FieldType = MessageForms.FieldType.CheckBox,
+                Label = "Use Raw Input for shortcuts (hot keys)",
+                SubLabel = "This enables shortcuts to work during applications/games that block certain keys (like WinKey or Control). NOTE: if the application in the foreground runs with higher privileges than ColorControl, Raw Input does not work and normal hot keys are used",
+                Value = _config.UseRawInput
+            };
 
-            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField });
+            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField });
 
             if (values?.Any() != true)
             {
@@ -1460,11 +1439,32 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             }
 
             _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
+            _config.UseRawInput = useRawInputField.ValueAsBool;
+
+            KeyboardShortcutManager.SetUseRawInput(_config.UseRawInput);
         }
 
         private void btnOptionsLog_Click(object sender, EventArgs e)
         {
             LogWindow.CreateAndShow();
+        }
+
+        private void chkModules_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            if (chkModules.Items.Count != _config.Modules.Count)
+            {
+                return;
+            }
+
+            var index = e.Index;
+
+            if (index < 0)
+            {
+                return;
+            }
+
+            var module = _config.Modules[index];
+            module.IsActive = e.NewValue == CheckState.Checked;
         }
     }
 }

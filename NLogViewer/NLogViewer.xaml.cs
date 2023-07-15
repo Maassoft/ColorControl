@@ -559,13 +559,16 @@ namespace DJ
 
             foreach (var line in lines)
             {
-                var parts = line.Split("|");
+                // Replace \0 in case of corruption
+                var cleanedLine = line.Replace("\0", "");
+
+                var parts = cleanedLine.Split("|");
 
                 if (parts.Length < 4)
                 {
-                    if (lastEventInfo != null && !string.IsNullOrWhiteSpace(line))
+                    if (lastEventInfo != null && !string.IsNullOrWhiteSpace(cleanedLine))
                     {
-                        lastEventInfo.Message += "\r\n" + line;
+                        lastEventInfo.Message += "\r\n" + cleanedLine;
 
                         continue;
                     }
@@ -575,7 +578,7 @@ namespace DJ
                         continue;
                     }
 
-                    parts = new string[] { DateTime.Now.ToString(), "info", "", line };
+                    parts = new string[] { DateTime.Now.ToString(), "info", "", cleanedLine };
                 }
 
                 var timeStamp = DateTime.Parse(parts[0]);

@@ -39,6 +39,7 @@
         public int ProcessMonitorPollingInterval { get; set; }
         public string LogLevel { get; set; }
         public List<Module> Modules { get; set; }
+        public bool UseRawInput { get; set; }
 
         public Config()
         {

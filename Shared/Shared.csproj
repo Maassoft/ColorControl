@@ -33,6 +33,7 @@
 		<PackageReference Include="System.Management" Version="7.0.0" />
 		<PackageReference Include="TaskScheduler" Version="2.10.1" />
 		<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.13" />
+		<PackageReference Include="RawInput.Sharp" Version="0.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>
