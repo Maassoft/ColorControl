@@ -14,6 +14,7 @@ using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
+using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
 using NWin32;
 using NWin32.NativeTypes;
@@ -275,13 +276,13 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public override async Task<bool> ApplyPreset(NvPreset preset)
+        public override Task<bool> ApplyPreset(NvPreset preset)
         {
             var result = true;
 
             if (!HasDisplaysAttached())
             {
-                return false;
+                return Task.FromResult(false);
             }
 
             SetCurrentDisplay(preset);
@@ -290,7 +291,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (display == null)
             {
-                return false;
+                return Task.FromResult(false);
             }
 
             var hdrEnabled = IsHDREnabled();
@@ -327,15 +328,15 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyOther)
             {
-                if (preset.contentType.HasValue)
-                {
-                    SetHDMIContentType(display, preset.contentType.Value);
-                }
-
                 if (preset.SDRBrightness.HasValue)
                 {
                     SetSDRBrightness(display, preset.SDRBrightness.Value);
                 }
+            }
+
+            if (preset.applyHdmiSettings)
+            {
+                SetHdmiSettings(display, preset.HdmiInfoFrameSettings);
             }
 
             if (preset.applyDithering)
@@ -360,7 +361,7 @@ namespace ColorControl.Services.NVIDIA
 
             PresetApplied();
 
-            return result;
+            return Task.FromResult(result);
         }
 
         public bool ApplyOverclocking(NvGpuOcSettings setting)
@@ -663,7 +664,7 @@ namespace ColorControl.Services.NVIDIA
                 return false;
             }
 
-            var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
+            var desktopRect = GetDesktopRect(display);
 
             if (refreshRate == 0)
             {
@@ -696,9 +697,23 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var portrait = IsDisplayInPortraitMode(display);
-            var desktopRect = display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
+            var desktopRect = GetDesktopRect(display);
 
             return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+        }
+
+        private Rectangle GetDesktopRect(Display display)
+        {
+            try
+            {
+                return display.DisplayDevice.ScanOutInformation.SourceDesktopRectangle;
+            }
+            catch (Exception)
+            {
+                var timing = display.DisplayDevice.CurrentTiming;
+
+                return new Rectangle(0, 0, timing.HorizontalActive, timing.VerticalActive);
+            }
         }
 
         private bool IsDisplayInPortraitMode(Display display)
@@ -726,7 +741,7 @@ namespace ColorControl.Services.NVIDIA
                 return new List<DEVMODEA>();
             }
 
-            var portrait = new[] { Rotate.Degree90, Rotate.Degree270 }.Contains(display.DisplayDevice.ScanOutInformation.SourceToTargetRotation);
+            var portrait = IsDisplayInPortraitMode(display);
             var timing = display.DisplayDevice.CurrentTiming;
 
             return GetAvailableResolutionsInternal(display.Name, portrait, (uint)(timing.Extra.RefreshRate));
@@ -743,6 +758,44 @@ namespace ColorControl.Services.NVIDIA
             var displayDevice = display.DisplayDevice;
             var hdr = displayDevice.HDRColorData;
             return hdr?.HDRMode == ColorDataHDRMode.UHDA;
+        }
+
+        public void SetHdmiSettings(Display display, NvHdmiInfoFrameSettings settings)
+        {
+            var displayDevice = display.DisplayDevice;
+
+            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+
+            if (!info.HasValue)
+            {
+                return;
+            }
+
+            var infoValue = info.Value;
+
+            var newInfo = new InfoFrameVideo(
+                infoValue.VideoIdentificationCode.Value,
+                InfoFrameVideoPixelRepetition.None,
+                settings.ColorFormat ?? infoValue.ColorFormat,
+                settings.Colorimetry ?? infoValue.Colorimetry,
+                settings.ExtendedColorimetry ?? infoValue.ExtendedColorimetry ?? InfoFrameVideoExtendedColorimetry.Auto,
+                settings.RGBQuantization ?? infoValue.RGBQuantization,
+                settings.YCCQuantization ?? infoValue.YCCQuantization,
+                settings.ContentMode ?? infoValue.ContentMode,
+                settings.ContentType ?? infoValue.ContentType,
+                InfoFrameVideoScanInfo.NoData,
+                InfoFrameBoolean.Auto,
+                InfoFrameVideoAspectRatioActivePortion.Auto,
+                InfoFrameVideoAspectRatioCodedFrame.Auto,
+                InfoFrameVideoNonUniformPictureScaling.NoData,
+                InfoFrameVideoBarData.NotPresent,
+                null,
+                null,
+                null,
+                null
+                );
+
+            displayDevice.SetHDMIVideoFrameInformation(newInfo, true);
         }
 
         public void SetHDMIContentType(Display display, InfoFrameVideoContentType contentType)
@@ -770,10 +823,50 @@ namespace ColorControl.Services.NVIDIA
             return info.HasValue ? info.Value.ContentType : InfoFrameVideoContentType.Auto;
         }
 
+        public NvHdmiInfoFrameSettings GetHdmiSettings(Display display)
+        {
+            var displayDevice = display.DisplayDevice;
+
+            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+
+            if (!info.HasValue)
+            {
+                return new NvHdmiInfoFrameSettings();
+            }
+
+            var infoValue = info.Value;
+
+            return new NvHdmiInfoFrameSettings
+            {
+                ColorFormat = infoValue.ColorFormat,
+                Colorimetry = infoValue.Colorimetry,
+                ExtendedColorimetry = infoValue.ExtendedColorimetry,
+                RGBQuantization = infoValue.RGBQuantization,
+                YCCQuantization = infoValue.YCCQuantization,
+                ContentMode = infoValue.ContentMode,
+                ContentType = infoValue.ContentType
+            };
+        }
+
         public void TestResolution()
         {
-            var display = GetCurrentDisplay();
-            var displayDevice = display.DisplayDevice;
+            //var display = GetCurrentDisplay();
+            //var displayDevice = display.DisplayDevice;
+
+            //var info = DisplayApi.GetScanOutConfiguration(displayDevice.DisplayId);
+
+            //var vertices = new float[] {
+            //    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            //    0.0f, 2160.0f, 0.0f, 2160.0f, 0.0f, 0.0f,
+            //    3840.0f, 0.0f, 3840.0f, 0.0f, 0.0f, 0.0f,
+            //    3840.0f, 2160.0f, 3840.0f, 2160.0f, 0.0f, 0.0f,
+            //};
+
+            //var warp = new ScanOutWarpingV1(WarpingVerticeFormat.TriangleStripXYUVRQ, vertices, info.TargetViewPortRectangle);
+            //var verticesCount = 4;
+            //var isSticky = false;
+
+            //DisplayApi.SetScanOutWarping(displayDevice.DisplayId, warp, ref verticesCount, out isSticky);
 
             //var timing = displayDevice.CurrentTiming;
 
@@ -781,36 +874,53 @@ namespace ColorControl.Services.NVIDIA
 
             //displayDevice.TrialCustomResolution(res);
 
-            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+            //var hdrColorData = displayDevice.HDRColorData;
+            //var mastering = hdrColorData.MasteringDisplayData;
 
-            if (info.HasValue)
-            {
-                var infoValue = info.Value;
+            //var newMastering = new MasteringDisplayColorData(
+            //    new ColorDataColorCoordinate(0.2f, 0.2f),
+            //    mastering.SecondColorCoordinate,
+            //    mastering.ThirdColorCoordinate,
+            //    mastering.WhiteColorCoordinate,
+            //    120,
+            //    mastering.MinimumMasteringLuminance,
+            //    mastering.MaximumContentLightLevel,
+            //    mastering.MaximumFrameAverageLightLevel);
 
-                var newInfo = new InfoFrameVideo(
-                    infoValue.VideoIdentificationCode.Value,
-                    InfoFrameVideoPixelRepetition.None,
-                    infoValue.ColorFormat,
-                    InfoFrameVideoColorimetry.UseExtendedColorimetry,
-                    InfoFrameVideoExtendedColorimetry.BT2020,
-                    infoValue.RGBQuantization,
-                    infoValue.YCCQuantization,
-                    InfoFrameVideoITC.ITContent,
-                    infoValue.ContentType,
-                    InfoFrameVideoScanInfo.NoData,
-                    InfoFrameBoolean.Auto,
-                    InfoFrameVideoAspectRatioActivePortion.Auto,
-                    InfoFrameVideoAspectRatioCodedFrame.Auto,
-                    InfoFrameVideoNonUniformPictureScaling.NoData,
-                    InfoFrameVideoBarData.NotPresent,
-                    null,
-                    null,
-                    null,
-                    null
-                    );
+            //var newHdrColorData = new HDRColorData(hdrColorData.HDRMode, newMastering);
 
-                displayDevice.SetHDMIVideoFrameInformation(newInfo, true);
-            }
+            //displayDevice.SetHDRColorData(newHdrColorData);
+
+            //var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+
+            //if (info.HasValue)
+            //{
+            //    var infoValue = info.Value;
+
+            //    var newInfo = new InfoFrameVideo(
+            //        infoValue.VideoIdentificationCode.Value,
+            //        InfoFrameVideoPixelRepetition.None,
+            //        InfoFrameVideoColorFormat.RGB,
+            //        InfoFrameVideoColorimetry.UseExtendedColorimetry,
+            //        InfoFrameVideoExtendedColorimetry.BT2020,
+            //        infoValue.RGBQuantization,
+            //        infoValue.YCCQuantization,
+            //        InfoFrameVideoITC.ITContent,
+            //        infoValue.ContentType,
+            //        InfoFrameVideoScanInfo.NoData,
+            //        InfoFrameBoolean.Auto,
+            //        InfoFrameVideoAspectRatioActivePortion.Auto,
+            //        InfoFrameVideoAspectRatioCodedFrame.Auto,
+            //        InfoFrameVideoNonUniformPictureScaling.NoData,
+            //        InfoFrameVideoBarData.NotPresent,
+            //        null,
+            //        null,
+            //        null,
+            //        null
+            //        );
+
+            //    displayDevice.SetHDMIVideoFrameInformation(newInfo, true);
+            //}
         }
 
         public Display[] GetDisplays()
@@ -856,87 +966,10 @@ namespace ColorControl.Services.NVIDIA
 
                 foreach (var display in displays)
                 {
-                    var values = new List<string>
-                    {
-                        "Current settings"
-                    };
+                    var preset = GetPresetForDisplay(display, true, displays.Count());
 
-                    var name = FormUtils.ExtendedDisplayName(display.Name);
-                    values.Add(name);
-
-                    var colorData = GetCurrentColorData(display);
-                    var colorSettings = string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
-                    values.Add(colorSettings);
-
-                    var refreshRate = display.DisplayDevice.CurrentTiming.Extra.RefreshRate;
-                    values.Add($"{refreshRate}Hz");
-
-                    var mode = GetCurrentMode(display.Name);
-                    values.Add($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
-
-                    var ditherInfo = GetDithering(display);
-                    string dithering;
-                    if (ditherInfo.state == -1)
-                    {
-                        dithering = "Error";
-                    }
-                    else
-                    {
-                        var state = (NvDitherState)ditherInfo.state;
-                        dithering = state switch { NvDitherState.Disabled => "Disabled", NvDitherState.Auto => "Auto: ", _ => string.Empty };
-                        if (state is NvDitherState.Enabled or NvDitherState.Auto)
-                        {
-                            var ditherBitsDescription = ((NvDitherBits)ditherInfo.bits).GetDescription();
-                            var ditherModeDescription = ((NvDitherMode)ditherInfo.mode).GetDescription();
-                            dithering = string.Format("{0}{1} {2}", dithering, ditherBitsDescription, ditherModeDescription);
-                        }
-                    }
-
-                    values.Add(dithering);
-
-                    var hdrEnabled = IsHDREnabled(display);
-                    values.Add(hdrEnabled ? "Yes" : "No");
-
-                    var drsValues = new List<string>();
-
-                    foreach (var setting in settings)
-                    {
-                        var settingMeta = GetSettingMeta(setting.SettingId);
-
-                        if (settingMeta == null)
-                        {
-                            continue;
-                        }
-
-                        var value = settingMeta.ToFriendlyName(setting.ValueText);
-
-                        if (value == null)
-                        {
-                            continue;
-                        }
-
-                        drsValues.Add($"{settingMeta.SettingName}: {value}");
-                    }
-
-                    values.Add(string.Join(", ", drsValues));
-
-                    var otherValues = new List<string>
-                    {
-                        $"Content type: {GetHDMIContentType(display)}"
-                    };
-
-                    if (hdrEnabled)
-                    {
-                        var sdrBrightness = GetSDRBrightness(display);
-
-                        otherValues.Add($"SDR brightness: {sdrBrightness}%");
-                    }
-
-                    values.Add(string.Join(", ", otherValues));
-
-                    var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
-
-                    var displayInfo = new NvDisplayInfo(display, values, infoLine, name);
+                    var values = preset.GetDisplayValues(_appContextProvider.GetAppContext().Config);
+                    var displayInfo = new NvDisplayInfo(display, values, preset.InfoLine, preset.displayName);
 
                     list.Add(displayInfo);
                 }
@@ -956,17 +989,22 @@ namespace ColorControl.Services.NVIDIA
 
             var display = displays.FirstOrDefault(d => displayName.StartsWith(d.Name));
 
+            return GetPresetForDisplay(display, driverSettings, displays.Count());
+        }
+
+        public NvPreset GetPresetForDisplay(Display display, bool driverSettings = false, int displayCount = 1)
+        {
             if (display == null)
             {
                 return null;
             }
 
-            var isPrimaryDisplay = displays.Count() == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
+            var isPrimaryDisplay = displayCount == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
             var preset = new NvPreset { Display = display, applyColorData = false, primaryDisplay = isPrimaryDisplay };
 
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
-            preset.contentType = GetHDMIContentType(display);
+            preset.HdmiInfoFrameSettings = GetHdmiSettings(display);
             preset.SDRBrightness = GetSDRBrightness(display);
 
             var mode = GetCurrentMode(display.Name);

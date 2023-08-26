@@ -33,7 +33,7 @@
         /// </summary>
         AdobeRGB,
 
-        Unknown1,
+        UnknownColorimetry,
 
         BT2020,
 

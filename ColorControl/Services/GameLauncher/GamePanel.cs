@@ -397,10 +397,10 @@ namespace ColorControl.Services.GameLauncher
             var options = Enumerable.Range(0, numberOfProcessors).Select(i => $"CPU #{i}");
 
             var values = MessageForms.ShowDialog("Set processor affinity", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Set desired processors which are allowed to run program",
-                        FieldType = MessageForms.FieldType.Flags,
+                        FieldType = FieldType.Flags,
                         Values = options,
                         Value = preset.ProcessAffinityMask
                     }
@@ -433,10 +433,10 @@ namespace ColorControl.Services.GameLauncher
             var dropDownValues = Utils.GetDescriptions<GamePriorityClass>();
 
             var values = MessageForms.ShowDialog("Set process priority", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Set desired process priority",
-                        FieldType = MessageForms.FieldType.DropDown,
+                        FieldType = FieldType.DropDown,
                         Values = dropDownValues,
                         Value = preset.ProcessPriorityClass > 0 ? ((GamePriorityClass)preset.ProcessPriorityClass).GetDescription() : GamePriorityClass.Normal.GetDescription()
                     }
@@ -448,13 +448,7 @@ namespace ColorControl.Services.GameLauncher
             }
 
             var value = values.First().Value.ToString();
-            var enumName = Utils.GetEnumNameByDescription(typeof(GamePriorityClass), value);
-            if (enumName != null)
-            {
-                value = enumName;
-            }
-
-            var enumValue = Enum.Parse(typeof(GamePriorityClass), value);
+            var enumValue = Utils.GetEnumValueByDescription<GamePriorityClass>(value);
 
             preset.ProcessPriorityClass = (uint)(int)enumValue;
         }

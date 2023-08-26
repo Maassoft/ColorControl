@@ -519,10 +519,10 @@ namespace ColorControl.Shared.Forms
 
         public static string EditShortcut(string shortcut, string label = "Shortcut", string title = null)
         {
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 Label = label,
-                FieldType = MessageForms.FieldType.Shortcut,
+                FieldType = FieldType.Shortcut,
                 Value = shortcut
             };
             var values = MessageForms.ShowDialog(title ?? "Set shortcut", new[] { field });

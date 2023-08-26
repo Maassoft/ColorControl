@@ -114,6 +114,7 @@ namespace ColorControl.Svc
                 SvcMessageType.GetLog => HandleGetLogMessage(message),
                 SvcMessageType.ClearLog => HandleClearLogMessage(message),
                 SvcMessageType.ExecuteRpc => await HandleExecuteRpcCommand(message),
+                SvcMessageType.ExecuteRpcGeneric => await HandleExecuteRpcGenericCommand(JsonConvert.DeserializeObject<SvcRpcMessage>(json)),
                 SvcMessageType.ExecuteUpdate => await HandleExecuteUpdateCommandAsync(JsonConvert.DeserializeObject<SvcInstallUpdateMessage>(json)),
                 SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
                 SvcMessageType.ApplyNvidiaDriverSettings => HandleNvDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
@@ -132,6 +133,19 @@ namespace ColorControl.Svc
             var startUpParams = StartUpParams.Parse(args);
 
             return SvcResultMessage.FromResult(await CommandLineHandler.HandleStartupParams(startUpParams, null));
+        }
+
+        private async Task<SvcResultMessage> HandleExecuteRpcGenericCommand(SvcRpcMessage message)
+        {
+            var service = NvService.CheckServiceInstance();
+
+            var method = service.GetType().GetMethod(message.MethodName);
+
+            var result = method.Invoke(service, message.Arguments);
+
+            var data = JsonConvert.SerializeObject(result);
+
+            return SvcResultMessage.FromResult(data);
         }
 
         private SvcResultMessage HandleSetLgConfigMessage(SvcMessage message)

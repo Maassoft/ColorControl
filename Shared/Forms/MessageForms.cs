@@ -4,81 +4,114 @@ using System.Globalization;
 
 namespace ColorControl.Shared.Forms
 {
+    public enum FieldType
+    {
+        Text,
+        Numeric,
+        DropDown,
+        Flags,
+        Shortcut,
+        CheckBox,
+        TrackBar,
+        Label
+    }
+
+    public class FieldDefinition
+    {
+        public string Label { get; set; }
+        public string SubLabel { get; set; }
+        public FieldType FieldType { get; set; } = FieldType.Text;
+        public IEnumerable<string> Values { get; set; }
+        public decimal MinValue { get; set; }
+        public decimal MaxValue { get; set; }
+        public int NumberOfValues { get; set; }
+        public int StepSize { get; set; }
+        public object Value { get; set; }
+
+        public int ValueAsInt => int.Parse(Value.ToString());
+        public uint ValueAsUInt => uint.Parse(Value.ToString());
+        public bool ValueAsBool => bool.Parse(Value.ToString());
+        public T ValueAsEnum<T>() where T : struct => Utils.GetEnumValueByDescription<T>(Value.ToString());
+
+        public static FieldDefinition CreateEnumField<T>(string label, T value) where T : struct, IConvertible
+        {
+            return new FieldDefinition
+            {
+                Label = label,
+                FieldType = FieldType.DropDown,
+                Values = Utils.GetDescriptions(typeof(T), replaceUnderscore: true),
+                Value = value.GetDescription()
+            };
+        }
+
+        public static FieldDefinition CreateDropDownField(string label, IList<string> values)
+        {
+            return new FieldDefinition
+            {
+                Label = label,
+                FieldType = FieldType.DropDown,
+                Values = values,
+                Value = values.FirstOrDefault()
+            };
+        }
+
+        public static FieldDefinition CreateCheckField(string label, bool value = true)
+        {
+            return new FieldDefinition
+            {
+                Label = label,
+                FieldType = FieldType.CheckBox,
+                Value = value
+            };
+        }
+    }
+
+    public class MessageForm : Form
+    {
+        private ToolTip _toolTip;
+        public Dictionary<Control, Control> _controls = new();
+
+        public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
+        {
+            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+        }
+
+        public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
+        {
+            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+        }
+
+        public void TrackBar_Scroll(object sender, EventArgs e)
+        {
+            var trackBar = sender as TrackBar;
+            var edit = (NumericUpDown)_controls[trackBar];
+
+            var indexDbl = (trackBar.Value * 1.0) / trackBar.TickFrequency;
+            var index = Convert.ToInt32(Math.Round(indexDbl));
+
+            var newValue = trackBar.Value < trackBar.Maximum ? trackBar.TickFrequency * index : trackBar.Value;
+            newValue = Math.Max(newValue, trackBar.Minimum);
+            newValue = Math.Min(newValue, trackBar.Maximum);
+
+            trackBar.Value = newValue;
+
+            edit.Value = trackBar.Value;
+
+            _toolTip ??= new ToolTip();
+            _toolTip.Show(trackBar.Value.ToString(), trackBar, 50, 10, 1500);
+        }
+
+        public void TrackBarEdit_ValueChanged(object sender, EventArgs e)
+        {
+            var edit = (NumericUpDown)sender;
+            var trackBar = (TrackBar)_controls.First(c => c.Value == edit).Key;
+
+            trackBar.Value = (int)edit.Value;
+        }
+    }
+
     public class MessageForms
     {
-        public enum FieldType
-        {
-            Text,
-            Numeric,
-            DropDown,
-            Flags,
-            Shortcut,
-            CheckBox,
-            TrackBar,
-            Label
-        }
-
-        public class FieldDefinition
-        {
-            public string Label { get; set; }
-            public string SubLabel { get; set; }
-            public FieldType FieldType { get; set; } = FieldType.Text;
-            public IEnumerable<string> Values { get; set; }
-            public decimal MinValue { get; set; }
-            public decimal MaxValue { get; set; }
-            public int NumberOfValues { get; set; }
-            public int StepSize { get; set; }
-            public object Value { get; set; }
-
-            public int ValueAsInt => int.Parse(Value.ToString());
-            public uint ValueAsUInt => uint.Parse(Value.ToString());
-            public bool ValueAsBool => bool.Parse(Value.ToString());
-        }
-
-        public class MessageForm : Form
-        {
-            private ToolTip _toolTip;
-            public Dictionary<Control, Control> _controls = new();
-
-            public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
-            {
-                ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
-            }
-
-            public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
-            {
-                KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
-            }
-
-            public void TrackBar_Scroll(object sender, EventArgs e)
-            {
-                var trackBar = sender as TrackBar;
-                var edit = (NumericUpDown)_controls[trackBar];
-
-                var indexDbl = (trackBar.Value * 1.0) / trackBar.TickFrequency;
-                var index = Convert.ToInt32(Math.Round(indexDbl));
-
-                var newValue = trackBar.Value < trackBar.Maximum ? trackBar.TickFrequency * index : trackBar.Value;
-                newValue = Math.Max(newValue, trackBar.Minimum);
-                newValue = Math.Min(newValue, trackBar.Maximum);
-
-                trackBar.Value = newValue;
-
-                edit.Value = trackBar.Value;
-
-                _toolTip ??= new ToolTip();
-                _toolTip.Show(trackBar.Value.ToString(), trackBar, 50, 10, 1500);
-            }
-
-            public void TrackBarEdit_ValueChanged(object sender, EventArgs e)
-            {
-                var edit = (NumericUpDown)sender;
-                var trackBar = (TrackBar)_controls.First(c => c.Value == edit).Key;
-
-                trackBar.Value = (int)edit.Value;
-            }
-        }
-
         public static Form MainForm;
 
         public static void WarningOk(string text)
@@ -195,6 +228,10 @@ namespace ColorControl.Shared.Forms
                         {
                             textBox.Mask = "AA-AA-AA-AA-AA-AA";
                             textBox.Culture = CultureInfo.InvariantCulture;
+                        }
+                        else if (field.Value != null)
+                        {
+                            textBox.Text = field.Value.ToString();
                         }
 
                         control = textBox;
@@ -362,7 +399,7 @@ namespace ColorControl.Shared.Forms
                     case FieldType.Label:
                         control = textLabel;
 
-                        top += 20;
+                        top -= 20;
 
                         break;
 

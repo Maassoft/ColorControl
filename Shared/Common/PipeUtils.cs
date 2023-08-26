@@ -78,5 +78,23 @@ namespace ColorControl.Shared.Common
 
             return resultMessage.Result;
         }
+
+        public static T SendRpcMessage<T>(SvcRpcMessage message, int timeout = 2000) where T : class
+        {
+            var messageJson = JsonConvert.SerializeObject(message);
+
+            var resultJson = SendMessage(messageJson, timeout);
+
+            if (resultJson == null)
+            {
+                return null;
+            }
+
+            var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
+
+            var result = JsonConvert.DeserializeObject<T>(resultMessage.Data);
+
+            return result;
+        }
     }
 }

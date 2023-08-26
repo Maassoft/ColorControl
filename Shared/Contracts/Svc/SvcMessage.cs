@@ -8,6 +8,7 @@ namespace ColorControl.Shared.Contracts
         GetLog = 2,
         ClearLog = 3,
         ExecuteRpc = 10,
+        ExecuteRpcGeneric = 11,
         ExecuteUpdate = 20,
         RestartAfterUpdate = 21,
         ApplyNvidiaDriverSettings = 101,
@@ -53,5 +54,17 @@ namespace ColorControl.Shared.Contracts
         }
 
         public List<NvGpuOcSettings> OverclockingSettings { get; set; }
+    }
+
+    public class SvcRpcMessage : SvcMessage
+    {
+        public SvcRpcMessage()
+        {
+            MessageType = SvcMessageType.ExecuteRpcGeneric;
+        }
+
+        public string ServiceName { get; set; }
+        public string MethodName { get; set; }
+        public object[] Arguments { get; set; }
     }
 }

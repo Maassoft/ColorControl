@@ -9,6 +9,7 @@ using novideo_srgb;
 using nspector;
 using nspector.Common;
 using nspector.Common.Meta;
+using NStandard;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native.Display;
@@ -36,14 +37,18 @@ namespace ColorControl.Services.NVIDIA
         private readonly AppContextProvider _appContextProvider;
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
+        private RpcService _rpcService;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcService rpcService)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
             _mainHandle = handle;
             _appContextProvider = appContextProvider;
             _config = appContextProvider.GetAppContext().Config;
+            _rpcService = rpcService;
+
+            _rpcService.Name = "NvService";
 
             InitializeComponent();
 
@@ -338,6 +343,8 @@ namespace ColorControl.Services.NVIDIA
             mnuNvOverclocking.Visible = preset != null && _nvService.Config.ShowOverclocking;
             mnuNvOtherSettings.Enabled = preset != null;
             miNvOtherIncluded.Visible = presetItemsVisible;
+            mnuNvHdmiSettings.Enabled = preset != null;
+            miNvHdmiIncluded.Visible = presetItemsVisible;
 
             if (preset == null)
             {
@@ -409,6 +416,7 @@ namespace ColorControl.Services.NVIDIA
             miHDREnabled.Checked = preset.HDREnabled;
             miToggleHDR.Checked = preset.toggleHDR;
             miNvOtherIncluded.Checked = preset.applyOther;
+            miNvHdmiIncluded.Checked = preset.applyHdmiSettings;
             miNvDriverSettingsIncluded.Checked = preset.applyDriverSettings;
 
             mnuNvPresetsColorSettings.Font = _menuItemFonts[preset.applyColorData];
@@ -418,9 +426,7 @@ namespace ColorControl.Services.NVIDIA
             miNvHDR.Font = _menuItemFonts[preset.applyHDR];
             mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
             mnuNvOtherSettings.Font = _menuItemFonts[preset.applyOther];
-
-            var contentTypeItem = FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Content type", typeof(InfoFrameVideoContentType), preset, "contentType", nvPresetContentTypeMenuItem_Click, unchanged: true);
-            contentTypeItem.DropDownItems[0].Visible = !isCurrentDisplay;
+            mnuNvHdmiSettings.Font = _menuItemFonts[preset.applyHdmiSettings];
 
             var itemName = $"{mnuNvOtherSettings.Name}_SDRBrightness";
             var brightnessMenu = FormUtils.BuildMenuItem(mnuNvOtherSettings.DropDownItems, itemName, "SDR brightness");
@@ -428,6 +434,13 @@ namespace ColorControl.Services.NVIDIA
             var subItemName = $"{itemName}_SubItem";
             var subItem = FormUtils.BuildMenuItem(brightnessMenu.DropDownItems, subItemName, "", onClick: nvPresetBrightnessMenuItem_Click);
             subItem.Text = (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)";
+
+            FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Content type", typeof(InfoFrameVideoContentType), preset.HdmiInfoFrameSettings, "ContentType", nvPresetHdmiContentTypeMenuItem_Click, unchanged: true)
+                .DropDownItems[0].Visible = !isCurrentDisplay;
+            FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Colorimetry", typeof(InfoFrameVideoColorimetry), preset.HdmiInfoFrameSettings, "Colorimetry", nvPresetHdmiColorimetryMenuItem_Click, unchanged: true)
+                .DropDownItems[0].Visible = !isCurrentDisplay;
+            FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Extended colorimetry", typeof(InfoFrameVideoExtendedColorimetry), preset.HdmiInfoFrameSettings, "ExtendedColorimetry", nvPresetHdmiExtendedColorimetryMenuItem_Click, unchanged: true)
+                .DropDownItems[0].Visible = !isCurrentDisplay;
 
             BuildNvOverclockingMenu(preset);
 
@@ -733,28 +746,40 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-        private void nvPresetContentTypeMenuItem_Click(object sender, EventArgs e)
+        private void nvPresetHdmiContentTypeMenuItem_Click(object sender, EventArgs e)
+        {
+            UpdateHdmiSettings<InfoFrameVideoContentType>(sender);
+        }
+
+        private void nvPresetHdmiColorimetryMenuItem_Click(object sender, EventArgs e)
+        {
+            UpdateHdmiSettings<InfoFrameVideoColorimetry>(sender);
+        }
+
+        private void nvPresetHdmiExtendedColorimetryMenuItem_Click(object sender, EventArgs e)
+        {
+            UpdateHdmiSettings<InfoFrameVideoExtendedColorimetry>(sender);
+        }
+
+        private void UpdateHdmiSettings<T>(object sender) where T : struct
         {
             var menuItem = (ToolStripMenuItem)sender;
-
-            var value = (InfoFrameVideoContentType?)menuItem.Tag;
+            var propName = ((PropertyInfo)menuItem.OwnerItem.Tag).Name;
+            var value = (T)menuItem.Tag;
 
             var preset = GetSelectedNvPreset(true);
 
+            var settings = preset.IsDisplayPreset ? new NvHdmiInfoFrameSettings() : preset.HdmiInfoFrameSettings;
+            var propInfo = settings.GetType().GetDeclaredProperty(propName);
+            propInfo.SetValue(settings, value);
+
             if (preset.IsDisplayPreset)
             {
-                if (!value.HasValue)
-                {
-                    return;
-                }
-
-                _nvService.SetHDMIContentType(preset.Display, value.Value);
+                _nvService.SetHdmiSettings(preset.Display, settings);
 
                 UpdateDisplayInfoItems();
                 return;
             }
-
-            preset.contentType = value;
 
             AddOrUpdateItem();
         }
@@ -854,29 +879,149 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-
         private void btnAddModesNv_Click(object sender, EventArgs e)
         {
-            var presets = NvPreset.GetDefaultPresets();
-            var added = false;
+            var nameField = new FieldDefinition
+            {
+                Label = "Preset name",
+                Value = _nvService.CreateNewPresetName()
+            };
 
-            foreach (var preset in presets)
+
+            var displays = _nvService.GetSimpleDisplayInfos();
+            //var primaryDisplay = _nvService.GetPrimaryDisplay();
+            displays.Insert(0, new NvDisplayInfo(null, null, null, "Primary display"));
+
+            var displayField = FieldDefinition.CreateDropDownField("Display", displays.Select(d => d.Name).ToList());
+
+            var sectionLabel = new FieldDefinition
             {
-                if (!_nvService.GetPresets().Any(x => x.colorData.Equals(preset.colorData)))
-                {
-                    AddOrUpdateItem(preset);
-                    added = true;
-                }
+                Label = "Check the sections below you want to configure",
+                FieldType = FieldType.Label
+            };
+
+            var colorSelectField = FieldDefinition.CreateCheckField("Color settings");
+            var resolutionSelectField = FieldDefinition.CreateCheckField("Resolution");
+            var refreshRateSelectField = FieldDefinition.CreateCheckField("Refresh rate");
+
+            var result = MessageForms.ShowDialog("Create new NVIDIA preset", new[] { nameField, displayField, sectionLabel, colorSelectField, resolutionSelectField, refreshRateSelectField });
+
+            if (!result.Any())
+            {
+                return;
             }
 
-            if (added)
+            var preset = new NvPreset();
+            preset.name = nameField.Value.ToString();
+            preset.primaryDisplay = displayField.Value.ToString() == "Primary display";
+            preset.displayName = !preset.primaryDisplay ? displays.FirstOrDefault(d => d.ToString() == displayField.Value.ToString())?.Display?.Name : null;
+
+            AskColorData(preset, colorSelectField.ValueAsBool);
+            AskResolution(preset, resolutionSelectField.ValueAsBool);
+            AskRefreshRate(preset, refreshRateSelectField.ValueAsBool);
+
+            AddOrUpdateItem(preset);
+
+            //var presets = NvPreset.GetDefaultPresets();
+            //var added = false;
+
+            //foreach (var preset in presets)
+            //{
+            //    if (!_nvService.GetPresets().Any(x => x.colorData.Equals(preset.colorData)))
+            //    {
+            //        AddOrUpdateItem(preset);
+            //        added = true;
+            //    }
+            //}
+
+            //if (added)
+            //{
+            //    MessageForms.InfoOk("Missing presets added.");
+            //}
+            //else
+            //{
+            //    MessageForms.InfoOk("All presets for every color setting already exist.");
+            //}
+        }
+
+        private void AskColorData(NvPreset preset, bool ask = true)
+        {
+            preset.colorData = NvPreset.DefaultColorData;
+
+            if (!ask)
             {
-                MessageForms.InfoOk("Missing presets added.");
+                return;
             }
-            else
+
+            var bitDepthField = FieldDefinition.CreateEnumField("Bit depth", ColorDataDepth.Default);
+            var colorFormatField = FieldDefinition.CreateEnumField("Color format", ColorDataFormat.Auto);
+            var dynamicRangeField = FieldDefinition.CreateEnumField("Dynamic range", ColorDataDynamicRange.Auto);
+            var colorimetryField = FieldDefinition.CreateEnumField("Color space", ColorDataColorimetry.Auto);
+
+            var result = MessageForms.ShowDialog("Color settings", new[] { bitDepthField, colorFormatField, dynamicRangeField, colorimetryField });
+
+            if (!result.Any())
             {
-                MessageForms.InfoOk("All presets for every color setting already exist.");
+                return;
             }
+
+            preset.colorData = new ColorData(
+                colorFormatField.ValueAsEnum<ColorDataFormat>(),
+                colorimetryField.ValueAsEnum<ColorDataColorimetry>(),
+                dynamicRange: dynamicRangeField.ValueAsEnum<ColorDataDynamicRange>(),
+                colorDepth: bitDepthField.ValueAsEnum<ColorDataDepth>());
+
+            preset.applyColorData = true;
+        }
+
+        private void AskResolution(NvPreset preset, bool ask = true)
+        {
+            if (!ask)
+            {
+                return;
+            }
+
+            var modes = _nvService.GetAvailableResolutions(preset).Select(d => $"{d.dmPelsWidth}x{d.dmPelsHeight}").ToList();
+
+            var modesField = FieldDefinition.CreateDropDownField("Resolution", modes);
+
+            var result = MessageForms.ShowDialog("Resolution", new[] { modesField });
+
+            if (!result.Any())
+            {
+                return;
+            }
+
+            var values = modesField.Value.ToString().Split('x').Select(s => Utils.ParseUInt(s)).ToArray();
+
+            preset.resolutionWidth = values[0];
+            preset.resolutionHeight = values[1];
+
+            preset.applyResolution = true;
+        }
+
+        private void AskRefreshRate(NvPreset preset, bool ask = true)
+        {
+            if (!ask)
+            {
+                return;
+            }
+
+            var modes = _nvService.GetAvailableRefreshRates(preset).Select(d => d.ToString()).ToList();
+
+            var modesField = FieldDefinition.CreateDropDownField("Refresh rate", modes);
+
+            var result = MessageForms.ShowDialog("Refresh rate", new[] { modesField });
+
+            if (!result.Any())
+            {
+                return;
+            }
+
+            var value = modesField.ValueAsUInt;
+
+            preset.refreshRate = value;
+            preset.applyRefreshRate = true;
         }
 
         private void miHDRIncluded_Click(object sender, EventArgs e)
@@ -1132,12 +1277,12 @@ namespace ColorControl.Services.NVIDIA
 
         private uint SelectNvDriverValue(SettingMeta settingMeta, uint currentValue)
         {
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 MinValue = settingMeta.DwordValues.First().Value,
                 MaxValue = settingMeta.DwordValues.Last().Value,
                 Label = settingMeta.SettingName,
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Value = currentValue
             };
 
@@ -1155,12 +1300,12 @@ namespace ColorControl.Services.NVIDIA
 
         private int? SelectValue(int min, int max, int? currentValue, string label)
         {
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 MinValue = min,
                 MaxValue = max,
                 Label = label,
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Value = currentValue
             };
 
@@ -1201,24 +1346,24 @@ namespace ColorControl.Services.NVIDIA
 
         private void EditNvSettings()
         {
-            var quickAccessField = new MessageForms.FieldDefinition
+            var quickAccessField = new FieldDefinition
             {
                 Label = "Quick Access shortcut",
-                FieldType = MessageForms.FieldType.Shortcut,
+                FieldType = FieldType.Shortcut,
                 Value = _config.NvQuickAccessShortcut
             };
 
-            var enableOcField = new MessageForms.FieldDefinition
+            var enableOcField = new FieldDefinition
             {
                 Label = "Enable overclocking",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = _nvService.Config.ShowOverclocking
             };
 
-            var enableNovideoField = new MessageForms.FieldDefinition
+            var enableNovideoField = new FieldDefinition
             {
                 Label = "Apply Novideo sRGB settings on startup",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = _nvService.Config.ApplyNovideoOnStartup
             };
 
@@ -1331,10 +1476,10 @@ namespace ColorControl.Services.NVIDIA
             var overclockTypes = gpuInfo.SupportedOcTypes.Select(t => Utils.GetDescription(t));
 
             var values = MessageForms.ShowDialog($"Overclock settings - {gpuInfo.GPU.FullName}", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Overclock method",
-                        FieldType = MessageForms.FieldType.DropDown,
+                        FieldType = FieldType.DropDown,
                         Values = overclockTypes,
                         Value = currentSettings.Type
                     } }, okButtonText: "Next >");
@@ -1400,7 +1545,7 @@ namespace ColorControl.Services.NVIDIA
             nvOverclockSettings.MaximumFrequencyKHz = freqField.ValueAsUInt * 1000;
             nvOverclockSettings.MemoryOffsetKHz = memoryOffsetField.ValueAsInt * 1000;
             nvOverclockSettings.VoltageBoostPercent = voltageBoostField.ValueAsUInt;
-            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == MessageForms.FieldType.TrackBar);
+            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == FieldType.TrackBar);
             nvOverclockSettings.FrequencyPreferred = nvOverclockSettings.MaximumFrequencyKHz > 0 && nvOverclockSettings.MaximumVoltageUv == 0;
 
             return nvOverclockSettings;
@@ -1434,7 +1579,7 @@ namespace ColorControl.Services.NVIDIA
             nvOverclockSettings.GraphicsOffsetKHz = coreOffsetField.ValueAsInt * 1000;
             nvOverclockSettings.MemoryOffsetKHz = memoryOffsetField.ValueAsInt * 1000;
             nvOverclockSettings.VoltageBoostPercent = voltageBoostField.ValueAsUInt;
-            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == MessageForms.FieldType.TrackBar);
+            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == FieldType.TrackBar);
             nvOverclockSettings.FrequencyPreferred = nvOverclockSettings.MaximumFrequencyKHz > 0 && nvOverclockSettings.MaximumVoltageUv == 0;
 
             return nvOverclockSettings;
@@ -1487,7 +1632,7 @@ namespace ColorControl.Services.NVIDIA
             nvOverclockSettings.MaximumVoltageUv = newVolt;
             nvOverclockSettings.MemoryOffsetKHz = memoryOffsetField.ValueAsInt * 1000;
             nvOverclockSettings.VoltageBoostPercent = voltageBoostField.ValueAsUInt;
-            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == MessageForms.FieldType.TrackBar);
+            nvOverclockSettings.PowerPCM = gpuInfo.PowerToPCM(powerField.ValueAsUInt, powerField.FieldType == FieldType.TrackBar);
 
             return nvOverclockSettings;
         }
@@ -1640,6 +1785,15 @@ namespace ColorControl.Services.NVIDIA
             var preset = GetSelectedNvPreset();
 
             preset.applyOther = !preset.applyOther;
+
+            AddOrUpdateItem();
+        }
+
+        private void miNvHdmiIncluded_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            preset.applyHdmiSettings = !preset.applyHdmiSettings;
 
             AddOrUpdateItem();
         }

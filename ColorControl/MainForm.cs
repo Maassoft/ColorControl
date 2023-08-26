@@ -260,7 +260,9 @@ namespace ColorControl
                 _serviceManager.NvService = new NvService(appContextProvider);
                 Logger.Debug("Initializing NVIDIA...Done.");
 
-                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider);
+                var rpcService = Program.ServiceProvider.GetRequiredService<RpcService>();
+
+                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider, rpcService);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _serviceManager.NvService.ToggleQuickAccessForm);
@@ -1322,7 +1324,7 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             //InstallUpdate("");
             //await Test();
 
-            //_serviceManager.NvService.TestResolution();
+            _serviceManager.NvService.TestResolution();
         }
 
         private async Task Test()
@@ -1414,18 +1416,18 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
         private void btnOptionsAdvanced_Click(object sender, EventArgs e)
         {
-            var processPollingIntervalField = new MessageForms.FieldDefinition
+            var processPollingIntervalField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Label = "Polling interval of process monitor (milliseconds).",
                 SubLabel = "Decreasing this delay may execute triggered presets sooner but can cause a higher CPU load",
                 MinValue = 50,
                 MaxValue = 5000,
                 Value = _config.ProcessMonitorPollingInterval
             };
-            var useRawInputField = new MessageForms.FieldDefinition
+            var useRawInputField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Label = "Use Raw Input for shortcuts (hot keys)",
                 SubLabel = "This enables shortcuts to work during applications/games that block certain keys (like WinKey or Control). NOTE: if the application in the foreground runs with higher privileges than ColorControl, Raw Input does not work and normal hot keys are used",
                 Value = _config.UseRawInput

@@ -34,16 +34,21 @@ namespace ColorControl.Services.NVIDIA
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
         public bool applyOther { get; set; }
-        public InfoFrameVideoContentType? contentType { get; set; }
         public int? SDRBrightness { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
         public bool applyOverclocking { get; set; }
         public List<NvGpuOcSettings> ocSettings { get; set; }
 
+        public bool applyHdmiSettings { get; set; }
+        public NvHdmiInfoFrameSettings HdmiInfoFrameSettings { get; set; }
+
         [JsonIgnore]
         public bool IsDisplayPreset => Display != null;
+        [JsonIgnore]
         public Display Display { get; set; }
+        [JsonIgnore]
+        public string InfoLine { get; set; }
 
         public NvPreset() : base()
         {
@@ -61,10 +66,10 @@ namespace ColorControl.Services.NVIDIA
             primaryDisplay = true;
             ditheringBits = 1;
             ditheringMode = 4;
-            contentType = InfoFrameVideoContentType.Auto;
             applyDriverSettings = false;
             driverSettings = new Dictionary<uint, uint>();
             ocSettings = new List<NvGpuOcSettings>();
+            HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -97,9 +102,11 @@ namespace ColorControl.Services.NVIDIA
             applyDriverSettings = preset.applyDriverSettings;
             driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
 
-            contentType = preset.contentType;
             SDRBrightness = preset.SDRBrightness;
             applyOther = preset.applyOther;
+
+            HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings(preset.HdmiInfoFrameSettings);
+            applyHdmiSettings = preset.applyHdmiSettings;
         }
 
         public NvPreset Clone()
@@ -111,48 +118,63 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "HDMI settings|200", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
         {
-            var values = new List<string>();
+            var isCurrent = IsDisplayPreset;
 
-            values.Add(name);
+            var values = new List<string>
+            {
+                isCurrent ? "Current settings" : name
+            };
 
-            var display = string.Format("{0}", primaryDisplay ? "Primary" : displayName);
+            var display = isCurrent ? displayName : string.Format("{0}", primaryDisplay ? "Primary" : displayName);
             values.Add(display);
 
-            var colorSettings = string.Format("{0}: {1}, {2}, {3}, {4}", applyColorData ? "Included" : "Excluded", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry);
+            var colorSettings = FormatDisplaySetting(string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry), isCurrent, applyColorData);
 
             values.Add(colorSettings);
-            values.Add(string.Format("{0}: {1}Hz", applyRefreshRate ? "Included" : "Excluded", refreshRate));
+            values.Add(FormatDisplaySetting(string.Format("{0}Hz", refreshRate), isCurrent, applyRefreshRate));
 
             if (applyResolution || resolutionWidth > 0)
             {
-                values.Add(string.Format("{0}: {1}x{2}", applyResolution ? "Included" : "Excluded", resolutionWidth, resolutionHeight));
+                values.Add(FormatDisplaySetting(string.Format("{0}x{1}", resolutionWidth, resolutionHeight), isCurrent, applyResolution));
             }
             else
             {
-                values.Add(string.Format("Excluded"));
+                values.Add(isCurrent ? "" : "Excluded");
             }
 
             var dithering = GetDitheringDescription();
 
-            values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", dithering));
-            values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
+            values.Add(FormatDisplaySetting(dithering, isCurrent, applyDithering));
+            values.Add(FormatDisplaySetting(toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled", isCurrent, applyHDR));
 
-            values.Add(string.Format("{0}: {1}", applyDriverSettings ? "Included" : "Excluded", GetDriverSettingsDescription()));
+            values.Add(FormatDisplaySetting(GetDriverSettingsDescription(), isCurrent, applyDriverSettings));
 
-            values.Add(string.Format("{0}: {1}", applyOther ? "Included" : "Excluded", GetOtherDescription()));
+            values.Add(FormatDisplaySetting(GetHdmiSettingsDescription(), isCurrent, applyHdmiSettings));
 
-            values.Add(string.Format("{0}: {1}", applyOverclocking ? "Included" : "Excluded", GetOverclockingSettingsDescription()));
+            values.Add(FormatDisplaySetting(GetOtherDescription(), isCurrent, applyOther));
 
-            values.Add(shortcut);
+            values.Add(FormatDisplaySetting(GetOverclockingSettingsDescription(), isCurrent, applyOverclocking));
 
-            values.Add(string.Format("{0}", config?.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
+            values.Add(isCurrent ? "" : shortcut);
+
+            values.Add(isCurrent ? "" : string.Format("{0}", config?.NvPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
+
+            if (isCurrent)
+            {
+                InfoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", displayName, colorSettings, refreshRate, HDREnabled ? "Yes" : "No");
+            }
 
             return values;
+        }
+
+        private static string FormatDisplaySetting(string values, bool isCurrent, bool isEnabled)
+        {
+            return string.Format("{0}{1}", isCurrent ? "" : isEnabled ? "Included: " : "Excluded: ", values);
         }
 
         public string GetOverclockingSettingsDescription(bool useNewLines = false)
@@ -212,15 +234,36 @@ namespace ColorControl.Services.NVIDIA
             return dithering;
         }
 
+        public string GetHdmiSettingsDescription()
+        {
+            var values = new List<string>();
+
+            if (HdmiInfoFrameSettings.Colorimetry.HasValue)
+            {
+                values.Add($"Colorimetry: {HdmiInfoFrameSettings.Colorimetry.Value}");
+            }
+            if (HdmiInfoFrameSettings.ExtendedColorimetry.HasValue)
+            {
+                values.Add($"Ext. colorimetry: {HdmiInfoFrameSettings.ExtendedColorimetry.Value}");
+            }
+            if (HdmiInfoFrameSettings.ContentType.HasValue)
+            {
+                values.Add($"Content type: {HdmiInfoFrameSettings.ContentType.Value}");
+            }
+
+            if (!values.Any())
+            {
+                values.Add("None");
+            }
+
+            return string.Join(", ", values);
+        }
+
         public string GetOtherDescription()
         {
             var values = new List<string>();
 
-            if (contentType.HasValue)
-            {
-                values.Add($"Content type: {contentType.Value}");
-            }
-            if (SDRBrightness.HasValue)
+            if (SDRBrightness.HasValue && (HDREnabled || !IsDisplayPreset))
             {
                 values.Add($"SDR brightness: {SDRBrightness.Value}%");
             }
@@ -233,11 +276,14 @@ namespace ColorControl.Services.NVIDIA
             return string.Join(", ", values);
         }
 
+        public static ColorData DefaultColorData => new ColorData(ColorDataFormat.Auto, dynamicRange: ColorDataDynamicRange.Auto, colorDepth: ColorDataDepth.Default, colorSelectionPolicy: ColorDataSelectionPolicy.BestQuality);
+
         public static List<NvPreset> GetDefaultPresets()
         {
-            var presets = new List<NvPreset>();
-
-            presets.Add(new NvPreset(new ColorData(ColorDataFormat.Auto, dynamicRange: ColorDataDynamicRange.Auto, colorDepth: ColorDataDepth.Default, colorSelectionPolicy: ColorDataSelectionPolicy.BestQuality)));
+            var presets = new List<NvPreset>
+            {
+                new NvPreset(DefaultColorData)
+            };
 
             for (var dynamicRange = ColorDataDynamicRange.VESA; dynamicRange <= ColorDataDynamicRange.CEA; dynamicRange++)
             {

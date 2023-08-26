@@ -80,6 +80,8 @@ namespace ColorControl.Services.NVIDIA
             miHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvDriverSettings = new System.Windows.Forms.ToolStripMenuItem();
             miNvDriverSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvOtherSettings = new System.Windows.Forms.ToolStripMenuItem();
+            miNvOtherIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvOverclocking = new System.Windows.Forms.ToolStripMenuItem();
             miNvOverclockingIncluded = new System.Windows.Forms.ToolStripMenuItem();
             miNvCopyId = new System.Windows.Forms.ToolStripMenuItem();
@@ -90,8 +92,8 @@ namespace ColorControl.Services.NVIDIA
             miNvNovideo = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
             lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
-            mnuNvOtherSettings = new System.Windows.Forms.ToolStripMenuItem();
-            miNvOtherIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvHdmiSettings = new System.Windows.Forms.ToolStripMenuItem();
+            miNvHdmiIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvPresets.SuspendLayout();
             mnuNvSettings.SuspendLayout();
             SuspendLayout();
@@ -227,7 +229,7 @@ namespace ColorControl.Services.NVIDIA
             btnAddModesNv.Name = "btnAddModesNv";
             btnAddModesNv.Size = new System.Drawing.Size(88, 27);
             btnAddModesNv.TabIndex = 9;
-            btnAddModesNv.Text = "Add modes";
+            btnAddModesNv.Text = "Add...";
             btnAddModesNv.UseVisualStyleBackColor = true;
             btnAddModesNv.Click += btnAddModesNv_Click;
             // 
@@ -322,9 +324,9 @@ namespace ColorControl.Services.NVIDIA
             // mnuNvPresets
             // 
             mnuNvPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvOverclocking, miNvCopyId });
+            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvHdmiSettings, mnuNvOverclocking, miNvCopyId });
             mnuNvPresets.Name = "mnuNvPresets";
-            mnuNvPresets.Size = new System.Drawing.Size(185, 296);
+            mnuNvPresets.Size = new System.Drawing.Size(185, 318);
             mnuNvPresets.Opening += mnuNvPresets_Opening;
             // 
             // miNvApply
@@ -545,6 +547,20 @@ namespace ColorControl.Services.NVIDIA
             miNvDriverSettingsIncluded.Text = "Included";
             miNvDriverSettingsIncluded.Click += miNvDriverSettingsIncluded_Click;
             // 
+            // mnuNvOtherSettings
+            // 
+            mnuNvOtherSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvOtherIncluded });
+            mnuNvOtherSettings.Name = "mnuNvOtherSettings";
+            mnuNvOtherSettings.Size = new System.Drawing.Size(184, 22);
+            mnuNvOtherSettings.Text = "Other";
+            // 
+            // miNvOtherIncluded
+            // 
+            miNvOtherIncluded.Name = "miNvOtherIncluded";
+            miNvOtherIncluded.Size = new System.Drawing.Size(180, 22);
+            miNvOtherIncluded.Text = "Included";
+            miNvOtherIncluded.Click += miNvOtherIncluded_Click;
+            // 
             // mnuNvOverclocking
             // 
             mnuNvOverclocking.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvOverclockingIncluded });
@@ -629,19 +645,19 @@ namespace ColorControl.Services.NVIDIA
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
             // 
-            // mnuNvOtherSettings
+            // mnuNvHdmiSettings
             // 
-            mnuNvOtherSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvOtherIncluded });
-            mnuNvOtherSettings.Name = "mnuNvOtherSettings";
-            mnuNvOtherSettings.Size = new System.Drawing.Size(184, 22);
-            mnuNvOtherSettings.Text = "Other";
+            mnuNvHdmiSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvHdmiIncluded });
+            mnuNvHdmiSettings.Name = "mnuNvHdmiSettings";
+            mnuNvHdmiSettings.Size = new System.Drawing.Size(184, 22);
+            mnuNvHdmiSettings.Text = "HDMI Settings";
             // 
-            // miNvOtherIncluded
+            // miNvHdmiIncluded
             // 
-            miNvOtherIncluded.Name = "miNvOtherIncluded";
-            miNvOtherIncluded.Size = new System.Drawing.Size(180, 22);
-            miNvOtherIncluded.Text = "Included";
-            miNvOtherIncluded.Click += miNvOtherIncluded_Click;
+            miNvHdmiIncluded.Name = "miNvHdmiIncluded";
+            miNvHdmiIncluded.Size = new System.Drawing.Size(180, 22);
+            miNvHdmiIncluded.Text = "Included";
+            miNvHdmiIncluded.Click += miNvHdmiIncluded_Click;
             // 
             // NvPanel
             // 
@@ -742,5 +758,7 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.ToolStripMenuItem miNvNovideo;
         private System.Windows.Forms.ToolStripMenuItem mnuNvOtherSettings;
         private System.Windows.Forms.ToolStripMenuItem miNvOtherIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvHdmiSettings;
+        private System.Windows.Forms.ToolStripMenuItem miNvHdmiIncluded;
     }
 }

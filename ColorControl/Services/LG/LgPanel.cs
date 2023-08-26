@@ -551,14 +551,14 @@ namespace ColorControl.Services.LG
             {
                 if (action.MinValue != action.MaxValue)
                 {
-                    List<MessageForms.FieldDefinition> fields = new();
+                    List<FieldDefinition> fields = new();
 
                     if (action.NumberOfValues == 1)
                     {
-                        fields.Add(new MessageForms.FieldDefinition
+                        fields.Add(new FieldDefinition
                         {
                             Label = "Enter desired " + title,
-                            FieldType = MessageForms.FieldType.Numeric,
+                            FieldType = FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
                         });
@@ -567,10 +567,10 @@ namespace ColorControl.Services.LG
                     {
                         var array = Enumerable.Range(0, action.NumberOfValues);
 
-                        fields.AddRange(array.Select(i => new MessageForms.FieldDefinition
+                        fields.AddRange(array.Select(i => new FieldDefinition
                         {
                             Label = "Value for " + (action.ValueLabels != null ? action.ValueLabels[i] : i.ToString()),
-                            FieldType = MessageForms.FieldType.Numeric,
+                            FieldType = FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
                         }));
@@ -603,10 +603,10 @@ namespace ColorControl.Services.LG
                 }
 
                 var values = MessageForms.ShowDialog("Choose value", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Choose desired " + title,
-                        FieldType = MessageForms.FieldType.DropDown,
+                        FieldType = FieldType.DropDown,
                         Values = dropDownValues
                     }
                 });
@@ -750,7 +750,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
             }
         }
 
-        private string ValidateAddDevice(IEnumerable<MessageForms.FieldDefinition> values)
+        private string ValidateAddDevice(IEnumerable<FieldDefinition> values)
         {
             if (values.Any(v => string.IsNullOrEmpty(v.Value?.ToString())))
             {
@@ -1025,10 +1025,10 @@ Do you want to continue?"
             var dropDownValues = Utils.GetDescriptions<PresetConditionType>(fromValue: 1);
 
             var values = MessageForms.ShowDialog("Set trigger conditions", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Set desired trigger conditions",
-                        FieldType = MessageForms.FieldType.Flags,
+                        FieldType = FieldType.Flags,
                         Values = dropDownValues,
                         Value = edtLgPresetTriggerConditions.Tag ?? 0
                     }
@@ -1155,11 +1155,11 @@ Do you want to continue?";
         {
             var advancedWasEnabled = _lgService.Config.ShowAdvancedActions;
 
-            var fields = new MessageForms.FieldDefinition[]
+            var fields = new FieldDefinition[]
             {
                 new()
                 {
-                    FieldType = MessageForms.FieldType.Numeric,
+                    FieldType = FieldType.Numeric,
                     Label = "Maximum number of retries powering on after startup/resume.",
                     SubLabel = "Retries are necessary to wait for the network link of your pc to be established.",
                     MinValue = 1,
@@ -1168,7 +1168,7 @@ Do you want to continue?";
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.Numeric,
+                    FieldType = FieldType.Numeric,
                     Label = "Delay when shutting down/restarting PC (milliseconds).",
                     SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
                     MinValue = 0,
@@ -1177,31 +1177,31 @@ Do you want to continue?";
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.Shortcut,
+                    FieldType = FieldType.Shortcut,
                     Label = "Quick Access shortcut",
                     Value = _lgService.Config.QuickAccessShortcut
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.Shortcut,
+                    FieldType = FieldType.Shortcut,
                     Label = "Game Bar shortcut",
                     Value = _lgService.Config.GameBarShortcut
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.CheckBox,
+                    FieldType = FieldType.CheckBox,
                     Label = "Show advanced actions under the Expert-button (InStart, EzAdjust, Software Update)",
                     Value = _lgService.Config.ShowAdvancedActions
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.CheckBox,
+                    FieldType = FieldType.CheckBox,
                     Label = "Automatically set selected device to last powered on",
                     Value = _lgService.Config.SetSelectedDeviceByPowerOn
                 },
                 new()
                 {
-                    FieldType = MessageForms.FieldType.Numeric,
+                    FieldType = FieldType.Numeric,
                     Label = "Default delay between remote control button presses (milliseconds).",
                     SubLabel = "Increasing this delay may prevent skipped button presses.",
                     MinValue = 100,
@@ -1276,30 +1276,30 @@ The InStart, EzAdjust and Software Update items are now visible under the Expert
             var device = _lgService.SelectedDevice;
             var selectedItem = clbLgPower.SelectedItem;
 
-            var durationField = new MessageForms.FieldDefinition
+            var durationField = new FieldDefinition
             {
                 Label = "Enter the minimal duration the screen saver must be running (in seconds)",
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 MinValue = 0,
                 MaxValue = 3600,
                 Value = device.ScreenSaverMinimalDuration
             };
-            var turnOffField = new MessageForms.FieldDefinition
+            var turnOffField = new FieldDefinition
             {
                 Label = "Turn screen off instead of power off",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.TurnScreenOffOnScreenSaver
             };
-            var turnOnField = new MessageForms.FieldDefinition
+            var turnOnField = new FieldDefinition
             {
                 Label = "Turn screen on instead of power on",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.TurnScreenOnAfterScreenSaver
             };
-            var manualField = new MessageForms.FieldDefinition
+            var manualField = new FieldDefinition
             {
                 Label = "Perform action even on manually executed screen saver",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.HandleManualScreenSaver
             };
 

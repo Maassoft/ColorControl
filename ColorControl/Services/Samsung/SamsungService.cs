@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace ColorControl.Services.Samsung
 {
-    class SamsungService : ServiceBase<SamsungPreset>
+    class SamsungService : ServiceBase<SamsungPreset>, ISamsungService
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -79,12 +79,6 @@ namespace ColorControl.Services.Samsung
                 Console.WriteLine("Error executing preset: " + ex.ToLogString());
                 return false;
             }
-        }
-
-        public void Init()
-        {
-            var _ = RefreshDevices(afterStartUp: true);
-            InstallEventHandlers();
         }
 
         public void InstallEventHandlers()
@@ -273,7 +267,7 @@ namespace ColorControl.Services.Samsung
             return await ApplyPreset(preset, _appContext);
         }
 
-        public async Task<bool> ApplyPreset(SamsungPreset preset, Shared.Common.AppContext appContext)
+        private async Task<bool> ApplyPreset(SamsungPreset preset, Shared.Common.AppContext appContext)
         {
             var result = true;
 
@@ -312,7 +306,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        internal void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        private void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             Devices.ForEach(d => d.ClearPowerOffTask());
 
@@ -323,7 +317,7 @@ namespace ColorControl.Services.Samsung
             PowerOnDevicesTask(wakeDevices, state, checkUserSession);
         }
 
-        public void PowerOffDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.ShutDown)
+        private void PowerOffDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.ShutDown)
         {
             if (!devices.Any())
             {
@@ -390,12 +384,12 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        public void PowerOnDevicesTask(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        private void PowerOnDevicesTask(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
         }
 
-        public async Task PowerOnDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        private async Task PowerOnDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             if (!devices.Any())
             {
@@ -438,7 +432,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        public async Task RefreshAppsAsync(bool force = false)
+        private async Task RefreshAppsAsync(bool force = false)
         {
             if (SelectedDevice == null)
             {
@@ -460,7 +454,7 @@ namespace ColorControl.Services.Samsung
             return _samsungApps;
         }
 
-        public async Task ProcessChanged(object sender, ProcessChangedEventArgs args, CancellationToken token)
+        private async Task ProcessChanged(object sender, ProcessChangedEventArgs args, CancellationToken token)
         {
             try
             {

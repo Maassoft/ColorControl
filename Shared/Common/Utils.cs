@@ -422,6 +422,17 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return null; // could also return string.Empty
         }
 
+        public static T GetEnumValueByDescription<T>(string value) where T : struct
+        {
+            var enumName = GetEnumNameByDescription(typeof(T), value);
+            if (enumName != null)
+            {
+                value = enumName;
+            }
+
+            return Enum.Parse<T>(value);
+        }
+
         public static string RemoveFirstUnderscore(this string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -458,16 +469,22 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return GetDescriptions(typeof(T), value, fromValue);
         }
 
-        public static List<string> GetDescriptions(Type enumType, int value = -1, int fromValue = 0)
+        public static List<string> GetDescriptions(Type enumType, int value = -1, int fromValue = 0, bool replaceUnderscore = false)
         {
             var list = new List<string>();
             foreach (var enumValue in Enum.GetValues(enumType))
             {
-                if ((int)enumValue < fromValue || value >= 0 && ((int)enumValue & value) == 0)
+                if (value > -1 || fromValue > 0)
                 {
-                    continue;
+                    var enumIntValue = Convert.ToInt32(enumValue);
+
+                    if (enumIntValue < fromValue || value >= 0 && (enumIntValue & value) == 0)
+                    {
+                        continue;
+                    }
                 }
-                list.Add(GetDescription(enumType, enumValue as IConvertible));
+
+                list.Add(GetDescription(enumType, enumValue as IConvertible) ?? (replaceUnderscore ? enumValue.ToString().Replace("_", "") : enumValue.ToString()));
             }
             return list;
         }
@@ -696,6 +713,16 @@ The best and suggested method to provide this is via a Windows Service. Only whe
         public static int ParseInt(string value, int def = 0)
         {
             if (int.TryParse(value, out var result))
+            {
+                return result;
+            }
+
+            return def;
+        }
+
+        public static uint ParseUInt(string value, uint def = 0)
+        {
+            if (uint.TryParse(value, out var result))
             {
                 return result;
             }

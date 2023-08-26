@@ -42,7 +42,7 @@ namespace ColorControl.Services.Samsung
 
     public enum ServiceMenuType
     {
-        Default,
+        HospitalityMenu,
     }
 
     public delegate void GenericDelegate(object sender);
@@ -703,16 +703,16 @@ namespace ColorControl.Services.Samsung
             var preset3 = new SamsungPreset("ServiceMenuStep3", null, new[] { "KEY_VOLUP:5100:Press", "KEY_VOLUP:500:Release" });
             var rebootPreset = new SamsungPreset("ServiceMenuStep4", null, new[] { "KEY_POWER:5000", "WOL" });
 
-            var serviceMenuTypes = new[] { ServiceMenuType.Default }.Select(t => Utils.GetDescription(t));
+            var serviceMenuTypes = new[] { ServiceMenuType.HospitalityMenu }.Select(t => Utils.GetDescription(t));
 
             if (!MessageForms.ShowDialog($"Access Service Menu", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
-                        Label = "Service Menu Type",
-                        SubLabel = "'Default' will not reset your settings. Click 'Next >' to continue or 'X' to stop",
-                        FieldType = MessageForms.FieldType.DropDown,
+                        Label = "Service Menu Access Type",
+                        SubLabel = "'Hospitality Menu' will not reset your settings. Click 'Next >' to continue or 'X' to stop",
+                        FieldType = FieldType.DropDown,
                         Values = serviceMenuTypes,
-                        Value = ServiceMenuType.Default
+                        Value = ServiceMenuType.HospitalityMenu
                     } }, okButtonText: "Next >").Any())
             {
                 return true;
@@ -721,11 +721,11 @@ namespace ColorControl.Services.Samsung
             await ExecutePresetWithProgressAsync(preset1, "Step 1: opening Service Menu. It is normal to see messages like 'Not Available'.");
 
             if (!MessageForms.ShowDialog($"Access Service Menu - Step 2", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Service Menu opened?",
                         SubLabel = "If the menu is opened with the 'Hospitality Mode' item highlighted and the rest disabled, click 'Next >' to continue or 'X' to stop",
-                        FieldType = MessageForms.FieldType.Label
+                        FieldType = FieldType.Label
                     } }, okButtonText: "Next >").Any())
             {
                 return true;
@@ -734,11 +734,11 @@ namespace ColorControl.Services.Samsung
             await ExecutePresetWithProgressAsync(preset2, "Step 2: accessing Service Menu...");
 
             var values = MessageForms.ShowDialog($"Access Service Menu - Step 3", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Service Menu - Advanced",
                         SubLabel = "If the 'Advanced' item is highlighted and you want to access these settings, click 'Next >' or click 'X' to skip",
-                        FieldType = MessageForms.FieldType.Label
+                        FieldType = FieldType.Label
                     } }, okButtonText: "Next >");
 
             if (values.Any())
@@ -747,11 +747,11 @@ namespace ColorControl.Services.Samsung
             }
 
             if (!MessageForms.ShowDialog($"Reboot TV - Final Step", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Reboot TV",
                         SubLabel = "After you have made the necessary changes, click 'Reboot TV' to reboot the TV or click 'X' to close. If the TV turns not back on automatically, power it on manually.",
-                        FieldType = MessageForms.FieldType.Label
+                        FieldType = FieldType.Label
                     } }, okButtonText: "Reboot TV").Any())
             {
                 return true;

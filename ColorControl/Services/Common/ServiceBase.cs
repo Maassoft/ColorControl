@@ -72,6 +72,13 @@ namespace ColorControl.Services.Common
         public virtual T CreateNewPreset()
         {
             var preset = new T();
+            preset.name = CreateNewPresetName();
+
+            return preset;
+        }
+
+        public string CreateNewPresetName()
+        {
             var name = "New preset";
             string fullname;
             var number = 1;
@@ -79,11 +86,9 @@ namespace ColorControl.Services.Common
             {
                 fullname = $"{name} ({number})";
                 number++;
-            } while (_presets.Any(x => x.name.Equals(fullname)));
+            } while (_presets.Any(x => x.name?.Equals(fullname) == true));
 
-            preset.name = fullname;
-
-            return preset;
+            return fullname;
         }
 
         protected virtual void Initialize()

@@ -711,23 +711,23 @@ namespace ColorControl.Services.NVIDIA
             return string.Empty;
         }
 
-        internal MessageForms.FieldDefinition GetCoreOffsetField(NvGpuOcSettings settings)
+        internal FieldDefinition GetCoreOffsetField(NvGpuOcSettings settings)
         {
             var graphicsDelta = GetDeltaClockMinMax(PublicClockDomain.Graphics);
 
-            //var field = new MessageForms.FieldDefinition
+            //var field = new FieldDefinition
             //{
             //    Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
-            //    FieldType = MessageForms.FieldType.Numeric,
+            //    FieldType = FieldType.Numeric,
             //    MinValue = graphicsDelta.Item1 / 1000,
             //    MaxValue = graphicsDelta.Item2 / 1000,
             //    Value = settings.GraphicsOffsetKHz / 1000
             //};
 
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
-                FieldType = MessageForms.FieldType.TrackBar,
+                FieldType = FieldType.TrackBar,
                 MinValue = graphicsDelta.Item1 / 1000,
                 MaxValue = graphicsDelta.Item2 / 1000,
                 Value = settings.GraphicsOffsetKHz / 1000,
@@ -737,23 +737,23 @@ namespace ColorControl.Services.NVIDIA
             return field;
         }
 
-        internal MessageForms.FieldDefinition GetMemoryOffsetField(NvGpuOcSettings settings)
+        internal FieldDefinition GetMemoryOffsetField(NvGpuOcSettings settings)
         {
             var memoryDelta = GetDeltaClockMinMax(PublicClockDomain.Memory);
 
-            //var field = new MessageForms.FieldDefinition
+            //var field = new FieldDefinition
             //{
             //    Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
-            //    FieldType = MessageForms.FieldType.Numeric,
+            //    FieldType = FieldType.Numeric,
             //    MinValue = memoryDelta.Item1 / 1000,
             //    MaxValue = memoryDelta.Item2 / 1000,
             //    Value = settings.MemoryOffsetKHz / 1000
             //};
 
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
-                FieldType = MessageForms.FieldType.TrackBar,
+                FieldType = FieldType.TrackBar,
                 MinValue = memoryDelta.Item1 / 1000,
                 MaxValue = memoryDelta.Item2 / 1000,
                 Value = settings.MemoryOffsetKHz / 1000,
@@ -763,7 +763,7 @@ namespace ColorControl.Services.NVIDIA
             return field;
         }
 
-        internal MessageForms.FieldDefinition GetPowerField(NvGpuOcSettings settings)
+        internal FieldDefinition GetPowerField(NvGpuOcSettings settings)
         {
             var powerLimits = GetPowerLimits();
 
@@ -779,18 +779,18 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var powerField = defaultPowerLimitMw > 0 ?
-                new MessageForms.FieldDefinition
+                new FieldDefinition
                 {
                     Label = $"Power limit in watts. Min: {MinPowerInMilliWatts / 1000}, max: {MaxPowerInMilliWatts / 1000}",
-                    FieldType = MessageForms.FieldType.TrackBar,
+                    FieldType = FieldType.TrackBar,
                     Value = (int)Math.Round((decimal)defaultPowerLimitMw / 100000000 * settings.PowerPCM),
                     MinValue = MinPowerInMilliWatts / 1000,
                     MaxValue = MaxPowerInMilliWatts / 1000
                 }
-                : new MessageForms.FieldDefinition
+                : new FieldDefinition
                 {
                     Label = $"Power limit in PCM (per cent mille). Min: {powerLimits.Item1}, max: {powerLimits.Item2}",
-                    FieldType = MessageForms.FieldType.TrackBar,
+                    FieldType = FieldType.TrackBar,
                     Value = settings.PowerPCM,
                     MinValue = powerLimits.Item1,
                     MaxValue = powerLimits.Item2
@@ -799,12 +799,12 @@ namespace ColorControl.Services.NVIDIA
             return powerField;
         }
 
-        internal MessageForms.FieldDefinition GetVoltageBoostField(NvGpuOcSettings settings)
+        internal FieldDefinition GetVoltageBoostField(NvGpuOcSettings settings)
         {
-            var field = new MessageForms.FieldDefinition
+            var field = new FieldDefinition
             {
                 Label = "Voltage boost in %",
-                FieldType = MessageForms.FieldType.TrackBar,
+                FieldType = FieldType.TrackBar,
                 Value = settings.VoltageBoostPercent,
                 MinValue = 0,
                 MaxValue = 100
@@ -813,7 +813,7 @@ namespace ColorControl.Services.NVIDIA
             return field;
         }
 
-        internal (MessageForms.FieldDefinition, MessageForms.FieldDefinition) GetCurveVoltFreqFields(NvGpuOcSettings settings)
+        internal (FieldDefinition, FieldDefinition) GetCurveVoltFreqFields(NvGpuOcSettings settings)
         {
             var curveEntries = CurveV3.GPUCurveEntries;
 
@@ -832,18 +832,18 @@ namespace ColorControl.Services.NVIDIA
                 .Distinct()
                 .ToList();
 
-            var voltField = new MessageForms.FieldDefinition
+            var voltField = new FieldDefinition
             {
                 Label = "Optional undervolt: maximum voltage in millivolt (0 = disabled)",
                 SubLabel = "If both UV voltage and UV frequency are set, frequency is derived from voltage.",
-                FieldType = MessageForms.FieldType.DropDown,
+                FieldType = FieldType.DropDown,
                 Value = settings.FrequencyPreferred ? 0 : settings.MaximumVoltageUv / 1000,
                 Values = voltValues,
             };
-            var freqField = new MessageForms.FieldDefinition
+            var freqField = new FieldDefinition
             {
                 Label = "Optional undervolt: maximum core frequency in MHz (0 = disabled)",
-                FieldType = MessageForms.FieldType.DropDown,
+                FieldType = FieldType.DropDown,
                 Value = !settings.FrequencyPreferred ? 0 : settings.MaximumFrequencyKHz / 1000,
                 Values = freqValues,
             };

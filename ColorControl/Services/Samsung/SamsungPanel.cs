@@ -547,14 +547,14 @@ namespace ColorControl.Services.Samsung
             {
                 if (action.MinValue != action.MaxValue)
                 {
-                    List<MessageForms.FieldDefinition> fields = new();
+                    List<FieldDefinition> fields = new();
 
                     if (action.NumberOfValues == 1)
                     {
-                        fields.Add(new MessageForms.FieldDefinition
+                        fields.Add(new FieldDefinition
                         {
                             Label = "Enter desired " + title,
-                            FieldType = MessageForms.FieldType.Numeric,
+                            FieldType = FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
                         });
@@ -563,10 +563,10 @@ namespace ColorControl.Services.Samsung
                     {
                         var array = Enumerable.Range(0, action.NumberOfValues);
 
-                        fields.AddRange(array.Select(i => new MessageForms.FieldDefinition
+                        fields.AddRange(array.Select(i => new FieldDefinition
                         {
                             Label = "Value for " + (action.ValueLabels != null ? action.ValueLabels[i] : i.ToString()),
-                            FieldType = MessageForms.FieldType.Numeric,
+                            FieldType = FieldType.Numeric,
                             MinValue = action.MinValue,
                             MaxValue = action.MaxValue,
                         }));
@@ -591,19 +591,12 @@ namespace ColorControl.Services.Samsung
             }
             else
             {
-                var dropDownValues = new List<string>();
-                foreach (var enumValue in Enum.GetValues(action.EnumType))
-                {
-                    var description = Utils.GetDescription(action.EnumType, enumValue as IConvertible) ?? enumValue.ToString().Replace("_", "");
-                    dropDownValues.Add(description);
-                }
-
                 var values = MessageForms.ShowDialog("Choose value", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Choose desired " + title,
-                        FieldType = MessageForms.FieldType.DropDown,
-                        Values = dropDownValues
+                        FieldType = FieldType.DropDown,
+                        Values = Utils.GetDescriptions(action.EnumType, replaceUnderscore: true),
                     }
                 });
 
@@ -747,7 +740,7 @@ Use 'Settings > Test power off/on' to test this functionality."
             }
         }
 
-        private string ValidateAddDevice(IEnumerable<MessageForms.FieldDefinition> values)
+        private string ValidateAddDevice(IEnumerable<FieldDefinition> values)
         {
             if (values.Any(v => string.IsNullOrEmpty(v.Value?.ToString())))
             {
@@ -855,10 +848,10 @@ Do you want to continue?"
             var dropDownValues = Utils.GetDescriptions<PresetConditionType>(fromValue: 1);
 
             var values = MessageForms.ShowDialog("Set trigger conditions", new[] {
-                    new MessageForms.FieldDefinition
+                    new FieldDefinition
                     {
                         Label = "Set desired trigger conditions",
-                        FieldType = MessageForms.FieldType.Flags,
+                        FieldType = FieldType.Flags,
                         Values = dropDownValues,
                         Value = edtSamsungPresetTriggerConditions.Tag ?? 0
                     }
@@ -963,9 +956,9 @@ Do you want to continue?";
 
         private void miNvSettings_Click(object sender, EventArgs e)
         {
-            var powerRetries = new MessageForms.FieldDefinition
+            var powerRetries = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Label = "Maximum number of retries powering on after startup/resume.",
                 SubLabel = "Retries are necessary to wait for the network link of your pc to be established.",
                 MinValue = 1,
@@ -973,9 +966,9 @@ Do you want to continue?";
                 Value = _samsungService.Config.PowerOnRetries
             };
 
-            var shutDownDelayField = new MessageForms.FieldDefinition
+            var shutDownDelayField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Label = "Delay when shutting down/restarting PC (milliseconds).",
                 SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
                 MinValue = 0,
@@ -983,9 +976,9 @@ Do you want to continue?";
                 Value = _samsungService.Config.ShutdownDelay
             };
 
-            var buttonDelayField = new MessageForms.FieldDefinition
+            var buttonDelayField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 Label = "Default delay between remote control button presses (milliseconds).",
                 SubLabel = "Increasing this delay may prevent skipped button presses.",
                 MinValue = 100,
@@ -993,23 +986,23 @@ Do you want to continue?";
                 Value = _samsungService.Config.DefaultButtonDelay
             };
 
-            var quickAccessShortcutField = new MessageForms.FieldDefinition
+            var quickAccessShortcutField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.Shortcut,
+                FieldType = FieldType.Shortcut,
                 Label = "Quick Access shortcut",
                 Value = _samsungService.Config.QuickAccessShortcut
             };
 
-            var setDeviceField = new MessageForms.FieldDefinition
+            var setDeviceField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Label = "Automatically set selected device to last powered on",
                 Value = _samsungService.Config.SetSelectedDeviceByPowerOn
             };
 
-            var showAdvancedField = new MessageForms.FieldDefinition
+            var showAdvancedField = new FieldDefinition
             {
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Label = "Show advanced actions under the Expert-button (Service Menu)",
                 SubLabel = "WARNING: entering the Service Menu is not recommended. This app and its creator are in no way accountable for any damages it may cause to your tv.",
                 Value = _samsungService.Config.ShowAdvancedActions
@@ -1046,31 +1039,31 @@ Do you want to continue?";
             var device = _samsungService.SelectedDevice;
             var selectedItem = clbLgPower.SelectedItem;
 
-            var durationField = new MessageForms.FieldDefinition
+            var durationField = new FieldDefinition
             {
                 Label = "Enter the minimal duration the screen saver must be running (in seconds)",
-                FieldType = MessageForms.FieldType.Numeric,
+                FieldType = FieldType.Numeric,
                 MinValue = 0,
                 MaxValue = 3600,
                 Value = device.Options.ScreenSaverMinimalDuration
             };
-            var turnOffField = new MessageForms.FieldDefinition
+            var turnOffField = new FieldDefinition
             {
                 Label = "Turn screen off instead of power off",
                 SubLabel = "NOTE: turning the screen off might not work correctly on all models",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.Options.TurnScreenOffOnScreenSaver
             };
-            var turnOnField = new MessageForms.FieldDefinition
+            var turnOnField = new FieldDefinition
             {
                 Label = "Turn screen on instead of power on",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.Options.TurnScreenOnAfterScreenSaver
             };
-            var manualField = new MessageForms.FieldDefinition
+            var manualField = new FieldDefinition
             {
                 Label = "Perform action even on manually executed screen saver",
-                FieldType = MessageForms.FieldType.CheckBox,
+                FieldType = FieldType.CheckBox,
                 Value = device.Options.HandleManualScreenSaver
             };
 

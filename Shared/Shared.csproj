@@ -41,6 +41,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\NvAPIWrapper\NvAPIWrapper.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Resource Include="Themes\DarkTheme.xaml">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>

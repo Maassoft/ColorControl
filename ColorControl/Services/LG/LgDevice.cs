@@ -184,6 +184,7 @@ namespace ColorControl.Services.LG
             //AddGenericPictureAction("dynamicRange", typeof(DynamicRange), category: "dimensionInfo", title: "Dynamic Range");
             AddGenericPictureAction("colorGamut", typeof(ColorGamut), title: "Color Gamut");
             AddGenericPictureAction("dynamicContrast", typeof(OffToHigh), title: "Dynamic Contrast");
+            AddGenericPictureAction("superResolution", typeof(OffToHigh), title: "Super Resolution");
             AddGenericPictureAction("gamma", typeof(GammaExp));
             AddGenericPictureAction("colorTemperature", minValue: -50, maxValue: 50, title: "Color Temperature");
             AddGenericPictureAction("whiteBalanceColorTemperature", typeof(WhiteBalanceColorTemperature), title: "White Balance Color Temperature");

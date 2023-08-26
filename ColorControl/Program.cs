@@ -247,6 +247,7 @@ namespace ColorControl
                     services.AddSingleton<MainForm>();
                     services.AddSingleton<ServiceManager>();
                     services.AddSingleton<RestartDetector>();
+                    services.AddTransient<RpcService>();
                 });
         }
         private static async Task RunService(string[] args)
