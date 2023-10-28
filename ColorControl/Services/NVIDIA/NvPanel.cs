@@ -37,9 +37,9 @@ namespace ColorControl.Services.NVIDIA
         private readonly AppContextProvider _appContextProvider;
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
-        private RpcService _rpcService;
+        private RpcClientService _rpcService;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcService rpcService)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcClientService rpcService)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
@@ -287,17 +287,20 @@ namespace ColorControl.Services.NVIDIA
         {
             var preset = GetSelectedNvPreset(true);
 
+            var checkState = miNvPresetDitheringEnabled.CheckState;
+            var newCheckState = checkState == CheckState.Checked ? CheckState.Unchecked : checkState == CheckState.Unchecked ? CheckState.Indeterminate : CheckState.Checked;
+
             if (preset.IsDisplayPreset)
             {
-                miNvPresetDitheringEnabled.Checked = !miNvPresetDitheringEnabled.Checked;
+                miNvPresetDitheringEnabled.CheckState = newCheckState;
 
-                _nvService.SetDithering(miNvPresetDitheringEnabled.Checked ? NvDitherState.Enabled : NvDitherState.Disabled);
+                _nvService.SetDithering(newCheckState == CheckState.Indeterminate ? NvDitherState.Auto : newCheckState == CheckState.Checked ? NvDitherState.Enabled : NvDitherState.Disabled);
 
                 UpdateDisplayInfoItems();
                 return;
             }
 
-            preset.ditheringEnabled = !preset.ditheringEnabled;
+            preset.ditheringEnabled = checkState == CheckState.Indeterminate ? null : checkState == CheckState.Checked;
 
             AddOrUpdateItem();
         }
@@ -395,7 +398,7 @@ namespace ColorControl.Services.NVIDIA
 
             miNvPresetColorSettings.Checked = preset.applyColorData;
             miNvPresetApplyDithering.Checked = preset.applyDithering;
-            miNvPresetDitheringEnabled.Checked = preset.ditheringEnabled;
+            miNvPresetDitheringEnabled.CheckState = preset.ditheringEnabled == null ? CheckState.Indeterminate : preset.ditheringEnabled == true ? CheckState.Checked : CheckState.Unchecked;
 
             foreach (var item in mnuNvDitheringBitDepth.DropDownItems.OfType<ToolStripMenuItem>())
             {
@@ -1466,7 +1469,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            _nvService.ApplyOverclocking(newSettings);
+            _nvService.ApplyOverclocking(new List<NvGpuOcSettings> { newSettings });
 
             UpdateNvGpuInfo();
         }
@@ -1687,7 +1690,7 @@ namespace ColorControl.Services.NVIDIA
 
         private async Task ApplyNvPresetOnStartup(int attempts = 5)
         {
-            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.GlobalContext.CurrentContext.StartUpParams;
 
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.NvidiaPresetIdOrName) ? startUpParams.NvidiaPresetIdOrName : _config.NvPresetId_ApplyOnStartup.ToString();
 
@@ -1728,7 +1731,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, ditheringBits, preset.ditheringMode);
+                _nvService.SetDithering(preset.DitherState, ditheringBits, preset.ditheringMode);
 
                 UpdateDisplayInfoItems();
                 return;
@@ -1749,7 +1752,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, preset.ditheringBits, ditheringMode);
+                _nvService.SetDithering(preset.DitherState, preset.ditheringBits, ditheringMode);
 
                 UpdateDisplayInfoItems();
                 return;
@@ -1796,6 +1799,20 @@ namespace ColorControl.Services.NVIDIA
             preset.applyHdmiSettings = !preset.applyHdmiSettings;
 
             AddOrUpdateItem();
+        }
+
+        private void miNvTestDithering_Click(object sender, EventArgs e)
+        {
+            var panel = new NvDitherPanel(_nvService);
+
+            MessageForms.ShowControl(panel, "Test dithering");
+        }
+
+        private void miNVIDIAInfo_Click(object sender, EventArgs e)
+        {
+            var panel = new NvInfoPanel(_nvService);
+
+            MessageForms.ShowControl(panel, "NVIDIA Info");
         }
     }
 }

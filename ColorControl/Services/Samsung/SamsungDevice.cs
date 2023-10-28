@@ -1,6 +1,7 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Forms;
+using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NLog;
@@ -114,7 +115,7 @@ namespace ColorControl.Services.Samsung
 
             AddInvokableAction("WOL", WakeAction);
             AddInvokableAction("ServiceMenu", ServiceMenuAction, true);
-            AddInternalPresetAction(new SamsungPreset("PictureOff", null, new[] { "KEY_AD:1200", "KEY_DOWN:300", "KEY_DOWN:300", "KEY_ENTER" }));
+            AddInternalPresetAction(new SamsungPreset("PictureOff", null, new[] { "KEY_AD:1400", "KEY_DOWN:200", "KEY_DOWN:200", "KEY_ENTER" }));
             AddInternalPresetAction(new SamsungPreset("PictureOn", null, new[] { "KEY_RETURN:1000", "KEY_RETURN", "KEY_RETURN" }));
 
             _serviceManager = Program.ServiceProvider.GetRequiredService<ServiceManager>();
@@ -328,7 +329,9 @@ namespace ColorControl.Services.Samsung
 
             if (MacAddress != null)
             {
-                result = WOL.WakeFunctionCheckAdmin(MacAddress, IpAddress);
+                var wolService = Program.ServiceProvider.GetRequiredService<WolService>();
+
+                result = wolService.SendWol(MacAddress, IpAddress);
             }
             else
             {
@@ -385,7 +388,7 @@ namespace ColorControl.Services.Samsung
             return $"{(IsDummy ? string.Empty : (IsCustom ? "Custom: " : "Auto detect: "))}{Name}{(!string.IsNullOrEmpty(IpAddress) ? ", " + IpAddress : string.Empty)}";
         }
 
-        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, Shared.Common.AppContext appContext = null, SamsungServiceConfig config = null)
+        internal async Task<bool> ExecutePresetAsync(SamsungPreset preset, Shared.Common.GlobalContext appContext = null, SamsungServiceConfig config = null)
         {
             if (config == null)
             {
@@ -463,7 +466,7 @@ namespace ColorControl.Services.Samsung
             return true;
         }
 
-        private async Task ExecuteStepsAsync(SamsungPreset preset, Shared.Common.AppContext appContext, SamsungServiceConfig config)
+        private async Task ExecuteStepsAsync(SamsungPreset preset, Shared.Common.GlobalContext appContext, SamsungServiceConfig config)
         {
             foreach (var step in preset.Steps)
             {
@@ -521,7 +524,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        public async Task ExecuteActionAsync(InvokableAction action, string[] parameters, Shared.Common.AppContext appContext, SamsungServiceConfig config)
+        public async Task ExecuteActionAsync(InvokableAction action, string[] parameters, Shared.Common.GlobalContext appContext, SamsungServiceConfig config)
         {
             if (action.Preset != null)
             {

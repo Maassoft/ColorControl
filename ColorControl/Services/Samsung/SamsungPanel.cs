@@ -38,7 +38,7 @@ namespace ColorControl.Services.Samsung
             _amdService = amdService;
             _mainHandle = handle;
 
-            _config = Shared.Common.AppContext.CurrentContext.Config;
+            _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -94,7 +94,7 @@ namespace ColorControl.Services.Samsung
         {
             FillSamsungDevices();
 
-            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.GlobalContext.CurrentContext.StartUpParams;
 
             if (startUpParams.ExecuteSamsungPreset)
             {
@@ -1114,7 +1114,7 @@ Do you want to continue?";
                 return;
             }
 
-            await device.ExecuteActionAsync(action, null, Shared.Common.AppContext.CurrentContext, _samsungService.Config);
+            await device.ExecuteActionAsync(action, null, Shared.Common.GlobalContext.CurrentContext, _samsungService.Config);
         }
     }
 }

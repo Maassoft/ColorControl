@@ -7,6 +7,7 @@ using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using novideo_srgb;
 using nspector.Common;
 using nspector.Common.Meta;
 using NvAPIWrapper.Display;
@@ -143,11 +144,15 @@ namespace ColorControl.Services.NVIDIA
             DRS_RBAR_OPTIONS,
             DRS_RBAR_SIZE_LIMIT
         };
-
+        private readonly WinApiService _winApiService;
+        private readonly RpcClientService _rpcClientService;
         private static NvService ServiceInstance;
 
-        public NvService(AppContextProvider appContextProvider) : base(appContextProvider)
+        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService) : base(appContextProvider)
         {
+            _winApiService = winApiService;
+            _rpcClientService = rpcClientService;
+            _rpcClientService.Name = nameof(NvService);
             NvPreset.NvService = this;
 
             AddJsonConverter(new ColorDataConverter());
@@ -159,9 +164,7 @@ namespace ColorControl.Services.NVIDIA
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-
-                var nvService = new NvService(appContextProvider);
+                var nvService = Program.ServiceProvider.GetRequiredService<NvService>();
 
                 var result = await nvService.ApplyPreset(idOrName);
 
@@ -315,6 +318,11 @@ namespace ColorControl.Services.NVIDIA
 
             if (applyHdr)
             {
+                if (newHdrEnabled && !hdrEnabled)
+                {
+                    MainWindow.BeforeDisplaySettingsChange();
+                }
+
                 SetHDRState(display, newHdrEnabled);
             }
 
@@ -341,7 +349,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyDithering)
             {
-                if (!SetDithering(preset.ditheringEnabled ? NvDitherState.Enabled : NvDitherState.Disabled, preset: preset))
+                if (!SetDithering(preset.DitherState, preset: preset))
                 {
                     result = false;
                 }
@@ -364,19 +372,17 @@ namespace ColorControl.Services.NVIDIA
             return Task.FromResult(result);
         }
 
-        public bool ApplyOverclocking(NvGpuOcSettings setting)
-        {
-            return ApplyOverclocking(new List<NvGpuOcSettings> { setting });
-        }
-
         public bool ApplyOverclocking(List<NvGpuOcSettings> settings)
         {
-            if (!Utils.IsAdministrator())
+            if (!_winApiService.IsAdministrator())
             {
-                var result = PipeUtils.SendMessage(new SvcNvOverclockingMessage
+                var message = new SvcRpcSetNvOverclockingMessage
                 {
+                    MethodName = nameof(ApplyOverclocking),
                     OverclockingSettings = settings
-                });
+                };
+
+                var result = _rpcClientService.Call<object>(message);
 
                 if (result == null)
                 {
@@ -418,40 +424,24 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public static void ApplyDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
+        public void ApplyDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
         {
-            CheckServiceInstance();
+            RefreshProfileSettings();
 
-            ServiceInstance._drs.StoreSettingsToProfile(profileName, settings);
+            _drs.StoreSettingsToProfile(profileName, settings);
         }
 
-        public static bool RestoreDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
+        public bool RestoreDriverSettings(string profileName, List<KeyValuePair<uint, string>> settings)
         {
-            CheckServiceInstance();
-
             var result = false;
 
             foreach (var keyValuePair in settings)
             {
                 var settingId = keyValuePair.Key;
-                ServiceInstance._drs.ResetValue(profileName, settingId, out result);
+                _drs.ResetValue(profileName, settingId, out result);
             }
 
             return result;
-        }
-
-        public static NvService CheckServiceInstance()
-        {
-            if (ServiceInstance == null)
-            {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-
-                ServiceInstance = new NvService(appContextProvider);
-                ServiceInstance.Initialize();
-                ServiceInstance.RefreshProfileSettings();
-            }
-
-            return ServiceInstance;
         }
 
         private void SetDriverSettings(Dictionary<uint, uint> settings)
@@ -853,6 +843,22 @@ namespace ColorControl.Services.NVIDIA
             //var display = GetCurrentDisplay();
             //var displayDevice = display.DisplayDevice;
 
+            //var config = DisplayApi.GetDisplayConfig();
+
+            //var config1 = config[0];
+
+            //var pathInfo1 = config1.TargetsInfo.First();
+
+            //var details = pathInfo1.Details.Value;
+
+            //var newDetails = new PathAdvancedTargetInfo(details.Rotation, Scaling.GPUScanOutToNative);
+
+            //var newPathTargetInfo = new PathTargetInfoV2(pathInfo1.DisplayId, newDetails);
+
+            //var newPathInfo = new PathInfoV2(new[] { newPathTargetInfo }, config1.SourceModeInfo);
+
+            //DisplayApi.SetDisplayConfig(new IPathInfo[] { newPathInfo }, DisplayConfigFlags.SaveToPersistence);
+
             //var info = DisplayApi.GetScanOutConfiguration(displayDevice.DisplayId);
 
             //var vertices = new float[] {
@@ -1023,7 +1029,7 @@ namespace ColorControl.Services.NVIDIA
             }
             else
             {
-                preset.ditheringEnabled = ditherInfo.state != (int)NvDitherState.Disabled;
+                preset.ditheringEnabled = ditherInfo.state == 0 ? null : ditherInfo.state != (int)NvDitherState.Disabled;
                 preset.ditheringBits = (uint)ditherInfo.bits;
                 preset.ditheringMode = (uint)ditherInfo.mode;
             }
@@ -1123,11 +1129,11 @@ namespace ColorControl.Services.NVIDIA
 
             _drs.GetProfileNames(ref _baseProfileName, false);
 
-            if (!Utils.IsAdministrator())
-            {
-                _drs.ApplySettings += HandleDrsApplySettings;
-                _drs.RestoreSetting += HandleDrsRestoreSetting;
-            }
+            //if (!WinApiService.IsAdministratorStatic())
+            //{
+            _drs.ApplySettings += HandleDrsApplySettings;
+            _drs.RestoreSetting += HandleDrsRestoreSetting;
+            //}
 
             //SetGpuClocks();
 
@@ -1169,9 +1175,8 @@ namespace ColorControl.Services.NVIDIA
 
         private bool HasPrivilegesForUnexposedApis()
         {
-            return Utils.IsAdministrator() || _appContextProvider.GetAppContext()?.Config.ElevationMethod != ElevationMethod.UseService || _appContextProvider.GetAppContext()?.IsServiceRunning() != true;
+            return _winApiService.IsAdministrator() || !_winApiService.IsServiceRunning();
         }
-
 
         private void HandleDrsApplySettings(object sender, DrsEvent drsEvent)
         {
@@ -1180,7 +1185,14 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            PipeUtils.SendMessage(new SvcNvDriverSettingsMessage { ProfileName = drsEvent.ProfileName, DriverSettings = drsEvent.Settings });
+            var message = new SvcRpcSetNvDriverSettingsMessage
+            {
+                MethodName = nameof(ApplyDriverSettings),
+                ProfileName = drsEvent.ProfileName,
+                DriverSettings = drsEvent.Settings
+            };
+
+            _rpcClientService.Call<object>(message);
 
             drsEvent.Handled = true;
         }
@@ -1192,7 +1204,14 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            PipeUtils.SendMessage(new SvcNvDriverSettingsMessage(SvcMessageType.RestoreNvidiaDriverSetting) { ProfileName = drsEvent.ProfileName, DriverSettings = drsEvent.Settings });
+            var message = new SvcRpcSetNvDriverSettingsMessage
+            {
+                MethodName = nameof(RestoreDriverSettings),
+                ProfileName = drsEvent.ProfileName,
+                DriverSettings = drsEvent.Settings
+            };
+
+            _rpcClientService.Call<object>(message);
 
             drsEvent.Handled = true;
         }

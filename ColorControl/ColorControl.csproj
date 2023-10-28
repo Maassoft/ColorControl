@@ -18,8 +18,8 @@
 		<PublisherName>Maassoft</PublisherName>
 		<Company>Maassoft</Company> 
 		<ApplicationRevision>0</ApplicationRevision>
-		<ApplicationVersion>9.6.4.0</ApplicationVersion>
-		<Version>9.6.4.0</Version>
+		<ApplicationVersion>9.7.0.0</ApplicationVersion>
+		<Version>9.7.0.0</Version>
 		<UseApplicationTrust>false</UseApplicationTrust>
 		<PublishWizardCompleted>true</PublishWizardCompleted>
 		<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -62,6 +62,9 @@
 		</Compile>
 		<Compile Update="services\lg\RemoteControlPanel.cs">
 			<SubType>UserControl</SubType>
+		</Compile>
+		<Compile Update="Services\NVIDIA\NvInfoPanel.cs">
+		  <SubType>UserControl</SubType>
 		</Compile>
 		<Compile Update="Services\NVIDIA\NvPanel.cs" />
 		<Compile Update="Services\Samsung\SamsungPanel.cs">

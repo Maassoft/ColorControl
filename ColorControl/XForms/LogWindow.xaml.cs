@@ -1,8 +1,10 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
+using ColorControl.Shared.Services;
 using ColorControl.Shared.XForms;
 using DJ;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -19,16 +21,18 @@ namespace ColorControl.XForms
         private static LogWindow _window;
 
         private int _logLevelIndex;
+        private readonly WinApiAdminService _winApiAdminService;
 
         public int LogLevelIndex { get => _logLevelIndex; set => _logLevelIndex = value; }
 
-        public LogWindow()
+        public LogWindow(WinApiAdminService winApiAdminService)
         {
             InitializeComponent();
 
-            LogLevelIndex = LogLevel.FromString(Shared.Common.AppContext.CurrentContext.Config.LogLevel).Ordinal;
+            LogLevelIndex = LogLevel.FromString(GlobalContext.CurrentContext.Config.LogLevel).Ordinal;
 
             DataContext = this;
+            _winApiAdminService = winApiAdminService;
         }
 
         private void OnRequestNavigate(object sender, RequestNavigateEventArgs e)
@@ -47,7 +51,7 @@ namespace ColorControl.XForms
                 new Application();
             }
 
-            _window ??= new LogWindow();
+            _window ??= Program.ServiceProvider.GetRequiredService<LogWindow>();
 
             if (show)
             {
@@ -77,7 +81,7 @@ namespace ColorControl.XForms
 
         private void RawLog_Click(object sender, RoutedEventArgs e)
         {
-            var context = Shared.Common.AppContext.CurrentContext;
+            var context = Shared.Common.GlobalContext.CurrentContext;
 
             string logFile;
             if (tabControl.SelectedIndex == 0)
@@ -86,7 +90,9 @@ namespace ColorControl.XForms
             }
             else
             {
-                if (!Utils.IsServiceRunning())
+                var winApiService = Program.ServiceProvider.GetRequiredService<WinApiService>();
+
+                if (!winApiService.IsServiceRunning())
                 {
                     MessageForms.WarningOk("Service is not running");
                     return;
@@ -109,7 +115,7 @@ namespace ColorControl.XForms
                 return;
             }
 
-            Utils.StartProcess(logFile);
+            _winApiAdminService.StartProcess(logFile);
         }
 
         private void LoadOlder_Click(object sender, RoutedEventArgs e)
@@ -128,7 +134,7 @@ namespace ColorControl.XForms
 
         private void LogLevel_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            var context = Shared.Common.AppContext.CurrentContext;
+            var context = Shared.Common.GlobalContext.CurrentContext;
 
             var logLevel = LogLevel.FromOrdinal(_logLevelIndex);
 
@@ -144,7 +150,7 @@ namespace ColorControl.XForms
                 return;
             }
 
-            var context = Shared.Common.AppContext.CurrentContext;
+            var context = Shared.Common.GlobalContext.CurrentContext;
 
             var lines = LoadLog();
 
@@ -160,7 +166,9 @@ namespace ColorControl.XForms
                 return Utils.ReadLines(Program.LogFilename);
             }
 
-            if (Utils.IsServiceRunning())
+            var winApiService = Program.ServiceProvider.GetRequiredService<WinApiService>();
+
+            if (winApiService.IsServiceRunning())
             {
                 var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
 

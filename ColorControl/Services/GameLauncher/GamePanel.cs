@@ -43,7 +43,7 @@ namespace ColorControl.Services.GameLauncher
             _amdService = amdService;
             _lgService = lgService;
             _samsungService = samsungService;
-            _config = Shared.Common.AppContext.CurrentContext.Config;
+            _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -139,7 +139,7 @@ namespace ColorControl.Services.GameLauncher
             var preset = GetSelectedGamePreset();
             var enabled = preset != null;
 
-            FormUtils.EnableControls(this, enabled, new List<Control> { lvGamePresets, btnGameAdd });
+            FormUtils.EnableControls(this, enabled, new List<Control> { lvGamePresets, btnGameAdd, btnGameSettings });
 
             if (preset != null)
             {
@@ -361,16 +361,44 @@ namespace ColorControl.Services.GameLauncher
 
         private void miGameSetQuickAccessShortcut_Click(object sender, EventArgs e)
         {
-            var shortcut = FormUtils.EditShortcut(_config.GameQuickAccessShortcut);
+            EditGameSettings();
+        }
 
-            if (shortcut == null)
+        private void EditGameSettings()
+        {
+            var quickAccessField = new FieldDefinition
+            {
+                Label = "Quick Access shortcut",
+                FieldType = FieldType.Shortcut,
+                Value = _config.GameQuickAccessShortcut
+            };
+
+            var applyExternallyLaunched = new FieldDefinition
+            {
+                Label = "Apply presets when launching games externally",
+                SubLabel = "This will monitor processes and automatically apply the preset whenever a known game is launched",
+                FieldType = FieldType.CheckBox,
+                Value = _gameService.Config.ApplyExternallyLaunched
+            };
+
+            var values = MessageForms.ShowDialog("Game launcher settings", new[] {
+                quickAccessField,
+                applyExternallyLaunched
+            });
+            if (!values.Any())
             {
                 return;
             }
 
+            var shortcut = (string)quickAccessField.Value;
+
             _config.GameQuickAccessShortcut = shortcut;
 
             KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut);
+
+            _gameService.Config.ApplyExternallyLaunched = applyExternallyLaunched.ValueAsBool;
+
+            UpdateInfo();
         }
 
         private void mnuGameActions_Opening(object sender, CancelEventArgs e)
@@ -489,6 +517,53 @@ namespace ColorControl.Services.GameLauncher
         private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)
         {
             FormUtils.ListViewSort(sender, e);
+        }
+
+        private void miPresetNVIDIAProfileInspector_Click(object sender, EventArgs e)
+        {
+            var form = new frmDrvSettings();
+            form.Show();
+
+            var preset = GetSelectedGamePreset();
+
+            var executable = Path.GetFileName(preset.Path);
+
+            form.SetProfileByExecutable(executable);
+        }
+
+        private void miGameOptionsAutoApplySettings_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedGamePreset();
+
+            var allowAutoApplyField = new FieldDefinition
+            {
+                Label = "Allow this preset to be automatically executed when the process starts",
+                FieldType = FieldType.CheckBox,
+                Value = preset.AutoSettings.AllowAutoApply
+            };
+
+            var processActions = new[] { ProcessAutoAction.None, ProcessAutoAction.Suspend }.Select(t => Utils.GetDescription(t));
+
+            var processActionField = new FieldDefinition
+            {
+                Label = "Optional action to perform directly after the process starts",
+                SubLabel = "Temporarily suspending the process may help when enabling/disabling HDR or other settings",
+                FieldType = FieldType.DropDown,
+                Values = processActions,
+                Value = preset.AutoSettings.ProcessAutoAction
+            };
+
+            var values = MessageForms.ShowDialog("Auto apply settings", new[] {
+                allowAutoApplyField,
+                processActionField
+            });
+            if (!values.Any())
+            {
+                return;
+            }
+
+            preset.AutoSettings.AllowAutoApply = allowAutoApplyField.ValueAsBool;
+            preset.AutoSettings.ProcessAutoAction = processActionField.ValueAsEnum<ProcessAutoAction>();
         }
     }
 }

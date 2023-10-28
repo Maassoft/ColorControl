@@ -1,8 +1,8 @@
 ﻿using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.LG;
-using ColorControl.Services.NVIDIA;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using NLog;
@@ -21,11 +21,19 @@ namespace ColorControl.Svc
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
+        private readonly RpcServerService _rpcServerService;
+        private readonly WinApiAdminService _winApiAdminService;
+        private readonly WolService _wolService;
         private static string LgConfigFile = "LgConfig.json";
 
-        public ColorControlBackgroundService(SessionSwitchDispatcher sessionSwitchDispatcher)
+        public string PipeName { get; set; } = PipeUtils.ServicePipe;
+
+        public ColorControlBackgroundService(SessionSwitchDispatcher sessionSwitchDispatcher, RpcServerService rpcServerService, WinApiAdminService winApiAdminService, WolService wolService)
         {
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
+            _rpcServerService = rpcServerService;
+            _winApiAdminService = winApiAdminService;
+            _wolService = wolService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,7 +45,10 @@ namespace ColorControl.Svc
                 //var lgService = new LgService(Program.DataDir, true);
                 //lgService.InstallEventHandlers(true);
 
-                await WakeDevicesAsync();
+                if (PipeName == PipeUtils.ServicePipe)
+                {
+                    await WakeDevicesAsync();
+                }
 
                 var securityIdentifier = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
 
@@ -50,7 +61,7 @@ namespace ColorControl.Svc
                 {
                     Logger.Debug("WAITING FOR MESSAGE...");
 
-                    var pipeServer = NamedPipeServerStreamAcl.Create("testpipe", PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024, ps);
+                    var pipeServer = NamedPipeServerStreamAcl.Create(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024, ps);
 
                     await pipeServer.WaitForConnectionAsync(stoppingToken);
 
@@ -113,39 +124,31 @@ namespace ColorControl.Svc
                 SvcMessageType.SetLgConfig => HandleSetLgConfigMessage(message),
                 SvcMessageType.GetLog => HandleGetLogMessage(message),
                 SvcMessageType.ClearLog => HandleClearLogMessage(message),
-                SvcMessageType.ExecuteRpc => await HandleExecuteRpcCommand(message),
-                SvcMessageType.ExecuteRpcGeneric => await HandleExecuteRpcGenericCommand(JsonConvert.DeserializeObject<SvcRpcMessage>(json)),
+                SvcMessageType.ExecuteRpcGeneric => await _rpcServerService.ExecuteRpcAsync(JsonConvert.DeserializeObject<SvcRpcMessage>(json)),
+                SvcMessageType.ExecuteRpcGenericTyped => await HandleRpcTypedAsync(JsonConvert.DeserializeObject<SvcRpcMessageTyped>(json), json),
                 SvcMessageType.ExecuteUpdate => await HandleExecuteUpdateCommandAsync(JsonConvert.DeserializeObject<SvcInstallUpdateMessage>(json)),
                 SvcMessageType.RestartAfterUpdate => HandleRestartAfterUpdateMessage(),
-                SvcMessageType.ApplyNvidiaDriverSettings => HandleNvDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
-                SvcMessageType.RestoreNvidiaDriverSetting => HandleNvRestoreDriverSettingsMessage(JsonConvert.DeserializeObject<SvcNvDriverSettingsMessage>(json)),
-                SvcMessageType.ApplyNvidiaOverclocking => HandleNvOverclockingMessage(JsonConvert.DeserializeObject<SvcNvOverclockingMessage>(json)),
                 _ => SvcResultMessage.FromResult(false, "Unexpected message type")
             };
 
             return result;
         }
 
-        private async Task<SvcResultMessage> HandleExecuteRpcCommand(SvcMessage message)
+        private async Task<SvcResultMessage> HandleRpcTypedAsync(SvcRpcMessageTyped message, string json)
         {
-            var args = message.Data.Split(' ');
+            var typeName = message.TypeName;
 
-            var startUpParams = StartUpParams.Parse(args);
+            Logger.Debug($"TypeName: {typeName}");
 
-            return SvcResultMessage.FromResult(await CommandLineHandler.HandleStartupParams(startUpParams, null));
-        }
+            var type = Type.GetType($"ColorControl.Shared.Contracts.{typeName}, Shared");
 
-        private async Task<SvcResultMessage> HandleExecuteRpcGenericCommand(SvcRpcMessage message)
-        {
-            var service = NvService.CheckServiceInstance();
+            Logger.Debug($"Type: {type?.Name}");
 
-            var method = service.GetType().GetMethod(message.MethodName);
+            var typedMessage = JsonConvert.DeserializeObject(json, type) as SvcRpcMessageTyped;
 
-            var result = method.Invoke(service, message.Arguments);
+            Logger.Debug($"Msg: {typedMessage?.MethodName}");
 
-            var data = JsonConvert.SerializeObject(result);
-
-            return SvcResultMessage.FromResult(data);
+            return await _rpcServerService.ExecuteRpcTypedAsync(typedMessage);
         }
 
         private SvcResultMessage HandleSetLgConfigMessage(SvcMessage message)
@@ -201,28 +204,7 @@ namespace ColorControl.Svc
 
         private SvcResultMessage HandleRestartAfterUpdateMessage()
         {
-            Utils.StartProcess("cmd.exe", $@"/C net stop ""{Utils.SERVICE_NAME}"" && net start ""{Utils.SERVICE_NAME}""", true);
-
-            return SvcResultMessage.FromResult(true);
-        }
-
-        private SvcResultMessage HandleNvDriverSettingsMessage(SvcNvDriverSettingsMessage message)
-        {
-            NvService.ApplyDriverSettings(message.ProfileName, message.DriverSettings);
-
-            return SvcResultMessage.FromResult(true);
-        }
-
-        private SvcResultMessage HandleNvRestoreDriverSettingsMessage(SvcNvDriverSettingsMessage message)
-        {
-            var result = NvService.RestoreDriverSettings(message.ProfileName, message.DriverSettings);
-
-            return SvcResultMessage.FromResult(result);
-        }
-
-        private SvcResultMessage HandleNvOverclockingMessage(SvcNvOverclockingMessage message)
-        {
-            NvService.CheckServiceInstance().ApplyOverclocking(message.OverclockingSettings);
+            _winApiAdminService.StartProcess("cmd.exe", $@"/C net stop ""{Utils.SERVICE_NAME}"" && net start ""{Utils.SERVICE_NAME}""", true);
 
             return SvcResultMessage.FromResult(true);
         }
@@ -252,7 +234,7 @@ namespace ColorControl.Svc
             {
                 for (var i = 0; i < config.PowerOnRetries; i++)
                 {
-                    WOL.WakeFunction(wakeDevice.MacAddress, wakeDevice.IpAddress);
+                    _wolService.SendWol(wakeDevice.MacAddress, wakeDevice.IpAddress);
 
                     await Task.Delay(1000);
 

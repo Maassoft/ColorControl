@@ -33,16 +33,17 @@ namespace ColorControl.Services.Samsung
         private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
         private readonly RestartDetector _restartDetector;
         private readonly ProcessEventDispatcher _processEventDispatcher;
+        private readonly WinApiAdminService _winApiAdminService;
         private string _configFilename;
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
         private object _lastTriggeredPreset;
         private List<SamsungApp> _samsungApps = new List<SamsungApp>();
-        private Shared.Common.AppContext _appContext;
+        private Shared.Common.GlobalContext _appContext;
 
         public List<SamsungDevice> Devices { get; private set; }
 
-        public SamsungService(AppContextProvider appContextProvider, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher) : base(appContextProvider)
+        public SamsungService(AppContextProvider appContextProvider, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService) : base(appContextProvider)
         {
             _appContext = appContextProvider.GetAppContext();
             _allowPowerOn = _appContext.StartUpParams.RunningFromScheduledTask;
@@ -51,6 +52,7 @@ namespace ColorControl.Services.Samsung
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
             _restartDetector = restartDetector;
             _processEventDispatcher = processEventDispatcher;
+            _winApiAdminService = winApiAdminService;
             SamTvConnection.SyncContext = _appContext.SynchronizationContext;
 
             LoadConfig();
@@ -267,7 +269,7 @@ namespace ColorControl.Services.Samsung
             return await ApplyPreset(preset, _appContext);
         }
 
-        private async Task<bool> ApplyPreset(SamsungPreset preset, Shared.Common.AppContext appContext)
+        private async Task<bool> ApplyPreset(SamsungPreset preset, Shared.Common.GlobalContext appContext)
         {
             var result = true;
 
@@ -368,7 +370,7 @@ namespace ColorControl.Services.Samsung
                     var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
                     if (File.Exists(standByScript))
                     {
-                        Utils.StartProcess(standByScript, hidden: true, wait: true);
+                        _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
                     }
                 }
 
@@ -428,7 +430,7 @@ namespace ColorControl.Services.Samsung
 
             if (File.Exists(resumeScript))
             {
-                Utils.StartProcess(resumeScript, hidden: true);
+                _winApiAdminService.StartProcess(resumeScript, hidden: true);
             }
         }
 

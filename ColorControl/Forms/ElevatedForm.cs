@@ -1,85 +1,53 @@
-﻿using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Native;
-using NWin32;
+﻿using ColorControl.Svc;
 using System;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ColorControl.Forms
+namespace ColorControl.Forms;
+
+public partial class ElevatedForm : Form
 {
-    public partial class ElevatedForm : Form
+    private ColorControlBackgroundService _backgroundService;
+
+    public ElevatedForm(ColorControlBackgroundService backgroundService)
     {
-        public ElevatedForm()
+        InitializeComponent();
+
+        FormBorderStyle = FormBorderStyle.None;
+        ShowInTaskbar = false;
+        Load += ElevatedForm_Load;
+        Shown += ElevatedForm_Shown;
+
+        Task.Run(CheckMutexAsync);
+
+        _backgroundService = backgroundService;
+        _backgroundService.PipeName = "elevatedpipe";
+
+        Task.Run(async () => await _backgroundService.StartAsync(CancellationToken.None));
+    }
+
+    private void ElevatedForm_Shown(object sender, EventArgs e)
+    {
+        Hide();
+    }
+
+    protected void ElevatedForm_Load(object sender, EventArgs e)
+    {
+        Size = new Size(0, 0);
+    }
+
+    private void CheckMutexAsync()
+    {
+        var mutex = new Mutex(false, Shared.Common.GlobalContext.CurrentContext.MutexId, out var created);
+        try
         {
-            InitializeComponent();
-
-            FormBorderStyle = FormBorderStyle.None;
-            ShowInTaskbar = false;
-            Load += ElevatedForm_Load;
-            Shown += ElevatedForm_Shown;
-
-            var filterStatus = new WinApi.CHANGEFILTERSTRUCT();
-            filterStatus.size = (uint)Marshal.SizeOf(filterStatus);
-            filterStatus.info = 0;
-
-            WinApi.ChangeWindowMessageFilterEx(Handle, NativeConstants.WM_COPYDATA, WinApi.ChangeWindowMessageFilterExAction.Allow, ref filterStatus);
-
-            Task.Run(CheckMutexAsync);
+            mutex.WaitOne();
         }
-
-        private void ElevatedForm_Shown(object sender, EventArgs e)
+        catch (AbandonedMutexException)
         {
-            Hide();
         }
-
-        protected void ElevatedForm_Load(object sender, EventArgs e)
-        {
-            Size = new Size(0, 0);
-        }
-
-        protected override void WndProc(ref Message m)
-        {
-            if (m.Msg == NativeConstants.WM_COPYDATA)
-            {
-                var container = (WinApi.COPYDATASTRUCT)m.GetLParam(typeof(WinApi.COPYDATASTRUCT));
-                var message = Marshal.PtrToStringAnsi(container.lpData);
-
-                HandleMessage(message);
-            }
-
-            base.WndProc(ref m);
-        }
-
-        private void HandleMessage(string message)
-        {
-            var args = message.Split(' ');
-
-            var startUpParams = StartUpParams.Parse(args);
-
-            try
-            {
-                var _ = CommandLineHandler.HandleStartupParams(startUpParams, null);
-            }
-            catch (Exception)
-            {
-
-            }
-        }
-
-        private void CheckMutexAsync()
-        {
-            var mutex = new Mutex(false, Shared.Common.AppContext.CurrentContext.MutexId, out var created);
-            try
-            {
-                mutex.WaitOne();
-            }
-            catch (AbandonedMutexException)
-            {
-            }
-            BeginInvoke(Application.Exit);
-        }
+        BeginInvoke(Application.Exit);
     }
 }

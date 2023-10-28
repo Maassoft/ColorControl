@@ -2,14 +2,14 @@
 {
     public class AppContextProvider
     {
-        private Common.AppContext _appContext;
+        private Common.GlobalContext _appContext;
 
-        public void SetAppContext(Common.AppContext appContext)
+        public void SetAppContext(Common.GlobalContext appContext)
         {
             _appContext = appContext;
         }
 
-        public Common.AppContext GetAppContext()
+        public Common.GlobalContext GetAppContext()
         {
             return _appContext;
         }

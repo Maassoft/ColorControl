@@ -21,6 +21,29 @@ namespace nspector.Common
         public event EventHandler<DrsEvent>? RestoreSetting;
         public bool ExternalApplySettings => ApplySettings != null;
 
+        const uint DRS_NGX_FORCE_DLAA = 0x10E41DF4;
+        const uint DRS_NGX_SCALE_RATIO = 0x10E41DF5;
+
+        private NVDRS_SETTING[] HiddenSettings = new[]
+        {
+            new NVDRS_SETTING {
+                version = nvw.NVDRS_SETTING_VER,
+                settingId = DRS_NGX_FORCE_DLAA,
+                settingType = NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE,
+                currentValue  = new NVDRS_SETTING_UNION {
+                    dwordValue = 0u
+                }
+            },
+            new NVDRS_SETTING {
+                version = nvw.NVDRS_SETTING_VER,
+                settingId = DRS_NGX_SCALE_RATIO,
+                settingType = NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE,
+                currentValue  = new NVDRS_SETTING_UNION {
+                    dwordValue = 0u
+                }
+            }
+        };
+
         public DrsSettingsService(DrsSettingsMetaService metaService, DrsDecrypterService decrpterService)
             : base(metaService, decrpterService)
         {
@@ -178,6 +201,30 @@ namespace nspector.Common
 
             baseProfileName = tmpBaseProfileName;
             return lstResult;
+        }
+
+        public string? GetProfileNameByApps(string appName)
+        {
+            string? name = null;
+
+            DrsSession((hSession) =>
+            {
+                var profileHandles = EnumProfileHandles(hSession);
+                foreach (IntPtr hProfile in profileHandles)
+                {
+                    var apps = GetProfileApplications(hSession, hProfile);
+
+                    if (apps.Any(a => a.appName.Equals(appName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var profile = GetProfileInfo(hSession, hProfile);
+                        name = profile.profileName;
+
+                        break;
+                    }
+                }
+            });
+
+            return name;
         }
 
         public void CreateProfile(string profileName, string applicationName = null)
@@ -541,7 +588,7 @@ namespace nspector.Common
 
                 foreach (var settingId in settingIds)
                 {
-                    var setting = ReadSetting(hSession, hProfile, settingId);
+                    var setting = ReadSetting(hSession, hProfile, settingId, profileName);
                     if (setting != null)
                         result.Add(CreateSettingItem(setting.Value));
                     else
@@ -549,6 +596,29 @@ namespace nspector.Common
                         var dummySetting = new NVDRS_SETTING() { settingId = settingId };
                         result.Add(CreateSettingItem(dummySetting, true));
                     }
+                }
+
+                var isBaseProfile = profileName.Contains("Base Profile", StringComparison.OrdinalIgnoreCase);
+
+                if (isBaseProfile)
+                {
+                    var hiddenSettings = HiddenSettings.Where(hs => !result.Any(s => s.SettingId == hs.settingId)).ToList();
+
+                    foreach (var hiddenSetting in hiddenSettings)
+                    {
+                        var setting = ReadSetting(hSession, hProfile, hiddenSetting.settingId);
+
+                        if (setting != null)
+                        {
+                            continue;
+                        }
+
+                        result.Add(CreateSettingItem(hiddenSetting));
+                    }
+                }
+                else
+                {
+                    result.RemoveAll(s => HiddenSettings.Any(hs => hs.settingId == s.SettingId));
                 }
 
                 if (skipApplications)

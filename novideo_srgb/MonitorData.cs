@@ -75,9 +75,16 @@ namespace novideo_srgb
 
         private void UpdateClamp(bool doClamp)
         {
+            if (HdrActive)
+            {
+                _clamped = false;
+                return;
+            }
+
             if (_clamped)
             {
                 Novideo.DisableColorSpaceConversion(_output);
+                _clamped = Novideo.IsColorSpaceConversionActive(_output);
             }
 
             if (!doClamp) return;
@@ -159,11 +166,11 @@ namespace novideo_srgb
             get => _clamped;
         }
 
-        public void ReapplyClamp()
+        public void ReapplyClamp(bool? forceClamp = null)
         {
             try
             {
-                var clamped = CanClamp && ClampSdr;
+                var clamped = CanClamp && ClampSdr && (!forceClamp.HasValue || forceClamp.Value);
                 UpdateClamp(clamped);
                 _clamped = clamped;
                 OnPropertyChanged(nameof(CanClamp));

@@ -22,19 +22,6 @@ namespace ColorControl.Services.LG
 {
     class LgService : ServiceBase<LgPreset>
     {
-        internal class ProcessMonitorContext
-        {
-            public List<LgDevice> Devices { get; set; }
-            public bool WasFullScreen { get; set; }
-            public Process[] StartedProcesses { get; set; }
-            public Process[] StoppedProcesses { get; set; }
-            public Process[] RunningProcesses { get; set; }
-            public bool IsNotificationDisabled { get; set; }
-            public Process ForegroundProcess { get; set; }
-            public bool ForegroundProcessIsFullScreen { get; set; }
-            public string LastFullScreenProcessName = string.Empty;
-        }
-
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static string LgListAppsJson = "listApps.json";
@@ -56,7 +43,6 @@ namespace ColorControl.Services.LG
         public event EventHandler SelectedDeviceChangedEvent;
 
         public LgServiceConfig Config { get; private set; }
-        public ProcessMonitorContext MonitorContext { get; private set; }
 
         protected override string PresetsBaseFilename => "LgPresets.json";
 
@@ -75,9 +61,13 @@ namespace ColorControl.Services.LG
         private int _poweredOffByScreenSaverProcessId;
         private LgPreset _lastTriggeredPreset;
         private RestartDetector _restartDetector;
+        private readonly WinApiService _winApiService;
+        private readonly WinApiAdminService _winApiAdminService;
         private SynchronizationContext _syncContext;
 
-        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector) : base(appContextProvider)
+        public ProcessChangedEventArgs CurrentProcessEvent => _processEventDispatcher?.MonitorContext;
+
+        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector, WinApiService winApiService, WinApiAdminService winApiAdminService) : base(appContextProvider)
         {
             _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
             _powerEventDispatcher = powerEventDispatcher;
@@ -87,6 +77,8 @@ namespace ColorControl.Services.LG
             LgPreset.LgApps = _lgApps;
 
             _restartDetector = restartDetector;
+            _winApiService = winApiService;
+            _winApiAdminService = winApiAdminService;
             _syncContext = appContextProvider.GetAppContext().SynchronizationContext;
             LgTvApiCore.SyncContext = _syncContext;
 
@@ -851,7 +843,7 @@ namespace ColorControl.Services.LG
                     var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
                     if (File.Exists(standByScript))
                     {
-                        Utils.StartProcess(standByScript, hidden: true, wait: true);
+                        _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
                     }
                 }
 
@@ -911,13 +903,13 @@ namespace ColorControl.Services.LG
 
             if (File.Exists(resumeScript))
             {
-                Utils.StartProcess(resumeScript, hidden: true);
+                _winApiAdminService.StartProcess(resumeScript, hidden: true);
             }
         }
 
         private void SendConfigToService()
         {
-            if (!Utils.IsServiceRunning())
+            if (!_winApiService.IsServiceRunning())
             {
                 return;
             }

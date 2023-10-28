@@ -1,13 +1,16 @@
-﻿using ColorControl.Services.Common;
+﻿using ColorControl.Forms;
+using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
+using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using ColorControl.Svc;
+using ColorControl.XForms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -31,7 +34,7 @@ namespace ColorControl
         public static string ConfigFilename { get; private set; }
         public static string LogFilename { get; private set; }
         public static Config Config { get; private set; }
-        public static Shared.Common.AppContext AppContext { get; private set; }
+        public static GlobalContext AppContext { get; private set; }
 
         public static bool IsRestarting { get; private set; }
         public static bool UserExit = false;
@@ -59,26 +62,22 @@ namespace ColorControl
             //Utils.UpdateFiles(@"H:\temp\ColorControl\ColorControl", @"C:\Users\vinni\source\repos\ColorControl\ColorControl\bin\Debug\net6.0-windows10.0.20348.0");
             //Utils.UnZipFile(@"H:\temp\ColorControl\ColorControl.zip", @"H:\temp\ColorControl\temp");
 
-            var runAsService = args.Contains("--service") || Utils.IsAdministrator() && Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
+            var runAsService = args.Contains("--service") || WinApiService.IsAdministratorStatic() && Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
+            var runElevated = args.Contains("--elevated");
 
-            InitLogger(runAsService);
+            InitLogger(runAsService, runElevated);
 
             Logger.Debug($"Using data path: {DataDir}");
             //Logger.Debug("Parent process: " + Process.GetCurrentProcess().Parent()?.ProcessName);
 
-            var host = CreateHostBuilder().Build();
-            ServiceProvider = host.Services;
-
-            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
-
             if (runAsService)
             {
-                AppContext = new Shared.Common.AppContext(null, new StartUpParams(), DataDir, _loggingRule);
-                appContextProvider.SetAppContext(AppContext);
-
                 await RunService(args);
                 return;
             }
+
+            var host = CreateHostBuilder().Build();
+            ServiceProvider = host.Services;
 
             var mutexId = $"Global\\{typeof(MainForm).GUID}";
 
@@ -90,15 +89,16 @@ namespace ColorControl
 
             LoadConfig();
 
+            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
+            var startUpParams = StartUpParams.Parse(args);
+
+            AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, mutexId);
+            appContextProvider.SetAppContext(AppContext);
+
             if (Config.UseGdiScaling)
             {
                 Application.SetHighDpiMode(HighDpiMode.DpiUnawareGdiScaled);
             }
-
-            var startUpParams = StartUpParams.Parse(args);
-
-            AppContext = new Shared.Common.AppContext(Config, startUpParams, DataDir, _loggingRule, mutexId);
-            appContextProvider.SetAppContext(AppContext);
 
             var existingProcess = Utils.GetProcessByName("ColorControl");
 
@@ -145,12 +145,26 @@ namespace ColorControl
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
 
+                        if (Debugger.IsAttached)
+                        {
+                            var winApiService = ServiceProvider.GetRequiredService<WinApiService>();
+
+                            if (winApiService.IsAdministrator())
+                            {
+                                var backgroundService = ServiceProvider.GetRequiredService<ColorControlBackgroundService>();
+                                backgroundService.PipeName = PipeUtils.ElevatedPipe;
+
+                                Task.Run(async () => await backgroundService.StartAsync(CancellationToken.None));
+                            }
+                        }
+
                         _mainForm = ServiceProvider.GetRequiredService<MainForm>();
                         Application.Run(_mainForm);
 
                         if (Debugger.IsAttached && !IsRestarting)
                         {
-                            Utils.StopService();
+                            var winApiAdminService = ServiceProvider.GetRequiredService<WinApiAdminService>();
+                            winApiAdminService.StopService();
                         }
                     }
                     catch (Exception ex)
@@ -181,12 +195,12 @@ namespace ColorControl
             Environment.Exit(0);
         }
 
-        private static void InitLogger(bool runAsService)
+        private static void InitLogger(bool runAsService, bool runElevated)
         {
             var config = new LoggingConfiguration();
 
             // Targets where to log to: File and Console
-            var logFileAppendix = runAsService ? "_svc" : "";
+            var logFileAppendix = runAsService ? "_svc" : runElevated ? "_elevated" : "";
 
             LogFilename = Path.Combine(DataDir, $"LogFile{logFileAppendix}.txt");
 
@@ -220,8 +234,6 @@ namespace ColorControl
             }
             Config ??= new Config();
 
-            Utils.UseDedicatedElevatedProcess = Config.UseDedicatedElevatedProcess;
-
             var minLogLevel = LogLevel.FromString(Config.LogLevel);
 
             if (minLogLevel != LogLevel.Trace)
@@ -245,9 +257,9 @@ namespace ColorControl
                     services.AddSingleton<PowerEventDispatcher>();
                     services.AddSingleton<ProcessEventDispatcher>();
                     services.AddSingleton<MainForm>();
-                    services.AddSingleton<ServiceManager>();
+                    services.AddSingleton<ElevatedForm>();
+                    services.AddSingleton<LogWindow>();
                     services.AddSingleton<RestartDetector>();
-                    services.AddTransient<RpcService>();
                 });
         }
         private static async Task RunService(string[] args)
@@ -266,6 +278,12 @@ namespace ColorControl
                 })
                 .Build();
 
+            ServiceProvider = host.Services;
+
+            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
+            AppContext = new GlobalContext(null, new StartUpParams(), DataDir, _loggingRule);
+            appContextProvider.SetAppContext(AppContext);
+
             await host.RunAsync();
         }
 
@@ -273,6 +291,17 @@ namespace ColorControl
         {
             services.AddSingleton<AppContextProvider>();
             services.AddSingleton<SessionSwitchDispatcher>();
+            services.AddSingleton<WinApiAdminService>();
+            services.AddSingleton<WinApiService>();
+            services.AddSingleton<WinElevatedProcessManager>();
+            services.AddTransient<RpcClientService>();
+            services.AddTransient<RpcServerService>();
+            services.AddSingleton<NvService>();
+            services.AddSingleton<WolService>();
+            services.AddSingleton<ColorControlBackgroundService>();
+            services.AddSingleton<ServiceManager>();
+
+            RpcServerService.ServiceTypes.Add(typeof(NvService));
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

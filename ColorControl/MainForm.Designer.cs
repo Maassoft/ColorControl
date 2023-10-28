@@ -59,9 +59,6 @@
             chkStartMinimized = new System.Windows.Forms.CheckBox();
             chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             tabInfo = new System.Windows.Forms.TabPage();
-            grpNVIDIAInfo = new System.Windows.Forms.GroupBox();
-            btnRefreshNVIDIAInfo = new System.Windows.Forms.Button();
-            tvNVIDIAInfo = new System.Windows.Forms.TreeView();
             groupBox3 = new System.Windows.Forms.GroupBox();
             lbPlugins = new System.Windows.Forms.ListBox();
             label7 = new System.Windows.Forms.Label();
@@ -73,7 +70,6 @@
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
             tabInfo.SuspendLayout();
-            grpNVIDIAInfo.SuspendLayout();
             groupBox3.SuspendLayout();
             SuspendLayout();
             // 
@@ -441,7 +437,6 @@
             // 
             // tabInfo
             // 
-            tabInfo.Controls.Add(grpNVIDIAInfo);
             tabInfo.Controls.Add(groupBox3);
             tabInfo.Location = new System.Drawing.Point(4, 24);
             tabInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -451,41 +446,6 @@
             tabInfo.TabIndex = 4;
             tabInfo.Text = "Info";
             tabInfo.UseVisualStyleBackColor = true;
-            // 
-            // grpNVIDIAInfo
-            // 
-            grpNVIDIAInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            grpNVIDIAInfo.Controls.Add(btnRefreshNVIDIAInfo);
-            grpNVIDIAInfo.Controls.Add(tvNVIDIAInfo);
-            grpNVIDIAInfo.Location = new System.Drawing.Point(463, 7);
-            grpNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpNVIDIAInfo.Name = "grpNVIDIAInfo";
-            grpNVIDIAInfo.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpNVIDIAInfo.Size = new System.Drawing.Size(643, 511);
-            grpNVIDIAInfo.TabIndex = 4;
-            grpNVIDIAInfo.TabStop = false;
-            grpNVIDIAInfo.Text = "NVIDIA info";
-            // 
-            // btnRefreshNVIDIAInfo
-            // 
-            btnRefreshNVIDIAInfo.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            btnRefreshNVIDIAInfo.Location = new System.Drawing.Point(7, 478);
-            btnRefreshNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            btnRefreshNVIDIAInfo.Name = "btnRefreshNVIDIAInfo";
-            btnRefreshNVIDIAInfo.Size = new System.Drawing.Size(88, 27);
-            btnRefreshNVIDIAInfo.TabIndex = 1;
-            btnRefreshNVIDIAInfo.Text = "Refresh";
-            btnRefreshNVIDIAInfo.UseVisualStyleBackColor = true;
-            btnRefreshNVIDIAInfo.Click += btnRefreshNVIDIAInfo_Click;
-            // 
-            // tvNVIDIAInfo
-            // 
-            tvNVIDIAInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            tvNVIDIAInfo.Location = new System.Drawing.Point(7, 22);
-            tvNVIDIAInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            tvNVIDIAInfo.Name = "tvNVIDIAInfo";
-            tvNVIDIAInfo.Size = new System.Drawing.Size(628, 448);
-            tvNVIDIAInfo.TabIndex = 0;
             // 
             // groupBox3
             // 
@@ -579,7 +539,6 @@
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
             tabInfo.ResumeLayout(false);
-            grpNVIDIAInfo.ResumeLayout(false);
             groupBox3.ResumeLayout(false);
             groupBox3.PerformLayout();
             ResumeLayout(false);
@@ -597,9 +556,6 @@
         private System.Windows.Forms.ListBox lbPlugins;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label lblInfo;
-        private System.Windows.Forms.GroupBox grpNVIDIAInfo;
-        private System.Windows.Forms.TreeView tvNVIDIAInfo;
-        private System.Windows.Forms.Button btnRefreshNVIDIAInfo;
         private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
         private System.Windows.Forms.CheckBox chkFixChromeFonts;
         private System.Windows.Forms.Label lblFixChromeFontsDescription;

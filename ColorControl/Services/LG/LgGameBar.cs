@@ -263,7 +263,7 @@ namespace ColorControl.Services.LG
         private void UpdateInfo()
         {
             lblTvName.Text = $"Device: {_lgDevice?.Name ?? "No tv selected"}";
-            lblProcessName.Text = $"Current process: {_lgService.MonitorContext?.ForegroundProcess?.ProcessName ?? _lgService.MonitorContext?.LastFullScreenProcessName ?? "No full screen process"}";
+            lblProcessName.Text = $"Current process: {_lgService.CurrentProcessEvent?.ForegroundProcess?.ProcessName ?? _lgService.CurrentProcessEvent?.LastFullScreenProcessName ?? "No full screen process"}";
 
             UpdateValues();
         }

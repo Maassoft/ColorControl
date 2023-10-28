@@ -28,10 +28,10 @@ namespace ColorControl.Services.EventDispatcher
     {
         public const string Event_ProcessChanged = "ProcessChanged";
         public bool IsRunning { get; set; }
+        public ProcessChangedEventArgs MonitorContext { get; private set; }
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private ProcessChangedEventArgs MonitorContext { get; set; }
         private AppContextProvider _appContextProvider { get; }
 
         public ProcessEventDispatcher(AppContextProvider appContextProvider)
@@ -88,6 +88,8 @@ namespace ColorControl.Services.EventDispatcher
         {
             var processes = Process.GetProcesses();
 
+            context.StartedProcesses = processes.Where(p => context.RunningProcesses?.Any(rp => rp.Id == p.Id) == false).ToList();
+            context.StoppedProcesses = context.RunningProcesses?.Where(p => processes.Any(rp => rp.Id == p.Id) == false).ToList();
             context.RunningProcesses = processes;
 
             context.IsNotificationDisabled = FormUtils.IsNotificationDisabled();

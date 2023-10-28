@@ -7,11 +7,14 @@ namespace ColorControl.Shared.Common
 {
     public static class PipeUtils
     {
+        public const string ServicePipe = "servicepipe";
+        public const string ElevatedPipe = "elevatedpipe";
+
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static string SendMessage(string message, int timeout = 2000)
+        public static string SendMessage(string message, int timeout = 2000, string pipeName = ServicePipe)
         {
-            var pipeClient = new NamedPipeClientStream(".", "testpipe", PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
+            var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
             try
             {
                 pipeClient.Connect(timeout);
@@ -61,36 +64,23 @@ namespace ColorControl.Shared.Common
             return SendMessage(message);
         }
 
-        public static bool? SendRpcMessage(string command)
+        public static T SendRpcMessage<T>(SvcRpcMessage message, int timeout = 2000, string pipeName = ServicePipe)
         {
-            var message = new SvcMessage { MessageType = SvcMessageType.ExecuteRpc, Data = command };
-
             var messageJson = JsonConvert.SerializeObject(message);
 
-            var resultJson = SendMessage(messageJson);
+            var resultJson = SendMessage(messageJson, timeout, pipeName);
 
             if (resultJson == null)
             {
-                return null;
+                return default;
             }
 
             var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
 
-            return resultMessage.Result;
-        }
-
-        public static T SendRpcMessage<T>(SvcRpcMessage message, int timeout = 2000) where T : class
-        {
-            var messageJson = JsonConvert.SerializeObject(message);
-
-            var resultJson = SendMessage(messageJson, timeout);
-
-            if (resultJson == null)
+            if (resultMessage?.Data == null)
             {
-                return null;
+                return default;
             }
-
-            var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
 
             var result = JsonConvert.DeserializeObject<T>(resultMessage.Data);
 

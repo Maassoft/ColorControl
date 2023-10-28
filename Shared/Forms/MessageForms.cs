@@ -531,5 +531,31 @@ namespace ColorControl.Shared.Forms
 
             return prompt;
         }
+
+        public static Form ShowControl(Control control, string title)
+        {
+            var prompt = new Form()
+            {
+                Icon = MainForm.Icon,
+                Text = title,
+                Width = 800,
+                Height = 400,
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = FormUtils.CurrentBackColor,
+                ForeColor = FormUtils.CurrentForeColor,
+            };
+
+            prompt.Controls.Add(control);
+
+            control.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            control.Width = prompt.ClientRectangle.Width;
+            control.Height = prompt.ClientRectangle.Height;
+
+            prompt.UpdateTheme(onlyIfDark: true);
+
+            prompt.Show(MainForm);
+
+            return prompt;
+        }
     }
 }

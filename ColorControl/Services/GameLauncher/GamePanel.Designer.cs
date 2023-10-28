@@ -34,6 +34,7 @@
             mnuGameOptions = new System.Windows.Forms.ContextMenuStrip(components);
             miGameProcessorAffinity = new System.Windows.Forms.ToolStripMenuItem();
             miGameProcessPriority = new System.Windows.Forms.ToolStripMenuItem();
+            miPresetNVIDIAProfileInspector = new System.Windows.Forms.ToolStripMenuItem();
             chkGameQuickAccess = new System.Windows.Forms.CheckBox();
             btnGameSettings = new System.Windows.Forms.Button();
             mnuGameActions = new System.Windows.Forms.ContextMenuStrip(components);
@@ -51,6 +52,7 @@
             mnuGameNvidiaPresets = new System.Windows.Forms.ToolStripMenuItem();
             mnuGameAmdPresets = new System.Windows.Forms.ToolStripMenuItem();
             mnuGameLgPresets = new System.Windows.Forms.ToolStripMenuItem();
+            mnuGameSamsungPresets = new System.Windows.Forms.ToolStripMenuItem();
             mnuGameStartProgram = new System.Windows.Forms.ToolStripMenuItem();
             label4 = new System.Windows.Forms.Label();
             edtGameName = new System.Windows.Forms.TextBox();
@@ -60,7 +62,7 @@
             btnGameAdd = new System.Windows.Forms.Button();
             btnGameLaunch = new System.Windows.Forms.Button();
             lvGamePresets = new System.Windows.Forms.ListView();
-            mnuGameSamsungPresets = new System.Windows.Forms.ToolStripMenuItem();
+            miGameOptionsAutoApplySettings = new System.Windows.Forms.ToolStripMenuItem();
             mnuGameOptions.SuspendLayout();
             mnuGameActions.SuspendLayout();
             mnuGameAddStep.SuspendLayout();
@@ -96,23 +98,30 @@
             // mnuGameOptions
             // 
             mnuGameOptions.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuGameOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miGameProcessorAffinity, miGameProcessPriority });
+            mnuGameOptions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miGameProcessorAffinity, miGameProcessPriority, miPresetNVIDIAProfileInspector, miGameOptionsAutoApplySettings });
             mnuGameOptions.Name = "mnuLgButtons";
-            mnuGameOptions.Size = new System.Drawing.Size(166, 48);
+            mnuGameOptions.Size = new System.Drawing.Size(202, 114);
             // 
             // miGameProcessorAffinity
             // 
             miGameProcessorAffinity.Name = "miGameProcessorAffinity";
-            miGameProcessorAffinity.Size = new System.Drawing.Size(165, 22);
+            miGameProcessorAffinity.Size = new System.Drawing.Size(201, 22);
             miGameProcessorAffinity.Text = "Processor affinity";
             miGameProcessorAffinity.Click += btnGameProcessAffinity_Click;
             // 
             // miGameProcessPriority
             // 
             miGameProcessPriority.Name = "miGameProcessPriority";
-            miGameProcessPriority.Size = new System.Drawing.Size(165, 22);
+            miGameProcessPriority.Size = new System.Drawing.Size(201, 22);
             miGameProcessPriority.Text = "Process priority";
             miGameProcessPriority.Click += miGameProcessPriority_Click;
+            // 
+            // miPresetNVIDIAProfileInspector
+            // 
+            miPresetNVIDIAProfileInspector.Name = "miPresetNVIDIAProfileInspector";
+            miPresetNVIDIAProfileInspector.Size = new System.Drawing.Size(201, 22);
+            miPresetNVIDIAProfileInspector.Text = "NVIDIA Profile Inspector";
+            miPresetNVIDIAProfileInspector.Click += miPresetNVIDIAProfileInspector_Click;
             // 
             // chkGameQuickAccess
             // 
@@ -145,21 +154,21 @@
             mnuGameActions.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuGameActions.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { mnuGameNvInspector, miGameSetQuickAccessShortcut });
             mnuGameActions.Name = "mnuLgButtons";
-            mnuGameActions.Size = new System.Drawing.Size(212, 48);
+            mnuGameActions.Size = new System.Drawing.Size(202, 48);
             mnuGameActions.Opening += mnuGameActions_Opening;
             // 
             // mnuGameNvInspector
             // 
             mnuGameNvInspector.Name = "mnuGameNvInspector";
-            mnuGameNvInspector.Size = new System.Drawing.Size(211, 22);
+            mnuGameNvInspector.Size = new System.Drawing.Size(201, 22);
             mnuGameNvInspector.Text = "NVIDIA Profile Inspector";
             mnuGameNvInspector.Click += mnuGameNvInspector_Click;
             // 
             // miGameSetQuickAccessShortcut
             // 
             miGameSetQuickAccessShortcut.Name = "miGameSetQuickAccessShortcut";
-            miGameSetQuickAccessShortcut.Size = new System.Drawing.Size(211, 22);
-            miGameSetQuickAccessShortcut.Text = "Set Quick Access Shortcut";
+            miGameSetQuickAccessShortcut.Size = new System.Drawing.Size(201, 22);
+            miGameSetQuickAccessShortcut.Text = "Settings...";
             miGameSetQuickAccessShortcut.Click += miGameSetQuickAccessShortcut_Click;
             // 
             // chkGameRunAsAdmin
@@ -261,31 +270,37 @@
             mnuGameAddStep.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuGameAddStep.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { mnuGameNvidiaPresets, mnuGameAmdPresets, mnuGameLgPresets, mnuGameSamsungPresets, mnuGameStartProgram });
             mnuGameAddStep.Name = "mnuLgButtons";
-            mnuGameAddStep.Size = new System.Drawing.Size(181, 136);
+            mnuGameAddStep.Size = new System.Drawing.Size(164, 114);
             mnuGameAddStep.Opening += mnuGameAddStep_Opening;
             // 
             // mnuGameNvidiaPresets
             // 
             mnuGameNvidiaPresets.Name = "mnuGameNvidiaPresets";
-            mnuGameNvidiaPresets.Size = new System.Drawing.Size(180, 22);
+            mnuGameNvidiaPresets.Size = new System.Drawing.Size(163, 22);
             mnuGameNvidiaPresets.Text = "NVIDIA presets";
             // 
             // mnuGameAmdPresets
             // 
             mnuGameAmdPresets.Name = "mnuGameAmdPresets";
-            mnuGameAmdPresets.Size = new System.Drawing.Size(180, 22);
+            mnuGameAmdPresets.Size = new System.Drawing.Size(163, 22);
             mnuGameAmdPresets.Text = "AMD presets";
             // 
             // mnuGameLgPresets
             // 
             mnuGameLgPresets.Name = "mnuGameLgPresets";
-            mnuGameLgPresets.Size = new System.Drawing.Size(180, 22);
+            mnuGameLgPresets.Size = new System.Drawing.Size(163, 22);
             mnuGameLgPresets.Text = "LG presets";
+            // 
+            // mnuGameSamsungPresets
+            // 
+            mnuGameSamsungPresets.Name = "mnuGameSamsungPresets";
+            mnuGameSamsungPresets.Size = new System.Drawing.Size(163, 22);
+            mnuGameSamsungPresets.Text = "Samsung presets";
             // 
             // mnuGameStartProgram
             // 
             mnuGameStartProgram.Name = "mnuGameStartProgram";
-            mnuGameStartProgram.Size = new System.Drawing.Size(180, 22);
+            mnuGameStartProgram.Size = new System.Drawing.Size(163, 22);
             mnuGameStartProgram.Text = "Start Program";
             mnuGameStartProgram.Click += mnuGameStartProgram_Click;
             // 
@@ -379,6 +394,7 @@
             lvGamePresets.AllowDrop = true;
             lvGamePresets.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             lvGamePresets.CheckBoxes = true;
+            lvGamePresets.ContextMenuStrip = mnuGameOptions;
             lvGamePresets.FullRowSelect = true;
             lvGamePresets.Location = new System.Drawing.Point(8, 8);
             lvGamePresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -396,11 +412,12 @@
             lvGamePresets.DragEnter += lvGamePresets_DragEnter;
             lvGamePresets.DoubleClick += lvGamePresets_DoubleClick;
             // 
-            // mnuGameSamsungPresets
+            // miGameOptionsAutoApplySettings
             // 
-            mnuGameSamsungPresets.Name = "mnuGameSamsungPresets";
-            mnuGameSamsungPresets.Size = new System.Drawing.Size(180, 22);
-            mnuGameSamsungPresets.Text = "Samsung presets";
+            miGameOptionsAutoApplySettings.Name = "miGameOptionsAutoApplySettings";
+            miGameOptionsAutoApplySettings.Size = new System.Drawing.Size(201, 22);
+            miGameOptionsAutoApplySettings.Text = "Auto apply settings...";
+            miGameOptionsAutoApplySettings.Click += miGameOptionsAutoApplySettings_Click;
             // 
             // GamePanel
             // 
@@ -470,5 +487,7 @@
         private System.Windows.Forms.ToolStripMenuItem miGameProcessPriority;
         private System.Windows.Forms.ComboBox cbxGameStepType;
         private System.Windows.Forms.ToolStripMenuItem mnuGameSamsungPresets;
+        private System.Windows.Forms.ToolStripMenuItem miPresetNVIDIAProfileInspector;
+        private System.Windows.Forms.ToolStripMenuItem miGameOptionsAutoApplySettings;
     }
 }

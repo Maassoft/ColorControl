@@ -1,7 +1,4 @@
-﻿using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Native;
-using Microsoft.Win32;
-using Microsoft.Win32.TaskScheduler;
+﻿using ColorControl.Shared.Native;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NStandard;
@@ -14,10 +11,7 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Security.Principal;
-using System.ServiceProcess;
 using System.Text;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Enumeration.Pnp;
@@ -36,7 +30,6 @@ namespace ColorControl.Shared.Common
         public static Guid GUID_CONSOLE_DISPLAY_STATE = Guid.Parse("6FE69556-704A-47A0-8F24-C28D936FDA47");
 
         public static bool ConsoleOpened { get; private set; }
-        public static bool UseDedicatedElevatedProcess = false;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -109,168 +102,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
                 }
             }
             return path;
-        }
-
-        private static bool? _IsAdministrator;
-
-        public static bool IsAdministrator()
-        {
-            if (_IsAdministrator.HasValue)
-            {
-                return _IsAdministrator.Value;
-            }
-
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            _IsAdministrator = principal.IsInRole(WindowsBuiltInRole.Administrator);
-
-            return _IsAdministrator.Value;
-        }
-
-        public static int ExecuteElevated(string args, bool wait = true, bool skipDedicated = false, bool skipService = false)
-        {
-            if (!skipService && IsServiceRunning())
-            {
-                var result = PipeUtils.SendRpcMessage(args);
-
-                if (result.HasValue)
-                {
-                    return 0;
-                }
-            }
-
-            if (UseDedicatedElevatedProcess && !skipDedicated)
-            {
-                CheckElevatedProcess();
-
-                WinApi.CopyData.Send(ElevatedProcessWindowHandle, 1, args);
-
-                return 0;
-            }
-
-            var fileName = Process.GetCurrentProcess().MainModule.FileName;
-
-            var info = new ProcessStartInfo(fileName, args)
-            {
-                Verb = "runas", // indicates to elevate privileges
-                UseShellExecute = true,
-            };
-
-            var process = new Process
-            {
-                EnableRaisingEvents = true, // enable WaitForExit()
-                StartInfo = info
-            };
-            try
-            {
-                process.Start();
-
-                if (wait)
-                {
-                    process.WaitForExit(); // sleep calling process thread until evoked process exit
-                }
-
-                return process.Id;
-            }
-            catch (Exception e)
-            {
-                Logger.Error("ExecuteElevated: " + e.Message);
-            }
-            return 0;
-        }
-
-        private static nint ElevatedProcessWindowHandle = nint.Zero;
-
-        public static void CheckElevatedProcess()
-        {
-            ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
-
-            if (ElevatedProcessWindowHandle == nint.Zero)
-            {
-                ExecuteElevated(StartUpParams.StartElevatedParam, false, true, true);
-
-                var delay = 1000;
-
-                while (delay >= 0)
-                {
-                    Thread.Sleep(100);
-
-                    ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
-
-                    if (ElevatedProcessWindowHandle != nint.Zero)
-                    {
-                        Thread.Sleep(500);
-                        break;
-                    }
-
-                    delay -= 100;
-                }
-            }
-        }
-
-        public static bool IsChromeFixInstalled()
-        {
-            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
-            return key != null && key.GetValue(null).ToString().Contains("--disable-lcd-text");
-        }
-
-        public static bool InstallChromeFix(bool install, string applicationDataFolder)
-        {
-            var argument = "--disable-lcd-text";
-
-            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command", true);
-            if (key != null)
-            {
-                var value = key.GetValue(null).ToString();
-                value = value.Replace("chrome.exe\" " + argument + " --", "chrome.exe\" --");
-                if (install)
-                {
-                    value = value.Replace("chrome.exe\" --", "chrome.exe\" " + argument + " --");
-                }
-                key.SetValue(null, value);
-            }
-
-            var roamingFolder = applicationDataFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-            UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk"), argument, !install);
-            UpdateShortcut(Path.Combine(roamingFolder, @"Microsoft\Internet Explorer\Quick Launch\Google Chrome.lnk"), argument, !install);
-
-            var allUsersStartMenuFolder = Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu);
-            UpdateShortcut(Path.Combine(allUsersStartMenuFolder, @"Programs\Google Chrome.lnk"), argument, !install);
-
-            return true;
-        }
-
-        public static bool IsChromeInstalled()
-        {
-            var key = Registry.ClassesRoot.OpenSubKey(@"ChromeHTML\shell\open\command");
-            return key != null;
-        }
-
-        public static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)
-        {
-            if (File.Exists(path))
-            {
-                IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
-
-                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(path);
-
-                shortcut.Arguments = shortcut.Arguments.Replace(arguments, "");
-                if (!removeArguments)
-                {
-                    if (!string.IsNullOrEmpty(shortcut.Arguments))
-                    {
-                        shortcut.Arguments = shortcut.Arguments + " ";
-                    }
-                    shortcut.Arguments = shortcut.Arguments + arguments;
-                }
-
-                // save it / create
-                shortcut.Save();
-
-                return true;
-            }
-            return false;
         }
 
         public static string[] GetDeviceProperty(PnpObject device, string propertyName)
@@ -489,63 +320,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return list;
         }
 
-        public static void RegisterTask(string taskName, bool enabled, TaskRunLevel runLevel = TaskRunLevel.LUA)
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated(enabled ? $"{StartUpParams.EnableAutoStartParam} {(int)runLevel}" : StartUpParams.DisableAutoStartParam, skipService: true);
-                return;
-            }
-
-            var file = Process.GetCurrentProcess().MainModule.FileName;
-            var directory = Path.GetDirectoryName(file);
-
-            try
-            {
-                using (TaskService ts = new TaskService())
-                {
-                    if (enabled)
-                    {
-                        var td = ts.NewTask();
-
-                        td.RegistrationInfo.Description = "Start ColorControl";
-                        td.Principal.RunLevel = runLevel;
-
-                        td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
-
-                        td.Actions.Add(new ExecAction(file, StartUpParams.RunningFromScheduledTaskParam, directory));
-
-                        ts.RootFolder.RegisterTaskDefinition(taskName, td);
-                    }
-                    else
-                    {
-                        ts.RootFolder.DeleteTask(taskName, false);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Could not create/delete task: {e.Message}");
-            }
-        }
-
-        public static bool TaskExists(string taskName)
-        {
-            using (TaskService ts = new TaskService())
-            {
-                var task = ts.RootFolder.Tasks.FirstOrDefault(x => x.Name.Equals(taskName));
-
-                return task != null;
-            }
-        }
-
-        public static void CheckWin32Error(string message)
-        {
-            var errorMessage = new Win32Exception(Marshal.GetLastWin32Error()).Message;
-
-            throw new Exception($"{message}: {errorMessage}");
-        }
-
         public static bool OpenConsole()
         {
             if (ConsoleOpened)
@@ -599,76 +373,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             }
 
             return null;
-        }
-
-        public static Process StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0)
-        {
-            var process = Process.Start(new ProcessStartInfo(fileName, arguments)
-            {
-                Verb = elevate ? "runas" : string.Empty, // indicates to elevate privileges
-                UseShellExecute = true,
-                WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
-                WorkingDirectory = setWorkingDir ? Path.GetDirectoryName(fileName) : null
-            });
-
-            if (affinityMask > 0)
-            {
-                SetProcessAffinity(process.Id, affinityMask);
-            }
-
-            if (priorityClass > 0 && priorityClass != NativeConstants.NORMAL_PRIORITY_CLASS)
-            {
-                SetProcessPriority(process.Id, priorityClass);
-            }
-
-            if (wait)
-            {
-                process.WaitForExit();
-            }
-
-            return process;
-        }
-
-        public static void SetProcessAffinity(int processId, uint affinityMask)
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated($"{StartUpParams.SetProcessAffinityParam} {processId} {affinityMask}");
-
-                return;
-            }
-
-            var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
-
-            if (hProcess == nint.Zero)
-            {
-                CheckWin32Error($"Unable to set processor affinity on process {processId}");
-            }
-
-            NativeMethods.SetProcessAffinityMask(hProcess, affinityMask);
-
-            //var AffinityMask = (long)process.ProcessorAffinity;
-            //AffinityMask &= 0x000F; // use only any of the first 4 available processors
-            //process.ProcessorAffinity = (IntPtr)AffinityMask;
-        }
-
-        public static void SetProcessPriority(int processId, uint priorityClass)
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated($"{StartUpParams.SetProcessPriorityParam} {processId} {priorityClass}");
-
-                return;
-            }
-
-            var hProcess = NativeMethods.OpenProcess(NativeConstants.PROCESS_ALL_ACCESS, false, (uint)processId);
-
-            if (hProcess == nint.Zero)
-            {
-                CheckWin32Error($"Unable to set process priority on process {processId}");
-            }
-
-            NativeMethods.SetPriorityClass(hProcess, priorityClass);
         }
 
         public static string GetResourceFile(string resourceName)
@@ -792,100 +496,6 @@ The best and suggested method to provide this is via a Windows Service. Only whe
         public static bool NormEquals(this string str1, string str2)
         {
             return str1.Trim().Replace(" ", string.Empty).Equals(str2.Trim().Replace(" ", string.Empty), StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static void StartService()
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated(StartUpParams.StartServiceParam);
-                return;
-            }
-
-            var controller = new ServiceController(SERVICE_NAME);
-
-            if (controller.Status == ServiceControllerStatus.Stopped)
-            {
-                controller.Start();
-            }
-        }
-
-        public static void StopService()
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated(StartUpParams.StopServiceParam);
-                return;
-            }
-
-            var controller = new ServiceController(SERVICE_NAME);
-
-            if (controller.Status == ServiceControllerStatus.Running)
-            {
-                controller.Stop();
-            }
-        }
-
-        public static bool IsServiceInstalled()
-        {
-            return GetServiceStatus() != 0;
-        }
-
-        public static bool IsServiceRunning()
-        {
-            return GetServiceStatus() == ServiceControllerStatus.Running;
-        }
-
-        public static ServiceControllerStatus GetServiceStatus()
-        {
-            var controller = new ServiceController(SERVICE_NAME);
-
-            try
-            {
-                return controller.Status;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        public static void InstallService()
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated(StartUpParams.InstallServiceParam, skipService: true);
-
-                return;
-            }
-
-
-            if (!IsServiceInstalled())
-            {
-                StartProcess("sc.exe", @$"create ""{SERVICE_NAME}"" binpath=""{Process.GetCurrentProcess().MainModule.FileName}"" start=auto", wait: true);
-                StartProcess("sc.exe", @$"description ""{SERVICE_NAME}"" ""Executes tasks for Color Control that require elevation. If this service is stopped, functions like WOL might be impacted.""", wait: true);
-            }
-
-            StartService();
-        }
-
-        public static void UninstallService()
-        {
-            if (!IsAdministrator())
-            {
-                ExecuteElevated(StartUpParams.UninstallServiceParam, skipService: true);
-
-                return;
-            }
-
-            if (!IsServiceInstalled())
-            {
-                return;
-            }
-
-            StopService();
-
-            StartProcess("sc.exe", @$"delete ""{SERVICE_NAME}""", wait: true);
         }
 
         public static async Task<bool> PingHost(string nameOrAddress)

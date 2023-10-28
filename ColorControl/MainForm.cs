@@ -15,7 +15,6 @@ using Linearstar.Windows.RawInput;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using novideo_srgb;
-using NvAPIWrapper.Display;
 using NWin32;
 using System;
 using System.Collections.Generic;
@@ -39,10 +38,12 @@ namespace ColorControl
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly ServiceManager _serviceManager;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly WinApiAdminService _winApiAdminService;
+        private readonly WinApiService _winApiService;
         private string _dataDir;
 
         private NvPanel _nvPanel;
-        private NvDitherPanel _nvDitherPanel;
 
         private NotifyIcon _trayIcon;
         private bool _initialized = false;
@@ -76,7 +77,8 @@ namespace ColorControl
         private Dictionary<int, Action> _shortcuts = new();
         private Dictionary<string, Func<UserControl>> _modules = new();
 
-        public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager)
+        public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager,
+            IServiceProvider serviceProvider, WinApiAdminService winApiAdminService, WinApiService winApiService)
         {
             InitializeComponent();
 
@@ -87,6 +89,9 @@ namespace ColorControl
 
             _powerEventDispatcher = powerEventDispatcher;
             _serviceManager = serviceManager;
+            _serviceProvider = serviceProvider;
+            _winApiAdminService = winApiAdminService;
+            _winApiService = winApiService;
             _dataDir = Program.DataDir;
             _config = Program.Config;
 
@@ -130,17 +135,17 @@ namespace ColorControl
             _trayIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
             _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
 
-            chkStartAfterLogin.Checked = Utils.TaskExists(Program.TS_TASKNAME);
+            chkStartAfterLogin.Checked = _winApiService.TaskExists(Program.TS_TASKNAME);
 
-            chkFixChromeFonts.Enabled = Utils.IsChromeInstalled();
+            chkFixChromeFonts.Enabled = _winApiService.IsChromeInstalled();
             if (chkFixChromeFonts.Enabled)
             {
-                var fixInstalled = Utils.IsChromeFixInstalled();
+                var fixInstalled = _winApiService.IsChromeFixInstalled();
                 if (_config.FixChromeFonts && !fixInstalled)
                 {
-                    Utils.ExecuteElevated(StartUpParams.ActivateChromeFontFixParam);
+                    _winApiAdminService.InstallChromeFix(true, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
                 }
-                chkFixChromeFonts.Checked = Utils.IsChromeFixInstalled();
+                chkFixChromeFonts.Checked = _winApiService.IsChromeFixInstalled();
             }
 
             InitShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut, StartScreenSaver);
@@ -230,12 +235,12 @@ namespace ColorControl
             var text = "Use Windows Service";
             btnStartStopService.Enabled = true;
 
-            if (Utils.IsServiceRunning())
+            if (_winApiService.IsServiceRunning())
             {
                 text += " (running)";
                 btnStartStopService.Text = "Stop";
             }
-            else if (Utils.IsServiceInstalled())
+            else if (_winApiService.IsServiceInstalled())
             {
                 text += " (installed, not running)";
                 btnStartStopService.Text = "Start";
@@ -256,11 +261,11 @@ namespace ColorControl
             {
                 //throw new Exception("bla");
                 Logger.Debug("Initializing NVIDIA...");
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-                _serviceManager.NvService = new NvService(appContextProvider);
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
+                _serviceManager.NvService = _serviceProvider.GetRequiredService<NvService>();
                 Logger.Debug("Initializing NVIDIA...Done.");
 
-                var rpcService = Program.ServiceProvider.GetRequiredService<RpcService>();
+                var rpcService = _serviceProvider.GetRequiredService<RpcClientService>();
 
                 _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider, rpcService);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -282,7 +287,7 @@ namespace ColorControl
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
                 _serviceManager.AmdService = new AmdService(appContextProvider);
 
                 _amdPanel = new AmdPanel(_serviceManager.AmdService, _trayIcon, Handle);
@@ -305,7 +310,7 @@ namespace ColorControl
         {
             try
             {
-                _serviceManager.GameService = Program.ServiceProvider.GetRequiredService<GameService>();
+                _serviceManager.GameService = _serviceProvider.GetRequiredService<GameService>();
 
                 _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _serviceManager.SamsungService, _trayIcon, Handle);
                 _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -336,7 +341,7 @@ namespace ColorControl
         {
             try
             {
-                _serviceManager.LgService = Program.ServiceProvider.GetRequiredService<LgService>();
+                _serviceManager.LgService = _serviceProvider.GetRequiredService<LgService>();
 
                 _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _trayIcon, Handle);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -360,7 +365,7 @@ namespace ColorControl
         {
             try
             {
-                _serviceManager.SamsungService = Program.ServiceProvider.GetRequiredService<SamsungService>();
+                _serviceManager.SamsungService = _serviceProvider.GetRequiredService<SamsungService>();
 
                 //_serviceManager.SamsungService.Init();
 
@@ -387,7 +392,7 @@ namespace ColorControl
 
             Text = Application.ProductName + " " + Application.ProductVersion;
 
-            if (Utils.IsAdministrator())
+            if (_winApiService.IsAdministrator())
             {
                 Text += " (administrator)";
             }
@@ -435,7 +440,7 @@ namespace ColorControl
         {
             if (_updateHtmlUrl != null)
             {
-                Utils.StartProcess(_updateHtmlUrl);
+                _winApiAdminService.StartProcess(_updateHtmlUrl);
             }
         }
 
@@ -691,7 +696,7 @@ namespace ColorControl
 
         private void CheckElevationMethod()
         {
-            if (Utils.IsAdministrator())
+            if (_winApiService.IsAdministrator())
             {
                 return;
             }
@@ -703,15 +708,15 @@ namespace ColorControl
                     return;
                 }
 
-                if (_config.ElevationMethod == ElevationMethod.UseService && !Utils.IsServiceInstalled() &&
+                if (_config.ElevationMethod == ElevationMethod.UseService && !_winApiService.IsServiceInstalled() &&
                     (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not installed. Do you want to install it now?") == DialogResult.Yes))
                 {
-                    Utils.InstallService();
+                    _winApiAdminService.InstallService();
                 }
-                else if (_config.ElevationMethod == ElevationMethod.UseService && !Utils.IsServiceRunning() &&
+                else if (_config.ElevationMethod == ElevationMethod.UseService && !_winApiService.IsServiceRunning() &&
                     (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not running. Do you want to start it now?") == DialogResult.Yes))
                 {
-                    Utils.StartService();
+                    _winApiAdminService.StartService();
                 }
 
                 return;
@@ -764,7 +769,6 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             if (tcMain.SelectedTab == tabInfo)
             {
-                LoadInfo();
             }
             else if (tcMain.SelectedTab == tabOptions)
             {
@@ -783,26 +787,6 @@ NOTE: installing the service may cause a User Account Control popup.");
                 foreach (var module in _config.Modules)
                 {
                     chkModules.Items.Add(module.DisplayName, module.IsActive);
-                }
-            }
-
-            if (_serviceManager.NvService != null)
-            {
-                if (_nvDitherPanel == null)
-                {
-                    _nvDitherPanel = new NvDitherPanel(_serviceManager.NvService);
-
-                    tabOptions.Controls.Add(_nvDitherPanel);
-
-                    _nvDitherPanel.Top = grpGeneralOptions.Top;
-                    _nvDitherPanel.Left = grpGeneralOptions.Left + grpGeneralOptions.Width + 4;
-                    _nvDitherPanel.Width = tabOptions.Width - _nvDitherPanel.Left - 4;
-
-                    _nvDitherPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                }
-                else
-                {
-                    _nvDitherPanel.UpdateInfo();
                 }
             }
 
@@ -944,24 +928,8 @@ NOTE: installing the service may cause a User Account Control popup.");
             await _samsungPanel?.ApplyPreset(preset);
         }
 
-        private void LoadInfo()
-        {
-            grpNVIDIAInfo.Visible = _serviceManager.NvService != null;
-        }
-
         private void btnRefreshNVIDIAInfo_Click(object sender, EventArgs e)
         {
-            if (_serviceManager.NvService != null)
-            {
-                tvNVIDIAInfo.Nodes.Clear();
-                var displays = Display.GetDisplays();
-                for (var i = 0; i < displays.Length; i++)
-                {
-                    var display = displays[i];
-                    var node = TreeNodeBuilder.CreateTree(display, $"Display[{i}]");
-                    tvNVIDIAInfo.Nodes.Add(node);
-                }
-            }
         }
 
         private void btnSetShortcutScreenSaver_Click(object sender, EventArgs e)
@@ -1063,7 +1031,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             {
                 _updateHtmlUrl = latest.html_url.Value;
 
-                if (latest.assets != null && Utils.IsServiceRunning())
+                if (latest.assets != null && _winApiService.IsServiceRunning())
                 {
                     var asset = latest.assets[0];
                     _downloadUrl = asset.browser_download_url.Value;
@@ -1196,8 +1164,6 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             _config.ElevationMethod = elevationMethod;
 
-            Utils.UseDedicatedElevatedProcess = _config.ElevationMethod == ElevationMethod.UseElevatedProcess;
-
             var _ = _config.ElevationMethod switch
             {
                 ElevationMethod.None => SetElevationMethodNone(),
@@ -1217,7 +1183,7 @@ NOTE: installing the service may cause a User Account Control popup.");
                 RegisterScheduledTask();
             }
 
-            Utils.UninstallService();
+            _winApiAdminService.UninstallService();
 
             return true;
         }
@@ -1230,16 +1196,16 @@ NOTE: installing the service may cause a User Account Control popup.");
                 RegisterScheduledTask();
             }
 
-            Utils.UninstallService();
+            _winApiAdminService.UninstallService();
 
             return true;
         }
 
         private bool SetElevationMethodUseService()
         {
-            Utils.InstallService();
+            _winApiAdminService.InstallService();
 
-            if (Utils.IsServiceInstalled())
+            if (_winApiService.IsServiceInstalled())
             {
                 MessageForms.InfoOk("Service installed successfully.");
                 return true;
@@ -1257,14 +1223,14 @@ NOTE: installing the service may cause a User Account Control popup.");
                 RegisterScheduledTask();
             }
 
-            Utils.UninstallService();
+            _winApiAdminService.UninstallService();
 
             return true;
         }
 
         private void RegisterScheduledTask(bool enabled = true)
         {
-            Utils.RegisterTask(Program.TS_TASKNAME, enabled, _config.ElevationMethod == ElevationMethod.RunAsAdmin ? Microsoft.Win32.TaskScheduler.TaskRunLevel.Highest : Microsoft.Win32.TaskScheduler.TaskRunLevel.LUA);
+            _winApiAdminService.RegisterTask(Program.TS_TASKNAME, enabled, _config.ElevationMethod == ElevationMethod.RunAsAdmin ? Microsoft.Win32.TaskScheduler.TaskRunLevel.Highest : Microsoft.Win32.TaskScheduler.TaskRunLevel.LUA);
         }
 
         private void btnElevationInfo_Click(object sender, EventArgs e)
@@ -1273,7 +1239,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
 NOTE: if ColorControl itself already runs as administrator this is indicated in the title: ColorControl {Application.ProductVersion} (administrator).
 
-Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as administrator.
+Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}running as administrator.
 ");
         }
 
@@ -1286,11 +1252,11 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
 
                 if (start)
                 {
-                    Utils.StartService();
+                    _winApiAdminService.StartService();
                 }
                 else
                 {
-                    Utils.StopService();
+                    _winApiAdminService.StopService();
                 }
 
                 var wait = 1500;
@@ -1299,7 +1265,7 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
                 {
                     await Task.Delay(100);
 
-                    if (start == Utils.IsServiceRunning())
+                    if (start == _winApiService.IsServiceRunning())
                     {
                         break;
                     }
@@ -1376,11 +1342,9 @@ Currently ColorControl is {(Utils.IsAdministrator() ? "" : "not ")}running as ad
             {
                 _config.FixChromeFonts = chkFixChromeFonts.Checked;
 
-                var param = chkFixChromeFonts.Checked ? StartUpParams.ActivateChromeFontFixParam : StartUpParams.DeactivateChromeFontFixParam;
-
                 var folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-                Utils.ExecuteElevated($"{param} {folder}");
+                _winApiAdminService.InstallChromeFix(chkFixChromeFonts.Checked, folder);
             }
         }
 

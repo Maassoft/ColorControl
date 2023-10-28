@@ -380,13 +380,15 @@ namespace nspector.Common
 
         public SettingMeta GetSettingMeta(uint settingId, SettingViewMode viewMode = SettingViewMode.Normal)
         {
-            if (settingMetaCache.ContainsKey(settingId))
+            var settingMeta = settingMetaCache.GetValueOrDefault(settingId);
+
+            if (settingMeta != null)
             {
-                return PostProcessMeta(settingId, settingMetaCache[settingId], viewMode);
+                return PostProcessMeta(settingId, settingMeta, viewMode);
             }
             else
             {
-                var settingMeta = CreateSettingMeta(settingId);
+                settingMeta = CreateSettingMeta(settingId);
                 settingMetaCache.Add(settingId, settingMeta);
                 return PostProcessMeta(settingId, settingMeta, viewMode);
             }

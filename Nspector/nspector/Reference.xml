@@ -4971,5 +4971,17 @@
       </SettingValues>
       <SettingMasks />
     </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>DLSS/DLAA: Force DLAA</UserfriendlyName>
+      <HexSettingID>0x10E41DF4</HexSettingID>
+      <Description />
+      <GroupName>8 - Extra</GroupName>
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>DLSS/DLAA: Override Scale Ratio</UserfriendlyName>
+      <HexSettingID>0x10E41DF5</HexSettingID>
+      <Description />
+      <GroupName>8 - Extra</GroupName>
+    </CustomSetting>
   </Settings>
 </CustomSettingNames>

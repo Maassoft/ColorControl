@@ -19,6 +19,7 @@ namespace nspector
 
         private List<SettingItem> _currentProfileSettingItems = new List<SettingItem>();
         private static bool _alreadyScannedForPredefinedSettings = false;
+        private static object[] _baseProfileNames;
         private IntPtr _taskbarParent = IntPtr.Zero;
         private bool _activated = false;
         private bool _isStartup = true;
@@ -173,15 +174,16 @@ namespace nspector
                 GC.Collect();
                 for (int i = 0; i < lvSettings.Items.Count; i++)
                 {
-                    if (lvSettings.Items[i].Text == lvSelection)
+                    var item = lvSettings.Items[i];
+                    if (item.Text == lvSelection)
                     {
-                        lvSettings.Items[i].Selected = true;
-                        lvSettings.Items[i].EnsureVisible();
+                        item.Selected = true;
+                        item.EnsureVisible();
 
                         if (!cbProfiles.Focused)
                         {
                             lvSettings.Select();
-                            cbValues.Text = lvSettings.Items[i].SubItems[1].Text;
+                            cbValues.Text = item.SubItems[1].Text;
                         }
                         break;
                     }
@@ -193,10 +195,31 @@ namespace nspector
         {
             cbProfiles.Items.Clear();
 
-            var profileNames = _drs.GetProfileNames(ref _baseProfileName);
-            cbProfiles.Items.AddRange(profileNames.Cast<object>().ToArray());
+            if (_baseProfileNames != null)
+            {
+                cbProfiles.Items.AddRange(_baseProfileNames);
+            }
+            else
+            {
+                var profileNames = _drs.GetProfileNames(ref _baseProfileName);
+                _baseProfileNames = profileNames.Cast<object>().ToArray();
+                cbProfiles.Items.AddRange(_baseProfileNames);
+            }
 
             cbProfiles.Sorted = true;
+        }
+
+        public void SetProfileByExecutable(string executable)
+        {
+            var profileName = _drs.GetProfileNameByApps(executable);
+
+            if (profileName != null)
+            {
+                cbProfiles.SelectedIndex = cbProfiles.Items.IndexOf(profileName);
+                return;
+            }
+
+            ShowCreateProfileDialog(Path.GetFileNameWithoutExtension(executable), executable);
         }
 
         private void MoveComboToItemAndFill()

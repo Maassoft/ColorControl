@@ -42,6 +42,21 @@ namespace novideo_srgb
             return _novideoWindow != null;
         }
 
+        public static void BeforeDisplaySettingsChange()
+        {
+            if (!IsInitialized())
+            {
+                return;
+            }
+
+            _novideoWindow.UpdateMonitors();
+        }
+
+        private void UpdateMonitors()
+        {
+            _viewModel.UpdateMonitors(false);
+        }
+
         public static void UpdateContextMenu(ToolStripMenuItem parent)
         {
             if (_novideoWindow == null)

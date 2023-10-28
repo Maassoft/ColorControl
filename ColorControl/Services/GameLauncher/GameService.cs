@@ -1,27 +1,120 @@
 ﻿using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Services;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ColorControl.Services.GameLauncher
 {
     class GameService : ServiceBase<GamePreset>
     {
-        //private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public override string ServiceName => "Game";
 
         protected override string PresetsBaseFilename => "GamePresets.json";
 
+        private ProcessEventDispatcher _processEventDispatcher;
+        private readonly WinApiAdminService _winApiAdminService;
+        private readonly WinApiService _winApiService;
         private ServiceManager _serviceManager;
+        private int _lastStartedProcessId;
+        private System.DateTime _lastStartedPresetDateTime = System.DateTime.MinValue;
+        private string _lastStartedProcessPath;
+        private string _configFilename;
 
-        public GameService(AppContextProvider appContextProvider, ServiceManager serviceManager) : base(appContextProvider)
+        public GameServiceConfig Config { get; private set; }
+
+        public GameService(AppContextProvider appContextProvider, ServiceManager serviceManager, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService, WinApiService winApiService) : base(appContextProvider)
         {
+            LoadConfig();
             LoadPresets();
             _serviceManager = serviceManager;
+            _processEventDispatcher = processEventDispatcher;
+            _winApiAdminService = winApiAdminService;
+            _winApiService = winApiService;
+            _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+        }
+
+        private async Task ProcessChanged(object sender, ProcessChangedEventArgs e, CancellationToken token)
+        {
+            if (e.StartedProcesses?.Any() != true || !Config.ApplyExternallyLaunched)
+            {
+                return;
+            }
+
+            if (_lastStartedPresetDateTime > System.DateTime.Now.AddSeconds(-5))
+            {
+                return;
+            }
+            _lastStartedProcessId = 0;
+
+            var startedProcesses = e.StartedProcesses;
+
+            foreach (var startedProcess in startedProcesses)
+            {
+                try
+                {
+                    if (await HandleStartedProcess(startedProcess))
+                    {
+                        return;
+                    }
+                }
+                catch (System.Exception) { }
+            }
+        }
+
+        private async Task<bool> HandleStartedProcess(Process process)
+        {
+            GamePreset preset;
+
+            if (_winApiService.IsAdministrator())
+            {
+                var fileName = process.MainModule.FileName;
+
+                preset = _presets.FirstOrDefault(p => fileName.Contains(Path.GetDirectoryName(p.Path), System.StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                var name = process.ProcessName.Replace("-Win64-Shipping", "");
+                preset = _presets.FirstOrDefault(p => Path.GetFileName(p.Path).Contains(name, System.StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (preset == null || !preset.AutoSettings.AllowAutoApply)
+            {
+                return false;
+            }
+
+            if (_lastStartedProcessId != process.Id)
+            {
+                Logger.Debug($"Auto-starting preset {preset.name} for process {process.ProcessName}");
+
+                var mainThreadId = 0;
+                var suspended = false;
+                if (preset.AutoSettings.ProcessAutoAction == ProcessAutoAction.Suspend)
+                {
+                    mainThreadId = _winApiAdminService.SuspendMainThread(process.Id);
+                    suspended = true;
+                }
+                else if (preset.AutoSettings.ProcessAutoAction == ProcessAutoAction.Restart)
+                {
+                    _winApiAdminService.StopProcess(process.Id);
+                    process = null;
+                }
+
+                var _ = ExecutePreset(preset, process, suspended ? mainThreadId : 0);
+
+                return true;
+            }
+
+            return false;
         }
 
         protected override List<GamePreset> GetDefaultPresets()
@@ -37,6 +130,7 @@ namespace ColorControl.Services.GameLauncher
         public void GlobalSave()
         {
             SavePresets();
+            SaveConfig();
         }
 
         public async Task<bool> ApplyPreset(string idOrName)
@@ -57,17 +151,34 @@ namespace ColorControl.Services.GameLauncher
             return await ApplyPreset(preset, Program.AppContext);
         }
 
-        public async Task<bool> ApplyPreset(GamePreset preset, AppContext appContext)
+        public async Task<bool> ApplyPreset(GamePreset preset, GlobalContext _)
+        {
+            var result = await ExecutePreset(preset);
+
+            _lastAppliedPreset = preset;
+
+            PresetApplied();
+
+            return result;
+        }
+
+        private async Task<bool> ExecutePreset(GamePreset preset, Process process = null, int resumeThreadId = default)
         {
             var result = true;
 
             await ExecuteSteps(preset.PreLaunchSteps);
 
-            Process process = null;
-
-            if (!string.IsNullOrEmpty(preset.Path))
+            if (process == null && !string.IsNullOrEmpty(preset.Path))
             {
-                process = Utils.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
+                process = _winApiAdminService.StartProcess(preset.Path, preset.Parameters, setWorkingDir: true, elevate: preset.RunAsAdministrator, affinityMask: preset.ProcessAffinityMask, priorityClass: preset.ProcessPriorityClass);
+
+                _lastStartedPresetDateTime = System.DateTime.Now;
+                _lastStartedProcessId = process.Id;
+                _lastStartedProcessPath = Path.GetDirectoryName(preset.Path);
+            }
+            else if (resumeThreadId != default)
+            {
+                _winApiAdminService.ResumeThread((uint)resumeThreadId);
             }
 
             await ExecuteSteps(preset.PostLaunchSteps);
@@ -77,16 +188,27 @@ namespace ColorControl.Services.GameLauncher
                 await ExecuteFinalizationStepsAsync(process, preset.FinalizeSteps);
             }
 
-            _lastAppliedPreset = preset;
-
-            PresetApplied();
-
             return result;
         }
 
         private async Task ExecuteFinalizationStepsAsync(Process process, List<string> finalizeSteps)
         {
-            await process.WaitForExitAsync();
+            await Task.Delay(1000);
+
+            try
+            {
+                if (process.HasExited)
+                {
+                    return;
+                }
+
+                await process.WaitForExitAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+                return;
+            }
 
             await ExecuteSteps(finalizeSteps);
         }
@@ -139,6 +261,28 @@ namespace ColorControl.Services.GameLauncher
                 }
 
             }
+        }
+
+        private void LoadConfig()
+        {
+            _configFilename = Path.Combine(_dataPath, "GameConfig.json");
+            try
+            {
+                if (File.Exists(_configFilename))
+                {
+                    Config = JsonConvert.DeserializeObject<GameServiceConfig>(File.ReadAllText(_configFilename));
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error($"LoadConfig: {ex.Message}");
+            }
+            Config ??= new GameServiceConfig();
+        }
+
+        private void SaveConfig()
+        {
+            Utils.WriteObject(_configFilename, Config);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace ColorControl.Services.LG
             _trayIcon = trayIcon;
             _mainHandle = handle;
 
-            _config = Shared.Common.AppContext.CurrentContext.Config;
+            _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -96,7 +96,7 @@ namespace ColorControl.Services.LG
         {
             FillLgDevices();
 
-            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.GlobalContext.CurrentContext.StartUpParams;
 
             if (startUpParams.ExecuteLgPreset)
             {

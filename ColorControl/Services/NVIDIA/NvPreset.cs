@@ -23,7 +23,7 @@ namespace ColorControl.Services.NVIDIA
         public bool HDREnabled { get; set; }
         public bool toggleHDR { get; set; }
         public bool applyDithering { get; set; }
-        public bool ditheringEnabled { get; set; }
+        public bool? ditheringEnabled { get; set; }
         public bool applyRefreshRate { get; set; }
         public uint refreshRate { get; set; }
         public bool applyResolution { get; set; }
@@ -49,6 +49,7 @@ namespace ColorControl.Services.NVIDIA
         public Display Display { get; set; }
         [JsonIgnore]
         public string InfoLine { get; set; }
+        public NvDitherState DitherState => ditheringEnabled.HasValue ? ditheringEnabled == true ? NvDitherState.Enabled : NvDitherState.Disabled : NvDitherState.Auto;
 
         public NvPreset() : base()
         {
@@ -224,14 +225,19 @@ namespace ColorControl.Services.NVIDIA
 
         public string GetDitheringDescription(string disabledText = "Disabled")
         {
-            var dithering = ditheringEnabled ? string.Empty : disabledText;
-            if (ditheringEnabled)
+            if (ditheringEnabled == null && ditheringBits == 0 && ditheringMode == 0)
+            {
+                return "Auto: Disabled";
+            }
+
+            if (ditheringEnabled is null or true)
             {
                 var ditherBitsDescription = ((NvDitherBits)ditheringBits).GetDescription();
                 var ditherModeDescription = ((NvDitherMode)ditheringMode).GetDescription();
-                dithering = string.Format("{0} {1}", ditherBitsDescription, ditherModeDescription);
+                return string.Format("{0}{1} {2}", ditheringEnabled == null ? "Auto: " : "", ditherBitsDescription, ditherModeDescription);
             }
-            return dithering;
+
+            return disabledText;
         }
 
         public string GetHdmiSettingsDescription()

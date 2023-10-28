@@ -63,6 +63,13 @@ namespace nspector.Common
             }
             else
             {
+                if (profileName.Contains("Base Profile", StringComparison.OrdinalIgnoreCase))
+                {
+                    var res = nvw.DRS_GetBaseProfile(hSession, ref hProfile);
+
+                    return hProfile;
+                }
+
                 var nvRes = nvw.DRS_FindProfileByName(hSession, new StringBuilder(profileName), ref hProfile);
 
                 if (nvRes == NvAPI_Status.NVAPI_PROFILE_NOT_FOUND)
@@ -174,7 +181,7 @@ namespace nspector.Common
 
         }
 
-        protected NVDRS_SETTING? ReadSetting(IntPtr hSession, IntPtr hProfile, uint settingId)
+        protected NVDRS_SETTING? ReadSetting(IntPtr hSession, IntPtr hProfile, uint settingId, string? profileName = null)
         {
             var newSetting = new NVDRS_SETTING()
             {
@@ -190,8 +197,13 @@ namespace nspector.Common
 
             if (decrypter != null)
             {
-                var profile = GetProfileInfo(hSession, hProfile);
-                decrypter.DecryptSettingIfNeeded(profile.profileName, ref newSetting);
+                if (profileName == null)
+                {
+                    var profile = GetProfileInfo(hSession, hProfile);
+                    profileName = profile.profileName;
+                }
+
+                decrypter.DecryptSettingIfNeeded(profileName, ref newSetting);
             }
 
             return newSetting;
@@ -254,10 +266,13 @@ namespace nspector.Common
         protected List<NVDRS_SETTING> GetProfileSettings(IntPtr hSession, IntPtr hProfile, NVDRS_PROFILE profile = default(NVDRS_PROFILE))
         {
             uint settingCount = 40;
-            var settings = new NVDRS_SETTING[settingCount];
-            settings[0].version = NvapiDrsWrapper.NVDRS_SETTING_VER;
 
-            var esRes = NvapiDrsWrapper.DRS_EnumSettings(hSession, hProfile, 0, ref settingCount, ref settings);
+            NVDRS_SETTING[] settings;
+
+            //var settings = new NVDRS_SETTING[settingCount];
+            //settings[0].version = NvapiDrsWrapper.NVDRS_SETTING_VER;
+
+            var esRes = NvapiDrsWrapper.DRS_EnumSettings(hSession, hProfile, 0, ref settingCount, out settings);
 
             if (esRes == NvAPI_Status.NVAPI_END_ENUMERATION)
                 return new List<NVDRS_SETTING>();
@@ -282,11 +297,14 @@ namespace nspector.Common
 
         protected List<NVDRS_APPLICATION_V3> GetProfileApplications(IntPtr hSession, IntPtr hProfile)
         {
-            uint appCount = 512;
-            var apps = new NVDRS_APPLICATION_V3[512];
-            apps[0].version = NvapiDrsWrapper.NVDRS_APPLICATION_VER_V3;
+            uint appCount = 8;
 
-            var esRes = NvapiDrsWrapper.DRS_EnumApplications(hSession, hProfile, 0, ref appCount, ref apps);
+            NVDRS_APPLICATION_V3[] apps;
+
+            //var apps = new NVDRS_APPLICATION_V3[8];
+            //apps[0].version = NvapiDrsWrapper.NVDRS_APPLICATION_VER_V3;
+
+            var esRes = NvapiDrsWrapper.DRS_EnumApplications(hSession, hProfile, 0, ref appCount, out apps);
 
             if (esRes == NvAPI_Status.NVAPI_END_ENUMERATION)
                 return new List<NVDRS_APPLICATION_V3>();

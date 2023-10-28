@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using ColorControl.Shared.Services;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using static ColorControl.Shared.Native.WinApi;
@@ -46,7 +47,7 @@ namespace ColorControl.Shared.Common
 
         public static Process Parent(this Process process, IEnumerable<Process> processes = null)
         {
-            if (Utils.IsAdministrator())
+            if (WinApiService.IsAdministratorStatic())
             {
                 try
                 {

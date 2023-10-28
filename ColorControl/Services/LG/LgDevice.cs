@@ -1,5 +1,6 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Services;
 using LgTv;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -262,8 +263,10 @@ namespace ColorControl.Services.LG
             AddSetDeviceConfigAction("HDMI_4_icon", typeof(HdmiIcon), "HDMI 4 icon");
 
             AddGenericPictureAction("soundMode", typeof(SoundMode), category: "sound", title: "Sound Mode");
+            AddGenericPictureAction("smartSoundMode", typeof(OffToOn), category: "sound", title: "Adaptive Sound Control");
             AddGenericPictureAction("soundOutput", typeof(SoundOutput), category: "sound", title: "Sound Output");
             AddGenericPictureAction("autoVolume", typeof(OffToOn), category: "sound", title: "Auto Volume");
+            AddGenericPictureAction("virtualSurround", typeof(OffToOn), category: "sound", title: "Virtual Surround");
 
             //AddGenericPictureAction("enableToastPopup", typeof(OffToOn), category: "option", title: "enableToastPopup");
             AddSetConfigAction("tv.conti.supportUsedTime", typeof(BoolFalseToTrue), title: "Total Power On Time");
@@ -917,7 +920,9 @@ namespace ColorControl.Services.LG
 
             if (MacAddress != null)
             {
-                result = WOL.WakeFunctionCheckAdmin(MacAddress, IpAddress);
+                var wolService = Program.ServiceProvider.GetRequiredService<WolService>();
+
+                result = wolService.SendWol(MacAddress, IpAddress);
                 _justWokeUp = true;
             }
             else

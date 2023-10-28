@@ -490,6 +490,10 @@ namespace nspector.Native.NVAPI2
         public static readonly DRS_DestroySessionDelegate DRS_DestroySession;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate NvAPI_Status DRS_DecryptSessionDelegate(IntPtr hSession);
+        public static readonly DRS_DecryptSessionDelegate DRS_DecryptSession;
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate NvAPI_Status DRS_LoadSettingsDelegate(IntPtr hSession);
         public static readonly DRS_LoadSettingsDelegate DRS_LoadSettings;
 
@@ -568,24 +572,38 @@ namespace nspector.Native.NVAPI2
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate NvAPI_Status DRS_EnumApplicationsDelegate(IntPtr hSession, IntPtr hProfile, uint startIndex, ref uint appCount, IntPtr pApplication);
         private static readonly DRS_EnumApplicationsDelegate DRS_EnumApplicationsInternal;
-        public static NvAPI_Status DRS_EnumApplications<TDrsAppVersion>(IntPtr hSession, IntPtr hProfile, uint startIndex, ref uint appCount, ref TDrsAppVersion[] apps)
+
+
+        [ThreadStatic]
+        private static IntPtr pSettingsApps;
+        [ThreadStatic]
+        private static NVDRS_APPLICATION_V3[] drsApps;
+
+        public static NvAPI_Status DRS_EnumApplications(IntPtr hSession, IntPtr hProfile, uint startIndex, ref uint appCount, out NVDRS_APPLICATION_V3[] apps)
         {
             NvAPI_Status res;
 
-            IntPtr pSettings;
-            NativeArrayHelper.SetArrayData(apps, out pSettings);
+            //IntPtr pSettings;
+
+            if (pSettingsApps == IntPtr.Zero)
+            {
+                drsApps = new NVDRS_APPLICATION_V3[8];
+                drsApps[0].version = NvapiDrsWrapper.NVDRS_APPLICATION_VER_V3;
+                NativeArrayHelper.SetArrayData(drsApps, out pSettingsApps);
+            }
+
+            //NativeArrayHelper.SetArrayData(apps, out pSettingsApps);
             try
             {
-                res = DRS_EnumApplicationsInternal(hSession, hProfile, startIndex, ref appCount, pSettings);
-                apps = NativeArrayHelper.GetArrayData<TDrsAppVersion>(pSettings, (int)appCount);
+                res = DRS_EnumApplicationsInternal(hSession, hProfile, startIndex, ref appCount, pSettingsApps);
+                apps = NativeArrayHelper.GetArrayData<NVDRS_APPLICATION_V3>(pSettingsApps, (int)appCount);
             }
             finally
             {
-                Marshal.FreeHGlobal(pSettings);
+                //Marshal.FreeHGlobal(pSettings);
             }
             return res;
         }
-
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate NvAPI_Status DRS_FindApplicationByNameDelegate(IntPtr hSession, [MarshalAs(UnmanagedType.LPWStr, SizeConst = (int)NvapiDrsWrapper.NVAPI_UNICODE_STRING_MAX)] StringBuilder appName, ref IntPtr phProfile, ref NVDRS_APPLICATION_V3 pApplication);
@@ -616,14 +634,18 @@ namespace nspector.Native.NVAPI2
         private static readonly DRS_EnumSettingsDelegate DRS_EnumSettingsInternal;
         [ThreadStatic]
         private static IntPtr pSettings;
+        [ThreadStatic]
+        private static NVDRS_SETTING[] drsSettings;
 
-        public static NvAPI_Status DRS_EnumSettings(IntPtr hSession, IntPtr hProfile, uint startIndex, ref uint settingsCount, ref NVDRS_SETTING[] settings)
+        public static NvAPI_Status DRS_EnumSettings(IntPtr hSession, IntPtr hProfile, uint startIndex, ref uint settingsCount, out NVDRS_SETTING[] settings)
         {
             NvAPI_Status res;
 
             if (pSettings == IntPtr.Zero)
             {
-                NativeArrayHelper.SetArrayData(settings, out pSettings);
+                drsSettings = new NVDRS_SETTING[settingsCount];
+                drsSettings[0].version = NvapiDrsWrapper.NVDRS_SETTING_VER;
+                NativeArrayHelper.SetArrayData(drsSettings, out pSettings);
             }
             try
             {
@@ -769,6 +791,8 @@ namespace nspector.Native.NVAPI2
                         GetDelegate(0xFA5F6134, out DRS_RestoreProfileDefault);
                         GetDelegate(0x7DD5B261, out DRS_RestoreProfileDefaultSetting, 0x53F0381E);
                         GetDelegate(0xDA8466A0, out DRS_GetBaseProfile);
+
+                        GetDelegate(0x8FC247B7, out DRS_DecryptSession);
                         #endregion
                     }
                 }

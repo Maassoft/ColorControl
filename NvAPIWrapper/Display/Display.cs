@@ -1,12 +1,12 @@
-﻿using System;
-using System.Linq;
-using NvAPIWrapper.GPU;
+﻿using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.Exceptions;
 using NvAPIWrapper.Native.GPU;
 using NvAPIWrapper.Native.Interfaces.Display;
+using System;
+using System.Linq;
 
 namespace NvAPIWrapper.Display
 {
@@ -41,12 +41,25 @@ namespace NvAPIWrapper.Display
             get => new DVCInformation(Handle);
         }
 
+
+        private DisplayDevice _displayDevice;
+
         /// <summary>
         ///     Gets corresponding DisplayDevice based on display name
         /// </summary>
         public DisplayDevice DisplayDevice
         {
-            get => new DisplayDevice(Name);
+            get
+            {
+
+                if (_displayDevice == null)
+                {
+                    _displayDevice = new DisplayDevice(Name);
+
+                }
+
+                return _displayDevice;
+            }
         }
 
         /// <summary>
@@ -189,7 +202,7 @@ namespace NvAPIWrapper.Display
                 return false;
             }
 
-            return Equals((Display) obj);
+            return Equals((Display)obj);
         }
 
         /// <inheritdoc />

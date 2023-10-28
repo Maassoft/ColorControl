@@ -22,7 +22,7 @@ namespace novideo_srgb
             UpdateMonitors();
         }
 
-        private void UpdateMonitors()
+        public void UpdateMonitors(bool? forceClamp = null)
         {
             Monitors.Clear();
             List<XElement> config = null;
@@ -66,12 +66,13 @@ namespace novideo_srgb
 
             foreach (var monitor in Monitors)
             {
-                monitor.ReapplyClamp();
+                monitor.ReapplyClamp(forceClamp);
             }
         }
 
-        public void OnDisplaySettingsChanged(object sender, EventArgs e)
+        public async void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
+            await Task.Delay(1000);
             UpdateMonitors();
         }
 

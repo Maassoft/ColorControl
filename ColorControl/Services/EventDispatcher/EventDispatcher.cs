@@ -16,6 +16,10 @@ public class EventDispatcher<T> where T : EventArgs
         {
             eventHandlers.Add(eventName, eventHandler);
         }
+        else
+        {
+            eventHandlers[eventName] += eventHandler;
+        }
     }
 
     public void RegisterAsyncEventHandler(string eventName, AsyncEventHandler<T> eventHandler)
@@ -23,6 +27,10 @@ public class EventDispatcher<T> where T : EventArgs
         if (!asyncEventHandlers.ContainsKey(eventName))
         {
             asyncEventHandlers.Add(eventName, eventHandler);
+        }
+        else
+        {
+            asyncEventHandlers[eventName] += eventHandler;
         }
     }
 

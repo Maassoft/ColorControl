@@ -11,16 +11,16 @@ namespace nspector.Native
 
         public static T[] GetArrayData<T>(IntPtr sourcePointer, int itemCount)
         {
-            var lstResult = new List<T>(itemCount);
+            var lstResult = new T[itemCount];
             if (sourcePointer != IntPtr.Zero && itemCount > 0)
             {
                 var sizeOfItem = Marshal.SizeOf(typeof(T));
                 for (int i = 0; i < itemCount; i++)
                 {
-                    lstResult.Add(GetArrayItemData<T>(sourcePointer + (sizeOfItem * i)));
+                    lstResult[i] = GetArrayItemData<T>(sourcePointer + (sizeOfItem * i));
                 }
             }
-            return lstResult.ToArray();
+            return lstResult;
         }
 
         public static void SetArrayData<T>(T[] items, out IntPtr targetPointer)
@@ -54,13 +54,5 @@ namespace nspector.Native
                 targetPointer = IntPtr.Zero;
             }
         }
-
-        public static void SetArrayItemData<T>(T item, out IntPtr targetPointer)
-        {
-            var sizeOfItem = Marshal.SizeOf(typeof(T));
-            targetPointer = Marshal.AllocHGlobal(sizeOfItem);
-            Marshal.StructureToPtr(item, targetPointer, true);
-        }
-
     }
 }

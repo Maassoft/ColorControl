@@ -30,7 +30,7 @@ namespace ColorControl.Services.AMD
             _trayIcon = trayIcon;
             _mainHandle = handle;
 
-            _config = Shared.Common.AppContext.CurrentContext.Config;
+            _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
 
@@ -127,7 +127,7 @@ namespace ColorControl.Services.AMD
 
         private async Task ApplyAmdPresetOnStartup(int attempts = 5)
         {
-            var startUpParams = Shared.Common.AppContext.CurrentContext.StartUpParams;
+            var startUpParams = Shared.Common.GlobalContext.CurrentContext.StartUpParams;
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.AmdPresetIdOrName) ? startUpParams.AmdPresetIdOrName : _config.AmdPresetId_ApplyOnStartup.ToString();
 
             if (!string.IsNullOrEmpty(presetIdOrName))

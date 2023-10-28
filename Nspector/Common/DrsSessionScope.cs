@@ -1,5 +1,4 @@
 ﻿using nspector.Native.NVAPI2;
-using System;
 using nvw = nspector.Native.NVAPI2.NvapiDrsWrapper;
 
 namespace nspector.Common
@@ -38,6 +37,8 @@ namespace nspector.Common
                         if (nvRes != NvAPI_Status.NVAPI_OK)
                             throw new NvapiException("DRS_LoadSettings", nvRes);
                     }
+
+                    var dRes = nvw.DRS_DecryptSession(GlobalSession);
                 }
             }
 

@@ -26,6 +26,19 @@ namespace ColorControl.Services.GameLauncher
         RealTime = NativeConstants.REALTIME_PRIORITY_CLASS
     }
 
+    public enum ProcessAutoAction
+    {
+        None = 0,
+        Suspend = 1,
+        Restart = 2
+    }
+
+    class AutoSettings
+    {
+        public bool AllowAutoApply { get; set; }
+        public ProcessAutoAction ProcessAutoAction { get; set; }
+    }
+
     class GamePreset : PresetBase
     {
         public string Path { get; set; }
@@ -36,12 +49,14 @@ namespace ColorControl.Services.GameLauncher
         public List<string> FinalizeSteps { get; set; }
         public uint ProcessAffinityMask { get; set; }
         public uint ProcessPriorityClass { get; set; }
+        public AutoSettings AutoSettings { get; set; }
 
         public GamePreset() : base()
         {
             PreLaunchSteps = new List<string>();
             PostLaunchSteps = new List<string>();
             FinalizeSteps = new List<string>();
+            AutoSettings = new AutoSettings();
         }
 
         public GamePreset(GamePreset preset) : this()
@@ -73,15 +88,16 @@ namespace ColorControl.Services.GameLauncher
 
         public override List<string> GetDisplayValues(Config config = null)
         {
-            var values = new List<string>();
+            var values = new List<string>
+            {
+                name,
+                Path,
+                Parameters,
 
-            values.Add(name);
-            values.Add(Path);
-            values.Add(Parameters);
-
-            values.Add(string.Join(", ", PreLaunchSteps));
-            values.Add(string.Join(", ", PostLaunchSteps));
-            values.Add(string.Join(", ", FinalizeSteps));
+                string.Join(", ", PreLaunchSteps),
+                string.Join(", ", PostLaunchSteps),
+                string.Join(", ", FinalizeSteps)
+            };
 
             return values;
         }

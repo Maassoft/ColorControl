@@ -6,9 +6,9 @@ using System.ComponentModel;
 namespace ColorControl.Shared.Common
 
 {
-    public class AppContext
+    public class GlobalContext
     {
-        public static AppContext CurrentContext { get; private set; }
+        public static GlobalContext CurrentContext { get; private set; }
 
         public Config Config { get; private set; }
 
@@ -19,7 +19,7 @@ namespace ColorControl.Shared.Common
         public DateTime StartTime { get; private set; } = DateTime.Now;
         public string MutexId { get; private set; }
 
-        public AppContext(Config config, StartUpParams startUpParams, string dataPath, LoggingRule loggingRule, string mutexId = null)
+        public GlobalContext(Config config, StartUpParams startUpParams, string dataPath, LoggingRule loggingRule, string mutexId = null)
         {
             Config = config;
             StartUpParams = startUpParams;
@@ -28,11 +28,6 @@ namespace ColorControl.Shared.Common
             MutexId = mutexId;
 
             CurrentContext = this;
-        }
-
-        public bool IsServiceRunning()
-        {
-            return Utils.IsServiceRunning();
         }
 
         public void SetLogLevel(LogLevel logLevel)

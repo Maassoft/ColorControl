@@ -5,6 +5,7 @@ using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -16,53 +17,9 @@ namespace ColorControl
     {
         public static async Task<bool> HandleStartupParams(StartUpParams startUpParams, Process existingProcess)
         {
-            if (startUpParams.ActivateChromeFontFix || startUpParams.DeactivateChromeFontFix)
-            {
-                Utils.InstallChromeFix(startUpParams.ActivateChromeFontFix, startUpParams.ChromeFontFixApplicationDataFolder);
-                return true;
-            }
-            if (startUpParams.EnableAutoStart || startUpParams.DisableAutoStart)
-            {
-                Utils.RegisterTask(Program.TS_TASKNAME, startUpParams.EnableAutoStart, startUpParams.AutoStartRunLevel);
-                return true;
-            }
-            if (startUpParams.SetProcessAffinity)
-            {
-                Utils.SetProcessAffinity(startUpParams.ProcessId, startUpParams.AffinityMask);
-                return true;
-            }
-            if (startUpParams.SetProcessPriority)
-            {
-                Utils.SetProcessPriority(startUpParams.ProcessId, startUpParams.PriorityClass);
-                return true;
-            }
             if (startUpParams.StartElevated)
             {
                 StartElevated();
-                return true;
-            }
-            if (startUpParams.SendWol)
-            {
-                return WOL.WakeFunction(startUpParams.WolMacAddress, startUpParams.WolIpAddress);
-            }
-            if (startUpParams.InstallService)
-            {
-                Utils.InstallService();
-                return true;
-            }
-            if (startUpParams.UninstallService)
-            {
-                Utils.UninstallService();
-                return true;
-            }
-            if (startUpParams.StartService)
-            {
-                Utils.StartService();
-                return true;
-            }
-            if (startUpParams.StopService)
-            {
-                Utils.StopService();
                 return true;
             }
 
@@ -152,7 +109,9 @@ Options:
         {
             try
             {
-                Application.Run(new ElevatedForm());
+                var elevatedForm = Program.ServiceProvider.GetRequiredService<ElevatedForm>();
+
+                Application.Run(elevatedForm);
             }
             catch (Exception ex)
             {
