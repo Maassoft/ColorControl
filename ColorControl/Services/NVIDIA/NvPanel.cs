@@ -438,6 +438,9 @@ namespace ColorControl.Services.NVIDIA
             var subItem = FormUtils.BuildMenuItem(brightnessMenu.DropDownItems, subItemName, "", onClick: nvPresetBrightnessMenuItem_Click);
             subItem.Text = (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)";
 
+            FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Scaling", typeof(Scaling), preset, "scaling", nvPresetScalingMenuItem_Click, unchanged: true, skipValues: new object[] { Scaling.Customized })
+                .DropDownItems[0].Visible = !isCurrentDisplay;
+
             FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Content type", typeof(InfoFrameVideoContentType), preset.HdmiInfoFrameSettings, "ContentType", nvPresetHdmiContentTypeMenuItem_Click, unchanged: true)
                 .DropDownItems[0].Visible = !isCurrentDisplay;
             FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Colorimetry", typeof(InfoFrameVideoColorimetry), preset.HdmiInfoFrameSettings, "Colorimetry", nvPresetHdmiColorimetryMenuItem_Click, unchanged: true)
@@ -822,6 +825,28 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
+        private void nvPresetScalingMenuItem_Click(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+            var propName = ((PropertyInfo)menuItem.OwnerItem.Tag).Name;
+            var value = (Scaling?)menuItem.Tag;
+
+            var preset = GetSelectedNvPreset(true);
+
+            var propInfo = preset.GetType().GetDeclaredProperty(propName);
+            propInfo.SetValue(preset, value);
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetScaling(preset.Display, value ?? Scaling.Default);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            AddOrUpdateItem();
+        }
+
         private void refreshRateMenuItem_Click(object sender, EventArgs e)
         {
             var refreshRate = (uint)((ToolStripItem)sender).Tag;
@@ -953,6 +978,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (!ask)
             {
+                preset.applyColorData = false;
                 return;
             }
 
@@ -1812,7 +1838,7 @@ namespace ColorControl.Services.NVIDIA
         {
             var panel = new NvInfoPanel(_nvService);
 
-            MessageForms.ShowControl(panel, "NVIDIA Info");
+            MessageForms.ShowControl(panel, "NVIDIA Info", height: 800);
         }
     }
 }

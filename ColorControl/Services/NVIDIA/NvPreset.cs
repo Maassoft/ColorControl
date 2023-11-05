@@ -35,6 +35,7 @@ namespace ColorControl.Services.NVIDIA
         public uint ditheringMode { get; set; }
         public bool applyOther { get; set; }
         public int? SDRBrightness { get; set; }
+        public Scaling? scaling { get; set; }
         public bool applyDriverSettings { get; set; }
         public Dictionary<uint, uint> driverSettings { get; set; }
         public bool applyOverclocking { get; set; }
@@ -104,6 +105,7 @@ namespace ColorControl.Services.NVIDIA
             driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
 
             SDRBrightness = preset.SDRBrightness;
+            scaling = preset.scaling;
             applyOther = preset.applyOther;
 
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings(preset.HdmiInfoFrameSettings);
@@ -272,6 +274,10 @@ namespace ColorControl.Services.NVIDIA
             if (SDRBrightness.HasValue && (HDREnabled || !IsDisplayPreset))
             {
                 values.Add($"SDR brightness: {SDRBrightness.Value}%");
+            }
+            if (scaling.HasValue)
+            {
+                values.Add($"Scaling: {scaling.Value.GetDescription()}");
             }
 
             if (!values.Any())

@@ -532,14 +532,14 @@ namespace ColorControl.Shared.Forms
             return prompt;
         }
 
-        public static Form ShowControl(Control control, string title)
+        public static Form ShowControl(Control control, string title, int width = 800, int height = 400)
         {
             var prompt = new Form()
             {
                 Icon = MainForm.Icon,
                 Text = title,
-                Width = 800,
-                Height = 400,
+                Width = width,
+                Height = height,
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = FormUtils.CurrentBackColor,
                 ForeColor = FormUtils.CurrentForeColor,

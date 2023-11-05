@@ -59,6 +59,7 @@
             chkStartMinimized = new System.Windows.Forms.CheckBox();
             chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             tabInfo = new System.Windows.Forms.TabPage();
+            webView21 = new Microsoft.Web.WebView2.WinForms.WebView2();
             groupBox3 = new System.Windows.Forms.GroupBox();
             lbPlugins = new System.Windows.Forms.ListBox();
             label7 = new System.Windows.Forms.Label();
@@ -70,6 +71,7 @@
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
             tabInfo.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
             groupBox3.SuspendLayout();
             SuspendLayout();
             // 
@@ -223,11 +225,11 @@
             grpGeneralOptions.Controls.Add(chkMinimizeOnClose);
             grpGeneralOptions.Controls.Add(chkStartMinimized);
             grpGeneralOptions.Controls.Add(chkStartAfterLogin);
-            grpGeneralOptions.Location = new System.Drawing.Point(7, 7);
+            grpGeneralOptions.Location = new System.Drawing.Point(7, 6);
             grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpGeneralOptions.Name = "grpGeneralOptions";
             grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpGeneralOptions.Size = new System.Drawing.Size(522, 210);
+            grpGeneralOptions.Size = new System.Drawing.Size(522, 211);
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
@@ -437,6 +439,7 @@
             // 
             // tabInfo
             // 
+            tabInfo.Controls.Add(webView21);
             tabInfo.Controls.Add(groupBox3);
             tabInfo.Location = new System.Drawing.Point(4, 24);
             tabInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -447,6 +450,19 @@
             tabInfo.Text = "Info";
             tabInfo.UseVisualStyleBackColor = true;
             // 
+            // webView21
+            // 
+            webView21.AllowExternalDrop = true;
+            webView21.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            webView21.CreationProperties = null;
+            webView21.DefaultBackgroundColor = System.Drawing.Color.White;
+            webView21.Location = new System.Drawing.Point(436, 7);
+            webView21.Name = "webView21";
+            webView21.Size = new System.Drawing.Size(671, 526);
+            webView21.Source = new System.Uri("https://github.com/Maassoft/ColorControl/releases", System.UriKind.Absolute);
+            webView21.TabIndex = 6;
+            webView21.ZoomFactor = 1D;
+            // 
             // groupBox3
             // 
             groupBox3.Controls.Add(lbPlugins);
@@ -456,20 +472,21 @@
             groupBox3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            groupBox3.Size = new System.Drawing.Size(449, 254);
+            groupBox3.Size = new System.Drawing.Size(422, 271);
             groupBox3.TabIndex = 5;
             groupBox3.TabStop = false;
             groupBox3.Text = "Info";
             // 
             // lbPlugins
             // 
+            lbPlugins.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             lbPlugins.FormattingEnabled = true;
             lbPlugins.HorizontalScrollbar = true;
             lbPlugins.ItemHeight = 15;
             lbPlugins.Location = new System.Drawing.Point(10, 77);
             lbPlugins.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             lbPlugins.Name = "lbPlugins";
-            lbPlugins.Size = new System.Drawing.Size(432, 169);
+            lbPlugins.Size = new System.Drawing.Size(405, 184);
             lbPlugins.TabIndex = 3;
             // 
             // label7
@@ -539,6 +556,7 @@
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
             tabInfo.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
             groupBox3.ResumeLayout(false);
             groupBox3.PerformLayout();
             ResumeLayout(false);
@@ -581,6 +599,7 @@
         private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
         private System.Windows.Forms.Button btnOptionsAdvanced;
         private System.Windows.Forms.Button btnOptionsLog;
+        private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
     }
 }
 

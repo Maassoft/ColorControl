@@ -17,6 +17,7 @@ using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
+using NvAPIWrapper.Native.Interfaces.Display;
 using NWin32;
 using NWin32.NativeTypes;
 using System;
@@ -295,6 +296,11 @@ namespace ColorControl.Services.NVIDIA
             if (display == null)
             {
                 return Task.FromResult(false);
+            }
+
+            if (preset.applyOther && preset.scaling.HasValue)
+            {
+                SetScaling(display, preset.scaling.Value);
             }
 
             var hdrEnabled = IsHDREnabled();
@@ -838,6 +844,65 @@ namespace ColorControl.Services.NVIDIA
             };
         }
 
+        public Scaling GetScaling(Display display)
+        {
+            var pathTargetInfo = GetTargetInfoForDisplay(display);
+
+            if (pathTargetInfo?.Details == null)
+            {
+                return Scaling.Default;
+            }
+
+            var details = pathTargetInfo.Details.Value;
+
+            return details.Scaling;
+        }
+
+        public void SetScaling(Display display, Scaling scaling)
+        {
+            var pathInfo = GetPathInfoForDisplay(display);
+
+            var pathTargetInfo = pathInfo.TargetsInfo.FirstOrDefault(ti => ti.DisplayId == display.DisplayDevice.DisplayId);
+
+            if (pathTargetInfo?.Details == null)
+            {
+                return;
+            }
+
+            var details = pathTargetInfo.Details.Value;
+
+            var newDetails = new PathAdvancedTargetInfo(details.Rotation, scaling);
+
+            var newPathTargetInfo = new PathTargetInfoV2(pathTargetInfo.DisplayId, newDetails);
+
+            var newPathInfo = new PathInfoV2(new[] { newPathTargetInfo }, pathInfo.SourceModeInfo);
+
+            DisplayApi.SetDisplayConfig(new IPathInfo[] { newPathInfo }, DisplayConfigFlags.SaveToPersistence);
+        }
+
+        private IPathTargetInfo? GetTargetInfoForDisplay(Display display)
+        {
+            var pathInfos = DisplayApi.GetDisplayConfig();
+
+            var pathInfo = pathInfos.FirstOrDefault(c => c.TargetsInfo.Any(ti => ti.DisplayId == display.DisplayDevice.DisplayId));
+
+            if (pathInfo == null)
+            {
+                return null;
+            }
+
+            var pathTargetInfo = pathInfo.TargetsInfo.FirstOrDefault(ti => ti.DisplayId == display.DisplayDevice.DisplayId);
+
+            return pathTargetInfo;
+        }
+
+        private IPathInfo? GetPathInfoForDisplay(Display display)
+        {
+            var pathInfos = DisplayApi.GetDisplayConfig();
+
+            return pathInfos.FirstOrDefault(c => c.TargetsInfo.Any(ti => ti.DisplayId == display.DisplayDevice.DisplayId));
+        }
+
         public void TestResolution()
         {
             //var display = GetCurrentDisplay();
@@ -1012,6 +1077,7 @@ namespace ColorControl.Services.NVIDIA
             preset.colorData = GetCurrentColorData(display);
             preset.HdmiInfoFrameSettings = GetHdmiSettings(display);
             preset.SDRBrightness = GetSDRBrightness(display);
+            preset.scaling = GetScaling(display);
 
             var mode = GetCurrentMode(display.Name);
 

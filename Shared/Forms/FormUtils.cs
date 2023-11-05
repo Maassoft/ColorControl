@@ -139,7 +139,7 @@ namespace ColorControl.Shared.Forms
             return subMenuItem;
         }
 
-        public static ToolStripMenuItem BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent, Font font = null, bool unchanged = false)
+        public static ToolStripMenuItem BuildDropDownMenu(ToolStripDropDownItem mnuParent, string name, Type enumType, object colorData, string propertyName, EventHandler clickEvent, Font font = null, bool unchanged = false, object[] skipValues = null)
         {
             PropertyInfo property = null;
             var subMenuItems = mnuParent.DropDownItems.Find("miColorSettings_" + name, false);
@@ -172,7 +172,14 @@ namespace ColorControl.Shared.Forms
 
                 foreach (var enumValue in Enum.GetValues(enumType))
                 {
-                    var item = subMenuItem.DropDownItems.AddCustom(enumValue.ToString());
+                    if (skipValues?.Contains(enumValue) == true)
+                    {
+                        continue;
+                    }
+
+                    var text = (enumValue as IConvertible)?.GetDescription() ?? enumValue.ToString();
+
+                    var item = subMenuItem.DropDownItems.AddCustom(text);
                     item.Tag = enumValue;
                     item.Click += clickEvent;
 

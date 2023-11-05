@@ -308,7 +308,7 @@ namespace nspector.Common
 
             if (drsEvent.Handled)
             {
-                removeFromModified = drsEvent.Result;
+                removeFromModified = false;
                 return;
             }
 

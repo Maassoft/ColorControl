@@ -41,6 +41,12 @@ namespace ColorControl.Services.NVIDIA
                 var node = TreeNodeBuilder.CreateTree(display, $"Display[{i}]");
                 tvNVIDIAInfo.Nodes.Add(node);
             }
+
+            for (var i = 0; i < tvNVIDIAInfo.Nodes.Count; i++)
+            {
+                var node = tvNVIDIAInfo.Nodes[i];
+                node.Expand();
+            }
         }
     }
 }
