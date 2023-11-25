@@ -34,8 +34,7 @@ public class RpcServerService
                 var arg = message.Arguments[i];
                 var methodParam = methodParams[i];
 
-                var convertedArg = ConvertArgument(arg, methodParam.ParameterType);
-                convertedArgs.Add(arg);
+                AddArgument(arg, methodParam.ParameterType, convertedArgs);
             }
 
             Logger.Debug($"Executing RPC: {message.ServiceName}.{message.MethodName}({string.Join(", ", convertedArgs)})");
@@ -54,21 +53,22 @@ public class RpcServerService
         }
     }
 
-    private object ConvertArgument(object arg, Type type)
+    private void AddArgument(object arg, Type type, List<object> list)
     {
         if (arg.GetType() != type)
         {
             if (type.IsEnum)
             {
-                return Enum.ToObject(type, arg);
+                // Add enum directly to list and not return as 'object'
+                list.Add(Enum.ToObject(type, arg));
+                return;
             }
 
-            var convertedArg = Convert.ChangeType(arg, type);
-            return convertedArg;
+            list.Add(Convert.ChangeType(arg, type));
+            return;
         }
 
-        return arg;
-
+        list.Add(arg);
     }
 
     public async Task<SvcResultMessage> ExecuteRpcTypedAsync(SvcRpcMessageTyped message)
@@ -92,8 +92,7 @@ public class RpcServerService
                 var arg = prop.GetValue(message);
                 var methodParam = methodParams[paramIndex];
 
-                var convertedArg = ConvertArgument(arg, methodParam.ParameterType);
-                convertedArgs.Add(arg);
+                AddArgument(arg, methodParam.ParameterType, convertedArgs);
 
                 paramIndex++;
             }

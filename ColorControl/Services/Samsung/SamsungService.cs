@@ -205,7 +205,7 @@ namespace ColorControl.Services.Samsung
                 }
                 else
                 {
-                    var _ = SelectedDevice.ConnectAsync();
+                    //var _ = SelectedDevice.ConnectAsync();
                 }
             }
         }

@@ -829,7 +829,7 @@ Do you want to continue?"
             mnuLgOLEDMotionPro.Visible = visible;
             miLgEnableMotionPro.Visible = enableVisible;
 
-            var svcMenuFlagVisible = new[] { "C3", "G3" }.Any(m => device?.ModelName?.Contains(m) == true);
+            var svcMenuFlagVisible = new[] { "B3", "C3", "G3" }.Any(m => device?.ModelName?.Contains(m) == true);
 
             mnuLgSetSvcMenuFlag.Visible = svcMenuFlagVisible;
 

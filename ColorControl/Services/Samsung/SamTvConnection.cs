@@ -25,7 +25,7 @@ namespace ColorControl.Services.Samsung
     {
         public static SynchronizationContext SyncContext { get; set; }
 
-        public bool ConnectionClosed { get; private set; }
+        public bool? ConnectionClosed { get; private set; }
         public bool ClosedByDispose { get; private set; }
 
         private MessageWebSocket _connection;
@@ -133,7 +133,7 @@ namespace ColorControl.Services.Samsung
                     _tokens.TryAdd(id, taskSource);
 
                     await SendMessageAsync(message);
-                    if (ConnectionClosed)
+                    if (ConnectionClosed == true)
                     {
                         throw new Exception("Connection closed");
                     }
@@ -143,7 +143,7 @@ namespace ColorControl.Services.Samsung
                 else
                 {
                     await SendMessageAsync(message);
-                    if (ConnectionClosed)
+                    if (ConnectionClosed == true)
                     {
                         throw new Exception("Connection closed");
                     }

@@ -38,8 +38,9 @@ namespace ColorControl.Services.NVIDIA
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
         private RpcClientService _rpcService;
+        private readonly WinApiAdminService _winApiAdminService;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcClientService rpcService)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
@@ -47,7 +48,7 @@ namespace ColorControl.Services.NVIDIA
             _appContextProvider = appContextProvider;
             _config = appContextProvider.GetAppContext().Config;
             _rpcService = rpcService;
-
+            _winApiAdminService = winApiAdminService;
             _rpcService.Name = "NvService";
 
             InitializeComponent();
@@ -440,6 +441,13 @@ namespace ColorControl.Services.NVIDIA
 
             FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Scaling", typeof(Scaling), preset, "scaling", nvPresetScalingMenuItem_Click, unchanged: true, skipValues: new object[] { Scaling.Customized })
                 .DropDownItems[0].Visible = !isCurrentDisplay;
+
+            var itemNameProfile = $"{mnuNvOtherSettings.Name}_Profile";
+            var profileMenu = FormUtils.BuildMenuItem(mnuNvOtherSettings.DropDownItems, itemNameProfile, "Color Profile");
+
+            var subItemNameProfile = $"{itemNameProfile}_SubItem";
+            var subItemProfile = FormUtils.BuildMenuItem(profileMenu.DropDownItems, subItemNameProfile, "", onClick: nvPresetColorProfileMenuItem_Click);
+            subItemProfile.Text = (!preset.ColorProfileSettings.ProfileName.IsNullOrWhiteSpace() ? $"{preset.ColorProfileSettings.ProfileName}" : "Unset") + " (click to change)";
 
             FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Content type", typeof(InfoFrameVideoContentType), preset.HdmiInfoFrameSettings, "ContentType", nvPresetHdmiContentTypeMenuItem_Click, unchanged: true)
                 .DropDownItems[0].Visible = !isCurrentDisplay;
@@ -843,6 +851,70 @@ namespace ColorControl.Services.NVIDIA
                 UpdateDisplayInfoItems();
                 return;
             }
+
+            AddOrUpdateItem();
+        }
+
+        private void nvPresetColorProfileMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+
+            _nvService.ResolveDisplay(preset);
+
+            if (preset.Display == null)
+            {
+                MessageForms.WarningOk($"Display {preset.displayName} not found");
+                return;
+            }
+
+            var display = preset.Display.Name;
+            if (!CCD.GetUsePerUserDisplayProfiles(display))
+            {
+                if (MessageForms.QuestionYesNo("To be able to select a color profile, user specific settings have to be enabled. Do you want to enable this?") != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                CCD.SetUsePerUserDisplayProfiles(display, true);
+            }
+
+            var profiles = CCD.GetDisplayColorProfiles(display);
+
+            if (!profiles.Any())
+            {
+                if (MessageForms.QuestionYesNo("There are no profiles associated with this display. You have to manually add these through the Color Management app. Do you want to open this?") != DialogResult.Yes)
+                {
+                    return;
+                }
+
+                _winApiAdminService.StartProcess("colorcpl.exe");
+
+                return;
+            }
+
+            profiles.Insert(0, "None");
+
+            var value = SelectStringValue(preset.ColorProfileSettings.ProfileName, "Color Profile", profiles);
+
+            if (value == null)
+            {
+                return;
+            }
+
+            if (value == "None")
+            {
+                value = null;
+            }
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetColorProfile(preset.Display, value);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ColorProfileSettings.ProfileName = value;
 
             AddOrUpdateItem();
         }
@@ -1355,6 +1427,33 @@ namespace ColorControl.Services.NVIDIA
             var settingValue = Utils.ParseInt(strValue);
 
             return settingValue;
+        }
+
+        private string SelectStringValue(string currentValue, string label, IEnumerable<string> values)
+        {
+            var field = new FieldDefinition
+            {
+                Label = label,
+                FieldType = FieldType.DropDown,
+                Values = values,
+                Value = currentValue
+            };
+
+            var resultFields = MessageForms.ShowDialog(field.Label, new[] { field });
+
+            if (!resultFields.Any())
+            {
+                return null;
+            }
+
+            var strValue = (string)resultFields.First().Value;
+
+            if (string.IsNullOrWhiteSpace(strValue))
+            {
+                return null;
+            }
+
+            return strValue;
         }
 
         private void miNvProfileInspector_Click(object sender, EventArgs e)

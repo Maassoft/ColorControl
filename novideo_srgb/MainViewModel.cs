@@ -37,11 +37,15 @@ namespace novideo_srgb
             foreach (var display in Display.GetDisplays())
             {
                 var displays = WindowsDisplayAPI.Display.GetDisplays();
-                var path = displays.First(x => x.DisplayName == display.Name).DevicePath;
+                var path = displays.FirstOrDefault(x => x.DisplayName == display.Name)?.DevicePath;
+                if (path == null)
+                {
+                    continue;
+                }
 
                 var hdrActive = hdrPaths.Contains(path);
 
-                var settings = config?.FirstOrDefault(x => (string)x.Attribute("path") == path);
+                var settings = config?.FirstOrDefault(x => (string?)x.Attribute("path") == path);
                 MonitorData monitor;
                 if (settings != null)
                 {

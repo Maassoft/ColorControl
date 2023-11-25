@@ -4,6 +4,7 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
 using Newtonsoft.Json;
 using nspector.Common;
+using NStandard;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.Native.Display;
 using System;
@@ -43,9 +44,10 @@ namespace ColorControl.Services.NVIDIA
 
         public bool applyHdmiSettings { get; set; }
         public NvHdmiInfoFrameSettings HdmiInfoFrameSettings { get; set; }
+        public NvColorProfileSettings ColorProfileSettings { get; set; }
 
         [JsonIgnore]
-        public bool IsDisplayPreset => Display != null;
+        public bool IsDisplayPreset { get; set; }
         [JsonIgnore]
         public Display Display { get; set; }
         [JsonIgnore]
@@ -72,6 +74,7 @@ namespace ColorControl.Services.NVIDIA
             driverSettings = new Dictionary<uint, uint>();
             ocSettings = new List<NvGpuOcSettings>();
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings();
+            ColorProfileSettings = new NvColorProfileSettings();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -106,6 +109,7 @@ namespace ColorControl.Services.NVIDIA
 
             SDRBrightness = preset.SDRBrightness;
             scaling = preset.scaling;
+            ColorProfileSettings = new NvColorProfileSettings(preset.ColorProfileSettings);
             applyOther = preset.applyOther;
 
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings(preset.HdmiInfoFrameSettings);
@@ -278,6 +282,10 @@ namespace ColorControl.Services.NVIDIA
             if (scaling.HasValue)
             {
                 values.Add($"Scaling: {scaling.Value.GetDescription()}");
+            }
+            if (!ColorProfileSettings.ProfileName.IsNullOrWhiteSpace())
+            {
+                values.Add($"Color profile: {ColorProfileSettings.ProfileName}");
             }
 
             if (!values.Any())

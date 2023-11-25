@@ -6,6 +6,7 @@ using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using static novideo_srgb.Colorimetry;
 
 namespace novideo_srgb
 {
@@ -87,49 +88,57 @@ namespace novideo_srgb
                 _clamped = Novideo.IsColorSpaceConversionActive(_output);
             }
 
-            if (!doClamp) return;
+            if (!doClamp)
+            {
+                return;
+            }
 
             if (_clamped) Thread.Sleep(100);
             if (UseEdid)
                 Novideo.SetColorSpaceConversion(_output, Colorimetry.RGBToRGB(TargetColorSpace, EdidColorSpace));
             else if (UseIcc)
             {
-                var profile = ICCMatrixProfile.FromFile(ProfilePath);
-                if (CalibrateGamma)
+                SetICCProfile(ProfilePath, SelectedGamma, TargetColorSpace);
+            }
+        }
+
+        private void SetICCProfile(string fileName, int selectedGamma, ColorSpace colorSpace)
+        {
+            var profile = ICCMatrixProfile.FromFile(fileName);
+            if (CalibrateGamma)
+            {
+                var trcBlack = Matrix.FromValues(new[,]
                 {
-                    var trcBlack = Matrix.FromValues(new[,]
-                    {
                         { profile.trcs[0].SampleAt(0) },
                         { profile.trcs[1].SampleAt(0) },
                         { profile.trcs[2].SampleAt(0) }
                     });
-                    var black = (profile.matrix * trcBlack)[1];
+                var black = (profile.matrix * trcBlack)[1];
 
-                    ToneCurve gamma;
-                    switch (SelectedGamma)
-                    {
-                        case 0:
-                            gamma = new SrgbEOTF(black);
-                            break;
-                        case 1:
-                            gamma = new GammaToneCurve(2.4, black, 0);
-                            break;
-                        case 2:
-                            gamma = new GammaToneCurve(CustomGamma, black, CustomPercentage / 100);
-                            break;
-                        case 3:
-                            gamma = new GammaToneCurve(CustomGamma, black, CustomPercentage / 100, true);
-                            break;
-                        default:
-                            throw new NotSupportedException("Unsupported gamma type " + SelectedGamma);
-                    }
-
-                    Novideo.SetColorSpaceConversion(_output, profile, TargetColorSpace, gamma, DisableOptimization);
-                }
-                else
+                ToneCurve gamma;
+                switch (selectedGamma)
                 {
-                    Novideo.SetColorSpaceConversion(_output, profile, TargetColorSpace);
+                    case 0:
+                        gamma = new SrgbEOTF(black);
+                        break;
+                    case 1:
+                        gamma = new GammaToneCurve(2.4, black, 0);
+                        break;
+                    case 2:
+                        gamma = new GammaToneCurve(CustomGamma, black, CustomPercentage / 100);
+                        break;
+                    case 3:
+                        gamma = new GammaToneCurve(CustomGamma, black, CustomPercentage / 100, true);
+                        break;
+                    default:
+                        throw new NotSupportedException("Unsupported gamma type " + selectedGamma);
                 }
+
+                Novideo.SetColorSpaceConversion(_output, profile, colorSpace, gamma, DisableOptimization);
+            }
+            else
+            {
+                Novideo.SetColorSpaceConversion(_output, profile, colorSpace);
             }
         }
 

@@ -418,19 +418,19 @@
             mnuLgSetSvcMenuFlag.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miLgFullServiceMenuEnable, miLgFullServiceMenuDisable });
             mnuLgSetSvcMenuFlag.Name = "mnuLgSetSvcMenuFlag";
             mnuLgSetSvcMenuFlag.Size = new System.Drawing.Size(320, 22);
-            mnuLgSetSvcMenuFlag.Text = "Enable Full Service Menu (C3/G3 only)";
+            mnuLgSetSvcMenuFlag.Text = "Enable Full Service Menu (B3/C3/G3 only)";
             // 
             // miLgFullServiceMenuEnable
             // 
             miLgFullServiceMenuEnable.Name = "miLgFullServiceMenuEnable";
-            miLgFullServiceMenuEnable.Size = new System.Drawing.Size(112, 22);
+            miLgFullServiceMenuEnable.Size = new System.Drawing.Size(180, 22);
             miLgFullServiceMenuEnable.Text = "Enable";
             miLgFullServiceMenuEnable.Click += miLgFullServiceMenuEnable_Click;
             // 
             // miLgFullServiceMenuDisable
             // 
             miLgFullServiceMenuDisable.Name = "miLgFullServiceMenuDisable";
-            miLgFullServiceMenuDisable.Size = new System.Drawing.Size(112, 22);
+            miLgFullServiceMenuDisable.Size = new System.Drawing.Size(180, 22);
             miLgFullServiceMenuDisable.Text = "Disable";
             miLgFullServiceMenuDisable.Click += miLgFullServiceMenuDisable_Click;
             // 

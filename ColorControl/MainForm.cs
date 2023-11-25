@@ -266,8 +266,9 @@ namespace ColorControl
                 Logger.Debug("Initializing NVIDIA...Done.");
 
                 var rpcService = _serviceProvider.GetRequiredService<RpcClientService>();
+                var winAdminService = _serviceProvider.GetRequiredService<WinApiAdminService>();
 
-                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider, rpcService);
+                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider, rpcService, winAdminService);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _serviceManager.NvService.ToggleQuickAccessForm);

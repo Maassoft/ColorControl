@@ -28,6 +28,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using static ColorControl.Shared.Native.CCD;
 
 namespace ColorControl.Services.NVIDIA
 {
@@ -242,14 +243,17 @@ namespace ColorControl.Services.NVIDIA
 
         private void SetCurrentDisplay(NvPreset preset)
         {
+            _currentDisplay = GetPresetDisplay(preset);
+        }
+
+        private Display GetPresetDisplay(NvPreset preset)
+        {
             if (preset.primaryDisplay)
             {
-                _currentDisplay = GetPrimaryDisplay();
+                return GetPrimaryDisplay();
             }
-            else
-            {
-                _currentDisplay = Display.GetDisplays().FirstOrDefault(x => x.Name.Equals(preset.displayName));
-            }
+
+            return Display.GetDisplays().FirstOrDefault(x => x.Name.Equals(preset.displayName));
         }
 
         public Display GetPrimaryDisplay()
@@ -345,6 +349,11 @@ namespace ColorControl.Services.NVIDIA
                 if (preset.SDRBrightness.HasValue)
                 {
                     SetSDRBrightness(display, preset.SDRBrightness.Value);
+                }
+
+                if (preset.ColorProfileSettings.ProfileName != null)
+                {
+                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName);
                 }
             }
 
@@ -903,9 +912,25 @@ namespace ColorControl.Services.NVIDIA
             return pathInfos.FirstOrDefault(c => c.TargetsInfo.Any(ti => ti.DisplayId == display.DisplayDevice.DisplayId));
         }
 
+        public void SetColorProfile(Display display, string name)
+        {
+            CCD.SetDisplayDefaultColorProfile(display.Name, name);
+        }
+
         public void TestResolution()
         {
             //var display = GetCurrentDisplay();
+
+            //CCD.GetUsePerUserDisplayProfiles(display.Name);
+
+            //CCD.GetDisplayColorProfiles(display.Name);
+
+            //CCD.InstallColorProfile(@"H:\srgb2000.icm");
+
+            //CCD.AddDisplayColorProfile(display.Name, "srgb2000.icm");
+
+            //CCD.SetDisplayDefaultColorProfile(display.Name, "srgb2000.icm");
+
             //var displayDevice = display.DisplayDevice;
 
             //var config = DisplayApi.GetDisplayConfig();
@@ -1071,13 +1096,16 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var isPrimaryDisplay = displayCount == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
-            var preset = new NvPreset { Display = display, applyColorData = false, primaryDisplay = isPrimaryDisplay };
+            var preset = new NvPreset { Display = display, IsDisplayPreset = true, applyColorData = false, primaryDisplay = isPrimaryDisplay };
+
+            preset.HDREnabled = IsHDREnabled(display);
 
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
             preset.HdmiInfoFrameSettings = GetHdmiSettings(display);
             preset.SDRBrightness = GetSDRBrightness(display);
             preset.scaling = GetScaling(display);
+            preset.ColorProfileSettings.ProfileName = CCD.GetDisplayDefaultColorProfile(display.Name, preset.HDREnabled ? COLORPROFILESUBTYPE.CPST_EXTENDED_DISPLAY_COLOR_MODE : COLORPROFILESUBTYPE.CPST_STANDARD_DISPLAY_COLOR_MODE);
 
             var mode = GetCurrentMode(display.Name);
 
@@ -1099,8 +1127,6 @@ namespace ColorControl.Services.NVIDIA
                 preset.ditheringBits = (uint)ditherInfo.bits;
                 preset.ditheringMode = (uint)ditherInfo.mode;
             }
-
-            preset.HDREnabled = IsHDREnabled(display);
 
             if (Config.ShowOverclocking)
             {
@@ -1310,6 +1336,16 @@ namespace ColorControl.Services.NVIDIA
         private void SaveConfig()
         {
             Utils.WriteObject(_configFilename, Config);
+        }
+
+        internal void ResolveDisplay(NvPreset preset)
+        {
+            if (preset.Display != null)
+            {
+                return;
+            }
+
+            preset.Display = GetPresetDisplay(preset);
         }
     }
 }
