@@ -1819,31 +1819,23 @@ namespace ColorControl.Services.NVIDIA
 
             var presetIdOrName = !string.IsNullOrEmpty(startUpParams.NvidiaPresetIdOrName) ? startUpParams.NvidiaPresetIdOrName : _config.NvPresetId_ApplyOnStartup.ToString();
 
-            if (!string.IsNullOrEmpty(presetIdOrName))
+            if (string.IsNullOrEmpty(presetIdOrName))
             {
-                var preset = _nvService?.GetPresetByIdOrName(presetIdOrName);
-                if (preset == null)
-                {
-                    if (string.IsNullOrEmpty(startUpParams.NvidiaPresetIdOrName))
-                    {
-                        _config.NvPresetId_ApplyOnStartup = 0;
-                    }
-                }
-                else if (_nvService != null)
-                {
-                    if (_nvService.HasDisplaysAttached())
-                    {
-                        await ApplyNvPreset(preset);
-                        return;
-                    }
-                    attempts--;
-                    if (attempts > 0)
-                    {
-                        await Task.Delay(2000);
-                        await ApplyNvPresetOnStartup(attempts);
-                    }
-                }
+                return;
             }
+
+            var preset = _nvService?.GetPresetByIdOrName(presetIdOrName);
+            if (preset == null)
+            {
+                if (string.IsNullOrEmpty(startUpParams.NvidiaPresetIdOrName))
+                {
+                    _config.NvPresetId_ApplyOnStartup = 0;
+                }
+                return;
+            }
+
+            preset.IsStartupPreset = true;
+            await ApplyNvPreset(preset);
         }
 
         private void miNvDithering6bit_Click(object sender, EventArgs e)

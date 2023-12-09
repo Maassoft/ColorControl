@@ -53,6 +53,8 @@ namespace ColorControl.Services.NVIDIA
         [JsonIgnore]
         public string InfoLine { get; set; }
         public NvDitherState DitherState => ditheringEnabled.HasValue ? ditheringEnabled == true ? NvDitherState.Enabled : NvDitherState.Disabled : NvDitherState.Auto;
+        [JsonIgnore]
+        public bool IsStartupPreset { get; set; }
 
         public NvPreset() : base()
         {

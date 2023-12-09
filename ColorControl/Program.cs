@@ -59,9 +59,6 @@ namespace ColorControl
         {
             DataDir = Utils.GetDataPath();
 
-            //Utils.UpdateFiles(@"H:\temp\ColorControl\ColorControl", @"C:\Users\vinni\source\repos\ColorControl\ColorControl\bin\Debug\net6.0-windows10.0.20348.0");
-            //Utils.UnZipFile(@"H:\temp\ColorControl\ColorControl.zip", @"H:\temp\ColorControl\temp");
-
             var runAsService = args.Contains("--service") || WinApiService.IsAdministratorStatic() && Process.GetCurrentProcess().Parent()?.ProcessName?.Equals("services", StringComparison.InvariantCultureIgnoreCase) == true;
             var runElevated = args.Contains("--elevated");
 
@@ -260,6 +257,7 @@ namespace ColorControl
                     services.AddSingleton<ElevatedForm>();
                     services.AddSingleton<LogWindow>();
                     services.AddSingleton<RestartDetector>();
+                    services.AddSingleton<InfoPanel>();
                 });
         }
         private static async Task RunService(string[] args)

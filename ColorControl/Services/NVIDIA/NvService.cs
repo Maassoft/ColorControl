@@ -241,9 +241,11 @@ namespace ColorControl.Services.NVIDIA
             Utils.WriteObject(_presetsFilename, _presets);
         }
 
-        private void SetCurrentDisplay(NvPreset preset)
+        private Display SetCurrentDisplay(NvPreset preset)
         {
             _currentDisplay = GetPresetDisplay(preset);
+
+            return _currentDisplay;
         }
 
         private Display GetPresetDisplay(NvPreset preset)
@@ -284,22 +286,48 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public override Task<bool> ApplyPreset(NvPreset preset)
+        private async Task<Display> WaitForDisplayAsync(NvPreset preset)
+        {
+            var attempt = 0;
+            Display display = null;
+
+            while (attempt < 20)
+            {
+                if (HasDisplaysAttached())
+                {
+                    display = SetCurrentDisplay(preset);
+                }
+
+                if (display != null)
+                {
+                    break;
+                }
+
+                if (preset.IsStartupPreset)
+                {
+                    await Task.Delay(1000);
+                    attempt++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return display;
+        }
+
+        public override async Task<bool> ApplyPreset(NvPreset preset)
         {
             var result = true;
 
-            if (!HasDisplaysAttached())
-            {
-                return Task.FromResult(false);
-            }
-
-            SetCurrentDisplay(preset);
-
-            var display = GetCurrentDisplay();
+            var display = await WaitForDisplayAsync(preset);
 
             if (display == null)
             {
-                return Task.FromResult(false);
+                Logger.Warn($"Cannot apply preset {preset.IdOrName} because the associated display is not active/found");
+
+                return false;
             }
 
             if (preset.applyOther && preset.scaling.HasValue)
@@ -382,9 +410,11 @@ namespace ColorControl.Services.NVIDIA
 
             _lastAppliedPreset = preset;
 
+            preset.IsStartupPreset = false;
+
             PresetApplied();
 
-            return Task.FromResult(result);
+            return result;
         }
 
         public bool ApplyOverclocking(List<NvGpuOcSettings> settings)
@@ -761,8 +791,8 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var displayDevice = display.DisplayDevice;
-            var hdr = displayDevice.HDRColorData;
-            return hdr?.HDRMode == ColorDataHDRMode.UHDA;
+            var hdr = Logger.Swallow(() => displayDevice.HDRColorData?.HDRMode == ColorDataHDRMode.UHDA);
+            return hdr;
         }
 
         public void SetHdmiSettings(Display display, NvHdmiInfoFrameSettings settings)
@@ -779,7 +809,7 @@ namespace ColorControl.Services.NVIDIA
             var infoValue = info.Value;
 
             var newInfo = new InfoFrameVideo(
-                infoValue.VideoIdentificationCode.Value,
+                infoValue.VideoIdentificationCode ?? 0xFF,
                 InfoFrameVideoPixelRepetition.None,
                 settings.ColorFormat ?? infoValue.ColorFormat,
                 settings.Colorimetry ?? infoValue.Colorimetry,

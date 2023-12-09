@@ -59,20 +59,12 @@
             chkStartMinimized = new System.Windows.Forms.CheckBox();
             chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             tabInfo = new System.Windows.Forms.TabPage();
-            webView21 = new Microsoft.Web.WebView2.WinForms.WebView2();
-            groupBox3 = new System.Windows.Forms.GroupBox();
-            lbPlugins = new System.Windows.Forms.ListBox();
-            label7 = new System.Windows.Forms.Label();
-            lblInfo = new System.Windows.Forms.Label();
             btnUpdate = new System.Windows.Forms.Button();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
-            tabInfo.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)webView21).BeginInit();
-            groupBox3.SuspendLayout();
             SuspendLayout();
             // 
             // tcMain
@@ -110,7 +102,7 @@
             grpOptionsModules.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpOptionsModules.Name = "grpOptionsModules";
             grpOptionsModules.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpOptionsModules.Size = new System.Drawing.Size(522, 131);
+            grpOptionsModules.Size = new System.Drawing.Size(658, 131);
             grpOptionsModules.TabIndex = 11;
             grpOptionsModules.TabStop = false;
             grpOptionsModules.Text = "Modules";
@@ -147,7 +139,7 @@
             grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpMiscellaneousOptions.Size = new System.Drawing.Size(522, 131);
+            grpMiscellaneousOptions.Size = new System.Drawing.Size(658, 131);
             grpMiscellaneousOptions.TabIndex = 5;
             grpMiscellaneousOptions.TabStop = false;
             grpMiscellaneousOptions.Text = "Miscellaneous";
@@ -229,7 +221,7 @@
             grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpGeneralOptions.Name = "grpGeneralOptions";
             grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpGeneralOptions.Size = new System.Drawing.Size(522, 211);
+            grpGeneralOptions.Size = new System.Drawing.Size(662, 211);
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
@@ -283,7 +275,7 @@
             // btnStartStopService
             // 
             btnStartStopService.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnStartStopService.Location = new System.Drawing.Point(474, 129);
+            btnStartStopService.Location = new System.Drawing.Point(614, 129);
             btnStartStopService.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnStartStopService.Name = "btnStartStopService";
             btnStartStopService.Size = new System.Drawing.Size(40, 27);
@@ -439,8 +431,6 @@
             // 
             // tabInfo
             // 
-            tabInfo.Controls.Add(webView21);
-            tabInfo.Controls.Add(groupBox3);
             tabInfo.Location = new System.Drawing.Point(4, 24);
             tabInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             tabInfo.Name = "tabInfo";
@@ -449,65 +439,6 @@
             tabInfo.TabIndex = 4;
             tabInfo.Text = "Info";
             tabInfo.UseVisualStyleBackColor = true;
-            // 
-            // webView21
-            // 
-            webView21.AllowExternalDrop = true;
-            webView21.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            webView21.CreationProperties = null;
-            webView21.DefaultBackgroundColor = System.Drawing.Color.White;
-            webView21.Location = new System.Drawing.Point(436, 7);
-            webView21.Name = "webView21";
-            webView21.Size = new System.Drawing.Size(671, 526);
-            webView21.Source = new System.Uri("https://github.com/Maassoft/ColorControl/releases", System.UriKind.Absolute);
-            webView21.TabIndex = 6;
-            webView21.ZoomFactor = 1D;
-            // 
-            // groupBox3
-            // 
-            groupBox3.Controls.Add(lbPlugins);
-            groupBox3.Controls.Add(label7);
-            groupBox3.Controls.Add(lblInfo);
-            groupBox3.Location = new System.Drawing.Point(7, 7);
-            groupBox3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            groupBox3.Name = "groupBox3";
-            groupBox3.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            groupBox3.Size = new System.Drawing.Size(422, 271);
-            groupBox3.TabIndex = 5;
-            groupBox3.TabStop = false;
-            groupBox3.Text = "Info";
-            // 
-            // lbPlugins
-            // 
-            lbPlugins.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            lbPlugins.FormattingEnabled = true;
-            lbPlugins.HorizontalScrollbar = true;
-            lbPlugins.ItemHeight = 15;
-            lbPlugins.Location = new System.Drawing.Point(10, 77);
-            lbPlugins.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            lbPlugins.Name = "lbPlugins";
-            lbPlugins.Size = new System.Drawing.Size(405, 184);
-            lbPlugins.TabIndex = 3;
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new System.Drawing.Point(7, 59);
-            label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            label7.Name = "label7";
-            label7.Size = new System.Drawing.Size(267, 15);
-            label7.TabIndex = 2;
-            label7.Text = "This app contains the following 3rd party plugins:";
-            // 
-            // lblInfo
-            // 
-            lblInfo.AutoSize = true;
-            lblInfo.Location = new System.Drawing.Point(7, 23);
-            lblInfo.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            lblInfo.Name = "lblInfo";
-            lblInfo.Size = new System.Drawing.Size(28, 15);
-            lblInfo.TabIndex = 1;
-            lblInfo.Text = "Info";
             // 
             // btnUpdate
             // 
@@ -555,10 +486,6 @@
             grpMiscellaneousOptions.PerformLayout();
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
-            tabInfo.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)webView21).EndInit();
-            groupBox3.ResumeLayout(false);
-            groupBox3.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -570,10 +497,6 @@
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
         private System.Windows.Forms.TabPage tabInfo;
-        private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.ListBox lbPlugins;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label lblInfo;
         private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
         private System.Windows.Forms.CheckBox chkFixChromeFonts;
         private System.Windows.Forms.Label lblFixChromeFontsDescription;
@@ -599,7 +522,6 @@
         private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
         private System.Windows.Forms.Button btnOptionsAdvanced;
         private System.Windows.Forms.Button btnOptionsLog;
-        private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
     }
 }
 

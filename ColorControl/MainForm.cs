@@ -1,4 +1,5 @@
-﻿using ColorControl.Services.AMD;
+﻿using ColorControl.Forms;
+using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
@@ -151,7 +152,6 @@ namespace ColorControl
             InitShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut, StartScreenSaver);
 
             InitModules();
-            InitInfo();
             UpdateServiceInfo();
 
             _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
@@ -385,32 +385,6 @@ namespace ColorControl
 
                 return null;
             }
-        }
-
-        private void InitInfo()
-        {
-            _currentVersionInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
-
-            Text = Application.ProductName + " " + Application.ProductVersion;
-
-            if (_winApiService.IsAdministrator())
-            {
-                Text += " (administrator)";
-            }
-
-            lblInfo.Text = Text + " - " + _currentVersionInfo.LegalCopyright;
-
-            lbPlugins.Items.Add("lgtv.net by gr4b4z");
-            lbPlugins.Items.Add("Newtonsoft.Json by James Newton-King");
-            lbPlugins.Items.Add("NLog by Jarek Kowalski, Kim Christensen, Julian Verdurmen");
-            lbPlugins.Items.Add("NvAPIWrapper.Net by Soroush Falahati");
-            lbPlugins.Items.Add("NWin32 by zmjack");
-            lbPlugins.Items.Add("TaskScheduler by David Hall");
-            lbPlugins.Items.Add("NVIDIA Profile Inspector by Orbmu2k");
-            lbPlugins.Items.Add("NvidiaML wrapper by LibreHardwareMonitor");
-            lbPlugins.Items.Add("Novideo sRGB by ledoge");
-            lbPlugins.Items.Add("NLogViewer by dojo90");
-            lbPlugins.Items.Add("WPFDarkTheme by AngryCarrot789");
         }
 
         private void OpenForm(object sender, EventArgs e)
@@ -770,6 +744,7 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             if (tcMain.SelectedTab == tabInfo)
             {
+                InitInfoTab();
             }
             else if (tcMain.SelectedTab == tabOptions)
             {
@@ -809,6 +784,21 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
 
             UpdateServiceInfo();
+        }
+
+        private void InitInfoTab()
+        {
+            if (tabInfo.Controls.Count > 0)
+            {
+                return;
+            }
+            var control = _serviceProvider.GetRequiredService<InfoPanel>();
+            control.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+            tabInfo.Controls.Add(control);
+
+            control.Size = tabInfo.ClientSize;
+            //control.BackColor = SystemColors.Window;
         }
 
         private void UpdateTrayMenu(ToolStripMenuItem menu, IEnumerable<PresetBase> presets, EventHandler eventHandler)
@@ -1291,7 +1281,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             //InstallUpdate("");
             //await Test();
 
-            _serviceManager.NvService.TestResolution();
+            //_serviceManager.NvService.TestResolution();
         }
 
         private async Task Test()

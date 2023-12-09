@@ -389,14 +389,14 @@
             mnuLgExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuLgExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { mnuLgOLEDMotionPro, mnuLgSetSvcMenuFlag, miLgExpertSeparator1 });
             mnuLgExpert.Name = "mnuLgButtons";
-            mnuLgExpert.Size = new System.Drawing.Size(321, 76);
+            mnuLgExpert.Size = new System.Drawing.Size(328, 76);
             mnuLgExpert.Opening += mnuLgExpert_Opening;
             // 
             // mnuLgOLEDMotionPro
             // 
             mnuLgOLEDMotionPro.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miLgEnableMotionPro, miLgDisableMotionPro });
             mnuLgOLEDMotionPro.Name = "mnuLgOLEDMotionPro";
-            mnuLgOLEDMotionPro.Size = new System.Drawing.Size(320, 22);
+            mnuLgOLEDMotionPro.Size = new System.Drawing.Size(327, 22);
             mnuLgOLEDMotionPro.Text = "Activate OLED Motion Pro (B9/C9/E9/W9 only)";
             // 
             // miLgEnableMotionPro
@@ -417,8 +417,8 @@
             // 
             mnuLgSetSvcMenuFlag.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miLgFullServiceMenuEnable, miLgFullServiceMenuDisable });
             mnuLgSetSvcMenuFlag.Name = "mnuLgSetSvcMenuFlag";
-            mnuLgSetSvcMenuFlag.Size = new System.Drawing.Size(320, 22);
-            mnuLgSetSvcMenuFlag.Text = "Enable Full Service Menu (B3/C3/G3 only)";
+            mnuLgSetSvcMenuFlag.Size = new System.Drawing.Size(327, 22);
+            mnuLgSetSvcMenuFlag.Text = "Enable Full Service Menu (2022/2023 OLED only)";
             // 
             // miLgFullServiceMenuEnable
             // 
@@ -437,7 +437,7 @@
             // miLgExpertSeparator1
             // 
             miLgExpertSeparator1.Name = "miLgExpertSeparator1";
-            miLgExpertSeparator1.Size = new System.Drawing.Size(317, 6);
+            miLgExpertSeparator1.Size = new System.Drawing.Size(324, 6);
             // 
             // chkLgRemoteControlShow
             // 

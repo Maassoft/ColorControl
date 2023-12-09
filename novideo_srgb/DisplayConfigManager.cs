@@ -35,6 +35,11 @@ namespace novideo_srgb
 
             check(GetDisplayConfigBufferSizes(QDC.QDC_ONLY_ACTIVE_PATHS, out var pathCount, out var modeCount));
 
+            if (pathCount == 0 || modeCount == 0)
+            {
+                return new HashSet<string>();
+            }
+
             var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
             var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
 

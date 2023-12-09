@@ -1,5 +1,6 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using NStandard;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -124,6 +125,7 @@ namespace ColorControl.Services.Common
         public List<PresetTrigger> Triggers { get; set; }
         public string Description { get; set; }
         public bool ShowInQuickAccess { get; set; }
+        public string IdOrName => name.IsNullOrEmpty() ? _id.ToString() : name;
 
         private int _id;
 
