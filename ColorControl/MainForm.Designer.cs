@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             tcMain = new System.Windows.Forms.TabControl();
             tabOptions = new System.Windows.Forms.TabPage();
@@ -35,6 +36,7 @@
             label1 = new System.Windows.Forms.Label();
             chkModules = new System.Windows.Forms.CheckedListBox();
             grpMiscellaneousOptions = new System.Windows.Forms.GroupBox();
+            btnOptionsColorProfiles = new System.Windows.Forms.Button();
             btnSetShortcutScreenSaver = new System.Windows.Forms.Button();
             label11 = new System.Windows.Forms.Label();
             edtBlankScreenSaverShortcut = new System.Windows.Forms.TextBox();
@@ -60,11 +62,14 @@
             chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             tabInfo = new System.Windows.Forms.TabPage();
             btnUpdate = new System.Windows.Forms.Button();
+            mnuColorProfiles = new System.Windows.Forms.ContextMenuStrip(components);
+            miCreateHDRColorProfile = new System.Windows.Forms.ToolStripMenuItem();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
+            mnuColorProfiles.SuspendLayout();
             SuspendLayout();
             // 
             // tcMain
@@ -130,6 +135,7 @@
             // 
             // grpMiscellaneousOptions
             // 
+            grpMiscellaneousOptions.Controls.Add(btnOptionsColorProfiles);
             grpMiscellaneousOptions.Controls.Add(btnSetShortcutScreenSaver);
             grpMiscellaneousOptions.Controls.Add(label11);
             grpMiscellaneousOptions.Controls.Add(edtBlankScreenSaverShortcut);
@@ -143,6 +149,17 @@
             grpMiscellaneousOptions.TabIndex = 5;
             grpMiscellaneousOptions.TabStop = false;
             grpMiscellaneousOptions.Text = "Miscellaneous";
+            // 
+            // btnOptionsColorProfiles
+            // 
+            btnOptionsColorProfiles.Location = new System.Drawing.Point(538, 17);
+            btnOptionsColorProfiles.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnOptionsColorProfiles.Name = "btnOptionsColorProfiles";
+            btnOptionsColorProfiles.Size = new System.Drawing.Size(112, 27);
+            btnOptionsColorProfiles.TabIndex = 12;
+            btnOptionsColorProfiles.Text = "Color Profiles...";
+            btnOptionsColorProfiles.UseVisualStyleBackColor = true;
+            btnOptionsColorProfiles.Click += btnOptionsColorProfiles_Click;
             // 
             // btnSetShortcutScreenSaver
             // 
@@ -455,6 +472,20 @@
             btnUpdate.Visible = false;
             btnUpdate.Click += btnUpdate_Click;
             // 
+            // mnuColorProfiles
+            // 
+            mnuColorProfiles.ImageScalingSize = new System.Drawing.Size(20, 20);
+            mnuColorProfiles.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miCreateHDRColorProfile });
+            mnuColorProfiles.Name = "mnuLgButtons";
+            mnuColorProfiles.Size = new System.Drawing.Size(214, 26);
+            // 
+            // miCreateHDRColorProfile
+            // 
+            miCreateHDRColorProfile.Name = "miCreateHDRColorProfile";
+            miCreateHDRColorProfile.Size = new System.Drawing.Size(213, 22);
+            miCreateHDRColorProfile.Text = "Create HDR Color Profile...";
+            miCreateHDRColorProfile.Click += miCreateHDRColorProfile_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -486,6 +517,7 @@
             grpMiscellaneousOptions.PerformLayout();
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
+            mnuColorProfiles.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -522,6 +554,9 @@
         private System.Windows.Forms.CheckBox chkOptionsUseDarkMode;
         private System.Windows.Forms.Button btnOptionsAdvanced;
         private System.Windows.Forms.Button btnOptionsLog;
+        private System.Windows.Forms.Button btnOptionsColorProfiles;
+        private System.Windows.Forms.ContextMenuStrip mnuColorProfiles;
+        private System.Windows.Forms.ToolStripMenuItem miCreateHDRColorProfile;
     }
 }
 

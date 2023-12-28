@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
+  </ItemGroup>
+
+	<PropertyGroup Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '7.0'))">
+		<TargetFramework>net7.0</TargetFramework>
+		<UseNativeAot Condition="$(PublishDir) != ''">true</UseNativeAot>
+	</PropertyGroup>
+
+	<!-- Optimize for size -->
+	<PropertyGroup Condition="'$(UseNativeAot)' == 'true'">
+		<PublishAot>true</PublishAot>
+		<IlcOptimizationPreference>Size</IlcOptimizationPreference>
+		<IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
+		<IlcGenerateStackTraceData>true</IlcGenerateStackTraceData>
+		<TrimUnusedDependencies>true</TrimUnusedDependencies>
+		<RootPackageReference>false</RootPackageReference>
+		<TrimMode>full</TrimMode>
+		<!--DebuggerSupport Condition="'$(Configuration)'=='Release'">false</DebuggerSupport-->
+		<EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+		<EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+		<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<!--UseSystemResourceKeys>true</UseSystemResourceKeys-->
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(UseNativeAot)' != 'true'">
+        <None Include="$(SolutionDir)LittleCms\lcms2.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseNativeAot)' == 'true'">
+        <DirectPInvoke Include="lcms2" />
+		<NativeLibrary Include="$(MSBuildThisFileDirectory)..\lcms2\Projects\VC2022\lcms2_static\$(Configuration)\x64\lcms2_static.lib" Condition="$(RuntimeIdentifier.StartsWith('win')) and $(RuntimeIdentifier.EndsWith('x64'))" />
+		<NativeLibrary Include="$(MSBuildThisFileDirectory)..\lcms2\Projects\VC2022\lcms2_static\$(Configuration)\ARM64\lcms2_static.lib" Condition="$(RuntimeIdentifier.StartsWith('win')) and $(RuntimeIdentifier.EndsWith('arm64'))" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="C:\Users\vinni\source\repos\ColorControl\LittleCms\lcms2.dll" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\LittleCms\LittleCms.csproj" />
+    </ItemGroup>
+</Project>

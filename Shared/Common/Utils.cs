@@ -206,6 +206,11 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return name.Substring(0, 1).ToUpper() + name.Substring(1);
         }
 
+        public static Dictionary<T, string> EnumToDictionary<T>() where T : struct, Enum
+        {
+            return Enum.GetValues<T>().ToDictionary(k => k, e => e.GetDescription());
+        }
+
         public static string GetDescriptionByEnumName<T>(string value) where T : IConvertible
         {
             string description = null;

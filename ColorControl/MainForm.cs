@@ -66,7 +66,6 @@ namespace ColorControl
 
         private AmdPanel _amdPanel;
         private bool _skipResize;
-        private FileVersionInfo _currentVersionInfo;
         private bool _checkedForUpdates = false;
         private string _updateHtmlUrl;
         private string _downloadUrl;
@@ -95,6 +94,15 @@ namespace ColorControl
             _winApiService = winApiService;
             _dataDir = Program.DataDir;
             _config = Program.Config;
+
+            var currentVersionInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
+
+            Text = Application.ProductName + " " + Application.ProductVersion;
+
+            if (_winApiService.IsAdministrator())
+            {
+                Text += " (administrator)";
+            }
 
             LoadConfig();
 
@@ -1422,6 +1430,16 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
 
             var module = _config.Modules[index];
             module.IsActive = e.NewValue == CheckState.Checked;
+        }
+
+        private void miCreateHDRColorProfile_Click(object sender, EventArgs e)
+        {
+            ColorProfileWindow.CreateAndShow();
+        }
+
+        private void btnOptionsColorProfiles_Click(object sender, EventArgs e)
+        {
+            mnuColorProfiles.ShowCustom(btnOptionsColorProfiles);
         }
     }
 }

@@ -250,6 +250,16 @@ namespace ColorControl.Shared.Forms
             return item;
         }
 
+        public static void BuildMenuItemAndSub(ToolStripMenuItem parent, string text, string subText, EventHandler onClick)
+        {
+            var itemName = $"{parent.Name}_{text}";
+            var menuItem = BuildMenuItem(parent.DropDownItems, itemName, text);
+
+            var subItemName = $"{itemName}_SubItem";
+            var subItem = BuildMenuItem(menuItem.DropDownItems, subItemName, "", onClick: onClick);
+            subItem.Text = subText;
+        }
+
         public static void BuildComboBox<T>(ComboBox comboBox, params T[] skip) where T : IConvertible
         {
             if (comboBox.Items.Count == 0)

@@ -20,6 +20,8 @@ namespace ColorControl.Services.NVIDIA
 
         public bool applyColorData { get; set; }
         public ColorData colorData { get; set; }
+        public bool ApplyColorEnhancements { get; set; }
+        public NvColorEnhancementSettings ColorEnhancementSettings { get; set; }
         public bool applyHDR { get; set; }
         public bool HDREnabled { get; set; }
         public bool toggleHDR { get; set; }
@@ -77,6 +79,7 @@ namespace ColorControl.Services.NVIDIA
             ocSettings = new List<NvGpuOcSettings>();
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings();
             ColorProfileSettings = new NvColorProfileSettings();
+            ColorEnhancementSettings = new NvColorEnhancementSettings();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -116,6 +119,9 @@ namespace ColorControl.Services.NVIDIA
 
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings(preset.HdmiInfoFrameSettings);
             applyHdmiSettings = preset.applyHdmiSettings;
+
+            ColorEnhancementSettings = new NvColorEnhancementSettings(preset.ColorEnhancementSettings);
+            ApplyColorEnhancements = preset.ApplyColorEnhancements;
         }
 
         public NvPreset Clone()
@@ -127,7 +133,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "HDMI settings|200", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Color enhancements", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "HDMI settings|200", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -145,6 +151,9 @@ namespace ColorControl.Services.NVIDIA
             var colorSettings = FormatDisplaySetting(string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry), isCurrent, applyColorData);
 
             values.Add(colorSettings);
+
+            values.Add(FormatDisplaySetting(GetColorEnhancementsDescription(), isCurrent, ApplyColorEnhancements));
+
             values.Add(FormatDisplaySetting(string.Format("{0}Hz", refreshRate), isCurrent, applyRefreshRate));
 
             if (applyResolution || resolutionWidth > 0)
@@ -288,6 +297,27 @@ namespace ColorControl.Services.NVIDIA
             if (!ColorProfileSettings.ProfileName.IsNullOrWhiteSpace())
             {
                 values.Add($"Color profile: {ColorProfileSettings.ProfileName}");
+            }
+
+            if (!values.Any())
+            {
+                values.Add("None");
+            }
+
+            return string.Join(", ", values);
+        }
+
+        public string GetColorEnhancementsDescription()
+        {
+            var values = new List<string>();
+
+            if (ColorEnhancementSettings.DigitalVibranceLevel != 50)
+            {
+                values.Add($"Digital vibrance: {ColorEnhancementSettings.DigitalVibranceLevel}%");
+            }
+            if (ColorEnhancementSettings.HueAngle != 0)
+            {
+                values.Add($"Hue: {ColorEnhancementSettings.HueAngle}°");
             }
 
             if (!values.Any())

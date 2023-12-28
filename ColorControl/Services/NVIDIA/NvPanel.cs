@@ -337,6 +337,8 @@ namespace ColorControl.Services.NVIDIA
             mnuNvDisplay.Visible = presetItemsVisible;
             miNvPresetColorSettings.Enabled = presetItemsVisible;
             mnuNvPresetsColorSettings.Enabled = preset != null;
+            miNvPresetColorEnhancementsIncluded.Enabled = presetItemsVisible;
+            mnuNvPresetsColorEnhancements.Enabled = preset != null;
             mnuRefreshRate.Enabled = preset != null;
             mnuNvResolution.Enabled = preset != null;
             miNvPresetDithering.Enabled = preset != null;
@@ -363,6 +365,7 @@ namespace ColorControl.Services.NVIDIA
 
             miNvPresetApplyDithering.Visible = !isCurrentDisplay;
             miNvPresetColorSettings.Visible = !isCurrentDisplay;
+            miNvPresetColorEnhancementsIncluded.Visible = !isCurrentDisplay;
             miNvResolutionIncluded.Visible = !isCurrentDisplay;
             miRefreshRateIncluded.Visible = !isCurrentDisplay;
             miHDRIncluded.Visible = !isCurrentDisplay;
@@ -422,8 +425,10 @@ namespace ColorControl.Services.NVIDIA
             miNvOtherIncluded.Checked = preset.applyOther;
             miNvHdmiIncluded.Checked = preset.applyHdmiSettings;
             miNvDriverSettingsIncluded.Checked = preset.applyDriverSettings;
+            miNvPresetColorEnhancementsIncluded.Checked = preset.ApplyColorEnhancements;
 
             mnuNvPresetsColorSettings.Font = _menuItemFonts[preset.applyColorData];
+            mnuNvPresetsColorEnhancements.Font = _menuItemFonts[preset.ApplyColorEnhancements];
             mnuRefreshRate.Font = _menuItemFonts[preset.applyRefreshRate];
             mnuNvResolution.Font = _menuItemFonts[preset.applyResolution];
             miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
@@ -432,22 +437,19 @@ namespace ColorControl.Services.NVIDIA
             mnuNvOtherSettings.Font = _menuItemFonts[preset.applyOther];
             mnuNvHdmiSettings.Font = _menuItemFonts[preset.applyHdmiSettings];
 
-            var itemName = $"{mnuNvOtherSettings.Name}_SDRBrightness";
-            var brightnessMenu = FormUtils.BuildMenuItem(mnuNvOtherSettings.DropDownItems, itemName, "SDR brightness");
+            FormUtils.BuildMenuItemAndSub(mnuNvPresetsColorEnhancements, "Digital Vibrance",
+                $"{preset.ColorEnhancementSettings.DigitalVibranceLevel}% (click to change)", nvPresetDvcMenuItem_Click);
+            FormUtils.BuildMenuItemAndSub(mnuNvPresetsColorEnhancements, "Hue",
+                $"{preset.ColorEnhancementSettings.HueAngle}° (click to change)", nvPresetHueMenuItem_Click);
 
-            var subItemName = $"{itemName}_SubItem";
-            var subItem = FormUtils.BuildMenuItem(brightnessMenu.DropDownItems, subItemName, "", onClick: nvPresetBrightnessMenuItem_Click);
-            subItem.Text = (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)";
+            FormUtils.BuildMenuItemAndSub(mnuNvOtherSettings, "SDR brightness",
+                (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)", nvPresetBrightnessMenuItem_Click);
 
             FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Scaling", typeof(Scaling), preset, "scaling", nvPresetScalingMenuItem_Click, unchanged: true, skipValues: new object[] { Scaling.Customized })
                 .DropDownItems[0].Visible = !isCurrentDisplay;
 
-            var itemNameProfile = $"{mnuNvOtherSettings.Name}_Profile";
-            var profileMenu = FormUtils.BuildMenuItem(mnuNvOtherSettings.DropDownItems, itemNameProfile, "Color Profile");
-
-            var subItemNameProfile = $"{itemNameProfile}_SubItem";
-            var subItemProfile = FormUtils.BuildMenuItem(profileMenu.DropDownItems, subItemNameProfile, "", onClick: nvPresetColorProfileMenuItem_Click);
-            subItemProfile.Text = (!preset.ColorProfileSettings.ProfileName.IsNullOrWhiteSpace() ? $"{preset.ColorProfileSettings.ProfileName}" : "Unset") + " (click to change)";
+            FormUtils.BuildMenuItemAndSub(mnuNvOtherSettings, "Color Profile",
+                (!preset.ColorProfileSettings.ProfileName.IsNullOrWhiteSpace() ? $"{preset.ColorProfileSettings.ProfileName}" : "Unset") + " (click to change)", nvPresetColorProfileMenuItem_Click);
 
             FormUtils.BuildDropDownMenu(mnuNvHdmiSettings, "Content type", typeof(InfoFrameVideoContentType), preset.HdmiInfoFrameSettings, "ContentType", nvPresetHdmiContentTypeMenuItem_Click, unchanged: true)
                 .DropDownItems[0].Visible = !isCurrentDisplay;
@@ -829,6 +831,68 @@ namespace ColorControl.Services.NVIDIA
             }
 
             preset.SDRBrightness = value;
+
+            AddOrUpdateItem();
+        }
+
+        private void nvPresetDvcMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+
+            var label = "Digital vibrance in % (clear to set to default)";
+
+            var display = _nvService.ResolveDisplay(preset);
+            var dvControl = display.DigitalVibranceControl;
+
+            var value = SelectValue(dvControl.MinimumLevel, dvControl.MaximumLevel, preset.ColorEnhancementSettings.DigitalVibranceLevel, label);
+
+            if (value == -1)
+            {
+                return;
+            }
+
+            var intValue = value ?? dvControl.DefaultLevel;
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetDigitalVibranceLevel(preset.Display, intValue);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ColorEnhancementSettings.DigitalVibranceLevel = intValue;
+
+            AddOrUpdateItem();
+        }
+
+        private void nvPresetHueMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+
+            var label = "Hue angle in ° (clear to set to default)";
+
+            var display = _nvService.ResolveDisplay(preset);
+            var hueControl = display.HUEControl;
+
+            var value = SelectValue(hueControl.DefaultAngle, 359, preset.ColorEnhancementSettings.HueAngle, label);
+
+            if (value == -1)
+            {
+                return;
+            }
+
+            var intValue = value ?? hueControl.DefaultAngle;
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetHueAngle(preset.Display, intValue);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ColorEnhancementSettings.HueAngle = intValue;
 
             AddOrUpdateItem();
         }
@@ -1930,6 +1994,15 @@ namespace ColorControl.Services.NVIDIA
             var panel = new NvInfoPanel(_nvService);
 
             MessageForms.ShowControl(panel, "NVIDIA Info", height: 800);
+        }
+
+        private void miNvPresetColorEnhancementsIncluded_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset();
+
+            preset.ApplyColorEnhancements = !preset.ApplyColorEnhancements;
+
+            AddOrUpdateItem();
         }
     }
 }

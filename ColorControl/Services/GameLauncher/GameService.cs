@@ -77,7 +77,14 @@ namespace ColorControl.Services.GameLauncher
 
             if (_winApiService.IsAdministrator())
             {
-                var fileName = process.MainModule.FileName;
+                var mainModule = process.MainModule;
+
+                if (mainModule == null)
+                {
+                    return false;
+                }
+
+                var fileName = mainModule.FileName;
 
                 preset = _presets.FirstOrDefault(p => fileName.Contains(Path.GetDirectoryName(p.Path), System.StringComparison.OrdinalIgnoreCase));
             }

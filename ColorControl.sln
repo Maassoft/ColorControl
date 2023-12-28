@@ -15,6 +15,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLogViewer", "NLogViewer\NL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared", "Shared\Shared.csproj", "{8F38D6B0-82DA-4DD1-89EB-918D8A18AEB1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LittleCms", "LittleCms\LittleCms.csproj", "{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MHC2Gen", "MHC2Gen\MHC2Gen.csproj", "{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +75,22 @@ Global
 		{8F38D6B0-82DA-4DD1-89EB-918D8A18AEB1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8F38D6B0-82DA-4DD1-89EB-918D8A18AEB1}.Release|x64.ActiveCfg = Release|Any CPU
 		{8F38D6B0-82DA-4DD1-89EB-918D8A18AEB1}.Release|x64.Build.0 = Release|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Debug|x64.Build.0 = Debug|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Release|x64.ActiveCfg = Release|Any CPU
+		{42D251AE-42AF-4C0D-B163-7C7A13C4A9A6}.Release|x64.Build.0 = Release|Any CPU
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Debug|Any CPU.Build.0 = Debug|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Debug|x64.ActiveCfg = Debug|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Debug|x64.Build.0 = Debug|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Release|Any CPU.ActiveCfg = Release|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Release|Any CPU.Build.0 = Release|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Release|x64.ActiveCfg = Release|x64
+		{9FDF741F-0ECF-46DB-8671-AB11ACEB9F41}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

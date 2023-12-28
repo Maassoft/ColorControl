@@ -57,6 +57,8 @@ namespace ColorControl.Services.NVIDIA
             miNvPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvPresetsColorSettings = new System.Windows.Forms.ToolStripMenuItem();
             miNvPresetColorSettings = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvPresetsColorEnhancements = new System.Windows.Forms.ToolStripMenuItem();
+            miNvPresetColorEnhancementsIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
             miRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvResolution = new System.Windows.Forms.ToolStripMenuItem();
@@ -94,8 +96,8 @@ namespace ColorControl.Services.NVIDIA
             miNvNovideo = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
             miNvTestDithering = new System.Windows.Forms.ToolStripMenuItem();
-            lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
             miNVIDIAInfo = new System.Windows.Forms.ToolStripMenuItem();
+            lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
             mnuNvPresets.SuspendLayout();
             mnuNvSettings.SuspendLayout();
             SuspendLayout();
@@ -326,9 +328,9 @@ namespace ColorControl.Services.NVIDIA
             // mnuNvPresets
             // 
             mnuNvPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvHdmiSettings, mnuNvOverclocking, miNvCopyId });
+            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuNvPresetsColorEnhancements, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvHdmiSettings, mnuNvOverclocking, miNvCopyId });
             mnuNvPresets.Name = "mnuNvPresets";
-            mnuNvPresets.Size = new System.Drawing.Size(185, 296);
+            mnuNvPresets.Size = new System.Drawing.Size(185, 340);
             mnuNvPresets.Opening += mnuNvPresets_Opening;
             // 
             // miNvApply
@@ -375,9 +377,23 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetColorSettings
             // 
             miNvPresetColorSettings.Name = "miNvPresetColorSettings";
-            miNvPresetColorSettings.Size = new System.Drawing.Size(120, 22);
+            miNvPresetColorSettings.Size = new System.Drawing.Size(180, 22);
             miNvPresetColorSettings.Text = "Included";
             miNvPresetColorSettings.Click += miNvPresetColorSettings_Click;
+            // 
+            // mnuNvPresetsColorEnhancements
+            // 
+            mnuNvPresetsColorEnhancements.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvPresetColorEnhancementsIncluded });
+            mnuNvPresetsColorEnhancements.Name = "mnuNvPresetsColorEnhancements";
+            mnuNvPresetsColorEnhancements.Size = new System.Drawing.Size(184, 22);
+            mnuNvPresetsColorEnhancements.Text = "Color Enhancements";
+            // 
+            // miNvPresetColorEnhancementsIncluded
+            // 
+            miNvPresetColorEnhancementsIncluded.Name = "miNvPresetColorEnhancementsIncluded";
+            miNvPresetColorEnhancementsIncluded.Size = new System.Drawing.Size(180, 22);
+            miNvPresetColorEnhancementsIncluded.Text = "Included";
+            miNvPresetColorEnhancementsIncluded.Click += miNvPresetColorEnhancementsIncluded_Click;
             // 
             // mnuRefreshRate
             // 
@@ -638,7 +654,7 @@ namespace ColorControl.Services.NVIDIA
             mnuNvSettings.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuNvSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvProfileInspector, miNvNovideo, miNvSettings, miNvTestDithering, miNVIDIAInfo });
             mnuNvSettings.Name = "mnuLgButtons";
-            mnuNvSettings.Size = new System.Drawing.Size(202, 136);
+            mnuNvSettings.Size = new System.Drawing.Size(202, 114);
             // 
             // miNvProfileInspector
             // 
@@ -778,5 +794,7 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.ToolStripMenuItem miNvHdmiIncluded;
         private System.Windows.Forms.ToolStripMenuItem miNvTestDithering;
         private System.Windows.Forms.ToolStripMenuItem miNVIDIAInfo;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvPresetsColorEnhancements;
+        private System.Windows.Forms.ToolStripMenuItem miNvPresetColorEnhancementsIncluded;
     }
 }

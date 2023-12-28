@@ -271,6 +271,10 @@ namespace novideo_srgb
             }
             catch
             {
+                if (display == null)
+                {
+                    throw new InvalidOperationException("No display");
+                }
                 return new EDID(display.Output.PhysicalGPU.ReadEDIDData(display.Output));
             }
         }

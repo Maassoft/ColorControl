@@ -8,14 +8,11 @@ namespace ColorControl.Forms
     public partial class InfoPanel : UserControl
     {
         private readonly WinApiService _winApiService;
-        private bool _initialized;
 
         public InfoPanel(WinApiService winApiService)
         {
             _winApiService = winApiService;
             InitializeComponent();
-
-            _initialized = true;
 
             if (DarkModeUtils.UseDarkMode)
             {
@@ -29,14 +26,14 @@ namespace ColorControl.Forms
         {
             var currentVersionInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
 
-            Text = Application.ProductName + " " + Application.ProductVersion;
+            var text = Application.ProductName + " " + Application.ProductVersion;
 
             if (_winApiService.IsAdministrator())
             {
-                Text += " (administrator)";
+                text += " (administrator)";
             }
 
-            lblInfo.Text = Text + " - " + currentVersionInfo.LegalCopyright;
+            lblInfo.Text = text + " - " + currentVersionInfo.LegalCopyright;
 
             lbPlugins.Items.Add("lgtv.net by gr4b4z");
             lbPlugins.Items.Add("Newtonsoft.Json by James Newton-King");
@@ -49,7 +46,8 @@ namespace ColorControl.Forms
             lbPlugins.Items.Add("Novideo sRGB by ledoge");
             lbPlugins.Items.Add("NLogViewer by dojo90");
             lbPlugins.Items.Add("WPFDarkTheme by AngryCarrot789");
-
+            lbPlugins.Items.Add("Little-CMS by mm2");
+            lbPlugins.Items.Add("MHC2 by dantmnf");
         }
 
     }

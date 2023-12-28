@@ -1,4 +1,5 @@
 ﻿using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Native;
 using Microsoft.Win32;
 using Microsoft.Win32.TaskScheduler;
 using NWin32;
@@ -334,6 +335,18 @@ namespace ColorControl.Shared.Services
             {
                 Logger.Error($"Could not create/delete task: {e.Message}");
             }
+        }
+
+        public bool UninstallColorProfile(string filename)
+        {
+            if (!_winApiService.IsAdministrator())
+            {
+                return _rpcService.Call<bool>(nameof(UninstallColorProfile), filename);
+            }
+
+            var deleteResult = CCD.UninstallColorProfile(filename);
+
+            return deleteResult;
         }
 
         private static bool UpdateShortcut(string path, string arguments, bool removeArguments = false)

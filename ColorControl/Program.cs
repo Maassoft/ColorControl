@@ -256,6 +256,7 @@ namespace ColorControl
                     services.AddSingleton<MainForm>();
                     services.AddSingleton<ElevatedForm>();
                     services.AddSingleton<LogWindow>();
+                    services.AddTransient<ColorProfileWindow>();
                     services.AddSingleton<RestartDetector>();
                     services.AddSingleton<InfoPanel>();
                 });

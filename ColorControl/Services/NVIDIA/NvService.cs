@@ -398,6 +398,12 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
+            if (preset.ApplyColorEnhancements)
+            {
+                SetDigitalVibranceLevel(display, preset.ColorEnhancementSettings.DigitalVibranceLevel);
+                SetHueAngle(display, preset.ColorEnhancementSettings.HueAngle);
+            }
+
             if (preset.applyDriverSettings)
             {
                 SetDriverSettings(preset.driverSettings);
@@ -607,6 +613,28 @@ namespace ColorControl.Services.NVIDIA
             }
 
             return 0;
+        }
+
+        public void SetDigitalVibranceLevel(Display display, int level)
+        {
+            var dvControl = display.DigitalVibranceControl;
+
+            dvControl.CurrentLevel = level;
+        }
+
+        public int GetDigitalVibranceLevel(Display display)
+        {
+            return display.DigitalVibranceControl.CurrentLevel;
+        }
+
+        public void SetHueAngle(Display display, int angle)
+        {
+            display.HUEControl.CurrentAngle = angle;
+        }
+
+        public int GetHueAngle(Display display)
+        {
+            return display.HUEControl.CurrentAngle;
         }
 
         public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null)
@@ -1132,6 +1160,7 @@ namespace ColorControl.Services.NVIDIA
 
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
+            preset.ColorEnhancementSettings = GetCurrentColorEnhancements(display);
             preset.HdmiInfoFrameSettings = GetHdmiSettings(display);
             preset.SDRBrightness = GetSDRBrightness(display);
             preset.scaling = GetScaling(display);
@@ -1197,6 +1226,15 @@ namespace ColorControl.Services.NVIDIA
             }
 
             return preset;
+        }
+
+        private NvColorEnhancementSettings GetCurrentColorEnhancements(Display display)
+        {
+            return new NvColorEnhancementSettings
+            {
+                DigitalVibranceLevel = GetDigitalVibranceLevel(display),
+                HueAngle = GetHueAngle(display)
+            };
         }
 
         public List<SettingItem> GetVisibleSettings()
@@ -1368,14 +1406,14 @@ namespace ColorControl.Services.NVIDIA
             Utils.WriteObject(_configFilename, Config);
         }
 
-        internal void ResolveDisplay(NvPreset preset)
+        internal Display ResolveDisplay(NvPreset preset)
         {
-            if (preset.Display != null)
+            if (preset.Display == null)
             {
-                return;
+                preset.Display = GetPresetDisplay(preset);
             }
 
-            preset.Display = GetPresetDisplay(preset);
+            return preset.Display;
         }
     }
 }
