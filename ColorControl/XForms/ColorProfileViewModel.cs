@@ -2,8 +2,9 @@
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.XForms;
+using EDIDParser;
 using MHC2Gen;
-using novideo_srgb;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -231,7 +232,7 @@ internal class ColorProfileViewModel : BaseViewModel
 
         var path = SelectedDisplay.DevicePath;
 
-        var edid = Novideo.GetEDID(path, null);
+        var edid = GetEDIDInternal(path);
         var primaries = edid?.DisplayParameters?.ChromaticityCoordinates;
 
         if (primaries == null)
@@ -257,4 +258,19 @@ internal class ColorProfileViewModel : BaseViewModel
             new CIExy { x = BluePoint.X, y = BluePoint.Y },
             new CIExy { x = WhitePoint.X, y = WhitePoint.Y });
     }
+
+    private static EDID GetEDIDInternal(string path)
+    {
+        try
+        {
+            var registryPath = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\DISPLAY\\";
+            registryPath += string.Join("\\", path.Split('#').Skip(1).Take(2));
+            return new EDID((byte[])Registry.GetValue(registryPath + "\\Device Parameters", "EDID", null));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
 }

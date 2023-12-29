@@ -41,7 +41,7 @@ namespace ColorControl.XForms
         {
             if (Application.Current == null)
             {
-                new Application();
+                new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             }
 
             var window = Program.ServiceProvider.GetRequiredService<ColorProfileWindow>();
