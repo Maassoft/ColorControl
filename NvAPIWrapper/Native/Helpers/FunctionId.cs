@@ -3,7 +3,7 @@
 namespace NvAPIWrapper.Native.Helpers
 {
     [SuppressMessage("ReSharper", "InconsistentNaming")]
-    internal enum FunctionId : uint
+    public enum FunctionId : uint
     {
         // -------------------------------------------------
         // Public NvAPI Functions
@@ -701,6 +701,12 @@ namespace NvAPIWrapper.Native.Helpers
         Unknown_B7BCF50D = 0xb7bcf50d, // `Unknown(hGpu, *mut { version = 0x00010008, value })` seen `value = 0x703`
         Unknown_F1D2777B = 0xf1d2777b, // `Unknown(hDisplayHandle, *mut hGpu)` maybe?
         NvAPI_GPU_QueryThermalSensors = 0x65FE3AAD,
+
+        // CC: added functions
+        NvAPI_Disp_SetOutputMode = 0x98E7661A,
+        NvAPI_Disp_GetOutputMode = 0x81FED88D,
+        NvAPI_Disp_SetDitherControl = 0xDF0DFCDD,
+        NvAPI_Disp_GetDitherControl = 0x932AC8FB,
 
         #endregion
 

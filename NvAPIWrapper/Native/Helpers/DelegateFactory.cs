@@ -1,13 +1,13 @@
+using NvAPIWrapper.Native.Attributes;
+using NvAPIWrapper.Native.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using NvAPIWrapper.Native.Attributes;
-using NvAPIWrapper.Native.Exceptions;
 
 namespace NvAPIWrapper.Native.Helpers
 {
-    internal static class DelegateFactory
+    public static class DelegateFactory
     {
         private static readonly Dictionary<KeyValuePair<FunctionId, Type>, object> Delegates =
             new Dictionary<KeyValuePair<FunctionId, Type>, object>();
@@ -37,7 +37,7 @@ namespace NvAPIWrapper.Native.Helpers
                     return Delegates[delegateKey] as T;
                 }
 
-                var ptr = NvAPI_QueryInterface((uint) functionId.FunctionId);
+                var ptr = NvAPI_QueryInterface((uint)functionId.FunctionId);
 
                 if (ptr != IntPtr.Zero)
                 {

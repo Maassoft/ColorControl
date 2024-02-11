@@ -64,6 +64,7 @@
             btnUpdate = new System.Windows.Forms.Button();
             mnuColorProfiles = new System.Windows.Forms.ContextMenuStrip(components);
             miCreateHDRColorProfile = new System.Windows.Forms.ToolStripMenuItem();
+            miCreateSDRColorProfile = new System.Windows.Forms.ToolStripMenuItem();
             tcMain.SuspendLayout();
             tabOptions.SuspendLayout();
             grpOptionsModules.SuspendLayout();
@@ -475,9 +476,9 @@
             // mnuColorProfiles
             // 
             mnuColorProfiles.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuColorProfiles.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miCreateHDRColorProfile });
+            mnuColorProfiles.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miCreateHDRColorProfile, miCreateSDRColorProfile });
             mnuColorProfiles.Name = "mnuLgButtons";
-            mnuColorProfiles.Size = new System.Drawing.Size(214, 26);
+            mnuColorProfiles.Size = new System.Drawing.Size(214, 70);
             // 
             // miCreateHDRColorProfile
             // 
@@ -485,6 +486,13 @@
             miCreateHDRColorProfile.Size = new System.Drawing.Size(213, 22);
             miCreateHDRColorProfile.Text = "Create HDR Color Profile...";
             miCreateHDRColorProfile.Click += miCreateHDRColorProfile_Click;
+            // 
+            // miCreateSDRColorProfile
+            // 
+            miCreateSDRColorProfile.Name = "miCreateSDRColorProfile";
+            miCreateSDRColorProfile.Size = new System.Drawing.Size(213, 22);
+            miCreateSDRColorProfile.Text = "Create SDR Color Profile...";
+            miCreateSDRColorProfile.Click += miCreateSDRColorProfile_Click;
             // 
             // MainForm
             // 
@@ -503,7 +511,6 @@
             Deactivate += MainForm_Deactivate;
             FormClosing += MainForm_FormClosing;
             FormClosed += MainForm_FormClosed;
-            Load += MainForm_Load;
             Shown += MainForm_Shown;
             ResizeBegin += MainForm_ResizeBegin;
             ResizeEnd += MainForm_ResizeEnd;
@@ -557,6 +564,7 @@
         private System.Windows.Forms.Button btnOptionsColorProfiles;
         private System.Windows.Forms.ContextMenuStrip mnuColorProfiles;
         private System.Windows.Forms.ToolStripMenuItem miCreateHDRColorProfile;
+        private System.Windows.Forms.ToolStripMenuItem miCreateSDRColorProfile;
     }
 }
 

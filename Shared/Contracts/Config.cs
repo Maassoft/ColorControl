@@ -40,6 +40,7 @@
         public string LogLevel { get; set; }
         public List<Module> Modules { get; set; }
         public bool UseRawInput { get; set; }
+        public bool SetMinTmlAndMaxTml { get; set; }
 
         public Config()
         {

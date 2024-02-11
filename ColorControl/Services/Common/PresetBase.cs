@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Common;
+﻿using ColorControl.Services.EventDispatcher;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using NStandard;
 using System;
@@ -68,10 +69,10 @@ namespace ColorControl.Services.Common
             var active = Conditions == PresetConditionType.None ||
                  (Conditions.HasFlag(PresetConditionType.SDR) ? !context.IsHDRActive : true) && (Conditions.HasFlag(PresetConditionType.HDR) ? context.IsHDRActive : true) &&
                  (Conditions.HasFlag(PresetConditionType.GsyncDisabled) ? !context.IsGsyncActive : true) && (Conditions.HasFlag(PresetConditionType.GsyncEnabled) ? context.IsGsyncActive : true);
-            var allProcesses = IncludedProcesses.Contains("*");
 
-            if (Trigger == PresetTriggerType.ProcessSwitch)
+            if (Trigger == PresetTriggerType.ProcessSwitch && context.Triggers.Contains(Trigger))
             {
+                var allProcesses = IncludedProcesses.Contains("*");
                 active = active && (allProcesses || (context.ChangedProcesses?.Any() ?? false));
 
                 if (active)
@@ -88,6 +89,15 @@ namespace ColorControl.Services.Common
                     active = included && !excluded && screenSizeCheck && notificationsDisabledCheck;
                 }
             }
+            else if ((Trigger == PresetTriggerType.ScreensaverStart || Trigger == PresetTriggerType.ScreensaverStop) && context.Triggers.Contains(Trigger))
+            {
+                active = active && (Trigger == PresetTriggerType.ScreensaverStart && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Started ||
+                         Trigger == PresetTriggerType.ScreensaverStop && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Stopped);
+            }
+            else
+            {
+                active = context.Triggers.Contains(Trigger);
+            }
 
             return active;
         }
@@ -99,7 +109,13 @@ namespace ColorControl.Services.Common
                 return string.Empty;
             }
 
-            return $"On {Trigger.GetDescription()} of {DisplayProcesses(IncludedProcesses)}{(ExcludedProcesses.Any() ? ", excluding " + DisplayProcesses(ExcludedProcesses) : string.Empty)}{(Conditions > 0 ? ", only in " + string.Join(", ", Utils.GetDescriptions<PresetConditionType>((int)Conditions)) : string.Empty)}";
+            var text = $"On {Trigger.GetDescription()}";
+
+            if (Trigger == PresetTriggerType.ProcessSwitch)
+            {
+                text += $"of {DisplayProcesses(IncludedProcesses)}{(ExcludedProcesses.Any() ? ", excluding " + DisplayProcesses(ExcludedProcesses) : string.Empty)}";
+            }
+            return text += $"{(Conditions > 0 ? ", only in " + string.Join(", ", Utils.GetDescriptions<PresetConditionType>((int)Conditions)) : string.Empty)}";
         }
 
         public static string DisplayProcesses(IEnumerable<string> processes)
@@ -110,12 +126,14 @@ namespace ColorControl.Services.Common
 
     class PresetTriggerContext
     {
+        public IEnumerable<PresetTriggerType> Triggers { get; set; } = new[] { PresetTriggerType.ProcessSwitch };
         public bool IsHDRActive { get; set; }
         public bool IsGsyncActive { get; set; }
         public Process ForegroundProcess { get; set; }
         public bool ForegroundProcessIsFullScreen { get; set; }
         public List<Process> ChangedProcesses { get; set; }
         public bool IsNotificationDisabled { get; set; }
+        public ScreenSaverTransitionState ScreenSaverTransitionState { get; set; }
     }
 
     internal abstract class PresetBase
@@ -177,7 +195,7 @@ namespace ColorControl.Services.Common
             return name;
         }
 
-        public void UpdateTrigger(PresetTriggerType triggerType, PresetConditionType conditions, string includedProcesses, string excludedProcesses)
+        public void UpdateTrigger(PresetTriggerType triggerType, PresetConditionType conditions, string includedProcesses = null, string excludedProcesses = null)
         {
             if (!Triggers.Any())
             {

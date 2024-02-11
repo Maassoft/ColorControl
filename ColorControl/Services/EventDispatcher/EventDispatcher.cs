@@ -53,6 +53,8 @@ public class EventDispatcher<T> where T : EventArgs
         {
             await asyncEventHandlers[eventName]?.InvokeAsync(this, eventArgs);
         }
+
+        DispatchEvent(eventName, eventArgs);
     }
 
     protected bool HasHandlers(string eventName)

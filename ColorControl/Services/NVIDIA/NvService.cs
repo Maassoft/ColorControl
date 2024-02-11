@@ -1,4 +1,5 @@
 ﻿using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
@@ -13,10 +14,12 @@ using nspector.Common.Meta;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
+using NvAPIWrapper.Native.Attributes;
 using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.GPU.Structures;
+using NvAPIWrapper.Native.Helpers;
 using NvAPIWrapper.Native.Interfaces.Display;
 using NWin32;
 using NWin32.NativeTypes;
@@ -28,6 +31,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using static ColorControl.Shared.Contracts.NVIDIA.NvHdrSettings;
 using static ColorControl.Shared.Native.CCD;
 
 namespace ColorControl.Services.NVIDIA
@@ -74,6 +78,7 @@ namespace ColorControl.Services.NVIDIA
                     PreserveSig = true)]
         private static extern IntPtr NvAPI64_QueryInterface(uint interfaceId);
 
+        [FunctionId(FunctionId.NvAPI_Disp_SetDitherControl)]
         public delegate int NvAPI_Disp_SetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
             [In] uint OutputId,
@@ -82,6 +87,7 @@ namespace ColorControl.Services.NVIDIA
             [In] uint mode
         );
 
+        [FunctionId(FunctionId.NvAPI_Disp_GetDitherControl)]
         public delegate int NvAPI_Disp_GetDitherControl(
             [In] uint DisplayId,
             [MarshalAs(UnmanagedType.Struct)] ref NV_GPU_DITHER_CONTROL_V1 ditherControl);
@@ -97,6 +103,47 @@ namespace ColorControl.Services.NVIDIA
             public uint modeCaps;
         };
 
+        [FunctionId(FunctionId.NvAPI_Disp_SetOutputMode)]
+        public delegate int NvAPI_Disp_SetOutputMode(
+            [In] uint DisplayId,
+            ref NV_DISPLAY_OUTPUT_MODE pDisplayMode
+        );
+
+        [FunctionId(FunctionId.NvAPI_Disp_GetOutputMode)]
+        public delegate int NvAPI_Disp_GetOutputMode(
+            [In] uint DisplayId,
+            ref NV_DISPLAY_OUTPUT_MODE pDisplayMode
+        );
+
+        //public struct NV_HDR_METADATA_V1
+        //{
+        //    public uint version;                                          //!< Version of this structure
+
+        //    public short displayPrimary_x0;                                //!< x coordinate of color primary 0 (e.g. Red) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+        //    public short displayPrimary_y0;                                //!< y coordinate of color primary 0 (e.g. Red) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+
+        //    public short displayPrimary_x1;                                //!< x coordinate of color primary 1 (e.g. Green) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+        //    public short displayPrimary_y1;                                //!< y coordinate of color primary 1 (e.g. Green) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+
+        //    public short displayPrimary_x2;                                //!< x coordinate of color primary 2 (e.g. Blue) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+        //    public short displayPrimary_y2;                                //!< y coordinate of color primary 2 (e.g. Blue) of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+
+        //    public short displayWhitePoint_x;                              //!< x coordinate of white point of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+        //    public short displayWhitePoint_y;                              //!< y coordinate of white point of mastering display ([0x0000-0xC350] = [0.0 - 1.0])
+
+        //    public short max_display_mastering_luminance;                  //!< Maximum display mastering luminance ([0x0000-0xFFFF] = [0.0 - 65535.0] cd/m^2, in units of 1 cd/m^2)
+        //    public short min_display_mastering_luminance;                  //!< Minimum display mastering luminance ([0x0000-0xFFFF] = [0.0 - 6.55350] cd/m^2, in units of 0.0001 cd/m^2)
+
+        //    public short max_content_light_level;                          //!< Maximum Content Light level (MaxCLL) ([0x0000-0xFFFF] = [0.0 - 65535.0] cd/m^2, in units of 1 cd/m^2)
+        //    public short max_frame_average_light_level;                    //!< Maximum Frame-Average Light Level (MaxFALL) ([0x0000-0xFFFF] = [0.0 - 65535.0] cd/m^2, in units of 1 cd/m^2)
+        //}
+
+        //public delegate int NvAPI_Disp_GetSourceHdrMetadata(
+        //    [In] uint DisplayId,
+        //    [MarshalAs(UnmanagedType.Struct)] ref NV_HDR_METADATA_V1 pMetadata,
+        //    [In] long sourcePID
+        //);
+
         public override string ServiceName => "NVIDIA";
 
         protected override string PresetsBaseFilename => "NvPresets.json";
@@ -105,6 +152,7 @@ namespace ColorControl.Services.NVIDIA
         private string _baseProfileName = "";
         private string _configFilename;
         public NvServiceConfig Config { get; private set; }
+        private NV_DISPLAY_OUTPUT_MODE? Hdr10OutputModeForced { get; set; }
 
         private DrsSettingsService _drs;
         private DrsSettingsMetaService _meta;
@@ -131,6 +179,9 @@ namespace ColorControl.Services.NVIDIA
         public const uint DRS_RBAR_OPTIONS = 0X000F00BB;
         public const uint DRS_RBAR_SIZE_LIMIT = 0X000F00FF;
 
+        public uint DriverVersion { get; private set; }
+        public bool OutputModeAvailable => DriverVersion >= 52500;
+
         private static readonly List<uint> _driverSettingIds = new()
         {
             DRS_GSYNC_APPLICATION_MODE,
@@ -148,18 +199,30 @@ namespace ColorControl.Services.NVIDIA
         };
         private readonly WinApiService _winApiService;
         private readonly RpcClientService _rpcClientService;
+        private readonly PowerEventDispatcher _powerEventDispatcher;
+        private readonly ServiceManager _serviceManager;
         private static NvService ServiceInstance;
 
-        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService) : base(appContextProvider)
+        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
         {
             _winApiService = winApiService;
             _rpcClientService = rpcClientService;
+            _powerEventDispatcher = powerEventDispatcher;
+            _serviceManager = serviceManager;
             _rpcClientService.Name = nameof(NvService);
             NvPreset.NvService = this;
 
             AddJsonConverter(new ColorDataConverter());
             LoadConfig();
             LoadPresets();
+        }
+
+        public void InstallEventHandlers()
+        {
+            // TODO: implement later
+            //_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
+            //_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
+            //_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
         }
 
         public static async Task<bool> ExecutePresetAsync(string idOrName)
@@ -354,14 +417,22 @@ namespace ColorControl.Services.NVIDIA
                 SetColorData(display, preset.colorData);
             }
 
-            if (applyHdr)
+            if (preset.applyHDR)
             {
-                if (newHdrEnabled && !hdrEnabled)
+                if (applyHdr)
                 {
-                    MainWindow.BeforeDisplaySettingsChange();
+                    if (newHdrEnabled && !hdrEnabled)
+                    {
+                        MainWindow.BeforeDisplaySettingsChange();
+                    }
+
+                    SetHDRState(display, newHdrEnabled);
                 }
 
-                SetHDRState(display, newHdrEnabled);
+                if (newHdrEnabled && preset.HdrSettings.OutputMode.HasValue)
+                {
+                    SetOutputMode(preset.HdrSettings.OutputMode.Value, display);
+                }
             }
 
             if (preset.applyRefreshRate || preset.applyResolution)
@@ -381,7 +452,7 @@ namespace ColorControl.Services.NVIDIA
 
                 if (preset.ColorProfileSettings.ProfileName != null)
                 {
-                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName);
+                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml);
                 }
             }
 
@@ -575,6 +646,12 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetHDRState(Display display, bool enabled)
         {
+            if (!enabled && Hdr10OutputModeForced.HasValue)
+            {
+                SetOutputMode(NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_SDR, display);
+                Hdr10OutputModeForced = null;
+            }
+
             CCD.SetHDRState(enabled, display.Name);
         }
 
@@ -637,48 +714,128 @@ namespace ColorControl.Services.NVIDIA
             return display.HUEControl.CurrentAngle;
         }
 
+        //public NV_HDR_METADATA_V1? GetHdrMetaData(Display display = null)
+        //{
+        //    var ptr = NvAPI64_QueryInterface(0x0D3F52DA);
+        //    if (ptr != IntPtr.Zero)
+        //    {
+        //        var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetSourceHdrMetadata)) as NvAPI_Disp_GetSourceHdrMetadata;
+
+        //        display ??= GetCurrentDisplay();
+
+        //        var displayDevice = display.DisplayDevice;
+
+        //        var displayId = displayDevice.DisplayId;
+
+        //        var metadata = new NV_HDR_METADATA_V1();
+        //        metadata.version = MAKE_NVAPI_VERSION<NV_HDR_METADATA_V1>(1);
+
+        //        var processId = Process.GetCurrentProcess().Id;
+
+        //        var resultValue = delegateValue(displayId, ref metadata, processId);
+
+        //        return resultValue == 0 ? metadata : null;
+        //    }
+
+        //    return null;
+        //}
+
+        public bool SetOutputMode(NV_DISPLAY_OUTPUT_MODE outputMode, Display display = null)
+        {
+            var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_SetOutputMode>();
+
+            if (delegateValue == null)
+            {
+                return false;
+            }
+
+            display ??= GetCurrentDisplay();
+
+            var displayDevice = display.DisplayDevice;
+
+            var displayId = displayDevice.DisplayId;
+
+            var newOutputMode = outputMode;
+            var previousOutputMode = Hdr10OutputModeForced;
+
+            var resultValue = delegateValue(displayId, ref outputMode);
+
+            if (resultValue == 0)
+            {
+                Hdr10OutputModeForced = newOutputMode > NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_SDR ? newOutputMode : null;
+            }
+
+            if (previousOutputMode == NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING && newOutputMode == NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10)
+            {
+                // HDR10+ will not be disabled properly when setting output mode to HDR10, just disable and enable HDR again
+                SetHDRState(display, false);
+                SetHDRState(display, true);
+            }
+
+            return resultValue == 0;
+        }
+
+        public NV_DISPLAY_OUTPUT_MODE? GetOutputMode(Display display = null)
+        {
+            var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_GetOutputMode>();
+
+            if (delegateValue == null)
+            {
+                return null;
+            }
+
+
+            display ??= GetCurrentDisplay();
+
+            var displayDevice = display.DisplayDevice;
+
+            var displayId = displayDevice.DisplayId;
+
+            var outputMode = NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_SDR;
+
+            var resultValue = delegateValue(displayId, ref outputMode);
+
+            return resultValue == 0 ? outputMode : null;
+        }
+
         public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null)
         {
+            var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_SetDitherControl>();
+
+            if (delegateValue == null)
+            {
+                return false;
+            }
+
             var result = true;
 
-            var ptr = NvAPI64_QueryInterface(0xDF0DFCDD);
-            if (ptr != IntPtr.Zero)
+            var display = currentDisplay ?? GetCurrentDisplay();
+            if (display == null)
             {
-                var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_SetDitherControl)) as NvAPI_Disp_SetDitherControl;
-
-                var display = currentDisplay ?? GetCurrentDisplay();
-                if (display == null)
-                {
-                    return false;
-                }
-
-                var displayDevice = display.DisplayDevice;
-
-                var gpuHandle = displayDevice.PhysicalGPU.Handle;
-                var displayId = displayDevice.DisplayId;
-
-                if (state == NvDitherState.Auto)
-                {
-                    // These seem to be ignored in Auto-state
-                    bits = 0;
-                    mode = 0;
-                }
-                else if (preset != null)
-                {
-                    bits = preset.ditheringBits;
-                    mode = preset.ditheringMode;
-                }
-
-                var resultValue = delegateValue(gpuHandle, displayId, (uint)state, bits, mode);
-                if (resultValue != 0)
-                {
-                    Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
-                    result = false;
-                }
+                return false;
             }
-            else
+
+            var displayDevice = display.DisplayDevice;
+
+            var gpuHandle = displayDevice.PhysicalGPU.Handle;
+            var displayId = displayDevice.DisplayId;
+
+            if (state == NvDitherState.Auto)
             {
-                Logger.Error($"Could not set dithering because the function NvAPI_Disp_SetDitherControl could not be found");
+                // These seem to be ignored in Auto-state
+                bits = 0;
+                mode = 0;
+            }
+            else if (preset != null)
+            {
+                bits = preset.ditheringBits;
+                mode = preset.ditheringMode;
+            }
+
+            var resultValue = delegateValue(gpuHandle, displayId, (uint)state, bits, mode);
+            if (resultValue != 0)
+            {
+                Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
                 result = false;
             }
 
@@ -687,33 +844,32 @@ namespace ColorControl.Services.NVIDIA
 
         public NV_GPU_DITHER_CONTROL_V1 GetDithering(Display currentDisplay = null)
         {
-            var dither = new NV_GPU_DITHER_CONTROL_V1 { version = 0x10018 };
+            var version = MAKE_NVAPI_VERSION<NV_GPU_DITHER_CONTROL_V1>(1);
+            var dither = new NV_GPU_DITHER_CONTROL_V1 { version = version };
 
-            var ptr = NvAPI64_QueryInterface(0x932AC8FB);
-            if (ptr != IntPtr.Zero)
-            {
-                var delegateValue = Marshal.GetDelegateForFunctionPointer(ptr, typeof(NvAPI_Disp_GetDitherControl)) as NvAPI_Disp_GetDitherControl;
+            var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_GetDitherControl>();
 
-                var display = currentDisplay ?? GetCurrentDisplay();
-                if (display == null)
-                {
-                    dither.state = -1;
-                    return dither;
-                }
-
-                var displayDevice = display.DisplayDevice;
-                var displayId = displayDevice.DisplayId;
-
-                var result = delegateValue(displayId, ref dither);
-                if (result != 0)
-                {
-                    Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
-                    dither.state = -1;
-                }
-            }
-            else
+            if (delegateValue == null)
             {
                 dither.state = -2;
+                return dither;
+            }
+
+            var display = currentDisplay ?? GetCurrentDisplay();
+            if (display == null)
+            {
+                dither.state = -1;
+                return dither;
+            }
+
+            var displayDevice = display.DisplayDevice;
+            var displayId = displayDevice.DisplayId;
+
+            var result = delegateValue(displayId, ref dither);
+            if (result != 0)
+            {
+                Logger.Error($"Could not get dithering because NvAPI_Disp_GetDitherControl returned a non-zero return code: {result}");
+                dither.state = -1;
             }
 
             return dither;
@@ -879,18 +1035,14 @@ namespace ColorControl.Services.NVIDIA
 
         public InfoFrameVideoContentType GetHDMIContentType(Display display)
         {
-            var displayDevice = display.DisplayDevice;
-
-            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+            var info = GetInfoFrameVideo(display);
 
             return info.HasValue ? info.Value.ContentType : InfoFrameVideoContentType.Auto;
         }
 
         public NvHdmiInfoFrameSettings GetHdmiSettings(Display display)
         {
-            var displayDevice = display.DisplayDevice;
-
-            var info = displayDevice.HDMIVideoFrameOverrideInformation ?? displayDevice.HDMIVideoFrameCurrentInformation;
+            var info = GetInfoFrameVideo(display);
 
             if (!info.HasValue)
             {
@@ -909,6 +1061,13 @@ namespace ColorControl.Services.NVIDIA
                 ContentMode = infoValue.ContentMode,
                 ContentType = infoValue.ContentType
             };
+        }
+
+        private static InfoFrameVideo? GetInfoFrameVideo(Display display)
+        {
+            var displayDevice = display.DisplayDevice;
+
+            return Logger.Swallow(() => displayDevice.HDMIVideoFrameOverrideInformation) ?? Logger.Swallow(() => displayDevice.HDMIVideoFrameCurrentInformation);
         }
 
         public Scaling GetScaling(Display display)
@@ -972,11 +1131,15 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetColorProfile(Display display, string name)
         {
-            CCD.SetDisplayDefaultColorProfile(display.Name, name);
+            CCD.SetDisplayDefaultColorProfile(display.Name, name, _appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml);
         }
 
         public void TestResolution()
         {
+            //GetHdrMetaData();
+
+            //SetOutputMode(NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING);
+
             //var display = GetCurrentDisplay();
 
             //CCD.GetUsePerUserDisplayProfiles(display.Name);
@@ -1157,6 +1320,7 @@ namespace ColorControl.Services.NVIDIA
             var preset = new NvPreset { Display = display, IsDisplayPreset = true, applyColorData = false, primaryDisplay = isPrimaryDisplay };
 
             preset.HDREnabled = IsHDREnabled(display);
+            preset.HdrSettings.OutputMode = preset.HDREnabled && OutputModeAvailable ? GetOutputMode(display) : null;
 
             preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
             preset.colorData = GetCurrentColorData(display);
@@ -1283,6 +1447,9 @@ namespace ColorControl.Services.NVIDIA
         {
             NvAPIWrapper.NVIDIA.Initialize();
             _initialized = true;
+
+            var version = default(string);
+            DriverVersion = GeneralApi.GetDriverAndBranchVersion(out version);
 
             _drs = DrsServiceLocator.SettingService;
             _meta = DrsServiceLocator.MetaService;
@@ -1414,6 +1581,54 @@ namespace ColorControl.Services.NVIDIA
             }
 
             return preset.Display;
+        }
+
+        private async Task PowerModeResume(object sender, PowerStateChangedEventArgs e, CancellationToken _)
+        {
+            Logger.Debug($"PowerModeChanged: {e.State}");
+
+            // Wait
+            await Task.Delay(30000);
+
+            ExecutePresetsForEvent(PresetTriggerType.Resume);
+        }
+
+        private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
+        {
+            Logger.Debug($"PowerModeChanged: {e.State}");
+
+            switch (e.State)
+            {
+                case PowerOnOffState.StandBy:
+                    {
+                        ExecutePresetsForEvent(PresetTriggerType.Standby);
+                        break;
+                    }
+                case PowerOnOffState.ShutDown:
+                    {
+                        ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+                        break;
+                    }
+            }
+        }
+
+        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        {
+            Logger.Debug($"Executing presets for event {triggerType}");
+
+            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == triggerType)).ToList();
+
+            if (!presets.Any())
+            {
+                return;
+            }
+
+            ExecuteEventPresets(_serviceManager, new[] { triggerType }).Wait();
+        }
+
+        private static uint MAKE_NVAPI_VERSION<T>(int version)
+        {
+            return (uint)((Marshal.SizeOf(typeof(T))) | version << 16);
         }
     }
 }

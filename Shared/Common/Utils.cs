@@ -206,9 +206,9 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return name.Substring(0, 1).ToUpper() + name.Substring(1);
         }
 
-        public static Dictionary<T, string> EnumToDictionary<T>() where T : struct, Enum
+        public static Dictionary<T, string> EnumToDictionary<T>(IEnumerable<T> skipValues = null) where T : struct, Enum
         {
-            return Enum.GetValues<T>().ToDictionary(k => k, e => e.GetDescription());
+            return Enum.GetValues<T>().Where(v => skipValues == null || !skipValues.Contains(v)).ToDictionary(k => k, e => e.GetDescription());
         }
 
         public static string GetDescriptionByEnumName<T>(string value) where T : IConvertible

@@ -5,6 +5,7 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using System;
 using System.Buffers.Binary;
 using System.IO;
+using System.Text.Json;
 
 namespace MHC2Gen
 {
@@ -206,6 +207,16 @@ namespace MHC2Gen
         }
     }
 
+    internal class ExtraInfoTag
+    {
+        public SDRTransferFunction SDRTransferFunction { get; set; }
+        public double Gamma { get; set; }
+        public double SDRMinBrightness { get; set; }
+        public double SDRMaxBrightness { get; set; }
+        public double SDRBrightnessBoost { get; set; }
+        public ColorGamut TargetGamut { get; set; }
+    }
+
     internal class IccContext
     {
         protected IccProfile profile;
@@ -380,14 +391,16 @@ namespace MHC2Gen
     internal class DeviceIccContext : IccContext
     {
         CIEXYZ illuminantRelativeBlackPoint;
-        double min_nits;
-        double max_nits;
+        public double min_nits;
+        public double max_nits;
         ToneCurve profileRedToneCurve;
         ToneCurve profileGreenToneCurve;
         ToneCurve profileBlueToneCurve;
         ToneCurve profileRedReverseToneCurve;
         ToneCurve profileGreenReverseToneCurve;
         ToneCurve profileBlueReverseToneCurve;
+
+        public ExtraInfoTag? ExtraInfoTag { get; }
 
         public bool UseChromaticAdaptation { get; set; }
 
@@ -401,6 +414,16 @@ namespace MHC2Gen
             profileRedReverseToneCurve = profileRedToneCurve.Reverse();
             profileGreenReverseToneCurve = profileGreenToneCurve.Reverse();
             profileBlueReverseToneCurve = profileBlueToneCurve.Reverse();
+
+            if (profile.ContainsTag(TagSignature.ScreeningDescTag))
+            {
+                var ccDesc = profile.ReadTag(SafeTagSignature.ScreeningDescTag);
+                var json = ccDesc?.Get("en", "US");
+                if (json != null)
+                {
+                    ExtraInfoTag = JsonSerializer.Deserialize<ExtraInfoTag>(json);
+                }
+            }
         }
 
         public static Matrix<double> RgbToXYZ(RgbPrimaries primaries)
@@ -450,7 +473,7 @@ namespace MHC2Gen
             {
                 max_nits = lumi.Y;
             }
-            var min_nits = 0.005;
+            var min_nits = 0.0;
             var bkpt = illuminantRelativeBlackPoint;
             if (bkpt.Y != 0)
             {
@@ -847,7 +870,7 @@ namespace MHC2Gen
 
             var devicePrimaries = command.DevicePrimaries; // new RgbPrimaries(new() { x = 0.698, y = 0.292 }, new() { x = 0.255, y = 0.699 }, new() { x = 0.148, y = 0.056 }, new() { x = 0.3127, y = 0.3290 });
 
-            var srgbTrc = IccProfile.Create_sRGB().ReadTag(SafeTagSignature.RedTRCTag)!;
+            var srgbTrc = profile.ReadTag(SafeTagSignature.RedTRCTag)!;
 
             var sourcePrimaries = RgbPrimaries.sRGB;
 
@@ -914,7 +937,7 @@ namespace MHC2Gen
                 MaxCLL = command.MaxCLL
             };
 
-            if (command.SDRTransferFunction == SDRTransferFunction.Piecewise)
+            if (!command.IsHDRProfile || command.SDRTransferFunction == SDRTransferFunction.Piecewise)
             {
                 MHC2.ApplyPiecewise();
             }
@@ -965,6 +988,20 @@ namespace MHC2Gen
             var new_desc = $"{command.Description} ({GetDeviceDescription()})";
             var new_desc_mlu = new MLU(new_desc);
             outputProfile.WriteTag(SafeTagSignature.ProfileDescriptionTag, new_desc_mlu);
+
+            var extraInfoTag = new ExtraInfoTag
+            {
+                SDRTransferFunction = command.SDRTransferFunction,
+                Gamma = command.Gamma,
+                SDRMinBrightness = command.SDRMinBrightness,
+                SDRMaxBrightness = command.SDRMaxBrightness,
+                SDRBrightnessBoost = command.SDRBrightnessBoost,
+                TargetGamut = command.ColorGamut
+            };
+
+            var ccDesc = JsonSerializer.Serialize(extraInfoTag);
+
+            outputProfile.WriteTag(SafeTagSignature.ScreeningDescTag, new MLU(ccDesc));
 
             outputProfile.WriteRawTag(MHC2Tag.Signature, MHC2.ToBytes());
 
@@ -1117,7 +1154,7 @@ namespace MHC2Gen
             outputProfile.HeaderManufacturer = profile.HeaderManufacturer;
             outputProfile.HeaderModel = profile.HeaderModel;
             outputProfile.HeaderAttributes = profile.HeaderAttributes;
-            outputProfile.HeaderRenderingIntent = RenderingIntent.ABSOLUTE_COLORIMETRIC;
+            outputProfile.HeaderRenderingIntent = RenderingIntent.PERCEPTUAL;
 
             var new_desc = $"XCSC: {sourceDescription} ({GetDeviceDescription()})";
             var new_desc_mlu = new MLU(new_desc);

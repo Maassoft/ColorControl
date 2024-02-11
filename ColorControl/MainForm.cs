@@ -168,16 +168,12 @@ namespace ColorControl
 
             _initialized = true;
 
-            AfterInitialized();
+            Task.Run(AfterInitialized);
 
             if (_config.UseDarkMode)
             {
                 SetTheme(_config.UseDarkMode);
             }
-        }
-
-        private void MainForm_Load(object sender, EventArgs e)
-        {
         }
 
         private void LoadModules()
@@ -236,6 +232,8 @@ namespace ColorControl
             }
 
             tcMain.SelectedIndex = 0;
+
+            _serviceManager.NvService?.InstallEventHandlers();
         }
 
         private void UpdateServiceInfo()
@@ -352,7 +350,7 @@ namespace ColorControl
             {
                 _serviceManager.LgService = _serviceProvider.GetRequiredService<LgService>();
 
-                _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _trayIcon, Handle);
+                _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _trayIcon, Handle, _powerEventDispatcher);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 _lgPanel.Init();
@@ -378,7 +376,7 @@ namespace ColorControl
 
                 //_serviceManager.SamsungService.Init();
 
-                _samsungPanel = new SamsungPanel(_serviceManager.SamsungService, _serviceManager.NvService, _serviceManager.AmdService, Handle);
+                _samsungPanel = new SamsungPanel(_serviceManager.SamsungService, _serviceManager.NvService, _serviceManager.AmdService, Handle, _powerEventDispatcher);
                 _samsungPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 _samsungPanel.Init();
@@ -958,13 +956,21 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
         }
 
-        private void AfterInitialized()
+        private async Task AfterInitialized()
         {
-            _nvPanel?.AfterInitialized();
-            _amdPanel?.AfterInitialized();
+            await _powerEventDispatcher.SendEventAsync(PowerEventDispatcher.Event_Startup);
+
+            if (_nvPanel != null)
+            {
+                await _nvPanel.AfterInitialized();
+            }
+            if (_amdPanel != null)
+            {
+                await _amdPanel.AfterInitialized();
+            }
             if (_trayIcon.Visible)
             {
-                var _ = CheckForUpdates();
+                await CheckForUpdates();
             }
         }
 
@@ -1289,7 +1295,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             //InstallUpdate("");
             //await Test();
 
-            //_serviceManager.NvService.TestResolution();
+            _serviceManager.NvService?.TestResolution();
         }
 
         private async Task Test()
@@ -1395,8 +1401,15 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
                 SubLabel = "This enables shortcuts to work during applications/games that block certain keys (like WinKey or Control). NOTE: if the application in the foreground runs with higher privileges than ColorControl, Raw Input does not work and normal hot keys are used",
                 Value = _config.UseRawInput
             };
+            var setMinTmlAndMaxTmlField = new FieldDefinition
+            {
+                FieldType = FieldType.CheckBox,
+                Label = "Set MinTML and MaxTML when applying color profiles",
+                SubLabel = "When this is enabled MinTML and MaxTML will be automatically be set to respectively the minimum luminance and the maximum luminance of the color profile",
+                Value = _config.SetMinTmlAndMaxTml
+            };
 
-            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField });
+            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField, setMinTmlAndMaxTmlField });
 
             if (values?.Any() != true)
             {
@@ -1405,6 +1418,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
 
             _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
             _config.UseRawInput = useRawInputField.ValueAsBool;
+            _config.SetMinTmlAndMaxTml = setMinTmlAndMaxTmlField.ValueAsBool;
 
             KeyboardShortcutManager.SetUseRawInput(_config.UseRawInput);
         }
@@ -1440,6 +1454,11 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
         private void btnOptionsColorProfiles_Click(object sender, EventArgs e)
         {
             mnuColorProfiles.ShowCustom(btnOptionsColorProfiles);
+        }
+
+        private void miCreateSDRColorProfile_Click(object sender, EventArgs e)
+        {
+            ColorProfileWindow.CreateAndShow(isHDR: false);
         }
     }
 }

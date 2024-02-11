@@ -73,7 +73,7 @@ namespace novideo_srgb
                 var item = new ToolStripMenuItem();
                 parent.DropDownItems.Add(item);
                 item.Text = monitor.Name;
-                item.Checked = monitor.Clamped;
+                item.CheckState = monitor.Clamped == true ? CheckState.Checked : monitor.Clamped == false ? CheckState.Unchecked : CheckState.Indeterminate;
                 item.Enabled = monitor.CanClamp;
                 item.ForeColor = parent.ForeColor;
                 item.Click += (sender, args) => monitor.Clamped = !monitor.Clamped;

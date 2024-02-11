@@ -7,7 +7,7 @@
         Title="Create Color Profile"
         ResizeMode="CanResize"
         Width="773"
-        Height="775"
+        Height="791"
         WindowStartupLocation="CenterOwner"
         SnapsToDevicePixels="True"
         Style="{DynamicResource CustomWindowStyle}"
@@ -19,58 +19,58 @@
                     <ColumnDefinition Width="132*"/>
                     <ColumnDefinition Width="577*"/>
                 </Grid.ColumnDefinitions>
-                <Label Content="Maximum Luminance (nits):" HorizontalAlignment="Left" Margin="206,232,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="412,236,0,0" TextWrapping="Wrap" Text="{Binding WhiteLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  Name="tbMaxLuminance" Height="18" InputScope="Number"/>
-                <Label Content="Minimum Luminance (nits):" HorizontalAlignment="Left" Margin="-5,232,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,236,0,0" TextWrapping="Wrap" Text="{Binding BlackLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbMinLuminance" Height="18" InputScope="Number"/>
                 <Label Content="Display:" HorizontalAlignment="Left" Margin="-6,8,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
                 <ComboBox Margin="76,10,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" SelectedValue="{Binding SelectedDisplay, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" ItemsSource="{Binding Displays}"/>
-                <Label Content="Color Gamut:" HorizontalAlignment="Left" Margin="-5,201,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <ComboBox Margin="76,203,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" ItemsSource="{Binding ColorGamuts}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding ColorGamut}" />
                 <Label Content="Display Primaries Source:" HorizontalAlignment="Left" Margin="-5,39,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
                 <ComboBox Margin="76,41,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="24" ItemsSource="{Binding PrimariesSources}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding PrimariesSource, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" />
                 <Label Content="Custom Primaries:" HorizontalAlignment="Left" Margin="-5,74,0,0" VerticalAlignment="Top" Width="118" Height="26"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,78,0,0" TextWrapping="Wrap" Text="{Binding RedPoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="76,78,0,0" TextWrapping="Wrap" Text="{Binding RedPoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy" Height="18" InputScope="Number"/>
                 <Label HorizontalContentAlignment="Right" Content="Red:" HorizontalAlignment="Left" Margin="20,74,0,0" VerticalAlignment="Top" Width="51" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="195,78,0,0" TextWrapping="Wrap" Text="{Binding RedPoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy1" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="195,78,0,0" TextWrapping="Wrap" Text="{Binding RedPoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy1" Height="18" InputScope="Number"/>
                 <Label Content="x" HorizontalAlignment="Left" Margin="164,74,0,0" VerticalAlignment="Top" Width="26" Height="26" Grid.Column="1"/>
                 <Label Content="y" HorizontalAlignment="Center" Margin="0,74,0,0" VerticalAlignment="Top" Width="24" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,109,0,0" TextWrapping="Wrap" Text="{Binding GreenPoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy2" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="76,109,0,0" TextWrapping="Wrap" Text="{Binding GreenPoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy2" Height="18" InputScope="Number"/>
                 <Label HorizontalContentAlignment="Right" Content="Green:" HorizontalAlignment="Left" Margin="20,105,0,0" VerticalAlignment="Top" Width="52" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="195,109,0,0" TextWrapping="Wrap" Text="{Binding GreenPoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy3" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="195,109,0,0" TextWrapping="Wrap" Text="{Binding GreenPoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy3" Height="18" InputScope="Number"/>
                 <Label Content="x" HorizontalAlignment="Left" Margin="164,105,0,0" VerticalAlignment="Top" Width="26" Height="26" Grid.Column="1"/>
                 <Label Content="y" HorizontalAlignment="Center" Margin="0,105,0,0" VerticalAlignment="Top" Width="24" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,140,0,0" TextWrapping="Wrap" Text="{Binding BluePoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy4" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="76,140,0,0" TextWrapping="Wrap" Text="{Binding BluePoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy4" Height="18" InputScope="Number"/>
                 <Label HorizontalContentAlignment="Right" Content="Blue:" HorizontalAlignment="Left" Margin="19,136,0,0" VerticalAlignment="Top" Width="52" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="195,140,0,0" TextWrapping="Wrap" Text="{Binding BluePoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy5" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="195,140,0,0" TextWrapping="Wrap" Text="{Binding BluePoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy5" Height="18" InputScope="Number"/>
                 <Label Content="x" HorizontalAlignment="Left" Margin="164,136,0,0" VerticalAlignment="Top" Width="26" Height="26" Grid.Column="1"/>
                 <Label Content="y" HorizontalAlignment="Center" Margin="0,136,0,0" VerticalAlignment="Top" Width="24" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,171,0,0" TextWrapping="Wrap" Text="{Binding WhitePoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy7" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="76,171,0,0" TextWrapping="Wrap" Text="{Binding WhitePoint.X, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy7" Height="18" InputScope="Number"/>
                 <Label HorizontalContentAlignment="Right" Content="White:" HorizontalAlignment="Left" Margin="19,167,0,0" VerticalAlignment="Top" Width="52" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="195,171,0,0" TextWrapping="Wrap" Text="{Binding WhitePoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy8" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding PrimariesEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="195,171,0,0" TextWrapping="Wrap" Text="{Binding WhitePoint.Y, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="83"  x:Name="tbSDRMinBrightness_Copy8" Height="18" InputScope="Number"/>
                 <Label Content="x" HorizontalAlignment="Left" Margin="164,167,0,0" VerticalAlignment="Top" Width="26" Height="26" Grid.Column="1"/>
                 <Label Content="y" HorizontalAlignment="Center" Margin="0,167,0,0" VerticalAlignment="Top" Width="24" Height="26" Grid.Column="1"/>
+                <Label Content="Color Gamut:" HorizontalAlignment="Left" Margin="-5,201,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <ComboBox Margin="76,203,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" ItemsSource="{Binding ColorGamuts}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding ColorGamut}" />
+                <Label Content="Minimum Luminance (nits):" HorizontalAlignment="Left" Margin="-5,232,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="76,236,0,0" TextWrapping="Wrap" Text="{Binding BlackLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbMinLuminance" Height="18" InputScope="Number"/>
+                <Label Content="Maximum Luminance (nits):" HorizontalAlignment="Left" Margin="206,232,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
+                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="412,236,0,0" TextWrapping="Wrap" Text="{Binding WhiteLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  Name="tbMaxLuminance" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Advanced HDR Settings" Padding="6" Height="133" Width="734" HorizontalAlignment="Left">
+        <GroupBox Header="Advanced HDR Settings" Padding="6" Height="133" Width="734" HorizontalAlignment="Left" Visibility="{Binding VisibilityHDRSettings}">
             <Grid Height="103">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="179*"/>
                     <ColumnDefinition Width="735*"/>
                 </Grid.ColumnDefinitions>
                 <Label Content="SDR Transfer Function &amp; Gamma:" HorizontalAlignment="Left" Margin="-5,6,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <ComboBox Margin="69,8,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" ItemsSource="{Binding SDRTransferFunctions}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding SDRTransferFunction}"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="405,10,0,0" TextWrapping="Wrap" Text="{Binding CustomGamma, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120" x:Name="tbCustomGamma" Height="18" InputScope="Number"/>
+                <ComboBox Margin="69,8,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" ItemsSource="{Binding SDRTransferFunctions}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding SDRTransferFunction, NotifyOnValidationError=True, ValidatesOnDataErrors=True}"/>
+                <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,10,0,0" TextWrapping="Wrap" Text="{Binding CustomGamma, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120" x:Name="tbCustomGamma" Height="18" InputScope="Number"/>
                 <Label Content="SDR minimum brightness (nits):" HorizontalAlignment="Left" Margin="-5,37,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="69,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMinBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMinBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness" Height="18" InputScope="Number"/>
                 <Label Content="SDR maximum brightness (nits):" HorizontalAlignment="Left" Margin="197,37,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="405,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMaxBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMaxBrightness" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMaxBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMaxBrightness" Height="18" InputScope="Number"/>
                 <Label Content="SDR brightness boost (%):" HorizontalAlignment="Left" Margin="-5,64,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="69,68,0,0" TextWrapping="Wrap" Text="{Binding SDRBrightnessBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness_Copy6" Height="18" InputScope="Number"/>
+                <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,68,0,0" TextWrapping="Wrap" Text="{Binding SDRBrightnessBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness_Copy6" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Advanced Profile Settings" Padding="6" Height="78" Width="734" HorizontalAlignment="Left">
-            <Grid Height="47">
+        <GroupBox Header="Advanced Profile Settings" Padding="6" Height="71" Width="734" HorizontalAlignment="Left">
+            <Grid Height="34">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="4*"/>
@@ -81,21 +81,24 @@
                 <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="400,10,0,0" TextWrapping="Wrap" Text="{Binding MaxCLL, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbMinLuminance_Copy1" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
-        <GroupBox DockPanel.Dock="Right" Margin="0,0,0,0" Header="Generate Options" Padding="6" Height="197" Width="733" HorizontalAlignment="Left">
-            <Grid Height="163" Margin="-2,0,2,0">
+        <GroupBox DockPanel.Dock="Right" Margin="0,0,0,0" Header="Generate Options" Padding="6" Height="225" Width="733" HorizontalAlignment="Left">
+            <Grid Height="194" Margin="-2,0,2,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="8*"/>
                     <ColumnDefinition Width="27*"/>
                 </Grid.ColumnDefinitions>
-                <Button IsEnabled="{Binding IsValid}"  Click="Button_Click" Content="Generate" Margin="46,132,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="20" Width="75" Grid.Column="1"/>
-                <Label Content="Overwrite existing profile:" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <ComboBox Margin="46,42,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" SelectedValue="{Binding SelectedExistingProfile}" ItemsSource="{Binding ExistingProfiles}"/>
-                <Label Content="New profile name:" HorizontalAlignment="Left" Margin="0,73,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="46,77,0,0" TextWrapping="Wrap" Text="{Binding NewProfileName}" VerticalAlignment="Top" Width="318" x:Name="tbName" Height="18"/>
                 <Label Content="Save option:" HorizontalAlignment="Left" Margin="0,8,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
                 <ComboBox Margin="46,10,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" ItemsSource="{Binding SaveOptions}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding SaveOption}" />
+                <Label Content="Overwrite existing profile:" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <ComboBox Margin="46,42,0,0" HorizontalAlignment="Left" Width="318" VerticalAlignment="Top" Grid.Column="1" Height="22" SelectedValue="{Binding SelectedExistingProfile, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" ItemsSource="{Binding ExistingProfiles}"/>
+                <Button Content="Load" Margin="385,42,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="20" Width="75" Grid.Column="1" Click="Button_Click_1"/>
+                <Button Content="Delete" Grid.Column="1" Margin="472,42,0,132" Click="Button_Click_2"/>
+                <Label Content="New profile name:" HorizontalAlignment="Left" Margin="0,73,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="46,77,0,0" TextWrapping="Wrap" Text="{Binding NewProfileName}" VerticalAlignment="Top" Width="318" x:Name="tbName" Height="18"/>
                 <Label Content="Description:" HorizontalAlignment="Left" Margin="0,101,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
                 <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="46,105,0,0" TextWrapping="Wrap" Text="{Binding Description, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="318" x:Name="tbName_Copy" Height="18"/>
+                <CheckBox Content="When activating, set MinTML and MaxTML to minimum/maximum luminance" IsChecked="{Binding SetMinMaxTml}" Margin="46,135,10,35" Grid.Column="1"/>
+                <Button IsEnabled="{Binding IsValid}" Click="Button_Click" Content="Generate" Margin="46,164,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Height="20" Width="75" Grid.Column="1"/>
             </Grid>
         </GroupBox>
         <StackPanel HorizontalAlignment="Right" Margin="0,6,0,0" VerticalAlignment="Bottom"/>

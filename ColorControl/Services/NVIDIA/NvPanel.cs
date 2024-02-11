@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Common;
+﻿using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
 using ColorControl.Shared.Forms;
@@ -351,6 +352,8 @@ namespace ColorControl.Services.NVIDIA
             miNvOtherIncluded.Visible = presetItemsVisible;
             mnuNvHdmiSettings.Enabled = preset != null;
             miNvHdmiIncluded.Visible = presetItemsVisible;
+            miHDROuputMode.Visible = _nvService.OutputModeAvailable;
+            mnuNvTriggers.Visible = false; // TODO: implement later
 
             if (preset == null)
             {
@@ -369,6 +372,9 @@ namespace ColorControl.Services.NVIDIA
             miNvResolutionIncluded.Visible = !isCurrentDisplay;
             miRefreshRateIncluded.Visible = !isCurrentDisplay;
             miHDRIncluded.Visible = !isCurrentDisplay;
+            miHDROutputModeUnchanged.Visible = !isCurrentDisplay;
+            miHDROutputModeHDR10.Checked = preset.HdrSettings.OutputMode == NvHdrSettings.NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10;
+            miHDROutputModeHDR10Plus.Checked = preset.HdrSettings.OutputMode == NvHdrSettings.NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING;
 
             if (mnuNvDisplay.DropDownItems.Count == 1)
             {
@@ -1616,7 +1622,7 @@ namespace ColorControl.Services.NVIDIA
 
             var text = subItem.Text;
 
-            if (index == 7)
+            if (index == 8)
             {
                 text = text.Replace(", ", "\r\n");
             }
@@ -1944,9 +1950,9 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-        public void AfterInitialized()
+        public async Task AfterInitialized()
         {
-            var _ = ApplyNvPresetOnStartup();
+            await ApplyNvPresetOnStartup();
         }
 
         internal void Save()
@@ -2003,6 +2009,75 @@ namespace ColorControl.Services.NVIDIA
             preset.ApplyColorEnhancements = !preset.ApplyColorEnhancements;
 
             AddOrUpdateItem();
+        }
+
+        private void miHDROutputModeUnchanged_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+            var menuItem = (ToolStripMenuItem)sender;
+
+            var outputMode = menuItem.Tag == null ? default : (string)menuItem.Tag == "1" ? NvHdrSettings.NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10 : NvHdrSettings.NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING;
+
+            if (preset.IsDisplayPreset)
+            {
+                if (outputMode == default)
+                {
+                    return;
+                }
+
+                _nvService.SetOutputMode(outputMode, preset.Display);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.HdrSettings.OutputMode = outputMode == default ? null : outputMode;
+
+            AddOrUpdateItem();
+
+        }
+
+        private void miNvTrigger1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+            var menuItem = (ToolStripMenuItem)sender;
+
+            var trigger = preset.Triggers.FirstOrDefault() ?? new PresetTrigger();
+            var triggerTypes = Utils.EnumToDictionary<PresetTriggerType>(new[] { PresetTriggerType.ProcessSwitch, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop, PresetTriggerType.Reserved5 }).Select(d => d.Value);
+            var conditions = Utils.GetDescriptions<PresetConditionType>(fromValue: 1);
+
+            var eventField = new FieldDefinition
+            {
+                Label = "Event",
+                FieldType = FieldType.DropDown,
+                Values = triggerTypes,
+                Value = trigger.Trigger.GetDescription()
+            };
+
+            var conditionsField = new FieldDefinition
+            {
+                Label = "Conditions",
+                FieldType = FieldType.Flags,
+                Values = conditions,
+                Value = trigger.Conditions
+            };
+
+            var values = MessageForms.ShowDialog("Edit trigger 1", new[] {
+                eventField,
+                conditionsField
+            });
+            if (!values.Any())
+            {
+                return;
+            }
+
+            trigger.Trigger = eventField.ValueAsEnum<PresetTriggerType>();
+            trigger.Conditions = conditionsField.ValueAsEnum<PresetConditionType>();
+
+            preset.UpdateTrigger(trigger.Trigger, trigger.Conditions);
+
+            AddOrUpdateItem();
+
         }
     }
 }

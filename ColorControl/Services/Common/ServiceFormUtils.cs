@@ -1,6 +1,5 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Forms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,7 +100,7 @@ namespace ColorControl.Shared.Forms
         {
             menu.DropDownItems.Clear();
 
-            foreach (var nvPreset in service?.GetPresets() ?? new List<T>())
+            foreach (var nvPreset in service?.GetPresets()?.OrderBy(p => p.name).ToList() ?? new List<T>())
             {
                 var text = nvPreset.name;
 

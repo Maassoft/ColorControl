@@ -10,6 +10,14 @@ using System.Threading.Tasks;
 
 namespace ColorControl.Services.EventDispatcher
 {
+    public enum ScreenSaverTransitionState
+    {
+        None = 0,
+        Started = 1,
+        Running = 2,
+        Stopped = 3
+    }
+
     public class ProcessChangedEventArgs : EventArgs
     {
         public IList<Process> StartedProcesses { get; set; }
@@ -21,6 +29,7 @@ namespace ColorControl.Services.EventDispatcher
         public string LastFullScreenProcessName = string.Empty;
         public bool StoppedFullScreen { get; set; }
         public bool IsScreenSaverActive { get; set; }
+        public ScreenSaverTransitionState ScreenSaverTransitionState { get; set; }
     }
 
 
@@ -100,7 +109,12 @@ namespace ColorControl.Services.EventDispatcher
             {
                 var process = context.RunningProcesses.FirstOrDefault(p => p.Id == processId);
 
-                context.IsScreenSaverActive = process?.ProcessName?.Contains(".scr") == true;
+                var screenSaverActive = process?.ProcessName?.Contains(".scr") == true;
+
+                context.IsScreenSaverActive = screenSaverActive;
+                context.ScreenSaverTransitionState = screenSaverActive ?
+                    context.ScreenSaverTransitionState == ScreenSaverTransitionState.None ? ScreenSaverTransitionState.Started : ScreenSaverTransitionState.Running :
+                    context.ScreenSaverTransitionState == ScreenSaverTransitionState.Running ? ScreenSaverTransitionState.Stopped : ScreenSaverTransitionState.None;
                 context.ForegroundProcess = process;
                 context.ForegroundProcessIsFullScreen = isFullScreen;
 

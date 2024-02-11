@@ -7,9 +7,11 @@ using MHC2Gen;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Windows;
 using System.Windows.Forms;
 using WindowsDisplayAPI;
 
@@ -112,7 +114,7 @@ internal class ColorProfileViewModel : BaseViewModel
 
     public string SelectedDisplayName => SelectedDisplay?.DisplayName;
 
-    public List<string> ExistingProfiles { get; set; }
+    public ObservableCollection<string> ExistingProfiles { get; set; }
     public string SelectedExistingProfile { get; set; } = CreateANewProfile;
     public string NewProfileName { get; set; }
     public string ProfileName => SelectedExistingProfile == CreateANewProfile ? NewProfileName : SelectedExistingProfile;
@@ -120,6 +122,11 @@ internal class ColorProfileViewModel : BaseViewModel
     public Dictionary<SaveOption, string> SaveOptions { get; } = Utils.EnumToDictionary<SaveOption>();
     public SaveOption SaveOption { get; set; } = SaveOption.InstallAndSetAsDefault;
 
+    public bool SDRSettingsEnabled { get; set; }
+    public Visibility VisibilityHDRSettings => IsHDR ? Visibility.Visible : Visibility.Collapsed;
+    public bool IsLoadEnabled { get; set; }
+    public bool SetMinMaxTml { get; set; } = true;
+    public bool PrimariesEnabled { get; set; } = true;
 
     public override string this[string columnName]
     {
@@ -127,8 +134,24 @@ internal class ColorProfileViewModel : BaseViewModel
         {
             var baseResult = base[columnName];
 
-            if (columnName == "SelectedDisplay" || columnName == "PrimariesSource")
+            if (columnName == nameof(SelectedDisplay))
             {
+                UpdateDisplay();
+            }
+            else if (columnName == nameof(SDRTransferFunction))
+            {
+                SDRSettingsEnabled = SDRTransferFunction == SDRTransferFunction.PurePower;
+                OnPropertyChanged(nameof(SDRSettingsEnabled));
+            }
+            else if (columnName == nameof(SelectedExistingProfile))
+            {
+                IsLoadEnabled = SelectedExistingProfile != CreateANewProfile;
+                OnPropertyChanged(nameof(IsLoadEnabled));
+            }
+            else if (columnName == nameof(PrimariesSource))
+            {
+                PrimariesEnabled = PrimariesSource == DisplayPrimariesSource.Custom;
+                OnPropertyChanged(nameof(PrimariesEnabled));
                 UpdateDisplay();
             }
 
@@ -149,7 +172,7 @@ internal class ColorProfileViewModel : BaseViewModel
 
         RefreshDisplays();
 
-        ExistingProfiles = new List<string> { CreateANewProfile };
+        ExistingProfiles = new ObservableCollection<string> { CreateANewProfile };
         NewProfileName = $"CC_{(isHDR ? "HDR" : "SDR")}_profile_{DateTime.Now:yyyyMMddHHmmss}.icm";
         Description = $"CC_{(isHDR ? "HDR" : "SDR")}";
 
@@ -163,11 +186,16 @@ internal class ColorProfileViewModel : BaseViewModel
 
     public void RefreshDisplays()
     {
-        Displays = Display.GetDisplays().Select(d => new CustomDisplay(d)).ToList();
+        Displays = Display.GetDisplays().Select(d => new CustomDisplay(d))
+            .Where(d => IsHDR == d.IsHDRSupportedAndEnabled())
+            .ToList();
+    }
 
-        if (IsHDR)
+    public void Update()
+    {
+        foreach (var property in GetType().GetProperties().Where(p => !new[] { "Display", "PrimariesSource" }.Any(s => p.Name.Contains(s))))
         {
-            Displays = Displays.Where(d => d.IsHDRSupportedAndEnabled()).ToList();
+            OnPropertyChanged(property.Name);
         }
     }
 
@@ -219,8 +247,14 @@ internal class ColorProfileViewModel : BaseViewModel
             }
         }
 
-        ExistingProfiles = new List<string> { CreateANewProfile };
-        ExistingProfiles.AddRange(CCD.GetDisplayColorProfiles(SelectedDisplay.DisplayName));
+        ExistingProfiles = new ObservableCollection<string> { CreateANewProfile };
+
+        var profiles = CCD.GetDisplayColorProfiles(SelectedDisplay.DisplayName);
+
+        foreach (var profile in profiles)
+        {
+            ExistingProfiles.Add(profile);
+        }
     }
 
     private void GetEDID()

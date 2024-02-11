@@ -1,10 +1,10 @@
-using System;
 using NvAPIWrapper.Native.Exceptions;
 using NvAPIWrapper.Native.General;
 using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.Helpers;
 using NvAPIWrapper.Native.Helpers.Structures;
 using NvAPIWrapper.Native.Interfaces.General;
+using System;
 
 namespace NvAPIWrapper.Native
 {

@@ -47,6 +47,7 @@ namespace ColorControl.Services.NVIDIA
         public bool applyHdmiSettings { get; set; }
         public NvHdmiInfoFrameSettings HdmiInfoFrameSettings { get; set; }
         public NvColorProfileSettings ColorProfileSettings { get; set; }
+        public NvHdrSettings HdrSettings { get; set; }
 
         [JsonIgnore]
         public bool IsDisplayPreset { get; set; }
@@ -80,6 +81,7 @@ namespace ColorControl.Services.NVIDIA
             HdmiInfoFrameSettings = new NvHdmiInfoFrameSettings();
             ColorProfileSettings = new NvColorProfileSettings();
             ColorEnhancementSettings = new NvColorEnhancementSettings();
+            HdrSettings = new NvHdrSettings();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -102,6 +104,8 @@ namespace ColorControl.Services.NVIDIA
             applyHDR = preset.applyHDR;
             HDREnabled = preset.HDREnabled;
             toggleHDR = preset.toggleHDR;
+            HdrSettings = new NvHdrSettings(preset.HdrSettings);
+
             applyDithering = preset.applyDithering;
             ditheringEnabled = preset.ditheringEnabled;
             applyRefreshRate = preset.applyRefreshRate;
@@ -168,7 +172,9 @@ namespace ColorControl.Services.NVIDIA
             var dithering = GetDitheringDescription();
 
             values.Add(FormatDisplaySetting(dithering, isCurrent, applyDithering));
-            values.Add(FormatDisplaySetting(toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled", isCurrent, applyHDR));
+
+            var hdrEnabledDesc = HDREnabled ? $"Enabled{(HdrSettings.OutputMode.HasValue ? (HdrSettings.OutputMode == NvHdrSettings.NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING ? " (HDR10+)" : " (HDR10)") : "")}" : "";
+            values.Add(FormatDisplaySetting(toggleHDR ? "Toggle" : HDREnabled ? hdrEnabledDesc : "Disabled", isCurrent, applyHDR));
 
             values.Add(FormatDisplaySetting(GetDriverSettingsDescription(), isCurrent, applyDriverSettings));
 

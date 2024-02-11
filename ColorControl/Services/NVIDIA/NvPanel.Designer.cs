@@ -80,6 +80,10 @@ namespace ColorControl.Services.NVIDIA
             miHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
             miToggleHDR = new System.Windows.Forms.ToolStripMenuItem();
             miHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            miHDROuputMode = new System.Windows.Forms.ToolStripMenuItem();
+            miHDROutputModeUnchanged = new System.Windows.Forms.ToolStripMenuItem();
+            miHDROutputModeHDR10 = new System.Windows.Forms.ToolStripMenuItem();
+            miHDROutputModeHDR10Plus = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvDriverSettings = new System.Windows.Forms.ToolStripMenuItem();
             miNvDriverSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvOtherSettings = new System.Windows.Forms.ToolStripMenuItem();
@@ -98,6 +102,8 @@ namespace ColorControl.Services.NVIDIA
             miNvTestDithering = new System.Windows.Forms.ToolStripMenuItem();
             miNVIDIAInfo = new System.Windows.Forms.ToolStripMenuItem();
             lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
+            mnuNvTriggers = new System.Windows.Forms.ToolStripMenuItem();
+            miNvTrigger1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvPresets.SuspendLayout();
             mnuNvSettings.SuspendLayout();
             SuspendLayout();
@@ -328,9 +334,9 @@ namespace ColorControl.Services.NVIDIA
             // mnuNvPresets
             // 
             mnuNvPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
-            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuNvPresetsColorEnhancements, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvHdmiSettings, mnuNvOverclocking, miNvCopyId });
+            mnuNvPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvApply, miNvPresetApplyOnStartup, tssNvPresetMenu, mnuNvDisplay, mnuNvPresetsColorSettings, mnuNvPresetsColorEnhancements, mnuRefreshRate, mnuNvResolution, miNvPresetDithering, miNvHDR, mnuNvDriverSettings, mnuNvOtherSettings, mnuNvHdmiSettings, mnuNvOverclocking, mnuNvTriggers, miNvCopyId });
             mnuNvPresets.Name = "mnuNvPresets";
-            mnuNvPresets.Size = new System.Drawing.Size(185, 340);
+            mnuNvPresets.Size = new System.Drawing.Size(185, 362);
             mnuNvPresets.Opening += mnuNvPresets_Opening;
             // 
             // miNvApply
@@ -377,7 +383,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetColorSettings
             // 
             miNvPresetColorSettings.Name = "miNvPresetColorSettings";
-            miNvPresetColorSettings.Size = new System.Drawing.Size(180, 22);
+            miNvPresetColorSettings.Size = new System.Drawing.Size(120, 22);
             miNvPresetColorSettings.Text = "Included";
             miNvPresetColorSettings.Click += miNvPresetColorSettings_Click;
             // 
@@ -391,7 +397,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetColorEnhancementsIncluded
             // 
             miNvPresetColorEnhancementsIncluded.Name = "miNvPresetColorEnhancementsIncluded";
-            miNvPresetColorEnhancementsIncluded.Size = new System.Drawing.Size(180, 22);
+            miNvPresetColorEnhancementsIncluded.Size = new System.Drawing.Size(120, 22);
             miNvPresetColorEnhancementsIncluded.Text = "Included";
             miNvPresetColorEnhancementsIncluded.Click += miNvPresetColorEnhancementsIncluded_Click;
             // 
@@ -525,7 +531,7 @@ namespace ColorControl.Services.NVIDIA
             // 
             // miNvHDR
             // 
-            miNvHDR.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miHDRIncluded, miToggleHDR, miHDREnabled });
+            miNvHDR.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miHDRIncluded, miToggleHDR, miHDREnabled, miHDROuputMode });
             miNvHDR.Name = "miNvHDR";
             miNvHDR.Size = new System.Drawing.Size(184, 22);
             miNvHDR.Text = "HDR";
@@ -533,23 +539,53 @@ namespace ColorControl.Services.NVIDIA
             // miHDRIncluded
             // 
             miHDRIncluded.Name = "miHDRIncluded";
-            miHDRIncluded.Size = new System.Drawing.Size(136, 22);
+            miHDRIncluded.Size = new System.Drawing.Size(142, 22);
             miHDRIncluded.Text = "Included";
             miHDRIncluded.Click += miHDRIncluded_Click;
             // 
             // miToggleHDR
             // 
             miToggleHDR.Name = "miToggleHDR";
-            miToggleHDR.Size = new System.Drawing.Size(136, 22);
+            miToggleHDR.Size = new System.Drawing.Size(142, 22);
             miToggleHDR.Text = "Toggle HDR";
             miToggleHDR.Click += miToggleHDR_Click;
             // 
             // miHDREnabled
             // 
             miHDREnabled.Name = "miHDREnabled";
-            miHDREnabled.Size = new System.Drawing.Size(136, 22);
+            miHDREnabled.Size = new System.Drawing.Size(142, 22);
             miHDREnabled.Text = "Enabled";
             miHDREnabled.Click += miHDREnabled_Click;
+            // 
+            // miHDROuputMode
+            // 
+            miHDROuputMode.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miHDROutputModeUnchanged, miHDROutputModeHDR10, miHDROutputModeHDR10Plus });
+            miHDROuputMode.Name = "miHDROuputMode";
+            miHDROuputMode.Size = new System.Drawing.Size(142, 22);
+            miHDROuputMode.Text = "Ouput Mode";
+            // 
+            // miHDROutputModeUnchanged
+            // 
+            miHDROutputModeUnchanged.Name = "miHDROutputModeUnchanged";
+            miHDROutputModeUnchanged.Size = new System.Drawing.Size(135, 22);
+            miHDROutputModeUnchanged.Text = "Unchanged";
+            miHDROutputModeUnchanged.Click += miHDROutputModeUnchanged_Click;
+            // 
+            // miHDROutputModeHDR10
+            // 
+            miHDROutputModeHDR10.Name = "miHDROutputModeHDR10";
+            miHDROutputModeHDR10.Size = new System.Drawing.Size(135, 22);
+            miHDROutputModeHDR10.Tag = "1";
+            miHDROutputModeHDR10.Text = "HDR10";
+            miHDROutputModeHDR10.Click += miHDROutputModeUnchanged_Click;
+            // 
+            // miHDROutputModeHDR10Plus
+            // 
+            miHDROutputModeHDR10Plus.Name = "miHDROutputModeHDR10Plus";
+            miHDROutputModeHDR10Plus.Size = new System.Drawing.Size(135, 22);
+            miHDROutputModeHDR10Plus.Tag = "2";
+            miHDROutputModeHDR10Plus.Text = "HDR10+";
+            miHDROutputModeHDR10Plus.Click += miHDROutputModeUnchanged_Click;
             // 
             // mnuNvDriverSettings
             // 
@@ -691,6 +727,20 @@ namespace ColorControl.Services.NVIDIA
             miNVIDIAInfo.Text = "NVIDIA Info";
             miNVIDIAInfo.Click += miNVIDIAInfo_Click;
             // 
+            // mnuNvTriggers
+            // 
+            mnuNvTriggers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvTrigger1ToolStripMenuItem });
+            mnuNvTriggers.Name = "mnuNvTriggers";
+            mnuNvTriggers.Size = new System.Drawing.Size(184, 22);
+            mnuNvTriggers.Text = "Triggers";
+            // 
+            // miNvTrigger1ToolStripMenuItem
+            // 
+            miNvTrigger1ToolStripMenuItem.Name = "miNvTrigger1ToolStripMenuItem";
+            miNvTrigger1ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            miNvTrigger1ToolStripMenuItem.Text = "Trigger 1";
+            miNvTrigger1ToolStripMenuItem.Click += miNvTrigger1ToolStripMenuItem_Click;
+            // 
             // NvPanel
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -796,5 +846,11 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.ToolStripMenuItem miNVIDIAInfo;
         private System.Windows.Forms.ToolStripMenuItem mnuNvPresetsColorEnhancements;
         private System.Windows.Forms.ToolStripMenuItem miNvPresetColorEnhancementsIncluded;
+        private System.Windows.Forms.ToolStripMenuItem miHDROuputMode;
+        private System.Windows.Forms.ToolStripMenuItem miHDROutputModeUnchanged;
+        private System.Windows.Forms.ToolStripMenuItem miHDROutputModeHDR10;
+        private System.Windows.Forms.ToolStripMenuItem miHDROutputModeHDR10Plus;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvTriggers;
+        private System.Windows.Forms.ToolStripMenuItem miNvTrigger1ToolStripMenuItem;
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
-using NvAPIWrapper.Native.Helpers;
+﻿using NvAPIWrapper.Native.Helpers;
+using System;
 
 namespace NvAPIWrapper.Native.Attributes
 {
     [AttributeUsage(AttributeTargets.Delegate)]
-    internal class FunctionIdAttribute : Attribute
+    public class FunctionIdAttribute : Attribute
     {
         public FunctionIdAttribute(FunctionId functionId)
         {

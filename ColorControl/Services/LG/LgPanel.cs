@@ -1,5 +1,6 @@
 ﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
@@ -12,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -28,6 +30,7 @@ namespace ColorControl.Services.LG
         private LgService _lgService;
         private NvService _nvService;
         private AmdService _amdService;
+        private readonly PowerEventDispatcher _powerEventDispatcher;
         private IntPtr _mainHandle;
         private NotifyIcon _trayIcon;
 
@@ -35,13 +38,14 @@ namespace ColorControl.Services.LG
         private bool _disableEvents = false;
         private LgGameBar _gameBarForm;
 
-        internal LgPanel(LgService lgService, NvService nvService, AmdService amdService, NotifyIcon trayIcon, IntPtr handle)
+        internal LgPanel(LgService lgService, NvService nvService, AmdService amdService, NotifyIcon trayIcon, IntPtr handle, PowerEventDispatcher powerEventDispatcher)
         {
             _lgService = lgService;
             _nvService = nvService;
             _amdService = amdService;
             _trayIcon = trayIcon;
             _mainHandle = handle;
+            _powerEventDispatcher = powerEventDispatcher;
 
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
@@ -72,8 +76,15 @@ namespace ColorControl.Services.LG
 
         public void Init()
         {
-            _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, () => AfterLgServiceRefreshDevices()));
+            var _ = Handle;
+
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
             _lgService.InstallEventHandlers();
+        }
+
+        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
+        {
+            await _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterLgServiceRefreshDevices));
         }
 
         private void _lgService_SelectedDeviceChangedEvent(object sender, EventArgs e)
@@ -92,7 +103,7 @@ namespace ColorControl.Services.LG
             cbxLgDevices.SelectedIndex = cbxLgDevices.Items.IndexOf(sender);
         }
 
-        private void AfterLgServiceRefreshDevices()
+        private async Task AfterLgServiceRefreshDevices()
         {
             FillLgDevices();
 
@@ -100,7 +111,14 @@ namespace ColorControl.Services.LG
 
             if (startUpParams.ExecuteLgPreset)
             {
-                var _ = _lgService.ApplyPreset(startUpParams.LgPresetName);
+                await _lgService.ApplyPreset(startUpParams.LgPresetName);
+                return;
+            }
+
+
+            if (startUpParams.RunningFromScheduledTask)
+            {
+                await _lgService.ExecuteEventPresets(PresetTriggerType.Startup);
             }
         }
 
@@ -320,7 +338,7 @@ namespace ColorControl.Services.LG
             chkLgRemoteControlShow.Checked = _lgService.Config.ShowRemoteControl;
             scLgController.Panel2Collapsed = !_lgService.Config.ShowRemoteControl;
 
-            FormUtils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
+            FormUtils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Reserved5);
 
             if (!string.IsNullOrEmpty(_lgTabMessage))
             {
@@ -660,7 +678,7 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            if (e.Index is 0 or 1 or 4 or 7 && !(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerOnAfterScreenSaver || device.PowerOnByWindows))
+            if (e.Index is 0 or 1 or 5 or 8 && !(device.PowerOnAfterResume || device.PowerOnAfterStartup || device.PowerOnAfterScreenSaver || device.PowerOnByWindows))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:

@@ -179,6 +179,11 @@ namespace novideo_srgb
         {
             try
             {
+                if (!ClampSdr)
+                {
+                    return;
+                }
+
                 var clamped = CanClamp && ClampSdr && (!forceClamp.HasValue || forceClamp.Value);
                 UpdateClamp(clamped);
                 _clamped = clamped;

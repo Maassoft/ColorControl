@@ -120,9 +120,9 @@ namespace ColorControl.Services.AMD
             ServiceFormUtils.AddOrUpdateListItem(lvAmdPresets, _amdService.GetPresets(), _config, preset);
         }
 
-        public void AfterInitialized()
+        public async Task AfterInitialized()
         {
-            var _ = ApplyAmdPresetOnStartup();
+            await ApplyAmdPresetOnStartup();
         }
 
         private async Task ApplyAmdPresetOnStartup(int attempts = 5)

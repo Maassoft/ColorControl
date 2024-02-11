@@ -316,6 +316,11 @@ namespace ColorControl.Shared.Forms
                             Text = label
                         };
 
+                        if (textSubLabel != null)
+                        {
+                            top += textSubLabel.Height + 4;
+                        }
+
                         checkBox.Checked = field.Value is bool boolValue && boolValue;
 
                         control = checkBox;

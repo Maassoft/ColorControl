@@ -272,6 +272,8 @@ namespace ColorControl.Services.LG
             AddSetConfigAction("tv.conti.supportUsedTime", typeof(BoolFalseToTrue), title: "Total Power On Time");
 
             AddGenericPictureAction("wolwowlOnOff", typeof(FalseToTrue), category: "network", title: "Wake-On-LAN");
+            AddLunaAction("TPC", typeof(BoolFalseToTrue), title: "Temporal Peak Luminance Control (TPC)", ModelYear.Series2020);
+            AddLunaAction("GSR", typeof(BoolFalseToTrue), title: "Global Sticky/Stress Reduction (GSR)", ModelYear.Series2020);
         }
 
         ~LgDevice()
@@ -354,6 +356,22 @@ namespace ColorControl.Services.LG
                 EnumType = type,
                 Title = title == null ? Utils.FirstCharUpperCase(name) : title,
                 Category = "Config",
+                Advanced = true
+            };
+
+            _invokableActions.Add(action);
+        }
+
+        private void AddLunaAction(string name, Type type, string title, ModelYear fromModelYear = ModelYear.None)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                AsyncFunction = GenericLunaAction,
+                EnumType = type,
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title,
+                Category = "Config",
+                FromModelYear = fromModelYear,
                 Advanced = true
             };
 
@@ -1141,6 +1159,19 @@ namespace ColorControl.Services.LG
             var value = values[0];
 
             await _lgTvApi.SetConfig(key, value);
+
+            return true;
+        }
+
+        private async Task<bool> GenericLunaAction(Dictionary<string, object> parameters)
+        {
+            await CheckConnectionAsync();
+
+            var key = parameters["name"].ToString();
+            var values = parameters["value"] as object[];
+            var value = values[0];
+
+            await _lgTvApi.SetTpcOrGsr(key, value?.ToString() == "bool_true");
 
             return true;
         }

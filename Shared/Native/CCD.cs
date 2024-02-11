@@ -1,4 +1,5 @@
 ﻿using ColorControl.Shared.Forms;
+using MHC2Gen;
 using NWin32;
 using System.ComponentModel;
 using System.IO;
@@ -143,7 +144,7 @@ namespace ColorControl.Shared.Native
             return err == NativeConstants.ERROR_SUCCESS;
         }
 
-        public static bool SetDisplayDefaultColorProfile(string displayName, string profileName)
+        public static bool SetDisplayDefaultColorProfile(string displayName, string profileName, bool fixMaxTML = true)
         {
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
@@ -167,6 +168,16 @@ namespace ColorControl.Shared.Native
             if (err != NativeConstants.ERROR_SUCCESS)
             {
                 throw new Win32Exception(err);
+            }
+
+            if (fixMaxTML)
+            {
+                var (minNits, maxNits) = MHC2Wrapper.GetMinMaxLuminance(profileName);
+
+                if (minNits < maxNits)
+                {
+                    SetMinMaxLuminance(minNits, maxNits, displayName: displayName);
+                }
             }
 
             return err == NativeConstants.ERROR_SUCCESS;
@@ -343,6 +354,50 @@ namespace ColorControl.Shared.Native
                 }
 
                 return (new ColorParams(), true);
+            }, displayName
+            );
+        }
+
+        public static void SetMinMaxLuminance(double minLuminance, double maxLuminance, double? maxFFL = null, string displayName = null)
+        {
+            ExecuteForModeConfig((modeInfo) =>
+            {
+                if (modeInfo.infoType == DisplayConfigModeInfoType.Target)
+                {
+                    var colorParams = GetColorParams(displayName);
+
+                    var divider = colorParams.RedPointX <= 1 << 10 ? 1 << 10 : 1 << 20;
+
+                    colorParams.MinLuminance = (uint)(minLuminance * 10000);
+                    colorParams.MaxLuminance = (uint)(maxLuminance * 10000);
+                    colorParams.MaxFullFrameLuminance = maxFFL.HasValue ? (uint)(maxFFL * 10000) : colorParams.MaxLuminance;
+                    colorParams.WhitePointX = (uint)(0.3127f * divider);
+                    colorParams.WhitePointY = (uint)(0.3290f * divider);
+
+                    var requestpacket = new DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM();
+                    requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                    unchecked
+                    {
+                        requestpacket.header.type = (DISPLAYCONFIG_DEVICE_INFO_TYPE)DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_PARAM;
+                    }
+                    requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM>();
+                    requestpacket.header.adapterId = modeInfo.adapterId;
+                    requestpacket.header.id = modeInfo.id;
+                    requestpacket.colorParams = colorParams;
+
+                    var error = NativeMethods.DisplayConfigSetDeviceInfo(ref requestpacket);
+
+                    if (error == NativeConstants.ERROR_SUCCESS)
+                    {
+                        return (true, false);
+                    }
+
+                    //throw new Win32Exception(error);
+
+                    return (false, false);
+                }
+
+                return (false, true);
             }, displayName
             );
         }
@@ -583,6 +638,7 @@ namespace ColorControl.Shared.Native
         }
 
         private const uint DISPLAYCONFIG_DEVICE_INFO_GET_DISPLAY_INFO = 0xFFFFFFFE;
+        private const uint DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_PARAM = 0xFFFFFFF0;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct DISPLAYCONFIG_DEVICE_INFO_HEADER
@@ -936,6 +992,15 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        private struct DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public ColorParams colorParams;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public byte[] Stuff;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         private struct DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO
         {
             public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
@@ -1103,6 +1168,8 @@ namespace ColorControl.Shared.Native
 
             [DllImport("user32")]
             public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_DISPLAY_INFO requestPacket);
+            [DllImport("user32")]
+            public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM setPacket);
             [DllImport("mscms", CharSet = CharSet.Unicode)]
             public static extern bool InstallColorProfileW(string machineName, string profilename);
 

@@ -1,5 +1,6 @@
 ﻿using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
+using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -27,17 +29,17 @@ namespace ColorControl.Services.Samsung
         private NvService _nvService;
         private AmdService _amdService;
         private IntPtr _mainHandle;
-
+        private readonly PowerEventDispatcher _powerEventDispatcher;
         private string _tabMessage;
         private bool _disableEvents = false;
 
-        internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, IntPtr handle)
+        internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, IntPtr handle, PowerEventDispatcher powerEventDispatcher)
         {
             _samsungService = samsungService;
             _nvService = nvService;
             _amdService = amdService;
             _mainHandle = handle;
-
+            _powerEventDispatcher = powerEventDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -70,8 +72,14 @@ namespace ColorControl.Services.Samsung
         public void Init()
         {
             var _ = Handle;
-            _samsungService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterSamsungServiceRefreshDevices));
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
+
             _samsungService.InstallEventHandlers();
+        }
+
+        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
+        {
+            await _samsungService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterSamsungServiceRefreshDevices));
         }
 
         private void _samsungService_SelectedDeviceChangedEvent(object sender, EventArgs e)
@@ -90,7 +98,7 @@ namespace ColorControl.Services.Samsung
             cbxSamsungDevices.SelectedIndex = cbxSamsungDevices.Items.IndexOf(sender);
         }
 
-        private void AfterSamsungServiceRefreshDevices()
+        private async Task AfterSamsungServiceRefreshDevices()
         {
             FillSamsungDevices();
 
@@ -98,7 +106,13 @@ namespace ColorControl.Services.Samsung
 
             if (startUpParams.ExecuteSamsungPreset)
             {
-                var _ = _samsungService.ApplyPreset(startUpParams.SamsungPresetName);
+                await _samsungService.ApplyPreset(startUpParams.SamsungPresetName);
+                return;
+            }
+
+            if (startUpParams.RunningFromScheduledTask)
+            {
+                await _samsungService.ExecuteEventPresets(PresetTriggerType.Startup);
             }
         }
 
@@ -318,7 +332,7 @@ namespace ColorControl.Services.Samsung
             //chkSamsungRemoteControlShow.Checked = _samsungService.Config.ShowRemoteControl;
             //scSamsungController.Panel2Collapsed = !_samsungService.Config.ShowRemoteControl;
 
-            FormUtils.BuildComboBox(cbxSamsungPresetTrigger, PresetTriggerType.Resume, PresetTriggerType.Shutdown, PresetTriggerType.Standby, PresetTriggerType.Startup, PresetTriggerType.Reserved5, PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop);
+            FormUtils.BuildComboBox(cbxSamsungPresetTrigger, PresetTriggerType.Reserved5);
 
             if (!string.IsNullOrEmpty(_tabMessage))
             {
@@ -649,7 +663,7 @@ namespace ColorControl.Services.Samsung
                 return;
             }
 
-            if (e.Index is 0 or 1 or 4 or 7 && !(device.Options.PowerOnAfterResume || device.Options.PowerOnAfterStartup || device.Options.PowerOnAfterScreenSaver || device.Options.PowerOnByWindows))
+            if (e.Index is 0 or 1 or 5 or 8 && !(device.Options.PowerOnAfterResume || device.Options.PowerOnAfterStartup || device.Options.PowerOnAfterScreenSaver || device.Options.PowerOnByWindows))
             {
                 MessageForms.InfoOk(
 @"Be sure to activate the following setting on the TV, or the app will not be able to wake the TV:
@@ -863,7 +877,7 @@ Do you want to continue?"
             }
 
             var value = (PresetConditionType)values.First().Value;
-            edtSamsungPresetTriggerConditions.Tag = (PresetConditionType)values.First().Value;
+            edtSamsungPresetTriggerConditions.Tag = value;
             edtSamsungPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>((int)value).Join(", ");
         }
 

@@ -1,5 +1,7 @@
 ﻿using Microsoft.Win32;
+using NWin32;
 using System;
+using System.Threading.Tasks;
 
 namespace ColorControl.Services.EventDispatcher
 {
@@ -36,9 +38,12 @@ namespace ColorControl.Services.EventDispatcher
     {
         public const string Event_Suspend = "Suspend";
         public const string Event_Resume = "Resume";
+        public const string Event_Startup = "Startup";
         public const string Event_Shutdown = "Shutdown";
         public const string Event_MonitorOff = "MonitorOff";
         public const string Event_MonitorOn = "MonitorOn";
+
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public PowerEventDispatcher()
         {
@@ -50,6 +55,7 @@ namespace ColorControl.Services.EventDispatcher
             var state = eventName switch
             {
                 Event_Shutdown => PowerOnOffState.ShutDown,
+                Event_Startup => PowerOnOffState.StartUp,
                 Event_MonitorOff => PowerOnOffState.MonitorOff,
                 Event_MonitorOn => PowerOnOffState.MonitorOn,
                 _ => PowerOnOffState.None
@@ -60,18 +66,51 @@ namespace ColorControl.Services.EventDispatcher
                 return;
             }
 
+            if (state == PowerOnOffState.ShutDown)
+            {
+                DispatchEventWithExecutionState(Event_Shutdown, PowerOnOffState.ShutDown);
+                return;
+            }
+
             DispatchEvent(eventName, new PowerStateChangedEventArgs(state));
         }
 
-        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        public async Task SendEventAsync(string eventName)
+        {
+            var state = eventName switch
+            {
+                Event_Startup => PowerOnOffState.StartUp,
+                _ => PowerOnOffState.None
+            };
+
+            await DispatchEventAsync(eventName, new PowerStateChangedEventArgs(state));
+        }
+
+        private async void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
             if (e.Mode == PowerModes.Suspend)
             {
-                DispatchEvent(Event_Suspend, new PowerStateChangedEventArgs(PowerOnOffState.StandBy));
+                DispatchEventWithExecutionState(Event_Suspend, PowerOnOffState.StandBy);
             }
             else if (e.Mode == PowerModes.Resume)
             {
+                await DispatchEventAsync(Event_Resume, new PowerStateChangedEventArgs(PowerOnOffState.Resume));
                 DispatchEvent(Event_Resume, new PowerStateChangedEventArgs(PowerOnOffState.Resume));
+            }
+        }
+
+        private void DispatchEventWithExecutionState(string eventName, PowerOnOffState powerState)
+        {
+            var error = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
+            try
+            {
+                Logger.Debug($"SetThreadExecutionState: {error}, Thread#: {Environment.CurrentManagedThreadId}");
+                DispatchEvent(eventName, new PowerStateChangedEventArgs(powerState));
+            }
+            finally
+            {
+                var error2 = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
+                Logger.Debug($"SetThreadExecutionState (reset): {error2}, Thread#: {Environment.CurrentManagedThreadId}");
             }
         }
     }

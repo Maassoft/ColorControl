@@ -273,6 +273,7 @@ namespace ColorControl
                 .ConfigureServices(services =>
                 {
                     services.RegisterSharedServices();
+                    services.AddSingleton<PowerEventDispatcher>();
                     services.AddHostedService<ColorControlBackgroundService>();
                 })
                 .Build();

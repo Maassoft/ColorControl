@@ -37,7 +37,6 @@ namespace ColorControl.Services.Samsung
         private string _configFilename;
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
-        private object _lastTriggeredPreset;
         private List<SamsungApp> _samsungApps = new List<SamsungApp>();
         private Shared.Common.GlobalContext _appContext;
 
@@ -88,7 +87,7 @@ namespace ColorControl.Services.Samsung
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
-            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Resume, PowerModeChanged);
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
             _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
         }
@@ -112,25 +111,39 @@ namespace ColorControl.Services.Samsung
             SamsungPreset.SamsungDevices = Config.Devices;
         }
 
+        private async Task PowerModeResume(object sender, PowerStateChangedEventArgs e, CancellationToken _)
+        {
+            Logger.Debug($"PowerModeChanged: {e.State}");
+
+            await WakeAfterStartupOrResume(PowerOnOffState.Resume);
+
+            ExecutePresetsForEvent(PresetTriggerType.Resume);
+        }
+
         private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
         {
             Logger.Debug($"PowerModeChanged: {e.State}");
 
+            if (Devices?.Any() != true)
+            {
+                Logger.Debug("Devices have not been loaded, ignoring event");
+                return;
+            }
+
             switch (e.State)
             {
-                case PowerOnOffState.Resume:
-                    {
-                        WakeAfterStartupOrResume(PowerOnOffState.Resume);
-                        break;
-                    }
                 case PowerOnOffState.StandBy:
                     {
+                        ExecutePresetsForEvent(PresetTriggerType.Standby);
+
                         var devices = Devices.Where(d => d.Options.PowerOffOnStandby);
                         PowerOffDevices(devices, PowerOnOffState.StandBy);
                         break;
                     }
                 case PowerOnOffState.ShutDown:
                     {
+                        ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+
                         var devices = Devices.Where(d => d.Options.PowerOffOnShutdown);
 
                         PowerOffDevices(devices);
@@ -150,6 +163,28 @@ namespace ColorControl.Services.Samsung
                         break;
                     }
             }
+        }
+
+        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        {
+            Logger.Debug($"Executing presets for event {triggerType}");
+
+            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == triggerType)).ToList();
+
+            if (!presets.Any())
+            {
+                return;
+            }
+
+            var applicableDevices = Devices.Where(d => d.Options.TriggersEnabled &&
+                presets.Any(p => (string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            if (!applicableDevices.Any())
+            {
+                return;
+            }
+
+            ExecuteEventPresets(_serviceManager, new[] { triggerType }).Wait();
         }
 
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
@@ -201,7 +236,7 @@ namespace ColorControl.Services.Samsung
             {
                 if (_allowPowerOn)
                 {
-                    WakeAfterStartupOrResume();
+                    await WakeAfterStartupOrResume();
                 }
                 else
                 {
@@ -308,7 +343,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        private void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        private Task WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             Devices.ForEach(d => d.ClearPowerOffTask());
 
@@ -316,7 +351,7 @@ namespace ColorControl.Services.Samsung
                                                  state == PowerOnOffState.Resume && d.Options.PowerOnAfterResume ||
                                                  state == PowerOnOffState.ScreenSaver && d.Options.PowerOnAfterScreenSaver);
 
-            PowerOnDevicesTask(wakeDevices, state, checkUserSession);
+            return PowerOnDevicesTask(wakeDevices, state, checkUserSession);
         }
 
         private void PowerOffDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.ShutDown)
@@ -332,63 +367,53 @@ namespace ColorControl.Services.Samsung
                 return;
             }
 
-            var error = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
-            try
+            if (state == PowerOnOffState.ShutDown)
             {
-                Logger.Debug($"SetThreadExecutionState: {error}, Thread#: {Environment.CurrentManagedThreadId}");
-                if (state == PowerOnOffState.ShutDown)
+                var sleep = Config.ShutdownDelay;
+
+                Logger.Debug($"PowerOffDevices: Waiting for a maximum of {sleep} milliseconds...");
+
+                while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
                 {
-                    var sleep = Config.ShutdownDelay;
+                    Thread.Sleep(100);
 
-                    Logger.Debug($"PowerOffDevices: Waiting for a maximum of {sleep} milliseconds...");
-
-                    while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
+                    if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
                     {
-                        Thread.Sleep(100);
-
-                        if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
-                        {
-                            Logger.Debug("Not powering off because of a restart");
-                            return;
-                        }
-
-                        sleep -= 100;
+                        Logger.Debug("Not powering off because of a restart");
+                        return;
                     }
+
+                    sleep -= 100;
                 }
-
-                Logger.Debug("Powering off tv(s)...");
-                var tasks = new List<Task>();
-                foreach (var device in devices)
-                {
-                    var task = device.PowerOffAsync();
-
-                    tasks.Add(task);
-                }
-
-                if (state == PowerOnOffState.StandBy)
-                {
-                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
-                    if (File.Exists(standByScript))
-                    {
-                        _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
-                    }
-                }
-
-                // We can't use async here because we need to stay on the main thread...
-                var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
-
-                Logger.Debug("Done powering off tv(s)");
             }
-            finally
+
+            Logger.Debug("Powering off tv(s)...");
+            var tasks = new List<Task>();
+            foreach (var device in devices)
             {
-                var error2 = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
-                Logger.Debug($"SetThreadExecutionState (reset): {error2}, Thread#: {Environment.CurrentManagedThreadId}");
+                var task = device.PowerOffAsync();
+
+                tasks.Add(task);
             }
+
+            if (state == PowerOnOffState.StandBy)
+            {
+                var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
+                if (File.Exists(standByScript))
+                {
+                    _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
+                }
+            }
+
+            // We can't use async here because we need to stay on the main thread...
+            var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
+
+            Logger.Debug("Done powering off tv(s)");
         }
 
-        private void PowerOnDevicesTask(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        private Task PowerOnDevicesTask(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
-            Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
+            return Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
         }
 
         private async Task PowerOnDevices(IEnumerable<SamsungDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
@@ -460,10 +485,15 @@ namespace ColorControl.Services.Samsung
         {
             try
             {
-                var wasConnected = Devices.Any(d => d.IsConnected());
+                var wasConnected = Devices?.Any(d => d.IsConnected());
+
+                if (!wasConnected.HasValue)
+                {
+                    return;
+                }
 
                 var applicableDevices = Devices.Where(d => d.Options.PowerOffOnScreenSaver || d.Options.PowerOnAfterScreenSaver || d.Options.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-                    ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
+                    ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))).ToList();
 
                 if (!applicableDevices.Any())
                 {
@@ -498,7 +528,9 @@ namespace ColorControl.Services.Samsung
                     _poweredOffByScreenSaver = false;
                     _poweredOffByScreenSaverProcessId = 0;
 
-                    WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+                    await WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+
+                    await ExecuteScreenSaverPresetsCustom(args, applicableDevices);
 
                     return;
                 }
@@ -507,7 +539,7 @@ namespace ColorControl.Services.Samsung
 
                 if (!connectedDevices.Any())
                 {
-                    if (wasConnected)
+                    if (wasConnected == true)
                     {
                         Logger.Debug("Process monitor: TV(s) where connected, but not any longer");
                         wasConnected = false;
@@ -534,7 +566,7 @@ namespace ColorControl.Services.Samsung
                     }
                 }
 
-                if (!wasConnected)
+                if (wasConnected == false)
                 {
                     Logger.Debug("Process monitor: TV(s) where not connected, but connection has now been established");
                     wasConnected = true;
@@ -547,11 +579,24 @@ namespace ColorControl.Services.Samsung
 
                 await ExecuteProcessPresets(args, connectedDevices);
 
+                await ExecuteScreenSaverPresetsCustom(args, connectedDevices);
             }
             catch (Exception ex)
             {
                 Logger.Error("ProcessChanged: " + ex.ToLogString());
             }
+        }
+
+        private async Task ExecuteScreenSaverPresetsCustom(ProcessChangedEventArgs context, IList<SamsungDevice> connectedDevices)
+        {
+            var triggerDevices = connectedDevices.Where(d => d.Options.TriggersEnabled).ToList();
+
+            if (!triggerDevices.Any())
+            {
+                return;
+            }
+
+            await ExecuteScreenSaverPresets(_serviceManager, context);
         }
 
         private async Task ExecuteProcessPresets(ProcessChangedEventArgs context, IList<SamsungDevice> connectedDevices)
@@ -588,19 +633,7 @@ namespace ColorControl.Services.Samsung
                 presets = presets.Where(p => p.Triggers.Any(t => !t.Conditions.HasFlag(PresetConditionType.FullScreen)));
             }
 
-            var isHDRActive = CCD.IsHDREnabled();
-
-            var isGsyncActive = await _serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
-
-            var triggerContext = new PresetTriggerContext
-            {
-                IsHDRActive = isHDRActive,
-                IsGsyncActive = isGsyncActive,
-                ForegroundProcess = context.ForegroundProcess,
-                ForegroundProcessIsFullScreen = context.ForegroundProcessIsFullScreen,
-                ChangedProcesses = changedProcesses,
-                IsNotificationDisabled = context.IsNotificationDisabled
-            };
+            var triggerContext = await CreateTriggerContext(_serviceManager, context);
 
             var toApplyPresets = presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
 
@@ -691,6 +724,11 @@ namespace ColorControl.Services.Samsung
             {
                 Logger.Error($"Screensaver check: can't power off: " + e.ToLogString());
             }
+        }
+
+        public async Task ExecuteEventPresets(PresetTriggerType triggerType)
+        {
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType });
         }
     }
 }

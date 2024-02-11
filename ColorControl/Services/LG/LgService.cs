@@ -59,7 +59,6 @@ namespace ColorControl.Services.LG
 
         private bool _poweredOffByScreenSaver;
         private int _poweredOffByScreenSaverProcessId;
-        private LgPreset _lastTriggeredPreset;
         private RestartDetector _restartDetector;
         private readonly WinApiService _winApiService;
         private readonly WinApiAdminService _winApiAdminService;
@@ -321,7 +320,7 @@ namespace ColorControl.Services.LG
             {
                 if (_allowPowerOn)
                 {
-                    WakeAfterStartupOrResume();
+                    await WakeAfterStartupOrResume();
                 }
                 else
                 {
@@ -415,7 +414,7 @@ namespace ColorControl.Services.LG
             return SelectedDevice?.Wake() ?? false;
         }
 
-        internal void WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        internal Task WakeAfterStartupOrResume(PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
             Devices.ForEach(d => d.ClearPowerOffTask());
 
@@ -423,13 +422,13 @@ namespace ColorControl.Services.LG
                                                  state == PowerOnOffState.Resume && d.PowerOnAfterResume ||
                                                  state == PowerOnOffState.ScreenSaver && d.PowerOnAfterScreenSaver);
 
-            PowerOnDevicesTask(wakeDevices, state, checkUserSession);
+            return PowerOnDevicesTask(wakeDevices, state, checkUserSession);
         }
 
         public void InstallEventHandlers()
         {
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
-            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Resume, PowerModeChanged);
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
@@ -462,25 +461,39 @@ namespace ColorControl.Services.LG
             }
         }
 
+        private async Task PowerModeResume(object sender, PowerStateChangedEventArgs e, CancellationToken _)
+        {
+            Logger.Debug($"PowerModeChanged: {e.State}");
+
+            await WakeAfterStartupOrResume(PowerOnOffState.Resume);
+
+            ExecutePresetsForEvent(PresetTriggerType.Resume);
+        }
+
         private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
         {
             Logger.Debug($"PowerModeChanged: {e.State}");
 
+            if (Devices?.Any() != true)
+            {
+                Logger.Debug("Devices have not been loaded, ignoring event");
+                return;
+            }
+
             switch (e.State)
             {
-                case PowerOnOffState.Resume:
-                    {
-                        WakeAfterStartupOrResume(PowerOnOffState.Resume);
-                        break;
-                    }
                 case PowerOnOffState.StandBy:
                     {
+                        ExecutePresetsForEvent(PresetTriggerType.Standby);
+
                         var devices = Devices.Where(d => d.PowerOffOnStandby);
                         PowerOffDevices(devices, PowerOnOffState.StandBy);
                         break;
                     }
                 case PowerOnOffState.ShutDown:
                     {
+                        ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+
                         var devices = Devices.Where(d => d.PowerOffOnShutdown);
 
                         PowerOffDevices(devices);
@@ -500,6 +513,26 @@ namespace ColorControl.Services.LG
                         break;
                     }
             }
+        }
+
+        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        {
+            var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == triggerType)).ToList();
+
+            if (!presets.Any())
+            {
+                return;
+            }
+
+            var applicableDevices = Devices.Where(d => d.TriggersEnabled &&
+                presets.Any(p => (string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            if (!applicableDevices.Any())
+            {
+                return;
+            }
+
+            var _ = Task.WhenAll(ExecuteEventPresets(_serviceManager, new[] { triggerType }, isHDRActive: applicableDevices.Any(d => d.IsUsingHDRPictureMode()))).ConfigureAwait(true);
         }
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
@@ -535,10 +568,15 @@ namespace ColorControl.Services.LG
         {
             try
             {
-                var wasConnected = Devices.Any(d => (d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) && d.IsConnected());
+                var wasConnected = Devices?.Any(d => (d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver) && d.IsConnected());
+
+                if (!wasConnected.HasValue)
+                {
+                    return;
+                }
 
                 var applicableDevices = Devices.Where(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-                    ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase))));
+                    ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))).ToList();
 
                 if (!applicableDevices.Any())
                 {
@@ -573,7 +611,9 @@ namespace ColorControl.Services.LG
                     _poweredOffByScreenSaver = false;
                     _poweredOffByScreenSaverProcessId = 0;
 
-                    WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+                    await WakeAfterStartupOrResume(PowerOnOffState.ScreenSaver);
+
+                    await ExecuteScreenSaverPresetsCustom(args, applicableDevices);
 
                     return;
                 }
@@ -582,7 +622,7 @@ namespace ColorControl.Services.LG
 
                 if (!connectedDevices.Any())
                 {
-                    if (wasConnected)
+                    if (wasConnected == true)
                     {
                         Logger.Debug("Process monitor: TV(s) where connected, but not any longer");
                         wasConnected = false;
@@ -609,7 +649,7 @@ namespace ColorControl.Services.LG
                     }
                 }
 
-                if (!wasConnected)
+                if (wasConnected == false)
                 {
                     Logger.Debug("Process monitor: TV(s) where not connected, but connection has now been established");
                     wasConnected = true;
@@ -622,11 +662,24 @@ namespace ColorControl.Services.LG
 
                 await ExecuteProcessPresets(args, connectedDevices);
 
+                await ExecuteScreenSaverPresetsCustom(args, connectedDevices);
             }
             catch (Exception ex)
             {
                 Logger.Error("ProcessChanged: " + ex.ToLogString());
             }
+        }
+
+        private async Task ExecuteScreenSaverPresetsCustom(ProcessChangedEventArgs context, IList<LgDevice> connectedDevices)
+        {
+            var triggerDevices = connectedDevices.Where(d => d.TriggersEnabled).ToList();
+
+            if (!triggerDevices.Any())
+            {
+                return;
+            }
+
+            await ExecuteScreenSaverPresets(_serviceManager, context, triggerDevices.Any(d => d.IsUsingHDRPictureMode()));
         }
 
         private async Task ExecuteProcessPresets(ProcessChangedEventArgs context, IList<LgDevice> connectedDevices)
@@ -648,12 +701,6 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            var changedProcesses = new List<Process>();
-            if (context.ForegroundProcess != null)
-            {
-                changedProcesses.Add(context.ForegroundProcess);
-            }
-
             if (context.ForegroundProcess != null && context.ForegroundProcessIsFullScreen)
             {
                 presets = presets.Where(p => p.Triggers.Any(t => t.Conditions.HasFlag(PresetConditionType.FullScreen)));
@@ -663,19 +710,7 @@ namespace ColorControl.Services.LG
                 presets = presets.Where(p => p.Triggers.Any(t => !t.Conditions.HasFlag(PresetConditionType.FullScreen)));
             }
 
-            var isHDRActive = triggerDevices.Any(d => d.IsUsingHDRPictureMode());
-
-            var isGsyncActive = await _serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
-
-            var triggerContext = new PresetTriggerContext
-            {
-                IsHDRActive = isHDRActive,
-                IsGsyncActive = isGsyncActive,
-                ForegroundProcess = context.ForegroundProcess,
-                ForegroundProcessIsFullScreen = context.ForegroundProcessIsFullScreen,
-                ChangedProcesses = changedProcesses,
-                IsNotificationDisabled = context.IsNotificationDisabled
-            };
+            var triggerContext = await CreateTriggerContext(_serviceManager, context, triggerDevices.Any(d => d.IsUsingHDRPictureMode()));
 
             var toApplyPresets = presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
 
@@ -805,63 +840,53 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            var error = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS | NativeConstants.ES_SYSTEM_REQUIRED | NativeConstants.ES_AWAYMODE_REQUIRED);
-            try
+            if (state == PowerOnOffState.ShutDown)
             {
-                Logger.Debug($"SetThreadExecutionState: {error}, Thread#: {Environment.CurrentManagedThreadId}");
-                if (state == PowerOnOffState.ShutDown)
+                var sleep = Config.ShutdownDelay;
+
+                Logger.Debug($"PowerOffDevices: Waiting for a maximum of {sleep} milliseconds...");
+
+                while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
                 {
-                    var sleep = Config.ShutdownDelay;
+                    Thread.Sleep(100);
 
-                    Logger.Debug($"PowerOffDevices: Waiting for a maximum of {sleep} milliseconds...");
-
-                    while (sleep > 0 && _restartDetector?.PowerOffDetected == false)
+                    if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
                     {
-                        Thread.Sleep(100);
-
-                        if (_restartDetector != null && (_restartDetector.RestartDetected || _restartDetector.IsRebootInProgress()))
-                        {
-                            Logger.Debug("Not powering off because of a restart");
-                            return;
-                        }
-
-                        sleep -= 100;
+                        Logger.Debug("Not powering off because of a restart");
+                        return;
                     }
+
+                    sleep -= 100;
                 }
-
-                Logger.Debug("Powering off tv(s)...");
-                var tasks = new List<Task>();
-                foreach (var device in devices)
-                {
-                    var task = device.PowerOff(true, false);
-
-                    tasks.Add(task);
-                }
-
-                if (state == PowerOnOffState.StandBy)
-                {
-                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
-                    if (File.Exists(standByScript))
-                    {
-                        _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
-                    }
-                }
-
-                // We can't use async here because we need to stay on the main thread...
-                var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
-
-                Logger.Debug("Done powering off tv(s)");
             }
-            finally
+
+            Logger.Debug("Powering off tv(s)...");
+            var tasks = new List<Task>();
+            foreach (var device in devices)
             {
-                var error2 = NativeMethods.SetThreadExecutionState(NativeConstants.ES_CONTINUOUS);
-                Logger.Debug($"SetThreadExecutionState (reset): {error2}, Thread#: {Environment.CurrentManagedThreadId}");
+                var task = device.PowerOff(true, false);
+
+                tasks.Add(task);
             }
+
+            if (state == PowerOnOffState.StandBy)
+            {
+                var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
+                if (File.Exists(standByScript))
+                {
+                    _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
+                }
+            }
+
+            // We can't use async here because we need to stay on the main thread...
+            var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
+
+            Logger.Debug("Done powering off tv(s)");
         }
 
-        public void PowerOnDevicesTask(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
+        public Task PowerOnDevicesTask(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
         {
-            Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
+            return Task.Run(async () => await PowerOnDevices(devices, state, checkUserSession));
         }
 
         public async Task PowerOnDevices(IEnumerable<LgDevice> devices, PowerOnOffState state = PowerOnOffState.StartUp, bool checkUserSession = true)
@@ -923,6 +948,11 @@ namespace ColorControl.Services.LG
             };
 
             PipeUtils.SendMessage(message);
+        }
+
+        public async Task ExecuteEventPresets(PresetTriggerType triggerType)
+        {
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType });
         }
     }
 }

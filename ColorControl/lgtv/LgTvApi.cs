@@ -538,12 +538,12 @@ namespace LgTv
 
         public async Task TurnScreenOff()
         {
-            await _connection.SendCommandAsync(new RequestMessage("", "ssap://com.webos.service.tvpower/power/turnOffScreen"));
+            await Logger.SwallowAsync(() => _connection.SendCommandAsync(new RequestMessage("", "ssap://com.webos.service.tvpower/power/turnOffScreen")));
         }
 
         public async Task TurnScreenOn()
         {
-            await _connection.SendCommandAsync(new RequestMessage("", "ssap://com.webos.service.tvpower/power/turnOnScreen"));
+            await Logger.SwallowAsync(() => _connection.SendCommandAsync(new RequestMessage("", "ssap://com.webos.service.tvpower/power/turnOnScreen")));
         }
 
         public async Task<bool> IsTurnedOn3D()
@@ -842,6 +842,18 @@ namespace LgTv
                 id = id,
                 label = label,
                 icon = iconPng
+            };
+
+            await ExecuteRequest(lunauri, @params);
+        }
+
+        public async Task SetTpcOrGsr(string name, bool enable)
+        {
+            var lunauri = $"luna://com.webos.service.oledepl/{(name == "TPC" ? "setTemporalPeakControl" : "setGlobalStressReduction")}";
+
+            var @params = new
+            {
+                enable
             };
 
             await ExecuteRequest(lunauri, @params);

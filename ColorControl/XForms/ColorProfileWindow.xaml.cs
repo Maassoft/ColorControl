@@ -18,14 +18,18 @@ namespace ColorControl.XForms
     {
         private ColorProfileViewModel _viewModel;
         private readonly WinApiAdminService _winApiAdminService;
+        private readonly AppContextProvider _appContextProvider;
 
-        public ColorProfileWindow(WinApiAdminService winApiAdminService)
+        public ColorProfileWindow(WinApiAdminService winApiAdminService, AppContextProvider appContextProvider, bool isHDR)
         {
-            _viewModel = new ColorProfileViewModel();
+            _winApiAdminService = winApiAdminService;
+            _appContextProvider = appContextProvider;
+
+            _viewModel = new ColorProfileViewModel(isHDR);
+            _viewModel.SetMinMaxTml = appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml;
 
             DataContext = _viewModel;
             InitializeComponent();
-            _winApiAdminService = winApiAdminService;
         }
 
         private void OnRequestNavigate(object sender, RequestNavigateEventArgs e)
@@ -37,14 +41,16 @@ namespace ColorControl.XForms
             System.Diagnostics.Process.Start(processStartInfo);
         }
 
-        public static void CreateAndShow(bool show = true)
+        public static void CreateAndShow(bool show = true, bool isHDR = true)
         {
             if (Application.Current == null)
             {
                 new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             }
 
-            var window = Program.ServiceProvider.GetRequiredService<ColorProfileWindow>();
+            var winApiAdminService = Program.ServiceProvider.GetRequiredService<WinApiAdminService>();
+            var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+            var window = new ColorProfileWindow(winApiAdminService, appContextProvider, isHDR);
 
             if (show)
             {
@@ -87,7 +93,11 @@ namespace ColorControl.XForms
         {
             if (!_viewModel.Displays.Any())
             {
-                MessageForms.WarningOk("There are no displays available that support HDR and have it enabled. Please activate HDR first.");
+                var message = _viewModel.IsHDR ?
+                    "There are no displays available that support HDR and have it enabled. Please activate HDR first." :
+                    "There are no displays available are in SDR mode. Please deactivate HDR first.";
+
+                MessageForms.WarningOk(message);
             }
         }
 
@@ -96,6 +106,7 @@ namespace ColorControl.XForms
             var command = new GenerateProfileCommand
             {
                 Description = _viewModel.Description,
+                IsHDRProfile = _viewModel.IsHDR,
                 MinCLL = _viewModel.MinCLL,
                 MaxCLL = _viewModel.MaxCLL,
                 BlackLuminance = _viewModel.BlackLuminance,
@@ -146,7 +157,81 @@ namespace ColorControl.XForms
 
             var profileName = Path.GetFileName(tempFilename);
 
-            CCD.SetDisplayDefaultColorProfile(displayName, profileName);
+            if (CCD.SetDisplayDefaultColorProfile(displayName, profileName, _viewModel.SetMinMaxTml))
+            {
+                if (!_viewModel.ExistingProfiles.Contains(profileName))
+                {
+                    _viewModel.ExistingProfiles.Add(profileName);
+                }
+                _viewModel.SelectedExistingProfile = profileName;
+                _viewModel.Update();
+            }
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            var existingProfile = _viewModel.SelectedExistingProfile;
+
+            if (existingProfile == ColorProfileViewModel.CreateANewProfile)
+            {
+                var openFileDialog = new System.Windows.Forms.OpenFileDialog
+                {
+                    Filter = "Color profiles (*.icc;*.icm)|*.icc;*.icm"
+                };
+                if (openFileDialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                {
+                    return;
+                }
+
+                existingProfile = openFileDialog.FileName;
+            }
+
+            if (MessageForms.QuestionYesNo("This will discard all current changes. Do you want to continue?") != System.Windows.Forms.DialogResult.Yes)
+            {
+                return;
+            }
+
+            // Load profile
+            var profileProperties = MHC2Wrapper.LoadProfile(existingProfile, _viewModel.IsHDR);
+
+            _viewModel.RedPoint = new(profileProperties.DevicePrimaries.Red);
+            _viewModel.GreenPoint = new(profileProperties.DevicePrimaries.Green);
+            _viewModel.BluePoint = new(profileProperties.DevicePrimaries.Blue);
+            _viewModel.WhitePoint = new(profileProperties.DevicePrimaries.White);
+            _viewModel.ColorGamut = profileProperties.ColorGamut;
+            _viewModel.BlackLuminance = profileProperties.BlackLuminance;
+            _viewModel.WhiteLuminance = profileProperties.WhiteLuminance;
+            _viewModel.SDRTransferFunction = profileProperties.SDRTransferFunction;
+            _viewModel.CustomGamma = profileProperties.Gamma;
+            _viewModel.SDRMinBrightness = profileProperties.SDRMinBrightness;
+            _viewModel.SDRMaxBrightness = profileProperties.SDRMaxBrightness;
+            _viewModel.SDRBrightnessBoost = profileProperties.SDRBrightnessBoost;
+            _viewModel.MinCLL = profileProperties.MinCLL;
+            _viewModel.MaxCLL = profileProperties.MaxCLL;
+
+            _viewModel.Update();
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+            var existingProfile = _viewModel.SelectedExistingProfile;
+
+            if (existingProfile == ColorProfileViewModel.CreateANewProfile)
+            {
+                return;
+            }
+
+            if (MessageForms.QuestionYesNo($"Are you sure you want to remove the color profile '{existingProfile}'?") != System.Windows.Forms.DialogResult.Yes)
+            {
+                return;
+            }
+
+            if (_winApiAdminService.UninstallColorProfile(existingProfile))
+            {
+                _viewModel.SelectedExistingProfile = ColorProfileViewModel.CreateANewProfile;
+                _viewModel.ExistingProfiles.Remove(existingProfile);
+                _viewModel.Update();
+            }
         }
     }
 }

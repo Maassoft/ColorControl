@@ -1,7 +1,10 @@
-﻿using ColorControl.Shared.Services;
+﻿using ColorControl.Services.EventDispatcher;
+using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,6 +30,7 @@ namespace ColorControl.Services.Common
         protected List<T> _presets;
         protected T _lastAppliedPreset;
         protected string _loadPresetsError;
+        protected T _lastTriggeredPreset;
 
         protected AppContextProvider _appContextProvider;
 
@@ -174,6 +178,59 @@ namespace ColorControl.Services.Common
         public void ToggleQuickAccessForm()
         {
             QuickAccessForm<T>.ToggleQuickAccessForm(this);
+        }
+
+        protected async Task<PresetTriggerContext> CreateTriggerContext(ServiceManager serviceManager, ProcessChangedEventArgs context = null, bool? isHDRActive = null, IList<PresetTriggerType> triggerTypes = null)
+        {
+            triggerTypes ??= new[] { PresetTriggerType.ProcessSwitch };
+
+            var changedProcesses = new List<Process>();
+            if (context?.ForegroundProcess != null)
+            {
+                changedProcesses.Add(context.ForegroundProcess);
+            }
+
+            var isGsyncActive = await serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
+
+            var triggerContext = new PresetTriggerContext
+            {
+                Triggers = triggerTypes,
+                IsHDRActive = isHDRActive ?? CCD.IsHDREnabled(),
+                IsGsyncActive = isGsyncActive,
+                ForegroundProcess = context?.ForegroundProcess,
+                ForegroundProcessIsFullScreen = context?.ForegroundProcessIsFullScreen ?? false,
+                IsNotificationDisabled = context?.IsNotificationDisabled ?? false,
+                ChangedProcesses = changedProcesses,
+                ScreenSaverTransitionState = context?.ScreenSaverTransitionState ?? ScreenSaverTransitionState.None
+            };
+
+            return triggerContext;
+        }
+
+        protected async Task ExecuteScreenSaverPresets(ServiceManager serviceManager, ProcessChangedEventArgs context, bool? isHDRActive = null)
+        {
+            await ExecuteEventPresets(serviceManager, new[] { PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop }, context, isHDRActive);
+        }
+
+        public async Task ExecuteEventPresets(ServiceManager serviceManager, IList<PresetTriggerType> triggerTypes, ProcessChangedEventArgs context = null, bool? isHDRActive = null)
+        {
+            var triggerContext = await CreateTriggerContext(serviceManager, context, isHDRActive, triggerTypes);
+
+            var triggerPresets = _presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
+
+            if (!triggerPresets.Any())
+            {
+                return;
+            }
+
+            Logger.Debug($"Executing event presets count: {triggerPresets.Count}");
+
+            foreach (var preset in triggerPresets)
+            {
+                Logger.Debug($"Executing event preset: {preset.name}");
+
+                await ApplyPreset(preset);
+            }
         }
 
     }

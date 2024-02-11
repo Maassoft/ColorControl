@@ -24,6 +24,7 @@ public enum ColorGamut
 public class GenerateProfileCommand
 {
     public string Description { get; set; }
+    public bool IsHDRProfile { get; set; }
     public RgbPrimaries DevicePrimaries { get; set; } = new RgbPrimaries(RgbPrimaries.sRGB);
     public SDRTransferFunction SDRTransferFunction { get; set; }
     public ColorGamut ColorGamut { get; set; }
