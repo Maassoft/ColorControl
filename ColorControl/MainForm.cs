@@ -11,7 +11,6 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
-using ColorControl.XForms;
 using Linearstar.Windows.RawInput;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
@@ -34,7 +33,7 @@ namespace ColorControl
     {
         private static bool SystemShutdown = false;
         private static bool EndSession = false;
-        private static int SHORTCUTID_SCREENSAVER = -100;
+        public static int SHORTCUTID_SCREENSAVER = -100;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly PowerEventDispatcher _powerEventDispatcher;
@@ -42,11 +41,12 @@ namespace ColorControl
         private readonly IServiceProvider _serviceProvider;
         private readonly WinApiAdminService _winApiAdminService;
         private readonly WinApiService _winApiService;
+        private readonly ElevationService _elevationService;
         private string _dataDir;
 
         private NvPanel _nvPanel;
 
-        private NotifyIcon _trayIcon;
+        public NotifyIcon _trayIcon;
         private bool _initialized = false;
         private Config _config;
         private bool _setVisibleCalled = false;
@@ -78,7 +78,7 @@ namespace ColorControl
         private Dictionary<string, Func<UserControl>> _modules = new();
 
         public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager,
-            IServiceProvider serviceProvider, WinApiAdminService winApiAdminService, WinApiService winApiService)
+            IServiceProvider serviceProvider, WinApiAdminService winApiAdminService, WinApiService winApiService, ElevationService elevationService)
         {
             InitializeComponent();
 
@@ -92,6 +92,7 @@ namespace ColorControl
             _serviceProvider = serviceProvider;
             _winApiAdminService = winApiAdminService;
             _winApiService = winApiService;
+            _elevationService = elevationService;
             _dataDir = Program.DataDir;
             _config = Program.Config;
 
@@ -144,23 +145,15 @@ namespace ColorControl
             _trayIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
             _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
 
-            chkStartAfterLogin.Checked = _winApiService.TaskExists(Program.TS_TASKNAME);
-
-            chkFixChromeFonts.Enabled = _winApiService.IsChromeInstalled();
-            if (chkFixChromeFonts.Enabled)
-            {
-                var fixInstalled = _winApiService.IsChromeFixInstalled();
-                if (_config.FixChromeFonts && !fixInstalled)
-                {
-                    _winApiAdminService.InstallChromeFix(true, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-                }
-                chkFixChromeFonts.Checked = _winApiService.IsChromeFixInstalled();
-            }
-
             InitShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut, StartScreenSaver);
 
             InitModules();
-            UpdateServiceInfo();
+
+            // Auto-apply fix if desired but not currently installed
+            if (_config.FixChromeFonts && _winApiService.IsChromeInstalled() && !_winApiService.IsChromeFixInstalled())
+            {
+                _winApiAdminService.InstallChromeFix(true, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            }
 
             _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
@@ -234,31 +227,6 @@ namespace ColorControl
             tcMain.SelectedIndex = 0;
 
             _serviceManager.NvService?.InstallEventHandlers();
-        }
-
-        private void UpdateServiceInfo()
-        {
-            var text = "Use Windows Service";
-            btnStartStopService.Enabled = true;
-
-            if (_winApiService.IsServiceRunning())
-            {
-                text += " (running)";
-                btnStartStopService.Text = "Stop";
-            }
-            else if (_winApiService.IsServiceInstalled())
-            {
-                text += " (installed, not running)";
-                btnStartStopService.Text = "Start";
-            }
-            else
-            {
-                text += " (not installed)";
-                btnStartStopService.Text = "Start";
-                btnStartStopService.Enabled = false;
-            }
-
-            rbElevationService.Text = text;
         }
 
         private UserControl InitNvService()
@@ -577,11 +545,6 @@ namespace ColorControl
             Process.Start("explorer.exe", screenSaver);
         }
 
-        private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
-        {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
-        }
-
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
@@ -615,34 +578,8 @@ namespace ColorControl
             }
         }
 
-        private void chkStartAfterLogin_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-            var enabled = chkStartAfterLogin.Checked;
-            RegisterScheduledTask(enabled);
-
-            rbElevationAdmin.Enabled = enabled;
-            if (!enabled && rbElevationAdmin.Checked)
-            {
-                rbElevationNone.Checked = true;
-            }
-        }
-
         private void LoadConfig()
         {
-            chkStartMinimized.Checked = _config.StartMinimized;
-            chkMinimizeOnClose.Checked = _config.MinimizeOnClose;
-            chkMinimizeToSystemTray.Checked = _config.MinimizeToTray;
-            chkCheckForUpdates.Checked = _config.CheckForUpdates;
-            chkAutoInstallUpdates.Checked = _config.AutoInstallUpdates;
-            chkAutoInstallUpdates.Enabled = _config.CheckForUpdates && _config.ElevationMethod == ElevationMethod.UseService;
-            edtBlankScreenSaverShortcut.Text = _config.ScreenSaverShortcut;
-            chkGdiScaling.Checked = _config.UseGdiScaling;
-            chkOptionsUseDarkMode.Checked = _config.UseDarkMode;
-
             _skipResize = true;
             try
             {
@@ -657,7 +594,6 @@ namespace ColorControl
 
         private void SaveConfig()
         {
-            _config.StartMinimized = chkStartMinimized.Checked;
             if (WindowState != FormWindowState.Minimized)
             {
                 _config.FormWidth = Width;
@@ -710,7 +646,7 @@ Do you want to install and start the Windows Service now? You can always change 
 NOTE: installing the service may cause a User Account Control popup.");
             if (result == DialogResult.Yes)
             {
-                SetElevationMethod(ElevationMethod.UseService);
+                _elevationService.SetElevationMethod(ElevationMethod.UseService);
             }
 
             _config.ElevationMethodAsked = true;
@@ -736,11 +672,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             }
         }
 
-        private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
-        {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
-        }
-
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
             InitSelectedTab();
@@ -764,32 +695,17 @@ NOTE: installing the service may cause a User Account Control popup.");
 
         private void InitOptionsTab()
         {
-            if (chkModules.Items.Count == 0)
+            if (tabInfo.Controls.Count > 0)
             {
-                foreach (var module in _config.Modules)
-                {
-                    chkModules.Items.Add(module.DisplayName, module.IsActive);
-                }
+                return;
             }
 
-            _initialized = false;
-            try
-            {
-                var _ = _config.ElevationMethod switch
-                {
-                    ElevationMethod.None => rbElevationNone.Checked = true,
-                    ElevationMethod.RunAsAdmin => rbElevationAdmin.Checked = true,
-                    ElevationMethod.UseService => rbElevationService.Checked = true,
-                    ElevationMethod.UseElevatedProcess => rbElevationProcess.Checked = true,
-                    _ => false
-                };
-            }
-            finally
-            {
-                _initialized = true;
-            }
+            var control = _serviceProvider.GetRequiredService<OptionsPanel>();
+            control.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
-            UpdateServiceInfo();
+            tabOptions.Controls.Add(control);
+
+            control.Size = tabInfo.ClientSize;
         }
 
         private void InitInfoTab()
@@ -811,7 +727,7 @@ NOTE: installing the service may cause a User Account Control popup.");
         {
             menu.DropDownItems.Clear();
 
-            foreach (var preset in presets)
+            foreach (var preset in presets.OrderBy(p => p.name))
             {
                 var name = preset.GetTextForMenuItem();
                 var keys = Keys.None;
@@ -859,7 +775,7 @@ NOTE: installing the service may cause a User Account Control popup.");
             _nvTrayMenu.Visible = _serviceManager.NvService != null;
             if (_nvTrayMenu.Visible)
             {
-                var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings);
+                var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings || x.applyOther || x.applyOverclocking || x.ApplyColorEnhancements || x.applyHdmiSettings);
 
                 UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
             }
@@ -923,29 +839,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             var preset = (SamsungPreset)item.Tag;
 
             await _samsungPanel?.ApplyPreset(preset);
-        }
-
-        private void btnRefreshNVIDIAInfo_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void btnSetShortcutScreenSaver_Click(object sender, EventArgs e)
-        {
-            var shortcut = edtBlankScreenSaverShortcut.Text.Trim();
-
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
-            {
-                return;
-            }
-
-            _config.ScreenSaverShortcut = shortcut;
-
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_SCREENSAVER, shortcut);
-        }
-
-        private void chkMinimizeOnClose_CheckedChanged(object sender, EventArgs e)
-        {
-            _config.MinimizeOnClose = chkMinimizeOnClose.Checked;
         }
 
         private void MainForm_Activated(object sender, EventArgs e)
@@ -1116,29 +1009,6 @@ NOTE: installing the service may cause a User Account Control popup.");
                 (_serviceManager.LgService?.GetPresets().Any(x => x.id != presetId && shortcut.Equals(x.shortcut)) ?? false);
         }
 
-        private void chkMinimizeToSystemTray_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_initialized)
-            {
-                _config.MinimizeToTray = chkMinimizeToSystemTray.Checked;
-                _trayIcon.Visible = _config.MinimizeToTray;
-            }
-        }
-
-        private void chkCheckForUpdates_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_initialized)
-            {
-                _config.CheckForUpdates = chkCheckForUpdates.Checked;
-                chkAutoInstallUpdates.Enabled = _config.CheckForUpdates && _config.ElevationMethod == ElevationMethod.UseService;
-            }
-        }
-
-        private void chkGdiScaling_CheckedChanged(object sender, EventArgs e)
-        {
-            _config.UseGdiScaling = chkGdiScaling.Checked;
-        }
-
         private void MainForm_ResizeBegin(object sender, EventArgs e)
         {
             SuspendLayout();
@@ -1147,143 +1017,6 @@ NOTE: installing the service may cause a User Account Control popup.");
         private void MainForm_ResizeEnd(object sender, EventArgs e)
         {
             ResumeLayout(true);
-        }
-
-        private void rbElevationNone_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-
-            if (sender is not RadioButton button || !button.Checked)
-            {
-                return;
-            }
-
-            SetElevationMethod((ElevationMethod)Utils.ParseInt((string)button.Tag));
-        }
-
-        private void SetElevationMethod(ElevationMethod elevationMethod)
-        {
-            _config.ElevationMethod = elevationMethod;
-
-            var _ = _config.ElevationMethod switch
-            {
-                ElevationMethod.None => SetElevationMethodNone(),
-                ElevationMethod.RunAsAdmin => SetElevationMethodRunAsAdmin(),
-                ElevationMethod.UseService => SetElevationMethodUseService(),
-                ElevationMethod.UseElevatedProcess => SetElevationMethodUseElevatedProcess(),
-                _ => true
-            };
-
-            UpdateServiceInfo();
-        }
-
-        private bool SetElevationMethodNone()
-        {
-            if (chkStartAfterLogin.Enabled)
-            {
-                RegisterScheduledTask();
-            }
-
-            _winApiAdminService.UninstallService();
-
-            return true;
-        }
-
-        private bool SetElevationMethodRunAsAdmin()
-        {
-            if (chkStartAfterLogin.Enabled)
-            {
-                RegisterScheduledTask(false);
-                RegisterScheduledTask();
-            }
-
-            _winApiAdminService.UninstallService();
-
-            return true;
-        }
-
-        private bool SetElevationMethodUseService()
-        {
-            _winApiAdminService.InstallService();
-
-            if (_winApiService.IsServiceInstalled())
-            {
-                MessageForms.InfoOk("Service installed successfully.");
-                return true;
-            }
-
-            MessageForms.ErrorOk("Service could not be installed. Check the logs.");
-
-            return false;
-        }
-
-        private bool SetElevationMethodUseElevatedProcess()
-        {
-            if (chkStartAfterLogin.Enabled)
-            {
-                RegisterScheduledTask();
-            }
-
-            _winApiAdminService.UninstallService();
-
-            return true;
-        }
-
-        private void RegisterScheduledTask(bool enabled = true)
-        {
-            _winApiAdminService.RegisterTask(Program.TS_TASKNAME, enabled, _config.ElevationMethod == ElevationMethod.RunAsAdmin ? Microsoft.Win32.TaskScheduler.TaskRunLevel.Highest : Microsoft.Win32.TaskScheduler.TaskRunLevel.LUA);
-        }
-
-        private void btnElevationInfo_Click(object sender, EventArgs e)
-        {
-            MessageForms.InfoOk(Utils.ELEVATION_MSG + @$"
-
-NOTE: if ColorControl itself already runs as administrator this is indicated in the title: ColorControl {Application.ProductVersion} (administrator).
-
-Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}running as administrator.
-");
-        }
-
-        private async void btnStartStopService_Click(object sender, EventArgs e)
-        {
-            btnStartStopService.Enabled = false;
-            try
-            {
-                var start = btnStartStopService.Text == "Start";
-
-                if (start)
-                {
-                    _winApiAdminService.StartService();
-                }
-                else
-                {
-                    _winApiAdminService.StopService();
-                }
-
-                var wait = 1500;
-
-                while (wait > 0)
-                {
-                    await Task.Delay(100);
-
-                    if (start == _winApiService.IsServiceRunning())
-                    {
-                        break;
-                    }
-
-                    wait -= 100;
-                }
-            }
-            finally
-            {
-                btnStartStopService.Enabled = true;
-            }
-
-            UpdateServiceInfo();
         }
 
         private async void MainForm_Click(object sender, EventArgs e)
@@ -1298,11 +1031,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             _serviceManager.NvService?.TestResolution();
         }
 
-        private async Task Test()
-        {
-        }
-
-        private void SetTheme(bool toDark)
+        public void SetTheme(bool toDark)
         {
             this.UpdateTheme(toDark);
 
@@ -1313,14 +1042,6 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             DarkModeUtils.SetContextMenuForeColor(_trayIcon.ContextMenuStrip, FormUtils.CurrentForeColor);
 
             InitSelectedTab();
-        }
-
-        private void chkAutoInstallUpdates_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_initialized)
-            {
-                _config.AutoInstallUpdates = chkAutoInstallUpdates.Checked;
-            }
         }
 
         private void btnUpdate_Click(object sender, EventArgs e)
@@ -1341,18 +1062,6 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             _trayIcon.Visible = false;
         }
 
-        private void chkFixChromeFonts_CheckedChanged(object sender, EventArgs e)
-        {
-            if (_initialized)
-            {
-                _config.FixChromeFonts = chkFixChromeFonts.Checked;
-
-                var folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-                _winApiAdminService.InstallChromeFix(chkFixChromeFonts.Checked, folder);
-            }
-        }
-
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if ((keyData == (Keys.Control | Keys.PageUp) || keyData == (Keys.Control | Keys.PageDown)) && IsShortcutControlFocused())
@@ -1369,96 +1078,6 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
-        }
-
-        private void chkOptionsUseDarkMode_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!_initialized)
-            {
-                return;
-            }
-
-            _config.UseDarkMode = chkOptionsUseDarkMode.Checked;
-
-            SetTheme(_config.UseDarkMode);
-        }
-
-        private void btnOptionsAdvanced_Click(object sender, EventArgs e)
-        {
-            var processPollingIntervalField = new FieldDefinition
-            {
-                FieldType = FieldType.Numeric,
-                Label = "Polling interval of process monitor (milliseconds).",
-                SubLabel = "Decreasing this delay may execute triggered presets sooner but can cause a higher CPU load",
-                MinValue = 50,
-                MaxValue = 5000,
-                Value = _config.ProcessMonitorPollingInterval
-            };
-            var useRawInputField = new FieldDefinition
-            {
-                FieldType = FieldType.CheckBox,
-                Label = "Use Raw Input for shortcuts (hot keys)",
-                SubLabel = "This enables shortcuts to work during applications/games that block certain keys (like WinKey or Control). NOTE: if the application in the foreground runs with higher privileges than ColorControl, Raw Input does not work and normal hot keys are used",
-                Value = _config.UseRawInput
-            };
-            var setMinTmlAndMaxTmlField = new FieldDefinition
-            {
-                FieldType = FieldType.CheckBox,
-                Label = "Set MinTML and MaxTML when applying color profiles",
-                SubLabel = "When this is enabled MinTML and MaxTML will be automatically be set to respectively the minimum luminance and the maximum luminance of the color profile",
-                Value = _config.SetMinTmlAndMaxTml
-            };
-
-            var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField, setMinTmlAndMaxTmlField });
-
-            if (values?.Any() != true)
-            {
-                return;
-            }
-
-            _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
-            _config.UseRawInput = useRawInputField.ValueAsBool;
-            _config.SetMinTmlAndMaxTml = setMinTmlAndMaxTmlField.ValueAsBool;
-
-            KeyboardShortcutManager.SetUseRawInput(_config.UseRawInput);
-        }
-
-        private void btnOptionsLog_Click(object sender, EventArgs e)
-        {
-            LogWindow.CreateAndShow();
-        }
-
-        private void chkModules_ItemCheck(object sender, ItemCheckEventArgs e)
-        {
-            if (chkModules.Items.Count != _config.Modules.Count)
-            {
-                return;
-            }
-
-            var index = e.Index;
-
-            if (index < 0)
-            {
-                return;
-            }
-
-            var module = _config.Modules[index];
-            module.IsActive = e.NewValue == CheckState.Checked;
-        }
-
-        private void miCreateHDRColorProfile_Click(object sender, EventArgs e)
-        {
-            ColorProfileWindow.CreateAndShow();
-        }
-
-        private void btnOptionsColorProfiles_Click(object sender, EventArgs e)
-        {
-            mnuColorProfiles.ShowCustom(btnOptionsColorProfiles);
-        }
-
-        private void miCreateSDRColorProfile_Click(object sender, EventArgs e)
-        {
-            ColorProfileWindow.CreateAndShow(isHDR: false);
         }
     }
 }

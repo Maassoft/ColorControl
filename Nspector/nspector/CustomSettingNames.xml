@@ -7706,5 +7706,110 @@
         </CustomSettingValue>
       </SettingValues>
     </CustomSetting>-->
+	
+	<CustomSetting>
+	  <UserfriendlyName>RTX HDR - Peak Brightness</UserfriendlyName>
+	  <HexSettingID>0x00DD48FC</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>400</UserfriendlyName>
+			<HexValue>0x00000190</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>1200</UserfriendlyName>
+			<HexValue>0x000004B0</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+	<CustomSetting>
+	  <UserfriendlyName>RTX HDR - Middle Grey</UserfriendlyName>
+	  <HexSettingID>0x00DD48FD</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>0</UserfriendlyName>
+			<HexValue>0x00000000</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>100</UserfriendlyName>
+			<HexValue>0x00000064</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+	<CustomSetting>
+	  <UserfriendlyName>RTX HDR - Contrast</UserfriendlyName>
+	  <HexSettingID>0x00DD48FE</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>0</UserfriendlyName>
+			<HexValue>0x00000000</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>200</UserfriendlyName>
+			<HexValue>0x000000C8</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+	<CustomSetting>
+	  <UserfriendlyName>RTX HDR - Saturation</UserfriendlyName>
+	  <HexSettingID>0x00DD48FF</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>0</UserfriendlyName>
+			<HexValue>0x00000000</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>200</UserfriendlyName>
+			<HexValue>0x000000C8</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+
+	<CustomSetting>
+	  <UserfriendlyName>RTX Dynamic Vibrance - Intensity</UserfriendlyName>
+	  <HexSettingID>0x00ABAB22</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>0</UserfriendlyName>
+			<HexValue>0x00000000</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>100</UserfriendlyName>
+			<HexValue>0x00000064</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+	<CustomSetting>
+	  <UserfriendlyName>RTX Dynamic Vibrance - Saturation Boost</UserfriendlyName>
+	  <HexSettingID>0x00ABAB13</HexSettingID>
+	  <GroupName>9 - RTX</GroupName>
+	  <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+	  <SettingValues>
+		<CustomSettingValue>
+			<UserfriendlyName>0</UserfriendlyName>
+			<HexValue>0x00000000</HexValue>
+		</CustomSettingValue>
+		<CustomSettingValue>
+			<UserfriendlyName>100</UserfriendlyName>
+			<HexValue>0x00000064</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
+	  <SettingMasks />
+	</CustomSetting>
+	
 	</Settings>
 </CustomSettingNames>

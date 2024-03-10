@@ -19,7 +19,7 @@ namespace nspector
 
         private List<SettingItem> _currentProfileSettingItems = new List<SettingItem>();
         private static bool _alreadyScannedForPredefinedSettings = false;
-        private static object[] _baseProfileNames;
+        private static object[]? _baseProfileNames;
         private IntPtr _taskbarParent = IntPtr.Zero;
         private bool _activated = false;
         private bool _isStartup = true;
@@ -993,7 +993,7 @@ namespace nspector
             ShowCreateProfileDialog("");
         }
 
-        private void ShowCreateProfileDialog(string nameProposal, string applicationName = null)
+        private void ShowCreateProfileDialog(string nameProposal, string? applicationName = null)
         {
             var ignoreList = cbProfiles.Items.Cast<string>().ToList();
             string result = nameProposal;
@@ -1003,6 +1003,7 @@ namespace nspector
                 try
                 {
                     _drs.CreateProfile(result, applicationName);
+                    _baseProfileNames = null;
                     RefreshProfilesCombo();
                     cbProfiles.SelectedIndex = cbProfiles.Items.IndexOf(result);
                     AddToModifiedProfiles(result, true);

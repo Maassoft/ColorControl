@@ -65,8 +65,8 @@
                 <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMinBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness" Height="18" InputScope="Number"/>
                 <Label Content="SDR maximum brightness (nits):" HorizontalAlignment="Left" Margin="197,37,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
                 <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMaxBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMaxBrightness" Height="18" InputScope="Number"/>
-                <Label Content="SDR brightness boost (%):" HorizontalAlignment="Left" Margin="-5,64,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,68,0,0" TextWrapping="Wrap" Text="{Binding SDRBrightnessBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness_Copy6" Height="18" InputScope="Number"/>
+                <Label Content="Brightness boost (%):" HorizontalAlignment="Left" Margin="-5,64,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="69,68,0,0" TextWrapping="Wrap" Text="{Binding SDRBrightnessBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness_Copy6" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
         <GroupBox Header="Advanced Profile Settings" Padding="6" Height="71" Width="734" HorizontalAlignment="Left">

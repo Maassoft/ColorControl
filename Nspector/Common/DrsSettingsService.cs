@@ -212,9 +212,9 @@ namespace nspector.Common
                 var profileHandles = EnumProfileHandles(hSession);
                 foreach (IntPtr hProfile in profileHandles)
                 {
-                    var apps = GetProfileApplications(hSession, hProfile);
+                    var apps = GetProfileApplications(hSession, hProfile, true);
 
-                    if (apps.Any(a => a.appName.Equals(appName, StringComparison.OrdinalIgnoreCase)))
+                    if (apps?.Any(a => a.appName.Equals(appName, StringComparison.OrdinalIgnoreCase)) == true)
                     {
                         var profile = GetProfileInfo(hSession, hProfile);
                         name = profile.profileName;
@@ -227,7 +227,7 @@ namespace nspector.Common
             return name;
         }
 
-        public void CreateProfile(string profileName, string applicationName = null)
+        public void CreateProfile(string profileName, string? applicationName = null)
         {
             DrsSession((hSession) =>
             {

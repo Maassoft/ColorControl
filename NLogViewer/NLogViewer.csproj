@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
+		<TargetFramework>net8.0-windows10.0.20348.0</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<RootNamespace>DJ</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -18,7 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="NLog" Version="5.1.2" />
+		<PackageReference Include="NLog" Version="5.2.8" />
 		<PackageReference Include="System.Reactive" Version="6.0.0" />
 	</ItemGroup>
 

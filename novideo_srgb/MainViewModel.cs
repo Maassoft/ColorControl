@@ -32,11 +32,11 @@ namespace novideo_srgb
             }
 
             var hdrPaths = DisplayConfigManager.GetHdrDisplayPaths();
+            var displays = WindowsDisplayAPI.Display.GetDisplays();
 
             var number = 1;
-            foreach (var display in Display.GetDisplays())
+            foreach (var display in GetDisplays())
             {
-                var displays = WindowsDisplayAPI.Display.GetDisplays();
                 var path = displays.FirstOrDefault(x => x.DisplayName == display.Name)?.DevicePath;
                 if (path == null)
                 {
@@ -71,6 +71,18 @@ namespace novideo_srgb
             foreach (var monitor in Monitors)
             {
                 monitor.ReapplyClamp(forceClamp);
+            }
+        }
+
+        private static Display[] GetDisplays()
+        {
+            try
+            {
+                return Display.GetDisplays();
+            }
+            catch (Exception)
+            {
+                return Array.Empty<Display>();
             }
         }
 

@@ -662,7 +662,7 @@ namespace ColorControl.Services.NVIDIA
                     subItemUnchanged.Font = _menuItemFonts[subItemUnchanged.Checked];
                 }
 
-                if (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3)
+                if (NvService.RangeDriverSettings.Contains(driverSetting.SettingId))
                 {
                     var value = settingMeta.DwordValues.FirstOrDefault(v => v.ValueName == driverSetting.ValueText);
 
@@ -670,7 +670,7 @@ namespace ColorControl.Services.NVIDIA
                     var subItem = FormUtils.BuildMenuItem(item.DropDownItems, subItemName, "", onClick: driverSettingFrameRateNvMenuItem_Click);
 
                     var metaValue = settingMeta.DwordValues.FirstOrDefault(v => v.Value == presetSetting);
-                    subItem.Text = $"{metaValue?.ValueName ?? "??FPS"} (click to change)";
+                    subItem.Text = $"{metaValue?.ValueName ?? (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3 ? "??FPS" : "default")} (click to change)";
 
                     subItem.Tag = value?.Value ?? 0;
                     subItem.Checked = presetSetting != defaultValue;

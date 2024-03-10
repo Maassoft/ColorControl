@@ -104,7 +104,7 @@ internal class ColorProfileViewModel : BaseViewModel
     public double WhiteLuminance { get; set; } = 1000;
     [Range(0, 10)]
     public double SDRMinBrightness { get; set; } = 0;
-    [Range(11, 1000)]
+    [Range(11, 10000)]
     public double SDRMaxBrightness { get; set; } = 100;
     [Range(-50, 50)]
     public double SDRBrightnessBoost { get; set; }

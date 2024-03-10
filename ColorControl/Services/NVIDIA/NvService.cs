@@ -7,6 +7,7 @@ using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using novideo_srgb;
 using nspector.Common;
@@ -29,6 +30,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using static ColorControl.Shared.Contracts.NVIDIA.NvHdrSettings;
@@ -78,7 +81,7 @@ namespace ColorControl.Services.NVIDIA
                     PreserveSig = true)]
         private static extern IntPtr NvAPI64_QueryInterface(uint interfaceId);
 
-        [FunctionId(FunctionId.NvAPI_Disp_SetDitherControl)]
+        [FunctionId(FunctionId.NvAPI_GPU_SetDitherControl)]
         public delegate int NvAPI_Disp_SetDitherControl(
             [In] PhysicalGPUHandle physicalGpu,
             [In] uint OutputId,
@@ -87,7 +90,7 @@ namespace ColorControl.Services.NVIDIA
             [In] uint mode
         );
 
-        [FunctionId(FunctionId.NvAPI_Disp_GetDitherControl)]
+        [FunctionId(FunctionId.NvAPI_GPU_GetDitherControl)]
         public delegate int NvAPI_Disp_GetDitherControl(
             [In] uint DisplayId,
             [MarshalAs(UnmanagedType.Struct)] ref NV_GPU_DITHER_CONTROL_V1 ditherControl);
@@ -114,6 +117,11 @@ namespace ColorControl.Services.NVIDIA
             [In] uint DisplayId,
             ref NV_DISPLAY_OUTPUT_MODE pDisplayMode
         );
+
+        [FunctionId(FunctionId.NvAPI_RestartDisplayDriver)]
+        public delegate void NvAPI_RestartDisplayDriver();
+
+        // NvAPI_RestartDisplayDriver B4B26B65
 
         //public struct NV_HDR_METADATA_V1
         //{
@@ -168,6 +176,12 @@ namespace ColorControl.Services.NVIDIA
         //public const uint DRS_ULTRA_LOW_LATENCY      = 0x10835000;
         public const uint DRS_PRERENDERED_FRAMES = 8102046;
         public const uint DRS_FRAME_RATE_LIMITER_V3 = 277041154;
+        public const uint DRS_RTX_HDR_PEAK_BRIGHTNESS = 0x00DD48FC;
+        public const uint DRS_RTX_HDR_MIDDLE_GREY = 0x00DD48FD;
+        public const uint DRS_RTX_HDR_CONTRAST = 0x00DD48FE;
+        public const uint DRS_RTX_HDR_SATURATION = 0x00DD48FF;
+        public const uint DRS_RTX_DYNAMIC_VIBRANCE_INTENSITY = 0x00ABAB22;
+        public const uint DRS_RTX_DYNAMIC_VIBRANCE_SATURATION_BOOST = 0x00ABAB13;
 
         public const uint DRS_ANISOTROPIC_FILTERING_SETTING = 0x101E61A9;
         public const uint DRS_ANISOTROPIC_FILTER_OPTIMIZATION = 0x0084CD70;
@@ -178,6 +192,8 @@ namespace ColorControl.Services.NVIDIA
         public const uint DRS_RBAR_FEATURE = 0X000F00BA;
         public const uint DRS_RBAR_OPTIONS = 0X000F00BB;
         public const uint DRS_RBAR_SIZE_LIMIT = 0X000F00FF;
+
+        public static uint[] RangeDriverSettings = [DRS_FRAME_RATE_LIMITER_V3, DRS_RTX_HDR_PEAK_BRIGHTNESS, DRS_RTX_HDR_MIDDLE_GREY, DRS_RTX_HDR_CONTRAST, DRS_RTX_HDR_SATURATION, DRS_RTX_DYNAMIC_VIBRANCE_INTENSITY, DRS_RTX_DYNAMIC_VIBRANCE_SATURATION_BOOST];
 
         public uint DriverVersion { get; private set; }
         public bool OutputModeAvailable => DriverVersion >= 52500;
@@ -798,15 +814,88 @@ namespace ColorControl.Services.NVIDIA
             return resultValue == 0 ? outputMode : null;
         }
 
-        public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null)
+        public bool SetDitherRegistryKey(string displayRegId, uint state, uint bits = 1, uint mode = 4)
         {
-            var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_SetDitherControl>();
-
-            if (delegateValue == null)
+            if (!_winApiService.IsAdministrator())
             {
-                return false;
+                var result = _rpcClientService.Call<bool>(nameof(SetDitherRegistryKey), displayRegId, state, bits, mode);
+
+                return result;
             }
 
+            const string DOMAIN_ALIAS_RID_ADMINS = "S-1-5-32-544";
+
+            var registryPath = "SYSTEM\\CurrentControlSet\\Services\\nvlddmkm\\State\\DisplayDatabase";
+
+            var displayDbKey = Registry.LocalMachine.OpenSubKey(registryPath);
+
+            var subKeyNames = displayDbKey.GetSubKeyNames().Where(n => n.Contains(displayRegId)).ToList();
+
+            foreach (var subKeyName in subKeyNames)
+            {
+                var keyPath = $"{registryPath}\\{subKeyName}";
+
+                try
+                {
+                    var subKey = Registry.LocalMachine.OpenSubKey(keyPath);
+
+                    var ditherValueName = subKey.GetValueNames().FirstOrDefault(n => n == "DitherRegistryKey");
+
+                    if (ditherValueName == null)
+                    {
+                        continue;
+                    }
+
+                    subKey = Registry.LocalMachine.OpenSubKey(keyPath, RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.ChangePermissions);
+
+                    var accessControl = subKey.GetAccessControl();
+
+                    var rules = accessControl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+                    var accessRules = new RegistryAccessRule[rules.Count];
+                    rules.CopyTo(accessRules, 0);
+
+                    if (!accessRules.Any(r => r.RegistryRights == RegistryRights.FullControl && r.IdentityReference.Value == DOMAIN_ALIAS_RID_ADMINS && r.AccessControlType == AccessControlType.Allow))
+                    {
+                        var ownerIdentity = accessControl.GetOwner(typeof(SecurityIdentifier));
+
+                        var adminFullControlRule = new RegistryAccessRule(ownerIdentity, RegistryRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow);
+
+                        accessControl.SetAccessRule(adminFullControlRule);
+
+                        subKey.SetAccessControl(accessControl);
+                    }
+
+                    subKey = Registry.LocalMachine.OpenSubKey(keyPath, true);
+
+                    var value = subKey.GetValue(ditherValueName) as byte[];
+
+                    if (value == null)
+                    {
+                        continue;
+                    }
+
+                    value[9] = (byte)state;
+                    value[10] = (byte)bits;
+                    value[11] = (byte)mode;
+
+                    // Checksum
+                    value[12] = (byte)value.Take(12).Sum(v => (uint)v);
+
+                    subKey.SetValue(ditherValueName, value, RegistryValueKind.Binary);
+
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Debug($"Cannot get access to registry key: {keyPath} because: {ex.Message}");
+                }
+            }
+
+            return true;
+        }
+
+        public bool SetDithering(NvDitherState state, uint bits = 1, uint mode = 4, NvPreset preset = null, Display currentDisplay = null, bool setRegistryKey = false, bool restartDriver = false)
+        {
             var result = true;
 
             var display = currentDisplay ?? GetCurrentDisplay();
@@ -832,14 +921,71 @@ namespace ColorControl.Services.NVIDIA
                 mode = preset.ditheringMode;
             }
 
-            var resultValue = delegateValue(gpuHandle, displayId, (uint)state, bits, mode);
-            if (resultValue != 0)
+            if (setRegistryKey)
             {
-                Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
-                result = false;
+                var displays = WindowsDisplayAPI.Display.GetDisplays();
+                var path = displays.FirstOrDefault(x => x.DisplayName == display.Name)?.DevicePath;
+
+                if (path == null)
+                {
+                    Logger.Debug($"Cannot find path for display {display.Name}");
+                    return false;
+                }
+
+                var parts = path.Split('#');
+
+                if (parts.Length < 2)
+                {
+                    Logger.Debug($"Incorrect path for display {display.Name}");
+                    return false;
+                }
+
+                var regId = parts[1];
+
+                result = SetDitherRegistryKey(regId, (uint)state, bits, mode);
+
+                if (restartDriver)
+                {
+                    RestartDriver();
+                }
+            }
+            else
+            {
+                var delegateValue = DelegateFactory.GetDelegate<NvAPI_Disp_SetDitherControl>();
+
+                if (delegateValue == null)
+                {
+                    return false;
+                }
+
+                var resultValue = delegateValue(gpuHandle, displayId, (uint)state, bits, mode);
+                if (resultValue != 0)
+                {
+                    Logger.Error($"Could not set dithering because NvAPI_Disp_SetDitherControl returned a non-zero return code: {resultValue}");
+                    result = false;
+                }
             }
 
             return result;
+        }
+
+        public bool RestartDriver()
+        {
+            if (!_winApiService.IsAdministrator())
+            {
+                return _rpcClientService.Call<bool>(nameof(RestartDriver));
+            }
+
+            var restartDelegate = DelegateFactory.GetDelegate<NvAPI_RestartDisplayDriver>();
+
+            if (restartDelegate != null)
+            {
+                restartDelegate();
+
+                return true;
+            }
+
+            return false;
         }
 
         public NV_GPU_DITHER_CONTROL_V1 GetDithering(Display currentDisplay = null)
@@ -1136,6 +1282,8 @@ namespace ColorControl.Services.NVIDIA
 
         public void TestResolution()
         {
+            SetDithering(NvDitherState.Enabled, 1, 4, setRegistryKey: true);
+
             //GetHdrMetaData();
 
             //SetOutputMode(NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_HDR10PLUS_GAMING);

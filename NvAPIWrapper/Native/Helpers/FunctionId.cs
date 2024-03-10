@@ -705,8 +705,6 @@ namespace NvAPIWrapper.Native.Helpers
         // CC: added functions
         NvAPI_Disp_SetOutputMode = 0x98E7661A,
         NvAPI_Disp_GetOutputMode = 0x81FED88D,
-        NvAPI_Disp_SetDitherControl = 0xDF0DFCDD,
-        NvAPI_Disp_GetDitherControl = 0x932AC8FB,
 
         #endregion
 

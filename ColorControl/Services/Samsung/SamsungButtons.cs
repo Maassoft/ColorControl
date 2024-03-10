@@ -11,6 +11,7 @@
         KEY_CHDOWN,
         KEY_ENTER,
         KEY_RETURN,
+        KEY_HOME,
         KEY_CH_LIST,
         KEY_MENU,
         KEY_SOURCE,
@@ -44,5 +45,6 @@
         KEY_AD,
         KEY_PMODE,
         KEY_ASPECT,
+        KEY_AMBIENT
     }
 }

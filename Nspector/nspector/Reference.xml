@@ -4983,5 +4983,152 @@
       <Description />
       <GroupName>8 - Extra</GroupName>
     </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Flags</UserfriendlyName>
+      <HexSettingID>0x00432F84</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off (0x00)</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enable (0x02)</UserfriendlyName>
+          <HexValue>0x00000002</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enable + Indicator (0x03)</UserfriendlyName>
+          <HexValue>0x00000003</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enable + Indicator + Debug (0x23)</UserfriendlyName>
+          <HexValue>0x00000023</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Unknown</UserfriendlyName>
+      <HexSettingID>0x1077A11A</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>On</UserfriendlyName>
+          <HexValue>0x00000001</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Game Filters</UserfriendlyName>
+      <HexSettingID>0x00980896</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>On</UserfriendlyName>
+          <HexValue>0x00000001</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Enable</UserfriendlyName>
+      <HexSettingID>0x00DD48FB</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>On</UserfriendlyName>
+          <HexValue>0x00000001</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Peak Brightness</UserfriendlyName>
+      <HexSettingID>0x00DD48FC</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Middle Grey</UserfriendlyName>
+      <HexSettingID>0x00DD48FD</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Contrast</UserfriendlyName>
+      <HexSettingID>0x00DD48FE</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Saturation</UserfriendlyName>
+      <HexSettingID>0x00DD48FF</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX Dynamic Vibrance - Enable</UserfriendlyName>
+      <HexSettingID>0x00980880</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>On</UserfriendlyName>
+          <HexValue>0x00000001</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX Dynamic Vibrance - Intensity</UserfriendlyName>
+      <HexSettingID>0x00ABAB22</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>RTX Dynamic Vibrance - Saturation Boost</UserfriendlyName>
+      <HexSettingID>0x00ABAB13</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
   </Settings>
 </CustomSettingNames>

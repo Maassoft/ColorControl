@@ -29,103 +29,104 @@ namespace ColorControl.Services.LG
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.flowPanel = new System.Windows.Forms.FlowLayoutPanel();
-            this.btnClose = new System.Windows.Forms.Button();
-            this.lblTvName = new System.Windows.Forms.Label();
-            this.tmrHide = new System.Windows.Forms.Timer(this.components);
-            this.lblProcessName = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            components = new System.ComponentModel.Container();
+            flowPanel = new System.Windows.Forms.FlowLayoutPanel();
+            btnClose = new System.Windows.Forms.Button();
+            lblTvName = new System.Windows.Forms.Label();
+            tmrHide = new System.Windows.Forms.Timer(components);
+            lblProcessName = new System.Windows.Forms.Label();
+            SuspendLayout();
             // 
             // flowPanel
             // 
-            this.flowPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.flowPanel.Location = new System.Drawing.Point(14, 47);
-            this.flowPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.flowPanel.Name = "flowPanel";
-            this.flowPanel.Size = new System.Drawing.Size(270, 325);
-            this.flowPanel.TabIndex = 0;
-            this.flowPanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RemoteControlForm_MouseDown);
-            this.flowPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.flowPanel_MouseMove);
-            this.flowPanel.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.flowPanel_PreviewKeyDown);
+            flowPanel.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            flowPanel.Location = new System.Drawing.Point(14, 47);
+            flowPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            flowPanel.Name = "flowPanel";
+            flowPanel.Size = new System.Drawing.Size(270, 325);
+            flowPanel.TabIndex = 0;
+            flowPanel.MouseDown += RemoteControlForm_MouseDown;
+            flowPanel.MouseEnter += flowPanel_MouseEnter;
+            flowPanel.MouseMove += flowPanel_MouseMove;
+            flowPanel.PreviewKeyDown += flowPanel_PreviewKeyDown;
             // 
             // btnClose
             // 
-            this.btnClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnClose.FlatAppearance.BorderColor = System.Drawing.Color.DarkGray;
-            this.btnClose.FlatAppearance.BorderSize = 0;
-            this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClose.ForeColor = System.Drawing.Color.White;
-            this.btnClose.Location = new System.Drawing.Point(280, 0);
-            this.btnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(16, 27);
-            this.btnClose.TabIndex = 1;
-            this.btnClose.TabStop = false;
-            this.btnClose.Text = "x";
-            this.btnClose.UseVisualStyleBackColor = true;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            btnClose.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            btnClose.FlatAppearance.BorderColor = System.Drawing.Color.DarkGray;
+            btnClose.FlatAppearance.BorderSize = 0;
+            btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            btnClose.ForeColor = System.Drawing.Color.White;
+            btnClose.Location = new System.Drawing.Point(280, 0);
+            btnClose.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnClose.Name = "btnClose";
+            btnClose.Size = new System.Drawing.Size(16, 27);
+            btnClose.TabIndex = 1;
+            btnClose.TabStop = false;
+            btnClose.Text = "x";
+            btnClose.UseVisualStyleBackColor = true;
+            btnClose.Click += btnClose_Click;
             // 
             // lblTvName
             // 
-            this.lblTvName.AutoSize = true;
-            this.lblTvName.ForeColor = System.Drawing.Color.White;
-            this.lblTvName.Location = new System.Drawing.Point(14, 0);
-            this.lblTvName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblTvName.Name = "lblTvName";
-            this.lblTvName.Size = new System.Drawing.Size(25, 15);
-            this.lblTvName.TabIndex = 0;
-            this.lblTvName.Text = "      ";
+            lblTvName.AutoSize = true;
+            lblTvName.ForeColor = System.Drawing.Color.White;
+            lblTvName.Location = new System.Drawing.Point(14, 0);
+            lblTvName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblTvName.Name = "lblTvName";
+            lblTvName.Size = new System.Drawing.Size(25, 15);
+            lblTvName.TabIndex = 0;
+            lblTvName.Text = "      ";
             // 
             // tmrHide
             // 
-            this.tmrHide.Interval = 5000;
-            this.tmrHide.Tick += new System.EventHandler(this.tmrHide_Tick);
+            tmrHide.Interval = 5000;
+            tmrHide.Tick += tmrHide_Tick;
             // 
             // lblProcessName
             // 
-            this.lblProcessName.AutoSize = true;
-            this.lblProcessName.ForeColor = System.Drawing.Color.White;
-            this.lblProcessName.Location = new System.Drawing.Point(14, 23);
-            this.lblProcessName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblProcessName.Name = "lblProcessName";
-            this.lblProcessName.Size = new System.Drawing.Size(25, 15);
-            this.lblProcessName.TabIndex = 2;
-            this.lblProcessName.Text = "      ";
+            lblProcessName.AutoSize = true;
+            lblProcessName.ForeColor = System.Drawing.Color.White;
+            lblProcessName.Location = new System.Drawing.Point(14, 23);
+            lblProcessName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblProcessName.Name = "lblProcessName";
+            lblProcessName.Size = new System.Drawing.Size(25, 15);
+            lblProcessName.TabIndex = 2;
+            lblProcessName.Text = "      ";
             // 
             // LgGameBar
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(298, 387);
-            this.Controls.Add(this.lblProcessName);
-            this.Controls.Add(this.lblTvName);
-            this.Controls.Add(this.btnClose);
-            this.Controls.Add(this.flowPanel);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.KeyPreview = true;
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "LgGameBar";
-            this.Opacity = 0.7D;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "RemoteControlForm";
-            this.TopMost = true;
-            this.Activated += new System.EventHandler(this.LgGameBar_Activated);
-            this.Deactivate += new System.EventHandler(this.LgGameBar_Deactivate);
-            this.Load += new System.EventHandler(this.RemoteControlForm_Load);
-            this.Shown += new System.EventHandler(this.RemoteControlForm_Shown);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.RemoteControlForm_KeyDown);
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.RemoteControlForm_KeyUp);
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.RemoteControlForm_MouseDown);
-            this.Move += new System.EventHandler(this.LgGameBar_Move);
-            this.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.RemoteControlForm_PreviewKeyDown);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            BackColor = System.Drawing.Color.Black;
+            ClientSize = new System.Drawing.Size(298, 387);
+            Controls.Add(lblProcessName);
+            Controls.Add(lblTvName);
+            Controls.Add(btnClose);
+            Controls.Add(flowPanel);
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            KeyPreview = true;
+            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "LgGameBar";
+            Opacity = 0.7D;
+            StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+            Text = "RemoteControlForm";
+            TopMost = true;
+            Activated += LgGameBar_Activated;
+            Deactivate += LgGameBar_Deactivate;
+            Load += RemoteControlForm_Load;
+            Shown += RemoteControlForm_Shown;
+            KeyDown += RemoteControlForm_KeyDown;
+            KeyUp += RemoteControlForm_KeyUp;
+            MouseDown += RemoteControlForm_MouseDown;
+            MouseEnter += LgGameBar_MouseEnter;
+            MouseLeave += LgGameBar_MouseLeave;
+            Move += LgGameBar_Move;
+            PreviewKeyDown += RemoteControlForm_PreviewKeyDown;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

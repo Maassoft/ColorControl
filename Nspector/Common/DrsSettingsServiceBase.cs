@@ -240,7 +240,7 @@ namespace nspector.Common
 
         protected List<IntPtr> EnumProfileHandles(IntPtr hSession)
         {
-            var profileHandles = new List<IntPtr>();
+            var profileHandles = new List<IntPtr>(5000);
             var hProfile = IntPtr.Zero;
             uint index = 0;
 
@@ -295,7 +295,7 @@ namespace nspector.Common
             return settings.ToList();
         }
 
-        protected List<NVDRS_APPLICATION_V3> GetProfileApplications(IntPtr hSession, IntPtr hProfile)
+        protected List<NVDRS_APPLICATION_V3>? GetProfileApplications(IntPtr hSession, IntPtr hProfile, bool returnNullIfNotFound = false)
         {
             uint appCount = 8;
 
@@ -307,7 +307,7 @@ namespace nspector.Common
             var esRes = NvapiDrsWrapper.DRS_EnumApplications(hSession, hProfile, 0, ref appCount, out apps);
 
             if (esRes == NvAPI_Status.NVAPI_END_ENUMERATION)
-                return new List<NVDRS_APPLICATION_V3>();
+                return returnNullIfNotFound ? null : new List<NVDRS_APPLICATION_V3>();
 
             if (esRes != NvAPI_Status.NVAPI_OK)
                 throw new NvapiException("DRS_EnumApplications", esRes);

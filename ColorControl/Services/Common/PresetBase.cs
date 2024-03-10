@@ -96,7 +96,7 @@ namespace ColorControl.Services.Common
             }
             else
             {
-                active = context.Triggers.Contains(Trigger);
+                active = active && context.Triggers.Contains(Trigger);
             }
 
             return active;

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0-windows10.0.20348.0</TargetFramework>
+		<TargetFramework>net8.0-windows10.0.20348.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<UseWPF>true</UseWPF>
@@ -25,15 +25,15 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="NLog" Version="5.1.2" />
-		<PackageReference Include="NStandard" Version="0.24.0" />
+		<PackageReference Include="NLog" Version="5.2.8" />
+		<PackageReference Include="NStandard" Version="0.59.0" />
 		<PackageReference Include="NWin32" Version="1.2.6" />
-		<PackageReference Include="System.Management" Version="7.0.0" />
+		<PackageReference Include="System.Management" Version="8.0.0" />
 		<PackageReference Include="TaskScheduler" Version="2.10.1" />
-		<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.13" />
-		<PackageReference Include="RawInput.Sharp" Version="0.1.1" />
+		<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.17" />
+		<PackageReference Include="RawInput.Sharp" Version="0.1.3" />
 	</ItemGroup>
 
 	<ItemGroup>

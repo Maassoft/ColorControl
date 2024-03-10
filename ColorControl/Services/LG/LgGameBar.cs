@@ -23,6 +23,7 @@ namespace ColorControl.Services.LG
         private LgDevice _lgDevice;
         private ToolTip _toolTip;
         private bool _settingChanged = false;
+        private bool _mouseHovering = false;
         private List<TrackBar> _trackBars = new List<TrackBar>();
         private List<string> _lastActions = new List<string>();
 
@@ -279,6 +280,12 @@ namespace ColorControl.Services.LG
         {
             _lgService.Config.GameBarLeft = Left;
             _lgService.Config.GameBarTop = Top;
+
+            if (_mouseHovering)
+            {
+                return;
+            }
+
             Hide();
         }
 
@@ -301,7 +308,18 @@ namespace ColorControl.Services.LG
                 value = enumValue.ToString();
             }
 
-            await _lgDevice.SetSystemSettings(setting.Name, value);
+            try
+            {
+                if (setting.Name == "audioVolume")
+                {
+                    await _lgDevice.SetVolume(Utils.ParseInt(value));
+                }
+                else
+                {
+                    await _lgDevice.SetSystemSettings(setting.Name, value);
+                }
+            }
+            catch (Exception) { }
 
             if (_toolTip != null)
             {
@@ -324,7 +342,23 @@ namespace ColorControl.Services.LG
         private void ResetAutoHide()
         {
             tmrHide.Enabled = false;
+            tmrHide.Interval = _lgService.Config.GameBarShowingTime;
             tmrHide.Enabled = true;
+        }
+
+        private void LgGameBar_MouseEnter(object sender, EventArgs e)
+        {
+            _mouseHovering = true;
+        }
+
+        private void LgGameBar_MouseLeave(object sender, EventArgs e)
+        {
+            _mouseHovering = false;
+        }
+
+        private void flowPanel_MouseEnter(object sender, EventArgs e)
+        {
+            _mouseHovering = true;
         }
     }
 }

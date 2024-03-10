@@ -259,6 +259,8 @@ namespace ColorControl
                     services.AddTransient<ColorProfileWindow>();
                     services.AddSingleton<RestartDetector>();
                     services.AddSingleton<InfoPanel>();
+                    services.AddSingleton<OptionsPanel>();
+                    services.AddSingleton<ElevationService>();
                 });
         }
         private static async Task RunService(string[] args)
@@ -334,6 +336,16 @@ namespace ColorControl
             Logger.Error(message);
 
             MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        internal static void SetTheme(bool useDarkMode)
+        {
+            _mainForm?.SetTheme(useDarkMode);
+        }
+
+        internal static NotifyIcon GetNotifyIcon()
+        {
+            return _mainForm?._trayIcon;
         }
     }
 }

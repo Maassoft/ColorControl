@@ -28,145 +28,179 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.grpNvidiaOptions = new System.Windows.Forms.GroupBox();
-            this.lblDitheringDisplay = new System.Windows.Forms.Label();
-            this.cbxDitheringDisplay = new System.Windows.Forms.ComboBox();
-            this.lblDitheringMode = new System.Windows.Forms.Label();
-            this.cbxDitheringMode = new System.Windows.Forms.ComboBox();
-            this.lblDitheringBitDepth = new System.Windows.Forms.Label();
-            this.cbxDitheringBitDepth = new System.Windows.Forms.ComboBox();
-            this.chkDitheringEnabled = new System.Windows.Forms.CheckBox();
-            this.pbGradient = new System.Windows.Forms.PictureBox();
-            this.grpNvidiaOptions.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).BeginInit();
-            this.SuspendLayout();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NvDitherPanel));
+            grpNvidiaOptions = new System.Windows.Forms.GroupBox();
+            btnSetRegistryKey = new System.Windows.Forms.Button();
+            btnRestartDriver = new System.Windows.Forms.Button();
+            lblDitherRegistry = new System.Windows.Forms.Label();
+            lblDitheringDisplay = new System.Windows.Forms.Label();
+            cbxDitheringDisplay = new System.Windows.Forms.ComboBox();
+            lblDitheringMode = new System.Windows.Forms.Label();
+            cbxDitheringMode = new System.Windows.Forms.ComboBox();
+            lblDitheringBitDepth = new System.Windows.Forms.Label();
+            cbxDitheringBitDepth = new System.Windows.Forms.ComboBox();
+            chkDitheringEnabled = new System.Windows.Forms.CheckBox();
+            pbGradient = new System.Windows.Forms.PictureBox();
+            grpNvidiaOptions.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbGradient).BeginInit();
+            SuspendLayout();
             // 
             // grpNvidiaOptions
             // 
-            this.grpNvidiaOptions.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringDisplay);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringDisplay);
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringMode);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringMode);
-            this.grpNvidiaOptions.Controls.Add(this.lblDitheringBitDepth);
-            this.grpNvidiaOptions.Controls.Add(this.cbxDitheringBitDepth);
-            this.grpNvidiaOptions.Controls.Add(this.chkDitheringEnabled);
-            this.grpNvidiaOptions.Controls.Add(this.pbGradient);
-            this.grpNvidiaOptions.Location = new System.Drawing.Point(4, 3);
-            this.grpNvidiaOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpNvidiaOptions.Name = "grpNvidiaOptions";
-            this.grpNvidiaOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.grpNvidiaOptions.Size = new System.Drawing.Size(856, 479);
-            this.grpNvidiaOptions.TabIndex = 6;
-            this.grpNvidiaOptions.TabStop = false;
-            this.grpNvidiaOptions.Text = "NVIDIA options - test dithering";
+            grpNvidiaOptions.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            grpNvidiaOptions.Controls.Add(btnSetRegistryKey);
+            grpNvidiaOptions.Controls.Add(btnRestartDriver);
+            grpNvidiaOptions.Controls.Add(lblDitherRegistry);
+            grpNvidiaOptions.Controls.Add(lblDitheringDisplay);
+            grpNvidiaOptions.Controls.Add(cbxDitheringDisplay);
+            grpNvidiaOptions.Controls.Add(lblDitheringMode);
+            grpNvidiaOptions.Controls.Add(cbxDitheringMode);
+            grpNvidiaOptions.Controls.Add(lblDitheringBitDepth);
+            grpNvidiaOptions.Controls.Add(cbxDitheringBitDepth);
+            grpNvidiaOptions.Controls.Add(chkDitheringEnabled);
+            grpNvidiaOptions.Controls.Add(pbGradient);
+            grpNvidiaOptions.Location = new System.Drawing.Point(4, 3);
+            grpNvidiaOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            grpNvidiaOptions.MinimumSize = new System.Drawing.Size(300, 100);
+            grpNvidiaOptions.Name = "grpNvidiaOptions";
+            grpNvidiaOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            grpNvidiaOptions.Size = new System.Drawing.Size(856, 479);
+            grpNvidiaOptions.TabIndex = 6;
+            grpNvidiaOptions.TabStop = false;
+            grpNvidiaOptions.Text = "NVIDIA options - test dithering";
+            // 
+            // btnSetRegistryKey
+            // 
+            btnSetRegistryKey.Location = new System.Drawing.Point(381, 17);
+            btnSetRegistryKey.Name = "btnSetRegistryKey";
+            btnSetRegistryKey.Size = new System.Drawing.Size(150, 23);
+            btnSetRegistryKey.TabIndex = 13;
+            btnSetRegistryKey.Text = "Set dither registry key";
+            btnSetRegistryKey.UseVisualStyleBackColor = true;
+            btnSetRegistryKey.Click += btnSetRegistryKey_Click;
+            // 
+            // btnRestartDriver
+            // 
+            btnRestartDriver.Location = new System.Drawing.Point(539, 16);
+            btnRestartDriver.Name = "btnRestartDriver";
+            btnRestartDriver.Size = new System.Drawing.Size(150, 23);
+            btnRestartDriver.TabIndex = 12;
+            btnRestartDriver.Text = "Restart driver";
+            btnRestartDriver.UseVisualStyleBackColor = true;
+            btnRestartDriver.Click += btnRestartDriver_Click;
+            // 
+            // lblDitherRegistry
+            // 
+            lblDitherRegistry.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            lblDitherRegistry.Location = new System.Drawing.Point(381, 47);
+            lblDitherRegistry.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblDitherRegistry.Name = "lblDitherRegistry";
+            lblDitherRegistry.Size = new System.Drawing.Size(467, 78);
+            lblDitherRegistry.TabIndex = 11;
+            lblDitherRegistry.Text = resources.GetString("lblDitherRegistry.Text");
             // 
             // lblDitheringDisplay
             // 
-            this.lblDitheringDisplay.AutoSize = true;
-            this.lblDitheringDisplay.Location = new System.Drawing.Point(8, 23);
-            this.lblDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringDisplay.Name = "lblDitheringDisplay";
-            this.lblDitheringDisplay.Size = new System.Drawing.Size(48, 15);
-            this.lblDitheringDisplay.TabIndex = 9;
-            this.lblDitheringDisplay.Text = "Display:";
+            lblDitheringDisplay.AutoSize = true;
+            lblDitheringDisplay.Location = new System.Drawing.Point(8, 23);
+            lblDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblDitheringDisplay.Name = "lblDitheringDisplay";
+            lblDitheringDisplay.Size = new System.Drawing.Size(48, 15);
+            lblDitheringDisplay.TabIndex = 9;
+            lblDitheringDisplay.Text = "Display:";
             // 
             // cbxDitheringDisplay
             // 
-            this.cbxDitheringDisplay.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringDisplay.FormattingEnabled = true;
-            this.cbxDitheringDisplay.Location = new System.Drawing.Point(75, 17);
-            this.cbxDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringDisplay.Name = "cbxDitheringDisplay";
-            this.cbxDitheringDisplay.Size = new System.Drawing.Size(212, 23);
-            this.cbxDitheringDisplay.TabIndex = 8;
-            this.cbxDitheringDisplay.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringDisplay_SelectedIndexChanged);
+            cbxDitheringDisplay.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cbxDitheringDisplay.DropDownWidth = 300;
+            cbxDitheringDisplay.FormattingEnabled = true;
+            cbxDitheringDisplay.Location = new System.Drawing.Point(75, 17);
+            cbxDitheringDisplay.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cbxDitheringDisplay.Name = "cbxDitheringDisplay";
+            cbxDitheringDisplay.Size = new System.Drawing.Size(298, 23);
+            cbxDitheringDisplay.TabIndex = 8;
+            cbxDitheringDisplay.SelectedIndexChanged += cbxDitheringDisplay_SelectedIndexChanged;
             // 
             // lblDitheringMode
             // 
-            this.lblDitheringMode.AutoSize = true;
-            this.lblDitheringMode.Location = new System.Drawing.Point(8, 105);
-            this.lblDitheringMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringMode.Name = "lblDitheringMode";
-            this.lblDitheringMode.Size = new System.Drawing.Size(41, 15);
-            this.lblDitheringMode.TabIndex = 7;
-            this.lblDitheringMode.Text = "Mode:";
+            lblDitheringMode.AutoSize = true;
+            lblDitheringMode.Location = new System.Drawing.Point(8, 105);
+            lblDitheringMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblDitheringMode.Name = "lblDitheringMode";
+            lblDitheringMode.Size = new System.Drawing.Size(41, 15);
+            lblDitheringMode.TabIndex = 7;
+            lblDitheringMode.Text = "Mode:";
             // 
             // cbxDitheringMode
             // 
-            this.cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringMode.FormattingEnabled = true;
-            this.cbxDitheringMode.Location = new System.Drawing.Point(75, 99);
-            this.cbxDitheringMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringMode.Name = "cbxDitheringMode";
-            this.cbxDitheringMode.Size = new System.Drawing.Size(136, 23);
-            this.cbxDitheringMode.TabIndex = 6;
-            this.cbxDitheringMode.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringMode_SelectedIndexChanged);
+            cbxDitheringMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cbxDitheringMode.FormattingEnabled = true;
+            cbxDitheringMode.Location = new System.Drawing.Point(75, 99);
+            cbxDitheringMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cbxDitheringMode.Name = "cbxDitheringMode";
+            cbxDitheringMode.Size = new System.Drawing.Size(136, 23);
+            cbxDitheringMode.TabIndex = 6;
+            cbxDitheringMode.SelectedIndexChanged += cbxDitheringMode_SelectedIndexChanged;
             // 
             // lblDitheringBitDepth
             // 
-            this.lblDitheringBitDepth.AutoSize = true;
-            this.lblDitheringBitDepth.Location = new System.Drawing.Point(8, 74);
-            this.lblDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblDitheringBitDepth.Name = "lblDitheringBitDepth";
-            this.lblDitheringBitDepth.Size = new System.Drawing.Size(60, 15);
-            this.lblDitheringBitDepth.TabIndex = 5;
-            this.lblDitheringBitDepth.Text = "Bit-depth:";
+            lblDitheringBitDepth.AutoSize = true;
+            lblDitheringBitDepth.Location = new System.Drawing.Point(8, 74);
+            lblDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblDitheringBitDepth.Name = "lblDitheringBitDepth";
+            lblDitheringBitDepth.Size = new System.Drawing.Size(60, 15);
+            lblDitheringBitDepth.TabIndex = 5;
+            lblDitheringBitDepth.Text = "Bit-depth:";
             // 
             // cbxDitheringBitDepth
             // 
-            this.cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbxDitheringBitDepth.FormattingEnabled = true;
-            this.cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 68);
-            this.cbxDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
-            this.cbxDitheringBitDepth.Size = new System.Drawing.Size(136, 23);
-            this.cbxDitheringBitDepth.TabIndex = 4;
-            this.cbxDitheringBitDepth.SelectedIndexChanged += new System.EventHandler(this.cbxDitheringBitDepth_SelectedIndexChanged);
+            cbxDitheringBitDepth.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cbxDitheringBitDepth.FormattingEnabled = true;
+            cbxDitheringBitDepth.Location = new System.Drawing.Point(75, 68);
+            cbxDitheringBitDepth.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cbxDitheringBitDepth.Name = "cbxDitheringBitDepth";
+            cbxDitheringBitDepth.Size = new System.Drawing.Size(136, 23);
+            cbxDitheringBitDepth.TabIndex = 4;
+            cbxDitheringBitDepth.SelectedIndexChanged += cbxDitheringBitDepth_SelectedIndexChanged;
             // 
             // chkDitheringEnabled
             // 
-            this.chkDitheringEnabled.AutoSize = true;
-            this.chkDitheringEnabled.Checked = true;
-            this.chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkDitheringEnabled.Location = new System.Drawing.Point(8, 46);
-            this.chkDitheringEnabled.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkDitheringEnabled.Name = "chkDitheringEnabled";
-            this.chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
-            this.chkDitheringEnabled.TabIndex = 3;
-            this.chkDitheringEnabled.Text = "Dithering enabled";
-            this.chkDitheringEnabled.ThreeState = true;
-            this.chkDitheringEnabled.UseVisualStyleBackColor = true;
-            this.chkDitheringEnabled.CheckStateChanged += new System.EventHandler(this.chkDitheringEnabled_CheckStateChanged);
+            chkDitheringEnabled.AutoSize = true;
+            chkDitheringEnabled.Checked = true;
+            chkDitheringEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+            chkDitheringEnabled.Location = new System.Drawing.Point(8, 46);
+            chkDitheringEnabled.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkDitheringEnabled.Name = "chkDitheringEnabled";
+            chkDitheringEnabled.Size = new System.Drawing.Size(120, 19);
+            chkDitheringEnabled.TabIndex = 3;
+            chkDitheringEnabled.Text = "Dithering enabled";
+            chkDitheringEnabled.ThreeState = true;
+            chkDitheringEnabled.UseVisualStyleBackColor = true;
+            chkDitheringEnabled.CheckStateChanged += chkDitheringEnabled_CheckStateChanged;
             // 
             // pbGradient
             // 
-            this.pbGradient.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pbGradient.Location = new System.Drawing.Point(8, 128);
-            this.pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.pbGradient.Name = "pbGradient";
-            this.pbGradient.Size = new System.Drawing.Size(840, 345);
-            this.pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pbGradient.TabIndex = 0;
-            this.pbGradient.TabStop = false;
+            pbGradient.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            pbGradient.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            pbGradient.Location = new System.Drawing.Point(8, 128);
+            pbGradient.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            pbGradient.Name = "pbGradient";
+            pbGradient.Size = new System.Drawing.Size(840, 345);
+            pbGradient.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            pbGradient.TabIndex = 0;
+            pbGradient.TabStop = false;
             // 
             // NvDitherPanel
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.grpNvidiaOptions);
-            this.Name = "NvDitherPanel";
-            this.Size = new System.Drawing.Size(864, 485);
-            this.grpNvidiaOptions.ResumeLayout(false);
-            this.grpNvidiaOptions.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbGradient)).EndInit();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Controls.Add(grpNvidiaOptions);
+            Name = "NvDitherPanel";
+            Size = new System.Drawing.Size(864, 485);
+            grpNvidiaOptions.ResumeLayout(false);
+            grpNvidiaOptions.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbGradient).EndInit();
+            ResumeLayout(false);
         }
 
         #endregion
@@ -180,5 +214,8 @@
         private System.Windows.Forms.CheckBox chkDitheringEnabled;
         private System.Windows.Forms.Label lblDitheringDisplay;
         private System.Windows.Forms.ComboBox cbxDitheringDisplay;
+        private System.Windows.Forms.Label lblDitherRegistry;
+        private System.Windows.Forms.Button btnRestartDriver;
+        private System.Windows.Forms.Button btnSetRegistryKey;
     }
 }

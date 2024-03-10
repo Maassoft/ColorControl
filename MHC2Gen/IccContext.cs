@@ -112,6 +112,23 @@ namespace MHC2Gen
             }
         }
 
+        public void ApplyGamma()
+        {
+            var lutSize = 1024;
+
+            RegammaLUT = new double[3, lutSize];
+
+            for (var i = 0; i < lutSize; i++)
+            {
+                var value = CmsFunctions.RgbToLinear((double)i / (lutSize - 1), 1.0);
+
+                for (var c = 0; c < 3; c++)
+                {
+                    RegammaLUT[c, i] = value;
+                }
+            }
+        }
+
         private static int EncodeS15F16(double value)
         {
             var x = (int)Math.Round(value * 65536);
@@ -937,6 +954,10 @@ namespace MHC2Gen
                 MaxCLL = command.MaxCLL
             };
 
+            //if (!command.IsHDRProfile)
+            //{
+            //    MHC2.ApplyGamma();
+            //}
             if (!command.IsHDRProfile || command.SDRTransferFunction == SDRTransferFunction.Piecewise)
             {
                 MHC2.ApplyPiecewise();

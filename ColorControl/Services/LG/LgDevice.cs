@@ -38,6 +38,7 @@ namespace ColorControl.Services.LG
             public int Contrast { get; set; }
             public int Brightness { get; set; }
             public int Color { get; set; }
+            public int Volume { get; set; }
         }
 
         public enum PowerState
@@ -199,7 +200,7 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("blackLevel", typeof(BlackLevel), title: "HDMI Black Level");
             AddGenericPictureAction("dolbyPrecisionDetail", typeof(OffToOn), title: "Dolby Precision Detail", fromModelYear: ModelYear.Series2022);
 
-            AddGenericPictureAction("ai_Brightness", typeof(OffToOn), title: "AI Brightness", fromModelYear: ModelYear.Series2021, category: "aiPicture");
+            AddGenericPictureAction("ai_Brightness", typeof(OffToOn), title: "AI Brightness", fromModelYear: ModelYear.Series2019, category: "aiPicture");
             AddGenericPictureAction("ai_Genre", typeof(OffToOn), title: "AI Genre Selection", fromModelYear: ModelYear.Series2021, category: "aiPicture");
             AddGenericPictureAction("ai_Picture", typeof(OffToOn), title: "AI Picture Pro", fromModelYear: ModelYear.Series2021, category: "aiPicture");
 
@@ -225,6 +226,8 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("blackStabilizer", minValue: -30, maxValue: 30, category: "other", title: "Black Stabilizer", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("whiteStabilizer", minValue: -30, maxValue: 30, category: "other", title: "White Stabilizer", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("blueLight", typeof(BlueLight), category: "other", title: "Reduce Blue Light", fromModelYear: ModelYear.Series2021);
+            AddGenericPictureAction("noiseReduction", typeof(OffToHigh), title: "Noise Reduction");
+            AddGenericPictureAction("mpegNoiseReduction", typeof(OffToHigh), title: "MPEG Noise Reduction");
 
             AddHdmiPictureAction("gameMode_hdmi", typeof(OffToOn), category: "other", title: "Game Optimizer HDMI1", fromModelYear: ModelYear.Series2021);
             AddGenericPictureAction("gameOptimization", typeof(OffToOn), category: "other", title: "VRR & G-Sync", fromModelYear: ModelYear.Series2021);
@@ -262,6 +265,7 @@ namespace ColorControl.Services.LG
             AddSetDeviceConfigAction("HDMI_3_icon", typeof(HdmiIcon), "HDMI 3 icon");
             AddSetDeviceConfigAction("HDMI_4_icon", typeof(HdmiIcon), "HDMI 4 icon");
 
+            AddVolumeAction("audioVolume", "Volume");
             AddGenericPictureAction("soundMode", typeof(SoundMode), category: "sound", title: "Sound Mode");
             AddGenericPictureAction("smartSoundMode", typeof(OffToOn), category: "sound", title: "Adaptive Sound Control");
             AddGenericPictureAction("soundOutput", typeof(SoundOutput), category: "sound", title: "Sound Output");
@@ -378,6 +382,22 @@ namespace ColorControl.Services.LG
             _invokableActions.Add(action);
         }
 
+        private void AddVolumeAction(string name, string title, ModelYear fromModelYear = ModelYear.None)
+        {
+            var action = new InvokableAction
+            {
+                Name = name,
+                AsyncFunction = GenericVolumeAction,
+                MinValue = 0,
+                MaxValue = 100,
+                Title = title == null ? Utils.FirstCharUpperCase(name) : title,
+                Category = "sound",
+                FromModelYear = fromModelYear
+            };
+
+            _invokableActions.Add(action);
+        }
+
         public void AddGameBarAction(string name)
         {
             if (!ActionsOnGameBar.Contains(name))
@@ -424,7 +444,7 @@ namespace ColorControl.Services.LG
                             SetModelYear();
                         }
 
-                        //await _lgTvApi.SubscribeVolume(VolumeChanged);
+                        await _lgTvApi.SubscribeVolume(VolumeChanged);
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);
                         await _lgTvApi.SubscribeForegroundApp(ForegroundAppChanged);
@@ -493,6 +513,20 @@ namespace ColorControl.Services.LG
 
         public bool VolumeChanged(dynamic payload)
         {
+            if (payload.volume != null)
+            {
+                PictureSettings.Volume = Utils.ParseDynamicAsInt(payload.volume, PictureSettings.Volume);
+            }
+
+            var volumeAction = _invokableActions.FirstOrDefault(a => a.Name == "audioVolume");
+
+            if (volumeAction != null)
+            {
+                volumeAction.CurrentValue = PictureSettings.Volume;
+            }
+
+            PictureSettingsChangedEvent?.Invoke(this, EventArgs.Empty);
+
             return true;
         }
 
@@ -985,7 +1019,11 @@ namespace ColorControl.Services.LG
         public List<InvokableAction> GetInvokableActionsForGameBar()
         {
             var actions = GetInvokableActions();
-            return actions.Where(a => a.Category == "picture" && (a.EnumType != null && a.EnumType != typeof(PictureMode) || a.MinValue >= 0 && a.MaxValue > 0)).ToList();
+            return actions.Where(a =>
+                                 a.Category == "picture" && (a.EnumType != null && a.EnumType != typeof(PictureMode) || a.MinValue >= 0 && a.MaxValue > 0) ||
+                                 a.Name == "audioVolume"
+                                 )
+                          .ToList();
         }
 
         public List<InvokableAction> GetActionsForGameBar()
@@ -1174,6 +1212,25 @@ namespace ColorControl.Services.LG
             await _lgTvApi.SetTpcOrGsr(key, value?.ToString() == "bool_true");
 
             return true;
+        }
+
+        private async Task<bool> GenericVolumeAction(Dictionary<string, object> parameters)
+        {
+            await CheckConnectionAsync();
+
+            var values = parameters["value"] as object[];
+            var value = values[0];
+
+            var volume = Utils.ParseInt(value.ToString(), 0);
+
+            await _lgTvApi.SetVolume(volume);
+
+            return true;
+        }
+
+        public Task SetVolume(int value)
+        {
+            return _lgTvApi.SetVolume(value);
         }
 
         private void UpdateCurrentValueOfAction(string settingName, string value)

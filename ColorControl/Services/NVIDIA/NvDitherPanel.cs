@@ -93,11 +93,11 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        private void ApplyDitheringOptions()
+        private bool ApplyDitheringOptions(bool setRegistry = false, bool restartDriver = false)
         {
             if (_updatingDitherSettings)
             {
-                return;
+                return false;
             }
 
             var state = chkDitheringEnabled.CheckState switch { CheckState.Checked => NvDitherState.Enabled, CheckState.Unchecked => NvDitherState.Disabled, _ => NvDitherState.Auto };
@@ -105,10 +105,14 @@ namespace ColorControl.Services.NVIDIA
             var mode = cbxDitheringMode.SelectedIndex;
             var display = ((NvDisplayInfo)cbxDitheringDisplay.SelectedItem)?.Display;
 
-            if (_nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal), currentDisplay: display) && state == NvDitherState.Auto)
+            var result = _nvService.SetDithering(state, (uint)bitDepth, (uint)(mode > -1 ? mode : (int)NvDitherMode.Temporal), currentDisplay: display, setRegistryKey: setRegistry, restartDriver: restartDriver);
+
+            if (result && state == NvDitherState.Auto)
             {
                 UpdateDitherSettings();
             }
+
+            return result;
         }
 
         private void cbxDitheringBitDepth_SelectedIndexChanged(object sender, EventArgs e)
@@ -143,6 +147,23 @@ namespace ColorControl.Services.NVIDIA
         {
             RefreshDisplays();
             UpdateDitherSettings();
+        }
+
+        private void btnRestartDriver_Click(object sender, EventArgs e)
+        {
+            _nvService.RestartDriver();
+        }
+
+        private void btnSetRegistryKey_Click(object sender, EventArgs e)
+        {
+            if (ApplyDitheringOptions(true))
+            {
+                MessageForms.InfoOk("Dither settings successfully written to the registry.");
+            }
+            else
+            {
+                MessageForms.ErrorOk("There was an error writing the dither settings to the registry. See the log for more details.");
+            }
         }
     }
 }

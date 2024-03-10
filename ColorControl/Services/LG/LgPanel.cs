@@ -1173,59 +1173,76 @@ Do you want to continue?";
         {
             var advancedWasEnabled = _lgService.Config.ShowAdvancedActions;
 
+            var retriesField = new FieldDefinition
+            {
+                FieldType = FieldType.Numeric,
+                Label = "Maximum number of retries powering on after startup/resume.",
+                SubLabel = "Retries are necessary to wait for the network link of your pc to be established.",
+                MinValue = 1,
+                MaxValue = 40,
+                Value = _lgService.Config.PowerOnRetries
+            };
+
+            var restartDelayField = new FieldDefinition
+            {
+                FieldType = FieldType.Numeric,
+                Label = "Delay when shutting down/restarting PC (milliseconds).",
+                SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
+                MinValue = 0,
+                MaxValue = 5000,
+                Value = _lgService.Config.ShutdownDelay
+            };
+
+            var quickAccessField = new FieldDefinition
+            {
+                FieldType = FieldType.Shortcut,
+                Label = "Quick Access shortcut",
+                Value = _lgService.Config.QuickAccessShortcut
+            };
+
+            var gameBarShortcutField = new FieldDefinition
+            {
+                FieldType = FieldType.Shortcut,
+                Label = "Game Bar shortcut",
+                Value = _lgService.Config.GameBarShortcut
+            };
+
+            var gameBarTimeoutField = new FieldDefinition
+            {
+                FieldType = FieldType.Numeric,
+                Label = "Game Bar showing time (milliseconds)",
+                MinValue = 1000,
+                MaxValue = 60000,
+                Value = _lgService.Config.GameBarShowingTime
+            };
+
+            var advancedField = new FieldDefinition
+            {
+                FieldType = FieldType.CheckBox,
+                Label = "Show advanced actions under the Expert-button (InStart, EzAdjust, Software Update)",
+                Value = _lgService.Config.ShowAdvancedActions
+            };
+
+            var setSelectedDeviceField = new FieldDefinition
+            {
+                FieldType = FieldType.CheckBox,
+                Label = "Automatically set selected device to last powered on",
+                Value = _lgService.Config.SetSelectedDeviceByPowerOn
+            };
+
+            var buttonDelayField = new FieldDefinition
+            {
+                FieldType = FieldType.Numeric,
+                Label = "Default delay between remote control button presses (milliseconds).",
+                SubLabel = "Increasing this delay may prevent skipped button presses.",
+                MinValue = 100,
+                MaxValue = 2000,
+                Value = _lgService.Config.DefaultButtonDelay
+            };
+
             var fields = new FieldDefinition[]
             {
-                new()
-                {
-                    FieldType = FieldType.Numeric,
-                    Label = "Maximum number of retries powering on after startup/resume.",
-                    SubLabel = "Retries are necessary to wait for the network link of your pc to be established.",
-                    MinValue = 1,
-                    MaxValue = 40,
-                    Value = _lgService.Config.PowerOnRetries
-                },
-                new()
-                {
-                    FieldType = FieldType.Numeric,
-                    Label = "Delay when shutting down/restarting PC (milliseconds).",
-                    SubLabel = "This delay may prevent the tv from powering off when restarting the pc.",
-                    MinValue = 0,
-                    MaxValue = 5000,
-                    Value = _lgService.Config.ShutdownDelay
-                },
-                new()
-                {
-                    FieldType = FieldType.Shortcut,
-                    Label = "Quick Access shortcut",
-                    Value = _lgService.Config.QuickAccessShortcut
-                },
-                new()
-                {
-                    FieldType = FieldType.Shortcut,
-                    Label = "Game Bar shortcut",
-                    Value = _lgService.Config.GameBarShortcut
-                },
-                new()
-                {
-                    FieldType = FieldType.CheckBox,
-                    Label = "Show advanced actions under the Expert-button (InStart, EzAdjust, Software Update)",
-                    Value = _lgService.Config.ShowAdvancedActions
-                },
-                new()
-                {
-                    FieldType = FieldType.CheckBox,
-                    Label = "Automatically set selected device to last powered on",
-                    Value = _lgService.Config.SetSelectedDeviceByPowerOn
-                },
-                new()
-                {
-                    FieldType = FieldType.Numeric,
-                    Label = "Default delay between remote control button presses (milliseconds).",
-                    SubLabel = "Increasing this delay may prevent skipped button presses.",
-                    MinValue = 100,
-                    MaxValue = 2000,
-                    Value = _lgService.Config.DefaultButtonDelay
-                }
+                retriesField, restartDelayField, quickAccessField, gameBarShortcutField, gameBarTimeoutField, advancedField, setSelectedDeviceField, buttonDelayField
             };
 
             var values = MessageForms.ShowDialog("LG controller settings", fields);
@@ -1235,17 +1252,18 @@ Do you want to continue?";
                 return;
             }
 
-            _lgService.Config.PowerOnRetries = values[0].ValueAsInt;
-            _lgService.Config.ShutdownDelay = values[1].ValueAsInt;
+            _lgService.Config.PowerOnRetries = retriesField.ValueAsInt;
+            _lgService.Config.ShutdownDelay = restartDelayField.ValueAsInt;
 
-            var shortcutQA = values[2].Value.ToString();
+            var shortcutQA = quickAccessField.Value.ToString();
 
             _lgService.Config.QuickAccessShortcut = shortcutQA;
 
             KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut);
 
-            var shortcutGB = values[3].Value.ToString();
+            var shortcutGB = gameBarShortcutField.Value.ToString();
             _lgService.Config.GameBarShortcut = shortcutGB;
+            _lgService.Config.GameBarShowingTime = gameBarTimeoutField.ValueAsInt;
 
             if (string.IsNullOrEmpty(shortcutGB))
             {
@@ -1256,9 +1274,9 @@ Do you want to continue?";
                 KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEBAR, shortcutGB);
             }
 
-            _lgService.Config.ShowAdvancedActions = values[4].ValueAsBool;
-            _lgService.Config.SetSelectedDeviceByPowerOn = values[5].ValueAsBool;
-            _lgService.Config.DefaultButtonDelay = values[6].ValueAsInt;
+            _lgService.Config.ShowAdvancedActions = advancedField.ValueAsBool;
+            _lgService.Config.SetSelectedDeviceByPowerOn = setSelectedDeviceField.ValueAsBool;
+            _lgService.Config.DefaultButtonDelay = buttonDelayField.ValueAsInt;
 
             if (!advancedWasEnabled && _lgService.Config.ShowAdvancedActions)
             {
