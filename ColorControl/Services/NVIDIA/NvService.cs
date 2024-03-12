@@ -1,8 +1,8 @@
 ﻿using ColorControl.Services.Common;
-using ColorControl.Services.EventDispatcher;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using static ColorControl.Services.EventDispatcher.EventExtensions;
+﻿using static ColorControl.Shared.EventDispatcher.EventExtensions;
 
-namespace ColorControl.Services.EventDispatcher;
+namespace ColorControl.Shared.EventDispatcher;
 
 public class EventDispatcher<T> where T : EventArgs
 {

@@ -1,7 +1,7 @@
-﻿using ColorControl.Services.EventDispatcher;
-using ColorControl.Services.LG;
+﻿using ColorControl.Services.LG;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Services;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;

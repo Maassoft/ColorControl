@@ -1,4 +1,4 @@
-﻿using ColorControl.Services.EventDispatcher;
+﻿using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using Newtonsoft.Json;

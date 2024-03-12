@@ -1,13 +1,13 @@
 ﻿using ColorControl.Forms;
 using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
-using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;

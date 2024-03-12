@@ -1,6 +1,6 @@
-﻿using ColorControl.Services.EventDispatcher;
-using ColorControl.Shared.Common;
+﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using NStandard;
 using System;
 using System.Collections.Generic;

@@ -1,12 +1,12 @@
 ﻿using ColorControl.Forms;
 using ColorControl.Services.Common;
-using ColorControl.Services.EventDispatcher;
 using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using ColorControl.Svc;
@@ -73,11 +73,6 @@ namespace ColorControl
                 return;
             }
 
-            var host = CreateHostBuilder().Build();
-            ServiceProvider = host.Services;
-
-            var mutexId = $"Global\\{typeof(MainForm).GUID}";
-
             var currentDomain = AppDomain.CurrentDomain;
             // Handler for unhandled exceptions.
             currentDomain.UnhandledException += GlobalUnhandledExceptionHandler;
@@ -86,16 +81,24 @@ namespace ColorControl
 
             LoadConfig();
 
+            if (Config.UseGdiScaling)
+            {
+                var result = Application.SetHighDpiMode(HighDpiMode.DpiUnawareGdiScaled);
+
+                Logger.Debug($"Result of setting SetHighDpiMode: {result}");
+            }
+
+            var host = CreateHostBuilder().Build();
+            ServiceProvider = host.Services;
+
+            var mutexId = $"Global\\{typeof(MainForm).GUID}";
+
             var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
             var startUpParams = StartUpParams.Parse(args);
 
             AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, mutexId);
             appContextProvider.SetAppContext(AppContext);
 
-            if (Config.UseGdiScaling)
-            {
-                Application.SetHighDpiMode(HighDpiMode.DpiUnawareGdiScaled);
-            }
 
             var existingProcess = Utils.GetProcessByName("ColorControl");
 
