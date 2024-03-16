@@ -56,6 +56,8 @@ namespace ColorControl.Services.Samsung
 
             LoadConfig();
             LoadPresets();
+
+            SetShortcuts(-204, Config.QuickAccessShortcut);
         }
 
         public static async Task<bool> ExecutePresetAsync(string presetName)
@@ -82,14 +84,22 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        public void InstallEventHandlers()
+        public override void InstallEventHandlers()
         {
+            base.InstallEventHandlers();
+
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
             _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
             _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+        }
+
+        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
+        {
+            await RefreshDevices(afterStartUp: true);
         }
 
         private void LoadConfig()
@@ -117,7 +127,7 @@ namespace ColorControl.Services.Samsung
 
             await WakeAfterStartupOrResume(PowerOnOffState.Resume);
 
-            ExecutePresetsForEvent(PresetTriggerType.Resume);
+            await ExecutePresetsForEvent(PresetTriggerType.Resume);
         }
 
         private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
@@ -134,7 +144,7 @@ namespace ColorControl.Services.Samsung
             {
                 case PowerOnOffState.StandBy:
                     {
-                        ExecutePresetsForEvent(PresetTriggerType.Standby);
+                        _ = ExecutePresetsForEvent(PresetTriggerType.Standby).ConfigureAwait(true);
 
                         var devices = Devices.Where(d => d.Options.PowerOffOnStandby);
                         PowerOffDevices(devices, PowerOnOffState.StandBy);
@@ -142,7 +152,7 @@ namespace ColorControl.Services.Samsung
                     }
                 case PowerOnOffState.ShutDown:
                     {
-                        ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+                        _ = ExecutePresetsForEvent(PresetTriggerType.Shutdown).ConfigureAwait(true);
 
                         var devices = Devices.Where(d => d.Options.PowerOffOnShutdown);
 
@@ -165,7 +175,7 @@ namespace ColorControl.Services.Samsung
             }
         }
 
-        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        private async Task ExecutePresetsForEvent(PresetTriggerType triggerType)
         {
             Logger.Debug($"Executing presets for event {triggerType}");
 
@@ -184,7 +194,7 @@ namespace ColorControl.Services.Samsung
                 return;
             }
 
-            ExecuteEventPresets(_serviceManager, new[] { triggerType }).Wait();
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType });
         }
 
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
@@ -310,7 +320,12 @@ namespace ColorControl.Services.Samsung
 
             var device = GetPresetDevice(preset);
 
-            await device?.ExecutePresetAsync(preset, appContext, Config);
+            if (device == null)
+            {
+                return false;
+            }
+
+            await device.ExecutePresetAsync(preset, appContext, Config);
 
             _lastAppliedPreset = preset;
 

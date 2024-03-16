@@ -41,6 +41,8 @@ namespace ColorControl.Services.GameLauncher
             _winApiAdminService = winApiAdminService;
             _winApiService = winApiService;
             _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+
+            SetShortcuts(-203, _appContextProvider.GetAppContext().Config.GameQuickAccessShortcut);
         }
 
         private async Task ProcessChanged(object sender, ProcessChangedEventArgs e, CancellationToken token)
@@ -145,7 +147,7 @@ namespace ColorControl.Services.GameLauncher
             var preset = GetPresetByIdOrName(idOrName);
             if (preset != null)
             {
-                return await ApplyPreset(preset, Program.AppContext);
+                return await ApplyPreset(preset);
             }
             else
             {
@@ -154,11 +156,6 @@ namespace ColorControl.Services.GameLauncher
         }
 
         public override async Task<bool> ApplyPreset(GamePreset preset)
-        {
-            return await ApplyPreset(preset, Program.AppContext);
-        }
-
-        public async Task<bool> ApplyPreset(GamePreset preset, GlobalContext _)
         {
             var result = await ExecutePreset(preset);
 

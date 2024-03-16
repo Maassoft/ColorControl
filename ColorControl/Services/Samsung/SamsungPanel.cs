@@ -6,6 +6,7 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using NLog;
 using NStandard;
 using System;
@@ -28,18 +29,18 @@ namespace ColorControl.Services.Samsung
         private SamsungService _samsungService;
         private NvService _nvService;
         private AmdService _amdService;
-        private IntPtr _mainHandle;
         private readonly PowerEventDispatcher _powerEventDispatcher;
+        private readonly AppContextProvider _appContextProvider;
         private string _tabMessage;
         private bool _disableEvents = false;
 
-        internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, IntPtr handle, PowerEventDispatcher powerEventDispatcher)
+        internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, PowerEventDispatcher powerEventDispatcher, AppContextProvider appContextProvider)
         {
             _samsungService = samsungService;
             _nvService = nvService;
             _amdService = amdService;
-            _mainHandle = handle;
             _powerEventDispatcher = powerEventDispatcher;
+            _appContextProvider = appContextProvider;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -72,9 +73,11 @@ namespace ColorControl.Services.Samsung
         public void Init()
         {
             var _ = Handle;
-            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
+            //_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
 
-            _samsungService.InstallEventHandlers();
+            //_samsungService.InstallEventHandlers();
+
+            var x = AfterSamsungServiceRefreshDevices();
         }
 
         private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
@@ -247,7 +250,7 @@ namespace ColorControl.Services.Samsung
         {
             var preset = GetSelectedPreset();
 
-            await ApplyPreset(preset);
+            await _samsungService.ApplyPresetUi(preset);
         }
 
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
@@ -457,7 +460,7 @@ namespace ColorControl.Services.Samsung
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_mainHandle, preset.id);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
             }
 
             _samsungService.GetPresets().Remove(preset);
@@ -469,20 +472,6 @@ namespace ColorControl.Services.Samsung
         private void btnAddLg_Click(object sender, EventArgs e)
         {
             AddOrUpdateItem(_samsungService.CreateNewPreset());
-        }
-
-        internal async Task ApplyPreset(SamsungPreset preset)
-        {
-            if (preset == null)
-            {
-                return;
-            }
-
-            var result = await _samsungService.ApplyPreset(preset);
-            if (!result)
-            {
-                MessageForms.WarningOk("Could not apply the preset (entirely). Check the log for details.");
-            }
         }
 
         private void btnSamsungRefreshApps_Click(object sender, EventArgs e)
@@ -518,7 +507,7 @@ namespace ColorControl.Services.Samsung
         private async void ApplySelectedPreset()
         {
             var preset = GetSelectedPreset();
-            await ApplyPreset(preset);
+            await _samsungService.ApplyPresetUi(preset);
         }
 
         private void btnSamsungAddButton_Click(object sender, EventArgs e)

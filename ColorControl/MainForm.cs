@@ -1,4 +1,5 @@
 ﻿using ColorControl.Forms;
+using ColorControl.Properties;
 using ColorControl.Services.AMD;
 using ColorControl.Services.Common;
 using ColorControl.Services.GameLauncher;
@@ -14,7 +15,6 @@ using ColorControl.Shared.Services;
 using Linearstar.Windows.RawInput;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
-using novideo_srgb;
 using NWin32;
 using System;
 using System.Collections.Generic;
@@ -46,20 +46,13 @@ namespace ColorControl
 
         private NvPanel _nvPanel;
 
-        public NotifyIcon _trayIcon;
+        public NotifyIconManager _notifyIconManager;
         private bool _initialized = false;
         private Config _config;
         private bool _setVisibleCalled = false;
 
         private LgPanel _lgPanel;
         private SamsungPanel _samsungPanel;
-
-        private ToolStripMenuItem _nvTrayMenu;
-        private ToolStripMenuItem _novideoTrayMenu;
-        private ToolStripMenuItem _amdTrayMenu;
-        private ToolStripMenuItem _lgTrayMenu;
-        private ToolStripMenuItem _samsungTrayMenu;
-        private ToolStripMenuItem _gameTrayMenu;
 
         private StartUpParams StartUpParams { get; }
         public string _lgTabMessage { get; private set; }
@@ -78,14 +71,22 @@ namespace ColorControl
         private Dictionary<string, Func<UserControl>> _modules = new();
 
         public MainForm(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager,
-            IServiceProvider serviceProvider, WinApiAdminService winApiAdminService, WinApiService winApiService, ElevationService elevationService)
+            IServiceProvider serviceProvider, WinApiAdminService winApiAdminService, WinApiService winApiService, ElevationService elevationService, NotifyIconManager notifyIconManager)
         {
             InitializeComponent();
 
+            Icon = Resources.AppIcon;
+
+            var appContext = appContextProvider.GetAppContext();
+
+            if (appContext.MainHandle == 0)
+            {
+                appContext.MainHandle = Handle;
+            }
             KeyboardShortcutManager.MainHandle = Handle;
 
-            StartUpParams = appContextProvider.GetAppContext().StartUpParams;
-            appContextProvider.GetAppContext().SynchronizationContext = AsyncOperationManager.SynchronizationContext;
+            StartUpParams = appContext.StartUpParams;
+            appContext.SynchronizationContext = AsyncOperationManager.SynchronizationContext;
 
             _powerEventDispatcher = powerEventDispatcher;
             _serviceManager = serviceManager;
@@ -93,17 +94,11 @@ namespace ColorControl
             _winApiAdminService = winApiAdminService;
             _winApiService = winApiService;
             _elevationService = elevationService;
+            _notifyIconManager = notifyIconManager;
             _dataDir = Program.DataDir;
             _config = Program.Config;
 
-            var currentVersionInfo = FileVersionInfo.GetVersionInfo(Application.ExecutablePath);
-
-            Text = Application.ProductName + " " + Application.ProductVersion;
-
-            if (_winApiService.IsAdministrator())
-            {
-                Text += " (administrator)";
-            }
+            Text = appContext.ApplicationTitleAdmin;
 
             LoadConfig();
 
@@ -113,37 +108,7 @@ namespace ColorControl
 
             MessageForms.MainForm = this;
 
-            _nvTrayMenu = new ToolStripMenuItem("NVIDIA presets");
-            _novideoTrayMenu = new ToolStripMenuItem("Novideo sRGB");
-            _amdTrayMenu = new ToolStripMenuItem("AMD presets");
-            _lgTrayMenu = new ToolStripMenuItem("LG presets");
-            _samsungTrayMenu = new ToolStripMenuItem("Samsung presets");
-            _gameTrayMenu = new ToolStripMenuItem("Game Launcher");
-            _trayIcon = new NotifyIcon()
-            {
-                Icon = Icon,
-                ContextMenuStrip = new ContextMenuStrip(),
-                Visible = _config.MinimizeToTray,
-                Text = Text
-            };
-
-            _trayIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[] {
-                    _nvTrayMenu,
-                    _novideoTrayMenu,
-                    _amdTrayMenu,
-                    _lgTrayMenu,
-                    _samsungTrayMenu,
-                    _gameTrayMenu,
-                    new ToolStripSeparator(),
-                    new ToolStripMenuItem("Open", null, OpenForm),
-                    new ToolStripSeparator(),
-                    new ToolStripMenuItem("Restart", null, Restart),
-                    new ToolStripMenuItem("Exit", null, Exit)
-                });
-
-            _trayIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
-            _trayIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
-            _trayIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
+            _notifyIconManager.Build();
 
             InitShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut, StartScreenSaver);
 
@@ -155,7 +120,7 @@ namespace ColorControl
                 _winApiAdminService.InstallChromeFix(true, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
             }
 
-            _screenStateNotify = WinApi.RegisterPowerSettingNotification(Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
+            _screenStateNotify = WinApi.RegisterPowerSettingNotification(appContext.MainHandle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
             //Scale(new SizeF(1.25F, 1.25F));
 
@@ -225,8 +190,6 @@ namespace ColorControl
             }
 
             tcMain.SelectedIndex = 0;
-
-            _serviceManager.NvService?.InstallEventHandlers();
         }
 
         private UserControl InitNvService()
@@ -242,7 +205,7 @@ namespace ColorControl
                 var rpcService = _serviceProvider.GetRequiredService<RpcClientService>();
                 var winAdminService = _serviceProvider.GetRequiredService<WinApiAdminService>();
 
-                _nvPanel = new NvPanel(_serviceManager.NvService, _trayIcon, Handle, appContextProvider, rpcService, winAdminService);
+                _nvPanel = new NvPanel(_serviceManager.NvService, _notifyIconManager.NotifyIcon, appContextProvider, rpcService, winAdminService);
                 _nvPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(NvPanel.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut, _serviceManager.NvService.ToggleQuickAccessForm);
@@ -262,10 +225,10 @@ namespace ColorControl
         {
             try
             {
-                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
-                _serviceManager.AmdService = new AmdService(appContextProvider);
+                _serviceManager.AmdService = _serviceProvider.GetRequiredService<AmdService>();
 
-                _amdPanel = new AmdPanel(_serviceManager.AmdService, _trayIcon, Handle);
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
+                _amdPanel = new AmdPanel(_serviceManager.AmdService, _notifyIconManager.NotifyIcon, appContextProvider);
                 _amdPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(AmdPanel.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut, _serviceManager.AmdService.ToggleQuickAccessForm);
@@ -287,7 +250,8 @@ namespace ColorControl
             {
                 _serviceManager.GameService = _serviceProvider.GetRequiredService<GameService>();
 
-                _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _serviceManager.SamsungService, _trayIcon, Handle);
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
+                _gamePanel = new GamePanel(_serviceManager.GameService, _serviceManager.NvService, _serviceManager.AmdService, _serviceManager.LgService, _serviceManager.SamsungService, _notifyIconManager.NotifyIcon, appContextProvider);
                 _gamePanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 InitShortcut(GamePanel.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut, _serviceManager.GameService.ToggleQuickAccessForm);
@@ -318,7 +282,8 @@ namespace ColorControl
             {
                 _serviceManager.LgService = _serviceProvider.GetRequiredService<LgService>();
 
-                _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _trayIcon, Handle, _powerEventDispatcher);
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
+                _lgPanel = new LgPanel(_serviceManager.LgService, _serviceManager.NvService, _serviceManager.AmdService, _notifyIconManager.NotifyIcon, _powerEventDispatcher, appContextProvider);
                 _lgPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 _lgPanel.Init();
@@ -342,9 +307,8 @@ namespace ColorControl
             {
                 _serviceManager.SamsungService = _serviceProvider.GetRequiredService<SamsungService>();
 
-                //_serviceManager.SamsungService.Init();
-
-                _samsungPanel = new SamsungPanel(_serviceManager.SamsungService, _serviceManager.NvService, _serviceManager.AmdService, Handle, _powerEventDispatcher);
+                var appContextProvider = _serviceProvider.GetRequiredService<AppContextProvider>();
+                _samsungPanel = new SamsungPanel(_serviceManager.SamsungService, _serviceManager.NvService, _serviceManager.AmdService, _powerEventDispatcher, appContextProvider);
                 _samsungPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
 
                 _samsungPanel.Init();
@@ -377,6 +341,13 @@ namespace ColorControl
         void Restart(object sender, EventArgs e)
         {
             Program.Restart();
+        }
+
+        public void OpenForm()
+        {
+            Show();
+            WindowState = FormWindowState.Normal;
+            Activate();
         }
 
         private void trayIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -466,25 +437,25 @@ namespace ColorControl
                     var preset = _serviceManager.NvService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (preset != null)
                     {
-                        _nvPanel?.ApplyNvPreset(preset);
+                        _serviceManager.NvService?.ApplyPresetUi(preset);
                     }
 
                     var amdPreset = _serviceManager.AmdService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (amdPreset != null)
                     {
-                        _amdPanel?.ApplyAmdPreset(amdPreset);
+                        _serviceManager.AmdService?.ApplyPresetUi(amdPreset);
                     }
 
                     var lgPreset = _serviceManager.LgService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (lgPreset != null)
                     {
-                        _lgPanel?.ApplyLgPreset(lgPreset);
+                        _serviceManager.LgService?.ApplyPresetUi(lgPreset);
                     }
 
                     var samsungPreset = _serviceManager.SamsungService?.GetPresets().FirstOrDefault(x => x.id == id);
                     if (samsungPreset != null)
                     {
-                        _samsungPanel?.ApplyPreset(samsungPreset);
+                        _serviceManager.SamsungService?.ApplyPresetUi(samsungPreset);
                     }
                 }
             }
@@ -510,15 +481,6 @@ namespace ColorControl
             {
                 Logger.Debug("WM_BRINGTOFRONT message received, opening form");
                 OpenForm(this, EventArgs.Empty);
-            }
-            else if (m.Msg == NativeConstants.WM_SYSCOMMAND)
-            {
-                //Logger.Debug($"WM_SYSCOMMAND: {m.WParam.ToInt32()}");
-
-                //if (m.WParam.ToInt32() == NativeConstants.SC_MONITORPOWER)
-                //{
-
-                //}
             }
             else if (m.Msg == NativeConstants.WM_POWERBROADCAST)
             {
@@ -548,7 +510,7 @@ namespace ColorControl
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             // Hide tray icon, otherwise it will remain shown until user mouses over it
-            _trayIcon.Visible = false;
+            _notifyIconManager.HideIcon();
 
             if (_screenStateNotify != IntPtr.Zero)
             {
@@ -723,124 +685,6 @@ NOTE: installing the service may cause a User Account Control popup.");
             //control.BackColor = SystemColors.Window;
         }
 
-        private void UpdateTrayMenu(ToolStripMenuItem menu, IEnumerable<PresetBase> presets, EventHandler eventHandler)
-        {
-            menu.DropDownItems.Clear();
-
-            foreach (var preset in presets.OrderBy(p => p.name))
-            {
-                var name = preset.GetTextForMenuItem();
-                var keys = Keys.None;
-
-                if (!string.IsNullOrEmpty(preset.shortcut))
-                {
-                    name += "        " + preset.shortcut;
-                    //keys = Utils.ShortcutToKeys(preset.shortcut);
-                }
-
-                var item = new ToolStripMenuItem(name, null, null, keys);
-                item.Tag = preset;
-                item.Click += eventHandler;
-                item.ForeColor = FormUtils.MenuItemForeColor;
-                menu.DropDownItems.Add(item);
-            }
-        }
-
-        private async void TrayMenuItemNv_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripMenuItem;
-            var preset = (NvPreset)item.Tag;
-
-            await _nvPanel?.ApplyNvPreset(preset);
-        }
-
-        private async void TrayMenuItemAmd_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripMenuItem;
-            var preset = (AmdPreset)item.Tag;
-
-            await _amdPanel?.ApplyAmdPreset(preset);
-        }
-
-        private async void TrayMenuItemGame_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripMenuItem;
-            var preset = (GamePreset)item.Tag;
-
-            await _gamePanel?.ApplyGamePreset(preset);
-        }
-
-        private void trayIconContextMenu_Popup(object sender, EventArgs e)
-        {
-            _nvTrayMenu.Visible = _serviceManager.NvService != null;
-            if (_nvTrayMenu.Visible)
-            {
-                var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings || x.applyOther || x.applyOverclocking || x.ApplyColorEnhancements || x.applyHdmiSettings);
-
-                UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
-            }
-
-            _novideoTrayMenu.Visible = _serviceManager.NvService != null && MainWindow.IsInitialized();
-            if (_novideoTrayMenu.Visible)
-            {
-                MainWindow.UpdateContextMenu(_novideoTrayMenu);
-            }
-
-            _amdTrayMenu.Visible = _serviceManager.AmdService != null;
-            if (_amdTrayMenu.Visible)
-            {
-                var presets = _serviceManager.AmdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
-
-                UpdateTrayMenu(_amdTrayMenu, presets, TrayMenuItemAmd_Click);
-            }
-
-            _lgTrayMenu.Visible = _serviceManager.LgService != null;
-            if (_lgTrayMenu.Visible)
-            {
-                var presets = _serviceManager.LgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
-
-                _lgTrayMenu.DropDownItems.Clear();
-
-                UpdateTrayMenu(_lgTrayMenu, presets, TrayMenuItemLg_Click);
-            }
-
-            _samsungTrayMenu.Visible = _serviceManager.SamsungService != null;
-            if (_samsungTrayMenu.Visible)
-            {
-                var presets = _serviceManager.SamsungService.GetPresets().Where(x => x.Steps.Any());
-
-                _samsungTrayMenu.DropDownItems.Clear();
-
-                UpdateTrayMenu(_samsungTrayMenu, presets, TrayMenuItemSamsung_Click);
-            }
-
-            _gameTrayMenu.Visible = _serviceManager.GameService != null;
-            if (_gameTrayMenu.Visible)
-            {
-                var presets = _serviceManager.GameService.GetPresets();
-
-                _gameTrayMenu.DropDownItems.Clear();
-
-                UpdateTrayMenu(_gameTrayMenu, presets, TrayMenuItemGame_Click);
-            }
-        }
-
-        private async void TrayMenuItemLg_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripMenuItem;
-            var preset = (LgPreset)item.Tag;
-
-            await _lgPanel?.ApplyLgPreset(preset);
-        }
-
-        private async void TrayMenuItemSamsung_Click(object sender, EventArgs e)
-        {
-            var item = sender as ToolStripMenuItem;
-            var preset = (SamsungPreset)item.Tag;
-
-            await _samsungPanel?.ApplyPreset(preset);
-        }
-
         private void MainForm_Activated(object sender, EventArgs e)
         {
             if (tcMain.SelectedTab?.Controls.Count > 0 && tcMain.SelectedTab.Controls[0] is IModulePanel panel)
@@ -861,10 +705,10 @@ NOTE: installing the service may cause a User Account Control popup.");
             {
                 await _amdPanel.AfterInitialized();
             }
-            if (_trayIcon.Visible)
-            {
-                await CheckForUpdates();
-            }
+            //if (_trayIcon.Visible)
+            //{
+            //    await CheckForUpdates();
+            //}
         }
 
         private async Task CheckForUpdates()
@@ -943,9 +787,9 @@ NOTE: installing the service may cause a User Account Control popup.");
 
                     btnUpdate.Visible = true;
 
-                    if (_trayIcon.Visible)
+                    if (_notifyIconManager.NotifyIcon.Visible)
                     {
-                        _trayIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click on the Update-button to update", ToolTipIcon.Info);
+                        _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click on the Update-button to update", ToolTipIcon.Info);
                     }
                     else
                     {
@@ -955,9 +799,9 @@ NOTE: installing the service may cause a User Account Control popup.");
                     return;
                 }
 
-                if (_trayIcon.Visible)
+                if (_notifyIconManager.NotifyIcon.Visible)
                 {
-                    _trayIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
+                    _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
                 }
                 else
                 {
@@ -1039,7 +883,7 @@ NOTE: installing the service may cause a User Account Control popup.");
 
             DarkModeUtils.InitWpfTheme();
 
-            DarkModeUtils.SetContextMenuForeColor(_trayIcon.ContextMenuStrip, FormUtils.CurrentForeColor);
+            DarkModeUtils.SetContextMenuForeColor(_notifyIconManager.NotifyIcon.ContextMenuStrip, FormUtils.CurrentForeColor);
 
             InitSelectedTab();
         }
@@ -1059,7 +903,7 @@ NOTE: installing the service may cause a User Account Control popup.");
         internal void CloseForRestart()
         {
             Hide();
-            _trayIcon.Visible = false;
+            _notifyIconManager.NotifyIcon.Visible = false;
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

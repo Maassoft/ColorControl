@@ -1,17 +1,21 @@
 ﻿using ColorControl.Shared.EventDispatcher;
+using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using NStandard;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ColorControl.Services.Common
 {
-    abstract class ServiceBase<T> where T : PresetBase, new()
+    abstract class ServiceBase<T> : IServiceBase where T : PresetBase, new()
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -31,6 +35,7 @@ namespace ColorControl.Services.Common
         protected T _lastAppliedPreset;
         protected string _loadPresetsError;
         protected T _lastTriggeredPreset;
+        protected int _quickAccessShortcutId;
 
         protected AppContextProvider _appContextProvider;
 
@@ -67,6 +72,72 @@ namespace ColorControl.Services.Common
         }
 
         public abstract Task<bool> ApplyPreset(T preset);
+
+        public async Task<bool> ApplyPresetUi(T preset)
+        {
+            if (preset == null)
+            {
+                return false;
+            }
+            try
+            {
+                var result = await ApplyPreset(preset);
+                if (!result)
+                {
+                    throw new Exception($"Error while applying {ServiceName}-preset. At least one setting could not be applied. Check the log for details.");
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+
+                MessageForms.ErrorOk($"Error applying {ServiceName}-preset ({e.TargetSite.Name}): {e.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> ApplyPresetById(int id)
+        {
+            var preset = _presets.FirstOrDefault(p => p.id == id);
+
+            if (preset == null)
+            {
+                return false;
+            }
+
+            return await ApplyPresetUi(preset);
+        }
+
+        protected void SetShortcuts(int quickAccessShortcutId = 0, string shortcut = null)
+        {
+            if (!Program.UseWorker)
+            {
+                return;
+            }
+
+            _quickAccessShortcutId = quickAccessShortcutId;
+
+            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetRequiredService<KeyboardShortcutDispatcher>();
+
+            if (quickAccessShortcutId != 0 && !shortcut.IsNullOrWhiteSpace())
+            {
+                keyboardShortcutDispatcher.RegisterShortcut(quickAccessShortcutId, shortcut);
+            }
+
+            foreach (var preset in _presets)
+            {
+                keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
+            }
+
+            keyboardShortcutDispatcher.RegisterAsyncEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HotKeyPressed);
+        }
+
+        public virtual void InstallEventHandlers()
+        {
+
+        }
 
         public T GetLastAppliedPreset()
         {
@@ -233,5 +304,15 @@ namespace ColorControl.Services.Common
             }
         }
 
+        protected virtual async Task HotKeyPressed(object sender, KeyboardShortcutEventArgs e, CancellationToken _)
+        {
+            if (e.HotKeyId == _quickAccessShortcutId)
+            {
+                ToggleQuickAccessForm();
+                return;
+            }
+
+            await ApplyPresetById(e.HotKeyId);
+        }
     }
 }

@@ -169,7 +169,8 @@ namespace ColorControl.Services.NVIDIA
         private int _lastSetSDRBrightness = -1;
         private int _lastReadSDRBrightness = -1;
 
-        private Semaphore _semaphore = new Semaphore(1, 1);
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim _refreshSemaphore = new SemaphoreSlim(1, 1);
 
         public const uint DRS_GSYNC_APPLICATION_MODE = 294973784;
         public const uint DRS_VSYNC_CONTROL = 11041231;
@@ -217,20 +218,26 @@ namespace ColorControl.Services.NVIDIA
         private readonly RpcClientService _rpcClientService;
         private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly ServiceManager _serviceManager;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private static NvService ServiceInstance;
 
-        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
+        public static readonly int SHORTCUTID_NVQA = -200;
+
+        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher) : base(appContextProvider)
         {
             _winApiService = winApiService;
             _rpcClientService = rpcClientService;
             _powerEventDispatcher = powerEventDispatcher;
             _serviceManager = serviceManager;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _rpcClientService.Name = nameof(NvService);
             NvPreset.NvService = this;
 
             AddJsonConverter(new ColorDataConverter());
             LoadConfig();
             LoadPresets();
+
+            SetShortcuts(SHORTCUTID_NVQA, _appContextProvider.GetAppContext().Config.NvQuickAccessShortcut);
         }
 
         public void InstallEventHandlers()
@@ -1575,7 +1582,7 @@ namespace ColorControl.Services.NVIDIA
 
         protected List<SettingItem> GetSettings()
         {
-            _semaphore.WaitOne();
+            _semaphore.Wait();
             try
             {
                 if (!_settings.Any())
@@ -1620,7 +1627,7 @@ namespace ColorControl.Services.NVIDIA
 
         public void RefreshProfileSettings()
         {
-            _semaphore.WaitOne();
+            _refreshSemaphore.Wait();
             try
             {
                 var firstTime = _settings?.Any() != true;
@@ -1644,7 +1651,7 @@ namespace ColorControl.Services.NVIDIA
             }
             finally
             {
-                _semaphore.Release();
+                _refreshSemaphore.Release();
             }
         }
 

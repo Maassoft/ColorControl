@@ -7,6 +7,7 @@ using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using nspector;
 using System;
 using System.Collections.Generic;
@@ -27,18 +28,18 @@ namespace ColorControl.Services.GameLauncher
 
         private Config _config;
         private GameService _gameService;
-        private IntPtr _mainHandle;
         private NotifyIcon _trayIcon;
+        private readonly AppContextProvider _appContextProvider;
         private NvService _nvService;
         private AmdService _amdService;
         private LgService _lgService;
         private SamsungService _samsungService;
 
-        internal GamePanel(GameService gameService, NvService nvService, AmdService amdService, LgService lgService, SamsungService samsungService, NotifyIcon trayIcon, IntPtr handle)
+        internal GamePanel(GameService gameService, NvService nvService, AmdService amdService, LgService lgService, SamsungService samsungService, NotifyIcon trayIcon, AppContextProvider appContextProvider)
         {
             _gameService = gameService;
             _trayIcon = trayIcon;
-            _mainHandle = handle;
+            _appContextProvider = appContextProvider;
             _nvService = nvService;
             _amdService = amdService;
             _lgService = lgService;
@@ -108,30 +109,7 @@ namespace ColorControl.Services.GameLauncher
         private async Task ApplySelectedGamePreset()
         {
             var preset = GetSelectedGamePreset();
-            await ApplyGamePreset(preset);
-        }
-
-        internal async Task<bool> ApplyGamePreset(GamePreset preset)
-        {
-            if (preset == null || _gameService == null)
-            {
-                return false;
-            }
-            try
-            {
-                var result = await _gameService.ApplyPreset(preset, Program.AppContext);
-                if (!result)
-                {
-                    throw new Exception("Error while applying Game-preset. At least one setting could not be applied. Check the log for details.");
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                MessageForms.ErrorOk($"Error applying Game-preset ({e.TargetSite.Name}): {e.Message}");
-                return false;
-            }
+            await _gameService.ApplyPresetUi(preset);
         }
 
         private void lvGamePresets_SelectedIndexChanged(object sender, EventArgs _)
@@ -291,7 +269,7 @@ namespace ColorControl.Services.GameLauncher
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_mainHandle, preset.id);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
             }
             _gameService.GetPresets().Remove(preset);
 

@@ -113,32 +113,33 @@ namespace ColorControl.Shared.Forms
     public class MessageForms
     {
         public static Form MainForm;
+        public static string Title = null;
 
         public static void WarningOk(string text)
         {
-            MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(text, Title ?? "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         public static void ErrorOk(string text)
         {
-            MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(text, Title ?? "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public static void InfoOk(string text, string title = null, string url = null)
         {
             if (url != null)
             {
-                MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
+                MessageBox.Show(text, title ?? Title ?? "Info", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, 0, url);
             }
             else
             {
-                MessageBox.Show(text, title ?? MainForm?.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(text, title ?? Title ?? "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
         public static DialogResult QuestionYesNo(string text)
         {
-            return MessageBox.Show(text, MainForm?.Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            return MessageBox.Show(text, Title ?? "Question", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
         }
 
         public static List<FieldDefinition> ShowDialog(string caption, IEnumerable<string> labels, Func<IEnumerable<FieldDefinition>, string> validateFunc = null)

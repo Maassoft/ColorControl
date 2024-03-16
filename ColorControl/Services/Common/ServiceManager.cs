@@ -3,8 +3,11 @@ using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Services;
+using NLog;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,7 +15,11 @@ namespace ColorControl.Services.Common;
 
 public class ServiceManager
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly WinApiAdminService _winApiAdminService;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly Config _config;
+    public Dictionary<string, object> Modules { get; } = new();
 
     internal NvService NvService { get; set; }
     internal LgService LgService { get; set; }
@@ -20,9 +27,55 @@ public class ServiceManager
     internal GameService GameService { get; set; }
     internal SamsungService SamsungService { get; set; }
 
-    public ServiceManager(WinApiAdminService winApiAdminService)
+    public ServiceManager(WinApiAdminService winApiAdminService, IServiceProvider serviceProvider, AppContextProvider appContextProvider)
     {
         _winApiAdminService = winApiAdminService;
+        _serviceProvider = serviceProvider;
+
+        _config = appContextProvider.GetAppContext().Config;
+    }
+
+    public void LoadModules()
+    {
+        AddModule<NvService>("NVIDIA controller");
+        AddModule<AmdService>("AMD controller");
+        AddModule<LgService>("LG controller");
+        AddModule<SamsungService>("Samsung controller");
+        AddModule<GameService>("Game launcher");
+
+        var names = Modules.Select(m => m.Key).ToList();
+        _config.Modules = _config.Modules.OrderBy(m => names.IndexOf(m.DisplayName)).ToList();
+    }
+
+    private void AddModule<T>(string displayName) where T : class, IServiceBase
+    {
+        var moduleEx = new ModuleEx<T> { DisplayName = displayName };
+        Modules.Add(displayName, moduleEx);
+
+        var existingModule = _config.Modules.FirstOrDefault(m => m.DisplayName == displayName);
+
+        if (existingModule == null)
+        {
+            existingModule = new Module { DisplayName = displayName, IsActive = true };
+            _config.Modules.Add(existingModule);
+        }
+
+        if (existingModule.IsActive)
+        {
+            var service = moduleEx.CreateService(_serviceProvider);
+
+            service?.InstallEventHandlers();
+
+            object _ = service switch
+            {
+                NvService nvService => NvService = nvService,
+                AmdService amdService => AmdService = amdService,
+                LgService lgService => LgService = lgService,
+                SamsungService samsungService => SamsungService = samsungService,
+                GameService gameService => GameService = gameService,
+                _ => throw new InvalidOperationException("Unknown module")
+            };
+        }
     }
 
     public async Task<bool> HandleExternalServiceAsync(string serviceName, string[] parameters)

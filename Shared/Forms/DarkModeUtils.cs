@@ -81,6 +81,35 @@ namespace ColorControl.Shared.Forms
             }
         }
 
+        public static void SetDarkMode(bool darkMode)
+        {
+            UseDarkMode = darkMode;
+
+            // Takes care of system context menu
+            WinApi.SetPreferredAppMode(darkMode ? 1 : 0);
+
+            var backColor = darkMode ? FormUtils.DarkModeBackColor : SystemColors.Control;
+            var foreColor = darkMode ? FormUtils.DarkModeForeColor : SystemColors.ControlText;
+
+            FormUtils.CurrentBackColor = backColor;
+            FormUtils.CurrentForeColor = foreColor;
+
+            if (darkMode)
+            {
+                _defaultRenderer ??= ToolStripManager.Renderer;
+
+                ToolStripManager.Renderer = new DarkModeToolStripRenderer();
+            }
+            else if (_defaultRenderer != null)
+            {
+                ToolStripManager.Renderer = _defaultRenderer;
+            }
+
+            FormUtils.MenuItemForeColor = FormUtils.CurrentForeColor;
+
+            WinApi.FlushMenuThemes();
+        }
+
         public static void UpdateTheme(this Form form, bool? useDarkMode = null, bool onlyIfDark = false)
         {
             var toDark = useDarkMode ?? UseDarkMode;
@@ -90,7 +119,7 @@ namespace ColorControl.Shared.Forms
                 return;
             }
 
-            UseDarkMode = toDark;
+            SetDarkMode(toDark);
 
             form.SuspendLayout();
 
@@ -102,36 +131,12 @@ namespace ColorControl.Shared.Forms
                 //var backroundColorValue = settings.GetColorValue(UIColorType.Background);
                 //var isDarkMode = FormUtils.IsColorLight(foregroundColorValue);
 
-                // Takes care of system context menu
-                WinApi.SetPreferredAppMode(toDark ? 1 : 0);
-
-                var backColor = toDark ? FormUtils.DarkModeBackColor : SystemColors.Control;
-                var foreColor = toDark ? FormUtils.DarkModeForeColor : SystemColors.ControlText;
-
-                FormUtils.CurrentBackColor = backColor;
-                FormUtils.CurrentForeColor = foreColor;
-
-                SetControlTheme(form, backColor, foreColor);
+                SetControlTheme(form, FormUtils.CurrentBackColor, FormUtils.CurrentForeColor);
 
                 var value = toDark ? 1 : 0;
 
                 // Takes care of title bar
                 WinApi.DwmSetWindowAttribute(form.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, 4);
-
-                if (toDark)
-                {
-                    _defaultRenderer ??= ToolStripManager.Renderer;
-
-                    ToolStripManager.Renderer = new DarkModeToolStripRenderer();
-                }
-                else if (_defaultRenderer != null)
-                {
-                    ToolStripManager.Renderer = _defaultRenderer;
-                }
-
-                FormUtils.MenuItemForeColor = foreColor;
-
-                WinApi.FlushMenuThemes();
             }
             finally
             {

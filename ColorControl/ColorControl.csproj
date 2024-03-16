@@ -27,7 +27,7 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<UseWPF>false</UseWPF>
 		<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-		<ApplicationIcon>pngbarn.ico</ApplicationIcon>
+		<ApplicationIcon>Resources\pngbarn.ico</ApplicationIcon>
 		<SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
 		<Copyright>2020-2024 Maassoft</Copyright>
 		<Authors>Maassoft</Authors>
@@ -65,6 +65,12 @@
 		<Compile Update="Forms\InfoPanel.cs">
 		  <SubType>UserControl</SubType>
 		</Compile>
+		<Compile Update="Properties\Resources.Designer.cs">
+		  <Generator></Generator>
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
 		<Compile Update="Services\Common\QuickAccessForm.cs">
 			<SubType>Form</SubType>
 		</Compile>
@@ -81,12 +87,10 @@
 		<EmbeddedResource Include="Resources\LG_register.json" />
 		<EmbeddedResource Include="Resources\RC_coords.txt" />
 		<EmbeddedResource Include="Resources\LG_remote.jpg" />
+		<EmbeddedResource Include="Resources\pngbarn.ico" />
 		<Content Include="LgPresets.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-	</ItemGroup>
-	<ItemGroup>
-		<Content Include="pngbarn.ico" />
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="bin\x64\Debug\" />
@@ -134,6 +138,10 @@
 		<ProjectReference Include="..\Shared\Shared.csproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+		  <Generator>PublicResXFileCodeGenerator</Generator>
+		  <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
 		<EmbeddedResource Update="Services\Samsung\SamsungPanel.resx">
 			<SubType>Designer</SubType>
 		</EmbeddedResource>

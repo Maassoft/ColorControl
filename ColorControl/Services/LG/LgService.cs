@@ -425,8 +425,10 @@ namespace ColorControl.Services.LG
             return PowerOnDevicesTask(wakeDevices, state, checkUserSession);
         }
 
-        public void InstallEventHandlers()
+        public override void InstallEventHandlers()
         {
+            base.InstallEventHandlers();
+
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
             _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);

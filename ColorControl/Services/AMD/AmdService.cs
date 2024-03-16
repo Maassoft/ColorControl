@@ -25,6 +25,8 @@ namespace ColorControl.Services.AMD
         public AmdService(AppContextProvider appContextProvider) : base(appContextProvider)
         {
             LoadPresets();
+
+            SetShortcuts(-201, _appContextProvider.GetAppContext().Config.AmdQuickAccessShortcut);
         }
 
         public static async Task<bool> ExecutePresetAsync(string idOrName)

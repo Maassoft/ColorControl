@@ -6,6 +6,7 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using LgTv;
 using NLog;
 using NStandard;
@@ -31,22 +32,21 @@ namespace ColorControl.Services.LG
         private NvService _nvService;
         private AmdService _amdService;
         private readonly PowerEventDispatcher _powerEventDispatcher;
-        private IntPtr _mainHandle;
+        private readonly AppContextProvider _appContextProvider;
         private NotifyIcon _trayIcon;
 
         private string _lgTabMessage;
         private bool _disableEvents = false;
         private LgGameBar _gameBarForm;
 
-        internal LgPanel(LgService lgService, NvService nvService, AmdService amdService, NotifyIcon trayIcon, IntPtr handle, PowerEventDispatcher powerEventDispatcher)
+        internal LgPanel(LgService lgService, NvService nvService, AmdService amdService, NotifyIcon trayIcon, PowerEventDispatcher powerEventDispatcher, AppContextProvider appContextProvider)
         {
             _lgService = lgService;
             _nvService = nvService;
             _amdService = amdService;
             _trayIcon = trayIcon;
-            _mainHandle = handle;
             _powerEventDispatcher = powerEventDispatcher;
-
+            _appContextProvider = appContextProvider;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -253,7 +253,7 @@ namespace ColorControl.Services.LG
         {
             var preset = GetSelectedLgPreset();
 
-            await ApplyLgPreset(preset);
+            await _lgService.ApplyPresetUi(preset);
         }
 
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
@@ -465,7 +465,7 @@ namespace ColorControl.Services.LG
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_mainHandle, preset.id);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
             }
 
             _lgService.GetPresets().Remove(preset);
@@ -477,20 +477,6 @@ namespace ColorControl.Services.LG
         private void btnAddLg_Click(object sender, EventArgs e)
         {
             AddOrUpdateItemLg(_lgService.CreateNewPreset());
-        }
-
-        internal async Task ApplyLgPreset(LgPreset preset, bool reconnect = false)
-        {
-            if (preset == null)
-            {
-                return;
-            }
-
-            var result = await _lgService.ApplyPreset(preset, reconnect);
-            if (!result)
-            {
-                MessageForms.WarningOk("Could not apply the preset (entirely). Check the log for details.");
-            }
         }
 
         private void btnLgRefreshApps_Click(object sender, EventArgs e)
@@ -526,7 +512,7 @@ namespace ColorControl.Services.LG
         private async void ApplySelectedLgPreset()
         {
             var preset = GetSelectedLgPreset();
-            await ApplyLgPreset(preset);
+            await _lgService.ApplyPresetUi(preset);
         }
 
         private void btnLgAddButton_Click(object sender, EventArgs e)
@@ -1267,7 +1253,7 @@ Do you want to continue?";
 
             if (string.IsNullOrEmpty(shortcutGB))
             {
-                WinApi.UnregisterHotKey(_mainHandle, SHORTCUTID_GAMEBAR);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, SHORTCUTID_GAMEBAR);
             }
             else
             {

@@ -34,18 +34,16 @@ namespace ColorControl.Services.NVIDIA
 
         private Config _config;
         private NvService _nvService;
-        private IntPtr _mainHandle;
         private readonly AppContextProvider _appContextProvider;
         private string _lastDisplayRefreshRates = string.Empty;
         private NotifyIcon _trayIcon;
         private RpcClientService _rpcService;
         private readonly WinApiAdminService _winApiAdminService;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, IntPtr handle, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService)
+        public NvPanel(NvService nvService, NotifyIcon trayIcon, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService)
         {
             _nvService = nvService;
             _trayIcon = trayIcon;
-            _mainHandle = handle;
             _appContextProvider = appContextProvider;
             _config = appContextProvider.GetAppContext().Config;
             _rpcService = rpcService;
@@ -245,7 +243,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_mainHandle, preset.id);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
             }
 
             _nvService.GetPresets().Remove(preset);
@@ -1248,32 +1246,7 @@ namespace ColorControl.Services.NVIDIA
         private async Task ApplySelectedNvPreset()
         {
             var preset = GetSelectedNvPreset();
-            await ApplyNvPreset(preset);
-        }
-
-        public async Task<bool> ApplyNvPreset(NvPreset preset)
-        {
-            if (preset == null || _nvService == null)
-            {
-                return false;
-            }
-            try
-            {
-                var result = await _nvService.ApplyPreset(preset);
-                if (!result)
-                {
-                    throw new Exception("Error while applying NVIDIA preset. At least one setting could not be applied. Check the log for details.");
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-
-                MessageForms.ErrorOk($"Error applying NVIDIA-preset ({e.TargetSite.Name}): {e.Message}");
-                return false;
-            }
+            await _nvService.ApplyPresetUi(preset);
         }
 
         private NvPreset GetSelectedNvPreset(bool currentDisplay = false, bool driverSettings = false)
@@ -1905,7 +1878,7 @@ namespace ColorControl.Services.NVIDIA
             }
 
             preset.IsStartupPreset = true;
-            await ApplyNvPreset(preset);
+            await _nvService.ApplyPresetUi(preset);
         }
 
         private void miNvDithering6bit_Click(object sender, EventArgs e)

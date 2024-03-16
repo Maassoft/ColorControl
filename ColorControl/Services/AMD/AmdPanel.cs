@@ -3,6 +3,7 @@ using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
+using ColorControl.Shared.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -18,18 +19,17 @@ namespace ColorControl.Services.AMD
     {
         public static readonly int SHORTCUTID_AMDQA = -201;
 
-        private AmdService _amdService;
-        private NotifyIcon _trayIcon;
-        private IntPtr _mainHandle;
+        private readonly AmdService _amdService;
+        private readonly NotifyIcon _trayIcon;
+        private readonly AppContextProvider _appContextProvider;
         private Config _config;
         private string _lastDisplayRefreshRates = string.Empty;
 
-        internal AmdPanel(AmdService amdService, NotifyIcon trayIcon, IntPtr handle)
+        internal AmdPanel(AmdService amdService, NotifyIcon trayIcon, AppContextProvider appContextProvider)
         {
             _amdService = amdService;
             _trayIcon = trayIcon;
-            _mainHandle = handle;
-
+            _appContextProvider = appContextProvider;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -144,7 +144,7 @@ namespace ColorControl.Services.AMD
                 {
                     if (_amdService.HasDisplaysAttached())
                     {
-                        await ApplyAmdPreset(preset);
+                        await _amdService.ApplyPresetUi(preset);
                     }
                     else
                     {
@@ -227,30 +227,7 @@ namespace ColorControl.Services.AMD
         private async Task ApplySelectedAmdPreset()
         {
             var preset = GetSelectedAmdPreset();
-            await ApplyAmdPreset(preset);
-        }
-
-        internal async Task<bool> ApplyAmdPreset(AmdPreset preset)
-        {
-            if (preset == null || _amdService == null)
-            {
-                return false;
-            }
-            try
-            {
-                var result = await _amdService.ApplyPreset(preset);
-                if (!result)
-                {
-                    throw new Exception("Error while applying AMD preset. At least one setting could not be applied. Check the log for details.");
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                MessageForms.ErrorOk($"Error applying AMD-preset ({e.TargetSite.Name}): {e.Message}");
-                return false;
-            }
+            await _amdService.ApplyPresetUi(preset);
         }
 
         private async void btnApplyAmd_Click(object sender, EventArgs e)
@@ -325,7 +302,7 @@ namespace ColorControl.Services.AMD
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_mainHandle, preset.id);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
             }
 
             _amdService.GetPresets().Remove(preset);

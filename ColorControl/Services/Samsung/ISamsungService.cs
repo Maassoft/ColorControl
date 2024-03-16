@@ -14,7 +14,6 @@ namespace ColorControl.Services.Samsung
         Task<bool> ApplyPreset(string idOrName);
         SamsungDevice GetPresetDevice(SamsungPreset preset);
         void GlobalSave();
-        void InstallEventHandlers();
         Task RefreshDevices(bool connect = true, bool afterStartUp = false);
     }
 }
