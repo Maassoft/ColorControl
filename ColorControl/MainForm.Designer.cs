@@ -103,7 +103,6 @@
             Activated += MainForm_Activated;
             Deactivate += MainForm_Deactivate;
             FormClosing += MainForm_FormClosing;
-            FormClosed += MainForm_FormClosed;
             Shown += MainForm_Shown;
             ResizeBegin += MainForm_ResizeBegin;
             ResizeEnd += MainForm_ResizeEnd;

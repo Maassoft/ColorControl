@@ -1,6 +1,7 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Services;
 using ColorControl.XForms;
@@ -17,15 +18,17 @@ public partial class OptionsPanel : UserControl
     private readonly WinApiAdminService _winApiAdminService;
     private readonly AppContextProvider _appContextProvider;
     private readonly ElevationService _elevationService;
+    private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
     private bool _initialized;
     private Config _config;
 
-    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, AppContextProvider appContextProvider, ElevationService elevationService)
+    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, AppContextProvider appContextProvider, ElevationService elevationService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
     {
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
         _appContextProvider = appContextProvider;
         _elevationService = elevationService;
+        _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
         _config = appContextProvider.GetAppContext().Config;
 
         InitializeComponent();
@@ -118,26 +121,26 @@ public partial class OptionsPanel : UserControl
 
     private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
     {
-        ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+        ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
     }
 
     private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
     {
-        KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+        _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
     }
 
     private void btnSetShortcutScreenSaver_Click(object sender, EventArgs e)
     {
         var shortcut = edtBlankScreenSaverShortcut.Text.Trim();
 
-        if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+        if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
         {
             return;
         }
 
         _config.ScreenSaverShortcut = shortcut;
 
-        KeyboardShortcutManager.RegisterShortcut(MainForm.SHORTCUTID_SCREENSAVER, shortcut);
+        _keyboardShortcutDispatcher.RegisterShortcut(MainWorker.SHORTCUTID_SCREENSAVER, shortcut);
     }
 
     private void chkFixChromeFonts_CheckedChanged(object sender, EventArgs e)
@@ -320,7 +323,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
         _config.UseRawInput = useRawInputField.ValueAsBool;
         _config.SetMinTmlAndMaxTml = setMinTmlAndMaxTmlField.ValueAsBool;
 
-        KeyboardShortcutManager.SetUseRawInput(_config.UseRawInput);
+        _keyboardShortcutDispatcher.SetUseRawInput(_config.UseRawInput);
     }
 
     private void btnOptionsLog_Click(object sender, EventArgs e)

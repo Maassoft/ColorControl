@@ -65,6 +65,19 @@ namespace ColorControl.Shared.Forms
             contextMenu.Show(control, control.PointToClient(Cursor.Position));
         }
 
+        public static Control FindFocusedControl(this Form form)
+        {
+            ContainerControl container = form ?? Form.ActiveForm;
+            Control control = null;
+            while (container != null)
+            {
+                control = container.ActiveControl;
+                container = control as ContainerControl;
+            }
+
+            return control;
+        }
+
         public static ToolStripMenuItem BuildDropDownMenuEx(ToolStripItemCollection items, string parentName, string name, Type enumType, EventHandler clickEvent, object tag = null, int min = 0, int max = 0, bool noSubItems = false)
         {
             var subMenuName = $"{parentName}_{name}";

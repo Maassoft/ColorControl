@@ -1,6 +1,9 @@
-﻿using ColorControl.Shared.Contracts;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Services;
+using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace ColorControl.Services.Common;
 
@@ -38,6 +41,47 @@ public class ElevationService
     public void RegisterScheduledTask(bool enabled = true)
     {
         _winApiAdminService.RegisterTask(Program.TS_TASKNAME, enabled, _config.ElevationMethod == ElevationMethod.RunAsAdmin ? Microsoft.Win32.TaskScheduler.TaskRunLevel.Highest : Microsoft.Win32.TaskScheduler.TaskRunLevel.LUA);
+    }
+
+    public void CheckElevationMethod()
+    {
+        if (_winApiService.IsAdministrator())
+        {
+            return;
+        }
+
+        if (_config.ElevationMethodAsked)
+        {
+            if (Debugger.IsAttached)
+            {
+                return;
+            }
+
+            if (_config.ElevationMethod == ElevationMethod.UseService && !_winApiService.IsServiceInstalled() &&
+                (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not installed. Do you want to install it now?") == DialogResult.Yes))
+            {
+                _winApiAdminService.InstallService();
+            }
+            else if (_config.ElevationMethod == ElevationMethod.UseService && !_winApiService.IsServiceRunning() &&
+                (MessageForms.QuestionYesNo("The elevation method is set to Windows Service but it is not running. Do you want to start it now?") == DialogResult.Yes))
+            {
+                _winApiAdminService.StartService();
+            }
+
+            return;
+        }
+
+        var result = MessageForms.QuestionYesNo(Utils.ELEVATION_MSG + @"
+
+Do you want to install and start the Windows Service now? You can always change this on the Options-tab page.
+
+NOTE: installing the service may cause a User Account Control popup.");
+        if (result == DialogResult.Yes)
+        {
+            SetElevationMethod(ElevationMethod.UseService);
+        }
+
+        _config.ElevationMethodAsked = true;
     }
 
     private bool SetElevationMethodNone(bool startAfterLoginChecked = false)

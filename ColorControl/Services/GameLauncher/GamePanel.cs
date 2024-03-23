@@ -1,10 +1,7 @@
-﻿using ColorControl.Services.AMD;
-using ColorControl.Services.Common;
-using ColorControl.Services.LG;
-using ColorControl.Services.NVIDIA;
-using ColorControl.Services.Samsung;
+﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
@@ -20,30 +17,22 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.GameLauncher
 {
-    public partial class GamePanel : UserControl, IModulePanel
+    partial class GamePanel : UserControl, IModulePanel
     {
-        public static readonly int SHORTCUTID_GAMEQA = -203;
-
         //private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private GameService _gameService;
-        private NotifyIcon _trayIcon;
+        private readonly ServiceManager _serviceManager;
         private readonly AppContextProvider _appContextProvider;
-        private NvService _nvService;
-        private AmdService _amdService;
-        private LgService _lgService;
-        private SamsungService _samsungService;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
-        internal GamePanel(GameService gameService, NvService nvService, AmdService amdService, LgService lgService, SamsungService samsungService, NotifyIcon trayIcon, AppContextProvider appContextProvider)
+        public GamePanel(GameService gameService, ServiceManager serviceManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _gameService = gameService;
-            _trayIcon = trayIcon;
+            _serviceManager = serviceManager;
             _appContextProvider = appContextProvider;
-            _nvService = nvService;
-            _amdService = amdService;
-            _lgService = lgService;
-            _samsungService = samsungService;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -60,7 +49,7 @@ namespace ColorControl.Services.GameLauncher
             foreach (var preset in _gameService.GetPresets())
             {
                 AddOrUpdateItemGame(preset);
-                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -76,12 +65,12 @@ namespace ColorControl.Services.GameLauncher
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private GamePreset GetSelectedGamePreset()
@@ -192,7 +181,7 @@ namespace ColorControl.Services.GameLauncher
         private void SaveGamePreset()
         {
             var shortcut = string.Empty;
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -229,7 +218,7 @@ namespace ColorControl.Services.GameLauncher
 
             AddOrUpdateItemGame();
 
-            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void btnGameBrowse_Click(object sender, EventArgs e)
@@ -279,10 +268,10 @@ namespace ColorControl.Services.GameLauncher
 
         private void mnuGameAddStep_Opening(object sender, CancelEventArgs e)
         {
-            ServiceFormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _nvService, "NVIDIA", miGameAddPreset_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _amdService, "AMD", miGameAddPreset_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _lgService, "LG", miGameAddPreset_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuGameSamsungPresets, _samsungService, "Samsung", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameNvidiaPresets, _serviceManager.NvService, "NVIDIA", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameAmdPresets, _serviceManager.AmdService, "AMD", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameLgPresets, _serviceManager.LgService, "LG", miGameAddPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuGameSamsungPresets, _serviceManager.SamsungService, "Samsung", miGameAddPreset_Click);
         }
 
         private void miGameAddPreset_Click(object sender, EventArgs e)
@@ -372,7 +361,7 @@ namespace ColorControl.Services.GameLauncher
 
             _config.GameQuickAccessShortcut = shortcut;
 
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(GameService.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut);
 
             _gameService.Config.ApplyExternallyLaunched = applyExternallyLaunched.ValueAsBool;
 
@@ -381,7 +370,7 @@ namespace ColorControl.Services.GameLauncher
 
         private void mnuGameActions_Opening(object sender, CancelEventArgs e)
         {
-            mnuGameNvInspector.Visible = _nvService != null;
+            mnuGameNvInspector.Visible = _serviceManager.NvService != null;
         }
 
         private void lvGamePresets_ItemChecked(object sender, ItemCheckedEventArgs e)
@@ -542,6 +531,10 @@ namespace ColorControl.Services.GameLauncher
 
             preset.AutoSettings.AllowAutoApply = allowAutoApplyField.ValueAsBool;
             preset.AutoSettings.ProcessAutoAction = processActionField.ValueAsEnum<ProcessAutoAction>();
+        }
+
+        public void Init()
+        {
         }
     }
 }

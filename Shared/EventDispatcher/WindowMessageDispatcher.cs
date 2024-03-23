@@ -58,12 +58,25 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     {
         public event EventHandler<Message> OnMessage;
 
+        private bool _systemShutdown;
+
         public DummyForm()
         {
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             Load += DummyForm_Load;
             Shown += DummyForm_Shown;
+            FormClosing += DummyForm_FormClosing;
+        }
+
+        private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Logger.Debug($"FormClosing: {_systemShutdown}");
+
+            if (_systemShutdown)
+            {
+                OnMessage?.Invoke(this, new Message { Msg = NativeConstants.WM_CLOSE });
+            }
         }
 
         private void DummyForm_Shown(object sender, EventArgs e)
@@ -78,6 +91,11 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
 
         protected override void WndProc(ref Message m)
         {
+            if (m.Msg == NativeConstants.WM_QUERYENDSESSION)
+            {
+                _systemShutdown = true;
+            }
+
             OnMessage?.Invoke(this, m);
 
             base.WndProc(ref m);

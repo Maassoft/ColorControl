@@ -63,8 +63,12 @@ namespace ColorControl.Services.LG
         private readonly WinApiService _winApiService;
         private readonly WinApiAdminService _winApiAdminService;
         private SynchronizationContext _syncContext;
+        private LgGameBar _gameBarForm;
 
         public ProcessChangedEventArgs CurrentProcessEvent => _processEventDispatcher?.MonitorContext;
+
+        public static readonly int SHORTCUTID_LGQA = -202;
+        public static readonly int SHORTCUTID_GAMEBAR = -101;
 
         public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector, WinApiService winApiService, WinApiAdminService winApiAdminService) : base(appContextProvider)
         {
@@ -89,6 +93,17 @@ namespace ColorControl.Services.LG
         ~LgService()
         {
             GlobalSave();
+        }
+
+        protected override async Task HotKeyPressed(object sender, KeyboardShortcutEventArgs e, CancellationToken _)
+        {
+            await base.HotKeyPressed(sender, e, _);
+
+            if (e.HotKeyId == SHORTCUTID_GAMEBAR)
+            {
+                ToggleGameBar();
+                return;
+            }
         }
 
         public static async Task<bool> ExecutePresetAsync(string presetName)
@@ -429,18 +444,34 @@ namespace ColorControl.Services.LG
         {
             base.InstallEventHandlers();
 
+            SetShortcuts(SHORTCUTID_LGQA, Config.QuickAccessShortcut);
+
+            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+            if (keyboardShortcutDispatcher != null)
+            {
+                keyboardShortcutDispatcher.RegisterShortcut(SHORTCUTID_GAMEBAR, Config.GameBarShortcut);
+            }
+
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
             _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
 
-            //SystemEvents.SessionEnded -= SessionEnded;
-            //SystemEvents.SessionEnded += SessionEnded;
-
             _sessionSwitchDispatcher.RegisterEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitched);
 
             _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+        }
+
+        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
+        {
+            await RefreshDevices(afterStartUp: true);
+
+            if (_appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask)
+            {
+                await ExecutePresetsForEvent(PresetTriggerType.Startup);
+            }
         }
 
         private void SessionSwitched(object sender, SessionSwitchEventArgs e)
@@ -469,7 +500,7 @@ namespace ColorControl.Services.LG
 
             await WakeAfterStartupOrResume(PowerOnOffState.Resume);
 
-            ExecutePresetsForEvent(PresetTriggerType.Resume);
+            await ExecutePresetsForEvent(PresetTriggerType.Resume);
         }
 
         private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
@@ -517,7 +548,7 @@ namespace ColorControl.Services.LG
             }
         }
 
-        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        private async Task ExecutePresetsForEvent(PresetTriggerType triggerType)
         {
             var presets = _presets.Where(p => p.Triggers.Any(t => t.Trigger == triggerType)).ToList();
 
@@ -534,7 +565,7 @@ namespace ColorControl.Services.LG
                 return;
             }
 
-            var _ = Task.WhenAll(ExecuteEventPresets(_serviceManager, new[] { triggerType }, isHDRActive: applicableDevices.Any(d => d.IsUsingHDRPictureMode()))).ConfigureAwait(true);
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType }, isHDRActive: applicableDevices.Any(d => d.IsUsingHDRPictureMode())).ConfigureAwait(true);
         }
 
         private void SessionEnded(object sender, SessionEndedEventArgs e)
@@ -955,6 +986,29 @@ namespace ColorControl.Services.LG
         public async Task ExecuteEventPresets(PresetTriggerType triggerType)
         {
             await ExecuteEventPresets(_serviceManager, new[] { triggerType });
+        }
+
+        public void ToggleGameBar()
+        {
+            if (_gameBarForm == null || !_gameBarForm.Visible)
+            {
+                if (_gameBarForm == null || _gameBarForm.IsDisposed)
+                {
+                    if (SelectedDevice == null)
+                    {
+                        return;
+                    }
+
+                    _gameBarForm = new LgGameBar(this);
+                }
+
+                _gameBarForm.Show();
+                _gameBarForm.Activate();
+            }
+            else
+            {
+                _gameBarForm?.Hide();
+            }
         }
     }
 }

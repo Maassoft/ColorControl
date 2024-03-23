@@ -22,11 +22,11 @@ namespace ColorControl.Services.AMD
 
         private ADLDisplayInfo _currentDisplay;
 
+        public static readonly int SHORTCUTID_AMDQA = -201;
+
         public AmdService(AppContextProvider appContextProvider) : base(appContextProvider)
         {
             LoadPresets();
-
-            SetShortcuts(-201, _appContextProvider.GetAppContext().Config.AmdQuickAccessShortcut);
         }
 
         public static async Task<bool> ExecutePresetAsync(string idOrName)
@@ -51,6 +51,13 @@ namespace ColorControl.Services.AMD
                 Console.WriteLine("Error executing preset: " + ex.ToLogString());
                 return false;
             }
+        }
+
+        public override void InstallEventHandlers()
+        {
+            base.InstallEventHandlers();
+
+            SetShortcuts(SHORTCUTID_AMDQA, _appContextProvider.GetAppContext().Config.AmdQuickAccessShortcut);
         }
 
         protected override List<AmdPreset> GetDefaultPresets()

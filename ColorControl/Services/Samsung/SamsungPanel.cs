@@ -13,34 +13,29 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ColorControl.Services.Samsung
 {
-    public partial class SamsungPanel : UserControl, IModulePanel
+    partial class SamsungPanel : UserControl, IModulePanel
     {
-        public static readonly int SHORTCUTID_SAMSUNGQA = -204;
-
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private SamsungService _samsungService;
-        private NvService _nvService;
-        private AmdService _amdService;
-        private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly AppContextProvider _appContextProvider;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
+        private readonly ServiceManager _serviceManager;
         private string _tabMessage;
         private bool _disableEvents = false;
 
-        internal SamsungPanel(SamsungService samsungService, NvService nvService, AmdService amdService, PowerEventDispatcher powerEventDispatcher, AppContextProvider appContextProvider)
+        public SamsungPanel(SamsungService samsungService, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher, ServiceManager serviceManager)
         {
             _samsungService = samsungService;
-            _nvService = nvService;
-            _amdService = amdService;
-            _powerEventDispatcher = powerEventDispatcher;
             _appContextProvider = appContextProvider;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
+            _serviceManager = serviceManager;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -72,17 +67,15 @@ namespace ColorControl.Services.Samsung
 
         public void Init()
         {
-            var _ = Handle;
-            //_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
+            _ = Handle;
 
-            //_samsungService.InstallEventHandlers();
+            if (_samsungService.Devices == null)
+            {
+                RefreshSamsungDevices();
+                return;
+            }
 
-            var x = AfterSamsungServiceRefreshDevices();
-        }
-
-        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
-        {
-            await _samsungService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterSamsungServiceRefreshDevices));
+            _ = AfterSamsungServiceRefreshDevices();
         }
 
         private void _samsungService_SelectedDeviceChangedEvent(object sender, EventArgs e)
@@ -112,11 +105,6 @@ namespace ColorControl.Services.Samsung
                 await _samsungService.ApplyPreset(startUpParams.SamsungPresetName);
                 return;
             }
-
-            if (startUpParams.RunningFromScheduledTask)
-            {
-                await _samsungService.ExecuteEventPresets(PresetTriggerType.Startup);
-            }
         }
 
         internal void Save()
@@ -126,12 +114,12 @@ namespace ColorControl.Services.Samsung
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void FillPresets()
@@ -141,7 +129,7 @@ namespace ColorControl.Services.Samsung
             foreach (var preset in _samsungService.GetPresets())
             {
                 AddOrUpdateItem(preset);
-                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -256,7 +244,7 @@ namespace ColorControl.Services.Samsung
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcutLg.Text.Trim();
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -311,7 +299,7 @@ namespace ColorControl.Services.Samsung
 
             AddOrUpdateItem();
 
-            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         public void UpdateInfo()
@@ -347,6 +335,11 @@ namespace ColorControl.Services.Samsung
         private void FillSamsungDevices()
         {
             var devices = _samsungService.Devices;
+
+            if (devices == null)
+            {
+                return;
+            }
 
             cbxSamsungDevices.Items.Clear();
             cbxSamsungDevices.Items.AddRange(devices.ToArray());
@@ -681,7 +674,7 @@ Use 'Settings > Test power off/on' to test this functionality."
 
                 if (e.Index == 10)
                 {
-                    _samsungService.RefreshDevices().ContinueWith((_) => FormUtils.BeginInvokeCheck(this, () => FillSamsungDevices()));
+                    RefreshSamsungDevices();
                 }
             });
         }
@@ -784,8 +777,8 @@ Use 'Settings > Test power off/on' to test this functionality."
             var device = _samsungService.GetPresetDevice(preset);
 
             BuildActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click, _samsungService.Config.ShowAdvancedActions);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _serviceManager.NvService, "NVIDIA", miLgAddNvPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _serviceManager.AmdService, "AMD", miLgAddAmdPreset_Click);
         }
 
         private void btnSamsungDeviceConvertToCustom_Click(object sender, EventArgs e)
@@ -872,12 +865,12 @@ Do you want to continue?"
 
         private void edtSamsungGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtSamsungGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void btnSamsungDeviceOptionsHelp_Click(object sender, EventArgs e)
@@ -1026,7 +1019,7 @@ Do you want to continue?";
 
             _samsungService.Config.QuickAccessShortcut = shortcutQA;
 
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_SAMSUNGQA, _samsungService.Config.QuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(SamsungService.SHORTCUTID_SAMSUNGQA, _samsungService.Config.QuickAccessShortcut);
 
             _samsungService.Config.SetSelectedDeviceByPowerOn = setDeviceField.ValueAsBool;
             _samsungService.Config.ShowAdvancedActions = showAdvancedField.ValueAsBool;

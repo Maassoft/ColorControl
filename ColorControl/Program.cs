@@ -40,7 +40,6 @@ namespace ColorControl
 
         public static bool IsRestarting { get; private set; }
         public static bool UserExit = false;
-        public static bool UseWorker = true;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static Mutex _mutex;
@@ -158,19 +157,9 @@ namespace ColorControl
                             }
                         }
 
-                        if (UseWorker)
-                        {
-                            var worker = ServiceProvider.GetRequiredService<MainWorker>();
+                        var worker = ServiceProvider.GetRequiredService<MainWorker>();
 
-                            await worker.DoWork();
-
-                            //Application.Run();
-                        }
-                        else
-                        {
-                            _mainForm = ServiceProvider.GetRequiredService<MainForm>();
-                            Application.Run(_mainForm);
-                        }
+                        await worker.DoWork();
 
                         if (Debugger.IsAttached && !IsRestarting)
                         {
@@ -298,6 +287,12 @@ namespace ColorControl
                     services.AddSingleton<OptionsPanel>();
                     services.AddSingleton<ElevationService>();
                     services.AddSingleton<UpdateManager>();
+
+                    services.AddSingleton<AmdPanel>();
+                    services.AddSingleton<NvPanel>();
+                    services.AddSingleton<LgPanel>();
+                    services.AddSingleton<SamsungPanel>();
+                    services.AddSingleton<GamePanel>();
                 });
         }
         private static async Task RunService(string[] args)

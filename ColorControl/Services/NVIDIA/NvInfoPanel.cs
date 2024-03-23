@@ -22,6 +22,10 @@ namespace ColorControl.Services.NVIDIA
             RefreshInfo();
         }
 
+        public void Init()
+        {
+        }
+
         public void UpdateInfo()
         {
             RefreshInfo();

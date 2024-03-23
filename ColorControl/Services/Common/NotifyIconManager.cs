@@ -54,9 +54,10 @@ public class NotifyIconManager
         {
             Icon = Resources.AppIcon,
             ContextMenuStrip = new ContextMenuStrip(),
-            Visible = _config.MinimizeToTray,
-            Text = _appContextProvider.GetAppContext().ApplicationTitleAdmin
+            Visible = _config.MinimizeToTray
         };
+
+        SetText();
 
         NotifyIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[] {
                     _nvTrayMenu,
@@ -229,5 +230,12 @@ public class NotifyIconManager
         var preset = (SamsungPreset)item.Tag;
 
         await _serviceManager.SamsungService?.ApplyPresetUi(preset);
+    }
+
+    internal void SetText(string text = null)
+    {
+        var fullText = $"{_appContextProvider.GetAppContext().ApplicationTitleAdmin}{(text == null ? "" : $"\n{text}")}";
+
+        FormUtils.SetNotifyIconText(NotifyIcon, fullText.Trim());
     }
 }

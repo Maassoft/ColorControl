@@ -2,6 +2,7 @@
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Services;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -15,19 +16,29 @@ public class UpdateManager
     private readonly ServiceManager _serviceManager;
     private readonly NotifyIconManager _notifyIconManager;
     private readonly WinApiService _winApiService;
+    private readonly WinApiAdminService _winApiAdminService;
     private readonly Config _config;
 
     private bool _checkedForUpdates;
     private string _updateHtmlUrl;
     private string _downloadUrl;
 
-    public UpdateManager(AppContextProvider appContextProvider, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService)
+    public UpdateManager(AppContextProvider appContextProvider, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService, WinApiAdminService winApiAdminService)
     {
         _appContextProvider = appContextProvider;
         _serviceManager = serviceManager;
         _notifyIconManager = notifyIconManager;
         _winApiService = winApiService;
+        _winApiAdminService = winApiAdminService;
         _config = appContextProvider.GetAppContext().Config;
+    }
+
+    private void trayIconBalloonTip_Clicked(object sender, EventArgs e)
+    {
+        if (_updateHtmlUrl != null)
+        {
+            _winApiAdminService.StartProcess(_updateHtmlUrl);
+        }
     }
 
     public async Task CheckForUpdates()
@@ -92,6 +103,8 @@ public class UpdateManager
 
         if (nvParts.Length != cvParts.Length || CompareVersions())
         {
+            _notifyIconManager.NotifyIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
+
             _updateHtmlUrl = latest.html_url.Value;
 
             if (latest.assets != null && _winApiService.IsServiceRunning())
@@ -101,7 +114,7 @@ public class UpdateManager
 
                 if (_config.AutoInstallUpdates)
                 {
-                    InstallUpdate(_downloadUrl);
+                    InstallUpdate();
 
                     return;
                 }
@@ -131,11 +144,13 @@ public class UpdateManager
         }
     }
 
-    private void InstallUpdate(string downloadUrl)
+    public void InstallUpdate()
     {
+        if (_downloadUrl == null) { return; }
+
         var message = new SvcInstallUpdateMessage
         {
-            DownloadUrl = downloadUrl,
+            DownloadUrl = _downloadUrl,
             ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
         };
 

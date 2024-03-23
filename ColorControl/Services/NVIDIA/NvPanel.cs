@@ -2,6 +2,7 @@
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
@@ -28,26 +29,26 @@ namespace ColorControl.Services.NVIDIA
 {
     partial class NvPanel : UserControl, IModulePanel
     {
-        public static readonly int SHORTCUTID_NVQA = -200;
-
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private NvService _nvService;
+        private readonly NotifyIconManager _notifyIconManager;
         private readonly AppContextProvider _appContextProvider;
         private string _lastDisplayRefreshRates = string.Empty;
-        private NotifyIcon _trayIcon;
         private RpcClientService _rpcService;
         private readonly WinApiAdminService _winApiAdminService;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
-        public NvPanel(NvService nvService, NotifyIcon trayIcon, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService)
+        public NvPanel(NvService nvService, NotifyIconManager notifyIconManager, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _nvService = nvService;
-            _trayIcon = trayIcon;
+            _notifyIconManager = notifyIconManager;
             _appContextProvider = appContextProvider;
             _config = appContextProvider.GetAppContext().Config;
             _rpcService = rpcService;
             _winApiAdminService = winApiAdminService;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _rpcService.Name = "NvService";
 
             InitializeComponent();
@@ -57,13 +58,6 @@ namespace ColorControl.Services.NVIDIA
             FormUtils.InitSortState(lvNvPresets, _config.NvPresetsSortState);
 
             _nvService.AfterApplyPreset += NvServiceAfterApplyPreset;
-
-            MainViewModel.ConfigPath = _appContextProvider.GetAppContext().DataPath;
-
-            if (_nvService.Config.ApplyNovideoOnStartup)
-            {
-                MainWindow.CreateAndShow(false);
-            }
         }
 
         private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -112,12 +106,20 @@ namespace ColorControl.Services.NVIDIA
         {
             FormUtils.InitListView(lvNvPresets, NvPreset.GetColumnNames());
 
-            UpdateDisplayInfoItems();
-
-            foreach (var preset in _nvService.GetPresets())
+            lvNvPresets.BeginUpdate();
+            try
             {
-                AddOrUpdateItem(preset);
-                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+                UpdateDisplayInfoItems();
+
+                foreach (var preset in _nvService.GetPresets())
+                {
+                    AddOrUpdateItem(preset);
+                    _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
+                }
+            }
+            finally
+            {
+                lvNvPresets.EndUpdate();
             }
         }
 
@@ -177,7 +179,7 @@ namespace ColorControl.Services.NVIDIA
 
             UpdateNvGpuInfo();
 
-            FormUtils.SetNotifyIconText(_trayIcon, text);
+            _notifyIconManager.SetText(text);
         }
 
         private void UpdateNvGpuInfo(List<PhysicalGPU> gpus = null)
@@ -1271,14 +1273,14 @@ namespace ColorControl.Services.NVIDIA
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void btnSetShortcut_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcut.Text.Trim();
 
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -1305,12 +1307,12 @@ namespace ColorControl.Services.NVIDIA
 
             AddOrUpdateItem();
 
-            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void edtShortcut_TextChanged(object sender, EventArgs e)
@@ -1552,7 +1554,7 @@ namespace ColorControl.Services.NVIDIA
 
             _config.NvQuickAccessShortcut = shortcut;
 
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_NVQA, _config.NvQuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(NvService.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut);
 
             _nvService.Config.ShowOverclocking = enableOcField.ValueAsBool;
             _nvService.Config.ApplyNovideoOnStartup = enableNovideoField.ValueAsBool;
@@ -1856,7 +1858,7 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
-        private async Task ApplyNvPresetOnStartup(int attempts = 5)
+        private async Task ApplyNvPresetOnStartup()
         {
             var startUpParams = Shared.Common.GlobalContext.CurrentContext.StartUpParams;
 
@@ -2051,6 +2053,10 @@ namespace ColorControl.Services.NVIDIA
 
             AddOrUpdateItem();
 
+        }
+
+        public void Init()
+        {
         }
     }
 }

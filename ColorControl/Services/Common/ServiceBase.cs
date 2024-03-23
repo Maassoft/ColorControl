@@ -112,14 +112,14 @@ namespace ColorControl.Services.Common
 
         protected void SetShortcuts(int quickAccessShortcutId = 0, string shortcut = null)
         {
-            if (!Program.UseWorker)
+            _quickAccessShortcutId = quickAccessShortcutId;
+
+            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+
+            if (keyboardShortcutDispatcher == null)
             {
                 return;
             }
-
-            _quickAccessShortcutId = quickAccessShortcutId;
-
-            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetRequiredService<KeyboardShortcutDispatcher>();
 
             if (quickAccessShortcutId != 0 && !shortcut.IsNullOrWhiteSpace())
             {
@@ -294,7 +294,7 @@ namespace ColorControl.Services.Common
                 return;
             }
 
-            Logger.Debug($"Executing event presets count: {triggerPresets.Count}");
+            Logger.Debug($"Executing event: {string.Join(',', triggerTypes)}, presets count: {triggerPresets.Count}");
 
             foreach (var preset in triggerPresets)
             {

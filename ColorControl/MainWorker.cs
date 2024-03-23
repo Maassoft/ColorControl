@@ -98,10 +98,11 @@ internal class MainWorker
         _screenStateNotify = WinApi.RegisterPowerSettingNotification(_windowMessageDispatcher.MessageForm.Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
         _keyboardShortcutDispatcher.SetUseRawInput(_config.UseRawInput);
-
-        _serviceManager.LoadModules();
+        MessageForms.KeyboardShortcutDispatcher = _keyboardShortcutDispatcher;
 
         _notifyIconManager.Build();
+
+        _serviceManager.LoadModules();
 
         // Auto-apply fix if desired but not currently installed
         if (_config.FixChromeFonts && _winApiService.IsChromeInstalled() && !_winApiService.IsChromeFixInstalled())
@@ -128,9 +129,14 @@ internal class MainWorker
 
         _startupSent = true;
 
-        var _ = _powerEventDispatcher.SendEventAsync(PowerEventDispatcher.Event_Startup);
+        _ = _powerEventDispatcher.SendEventAsync(PowerEventDispatcher.Event_Startup);
 
-        var x = _updateManager.CheckForUpdates();
+        _ = _updateManager.CheckForUpdates();
+
+        if (!_config.StartMinimized /*|| Debugger.IsAttached*/)
+        {
+            Program.OpenMainForm();
+        }
     }
 
     private void HandlePowerBroadcastEvent(object sender, WindowMessageEventArgs e)
@@ -151,12 +157,16 @@ internal class MainWorker
     {
         if (_queryEndSession)
         {
+            Logger.Debug($"MainWorker: SystemShutdown");
+
             _powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
         }
     }
 
     private void HandleQueryEndSessionEvent(object sender, WindowMessageEventArgs e)
     {
+        Logger.Debug("MainWorker: QueryEndSession");
+
         _queryEndSession = true;
     }
 

@@ -165,5 +165,9 @@ namespace ColorControl.Services.NVIDIA
                 MessageForms.ErrorOk("There was an error writing the dither settings to the registry. See the log for more details.");
             }
         }
+
+        public void Init()
+        {
+        }
     }
 }

@@ -53,11 +53,21 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
 
     private async void HotKeyPressed(object sender, WindowMessageEventArgs e)
     {
+        if (IsShortcutControlFocused())
+        {
+            return;
+        }
+
         await DispatchEventAsync(Event_HotKey, new KeyboardShortcutEventArgs { HotKeyId = (int)e.Message.WParam });
     }
 
     private async void HandleInputMessage(object sender, WindowMessageEventArgs e)
     {
+        if (IsShortcutControlFocused())
+        {
+            return;
+        }
+
         // Create an RawInputData from the handle stored in lParam.
         var data = RawInputData.FromHandle(e.Message.LParam);
 
@@ -70,6 +80,21 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
                 await DispatchEventAsync(Event_HotKey, new KeyboardShortcutEventArgs { HotKeyId = shortcut.Id });
             }
         }
+    }
+
+    public static bool IsShortcutControlFocused()
+    {
+        if (Form.ActiveForm?.GetType().Name.Equals("MessageForm") == true)
+        {
+            return true;
+        }
+        var control = Form.ActiveForm?.FindFocusedControl();
+        return control?.Name.Contains("Shortcut") ?? false;
+    }
+
+    public bool ShortCutExists(string shortcut, int presetId = 0)
+    {
+        return _registeredShortcuts.Any(s => s.Key != presetId && s.Value.Shortcut == shortcut);
     }
 
     public void SetUseRawInput(bool useRawInput)

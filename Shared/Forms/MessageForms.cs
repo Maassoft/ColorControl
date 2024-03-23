@@ -1,4 +1,5 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.EventDispatcher;
 using System.Data;
 using System.Globalization;
 
@@ -73,12 +74,12 @@ namespace ColorControl.Shared.Forms
 
         public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = MessageForms.KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            MessageForms.KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         public void TrackBar_Scroll(object sender, EventArgs e)
@@ -113,6 +114,7 @@ namespace ColorControl.Shared.Forms
     public class MessageForms
     {
         public static Form MainForm;
+        public static KeyboardShortcutDispatcher KeyboardShortcutDispatcher;
         public static string Title = null;
 
         public static void WarningOk(string text)

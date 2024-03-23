@@ -218,30 +218,36 @@ namespace ColorControl.Services.NVIDIA
         private readonly RpcClientService _rpcClientService;
         private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly ServiceManager _serviceManager;
-        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private static NvService ServiceInstance;
 
         public static readonly int SHORTCUTID_NVQA = -200;
 
-        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher) : base(appContextProvider)
+        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
         {
             _winApiService = winApiService;
             _rpcClientService = rpcClientService;
             _powerEventDispatcher = powerEventDispatcher;
             _serviceManager = serviceManager;
-            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _rpcClientService.Name = nameof(NvService);
             NvPreset.NvService = this;
 
             AddJsonConverter(new ColorDataConverter());
             LoadConfig();
             LoadPresets();
-
-            SetShortcuts(SHORTCUTID_NVQA, _appContextProvider.GetAppContext().Config.NvQuickAccessShortcut);
         }
 
-        public void InstallEventHandlers()
+        public override void InstallEventHandlers()
         {
+            SetShortcuts(SHORTCUTID_NVQA, _appContextProvider.GetAppContext().Config.NvQuickAccessShortcut);
+
+            GetDisplayInfos(false);
+
+            MainViewModel.ConfigPath = _appContextProvider.GetAppContext().DataPath;
+            if (Config.ApplyNovideoOnStartup)
+            {
+                MainWindow.CreateAndShow(false);
+            }
+
             // TODO: implement later
             //_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
             //_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
@@ -513,6 +519,7 @@ namespace ColorControl.Services.NVIDIA
             preset.IsStartupPreset = false;
 
             PresetApplied();
+            GetDisplayInfos(false);
 
             return result;
         }
@@ -1426,15 +1433,17 @@ namespace ColorControl.Services.NVIDIA
             return list;
         }
 
-        public List<NvDisplayInfo> GetDisplayInfos()
+        public List<NvDisplayInfo> GetDisplayInfos(bool refreshSettings = true)
         {
             try
             {
                 var displays = GetDisplays();
                 var list = new List<NvDisplayInfo>();
 
-                RefreshProfileSettings();
-                var settings = GetVisibleSettings();
+                if (refreshSettings)
+                {
+                    RefreshProfileSettings();
+                }
 
                 foreach (var display in displays)
                 {
@@ -1444,6 +1453,13 @@ namespace ColorControl.Services.NVIDIA
                     var displayInfo = new NvDisplayInfo(display, values, preset.InfoLine, preset.displayName);
 
                     list.Add(displayInfo);
+                }
+
+                var notifyIconManager = _appContextProvider.GetAppContext().ServiceProvider.GetService<NotifyIconManager>();
+
+                if (notifyIconManager != null)
+                {
+                    notifyIconManager.SetText(string.Join("\n", list.Select(i => i.InfoLine)));
                 }
 
                 return list;
@@ -1745,7 +1761,7 @@ namespace ColorControl.Services.NVIDIA
             // Wait
             await Task.Delay(30000);
 
-            ExecutePresetsForEvent(PresetTriggerType.Resume);
+            await ExecutePresetsForEvent(PresetTriggerType.Resume);
         }
 
         private void PowerModeChanged(object sender, PowerStateChangedEventArgs e)
@@ -1756,18 +1772,18 @@ namespace ColorControl.Services.NVIDIA
             {
                 case PowerOnOffState.StandBy:
                     {
-                        ExecutePresetsForEvent(PresetTriggerType.Standby);
+                        _ = ExecutePresetsForEvent(PresetTriggerType.Standby);
                         break;
                     }
                 case PowerOnOffState.ShutDown:
                     {
-                        ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+                        _ = ExecutePresetsForEvent(PresetTriggerType.Shutdown);
                         break;
                     }
             }
         }
 
-        private void ExecutePresetsForEvent(PresetTriggerType triggerType)
+        private async Task ExecutePresetsForEvent(PresetTriggerType triggerType)
         {
             Logger.Debug($"Executing presets for event {triggerType}");
 
@@ -1778,7 +1794,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            ExecuteEventPresets(_serviceManager, new[] { triggerType }).Wait();
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType }).ConfigureAwait(true);
         }
 
         private static uint MAKE_NVAPI_VERSION<T>(int version)

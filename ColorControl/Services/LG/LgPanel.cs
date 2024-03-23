@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -22,31 +21,23 @@ namespace ColorControl.Services.LG
 {
     public partial class LgPanel : UserControl, IModulePanel
     {
-        public static readonly int SHORTCUTID_LGQA = -202;
-        public static readonly int SHORTCUTID_GAMEBAR = -101;
-
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private Config _config;
         private LgService _lgService;
-        private NvService _nvService;
-        private AmdService _amdService;
-        private readonly PowerEventDispatcher _powerEventDispatcher;
+        private readonly ServiceManager _serviceManager;
         private readonly AppContextProvider _appContextProvider;
-        private NotifyIcon _trayIcon;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
         private string _lgTabMessage;
         private bool _disableEvents = false;
-        private LgGameBar _gameBarForm;
 
-        internal LgPanel(LgService lgService, NvService nvService, AmdService amdService, NotifyIcon trayIcon, PowerEventDispatcher powerEventDispatcher, AppContextProvider appContextProvider)
+        internal LgPanel(LgService lgService, ServiceManager serviceManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _lgService = lgService;
-            _nvService = nvService;
-            _amdService = amdService;
-            _trayIcon = trayIcon;
-            _powerEventDispatcher = powerEventDispatcher;
+            _serviceManager = serviceManager;
             _appContextProvider = appContextProvider;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -76,15 +67,8 @@ namespace ColorControl.Services.LG
 
         public void Init()
         {
-            var _ = Handle;
-
-            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
-            _lgService.InstallEventHandlers();
-        }
-
-        private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
-        {
-            await _lgService.RefreshDevices(afterStartUp: true).ContinueWith((_) => FormUtils.BeginInvokeCheck(this, AfterLgServiceRefreshDevices));
+            _ = Handle;
+            _ = AfterLgServiceRefreshDevices();
         }
 
         private void _lgService_SelectedDeviceChangedEvent(object sender, EventArgs e)
@@ -114,12 +98,6 @@ namespace ColorControl.Services.LG
                 await _lgService.ApplyPreset(startUpParams.LgPresetName);
                 return;
             }
-
-
-            if (startUpParams.RunningFromScheduledTask)
-            {
-                await _lgService.ExecuteEventPresets(PresetTriggerType.Startup);
-            }
         }
 
         internal void Save()
@@ -129,12 +107,12 @@ namespace ColorControl.Services.LG
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void FillLgPresets()
@@ -144,7 +122,7 @@ namespace ColorControl.Services.LG
             foreach (var preset in _lgService.GetPresets())
             {
                 AddOrUpdateItemLg(preset);
-                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -259,7 +237,7 @@ namespace ColorControl.Services.LG
         private void btnSetShortcutLg_Click(object sender, EventArgs e)
         {
             var shortcut = edtShortcutLg.Text.Trim();
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -314,7 +292,7 @@ namespace ColorControl.Services.LG
 
             AddOrUpdateItemLg();
 
-            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         public void UpdateInfo()
@@ -795,8 +773,8 @@ You can also activate this option by using the Expert-button and selecting Wake-
             var device = _lgService.GetPresetDevice(preset);
 
             BuildLgActionMenu(device, mnuLgActions.DropDownItems, mnuLgActions.Name, miLgAddAction_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _nvService, "NVIDIA", miLgAddNvPreset_Click);
-            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _amdService, "AMD", miLgAddAmdPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgNvPresets, _serviceManager.NvService, "NVIDIA", miLgAddNvPreset_Click);
+            ServiceFormUtils.BuildServicePresetsMenu(mnuLgAmdPresets, _serviceManager.AmdService, "AMD", miLgAddAmdPreset_Click);
         }
 
         private void btnLgDeviceConvertToCustom_Click(object sender, EventArgs e)
@@ -1048,42 +1026,19 @@ Do you want to continue?"
             edtLgPresetTriggerConditions.Text = Utils.GetDescriptions<PresetConditionType>((int)value).Join(", ");
         }
 
-        public void ToggleGameBar()
-        {
-            if (_gameBarForm == null || !_gameBarForm.Visible)
-            {
-                if (_gameBarForm == null || _gameBarForm.IsDisposed)
-                {
-                    if (_lgService?.SelectedDevice == null)
-                    {
-                        return;
-                    }
-
-                    _gameBarForm = new LgGameBar(_lgService);
-                }
-
-                _gameBarForm.Show();
-                _gameBarForm.Activate();
-            }
-            else
-            {
-                _gameBarForm?.Hide();
-            }
-        }
-
         private void btnLgGameBar_Click(object sender, EventArgs e)
         {
-            ToggleGameBar();
+            _lgService.ToggleGameBar();
         }
 
         private void edtLgGameBarShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtLgGameBarShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void btnLgDeviceOptionsHelp_Click(object sender, EventArgs e)
@@ -1245,7 +1200,7 @@ Do you want to continue?";
 
             _lgService.Config.QuickAccessShortcut = shortcutQA;
 
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(LgService.SHORTCUTID_LGQA, _lgService.Config.QuickAccessShortcut);
 
             var shortcutGB = gameBarShortcutField.Value.ToString();
             _lgService.Config.GameBarShortcut = shortcutGB;
@@ -1253,11 +1208,11 @@ Do you want to continue?";
 
             if (string.IsNullOrEmpty(shortcutGB))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, SHORTCUTID_GAMEBAR);
+                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, LgService.SHORTCUTID_GAMEBAR);
             }
             else
             {
-                KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_GAMEBAR, shortcutGB);
+                _keyboardShortcutDispatcher.RegisterShortcut(LgService.SHORTCUTID_GAMEBAR, shortcutGB);
             }
 
             _lgService.Config.ShowAdvancedActions = advancedField.ValueAsBool;

@@ -37,17 +37,17 @@ public class ServiceManager
 
     public void LoadModules()
     {
-        AddModule<NvService>("NVIDIA controller");
-        AddModule<AmdService>("AMD controller");
-        AddModule<LgService>("LG controller");
-        AddModule<SamsungService>("Samsung controller");
-        AddModule<GameService>("Game launcher");
+        NvService = AddModule<NvService>("NVIDIA controller");
+        AmdService = AddModule<AmdService>("AMD controller");
+        LgService = AddModule<LgService>("LG controller");
+        SamsungService = AddModule<SamsungService>("Samsung controller");
+        GameService = AddModule<GameService>("Game launcher");
 
         var names = Modules.Select(m => m.Key).ToList();
         _config.Modules = _config.Modules.OrderBy(m => names.IndexOf(m.DisplayName)).ToList();
     }
 
-    private void AddModule<T>(string displayName) where T : class, IServiceBase
+    private T AddModule<T>(string displayName) where T : class, IServiceBase
     {
         var moduleEx = new ModuleEx<T> { DisplayName = displayName };
         Modules.Add(displayName, moduleEx);
@@ -66,16 +66,10 @@ public class ServiceManager
 
             service?.InstallEventHandlers();
 
-            object _ = service switch
-            {
-                NvService nvService => NvService = nvService,
-                AmdService amdService => AmdService = amdService,
-                LgService lgService => LgService = lgService,
-                SamsungService samsungService => SamsungService = samsungService,
-                GameService gameService => GameService = gameService,
-                _ => throw new InvalidOperationException("Unknown module")
-            };
+            return service;
         }
+
+        return default;
     }
 
     public async Task<bool> HandleExternalServiceAsync(string serviceName, string[] parameters)

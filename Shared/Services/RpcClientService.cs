@@ -46,9 +46,10 @@ public class RpcClientService
     {
         message.ServiceName = Name;
 
-        if (Debugger.IsAttached)
+        if (Debugger.IsAttached && !_winApiService.IsServiceRunning())
         {
-            return PipeUtils.SendRpcMessage<T>(message, pipeName: PipeUtils.ElevatedPipe);
+            //return PipeUtils.SendRpcMessage<T>(message, pipeName: PipeUtils.ElevatedPipe);
+            return ExecuteViaElevatedProcess<T>(message);
         }
 
         if (!_winApiService.IsServiceRunning())

@@ -1,6 +1,7 @@
 ﻿using ATI.ADL;
-using ColorControl.Shared.Common;
+using ColorControl.Services.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
@@ -17,19 +18,19 @@ namespace ColorControl.Services.AMD
 {
     public partial class AmdPanel : UserControl, IModulePanel
     {
-        public static readonly int SHORTCUTID_AMDQA = -201;
-
         private readonly AmdService _amdService;
-        private readonly NotifyIcon _trayIcon;
+        private readonly NotifyIconManager _notifyIconManager;
         private readonly AppContextProvider _appContextProvider;
+        private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private Config _config;
         private string _lastDisplayRefreshRates = string.Empty;
 
-        internal AmdPanel(AmdService amdService, NotifyIcon trayIcon, AppContextProvider appContextProvider)
+        internal AmdPanel(AmdService amdService, NotifyIconManager notifyIconManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _amdService = amdService;
-            _trayIcon = trayIcon;
+            _notifyIconManager = notifyIconManager;
             _appContextProvider = appContextProvider;
+            _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
             InitializeComponent();
@@ -55,7 +56,7 @@ namespace ColorControl.Services.AMD
             foreach (var preset in _amdService.GetPresets())
             {
                 AddOrUpdateItemAmd(preset);
-                KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -112,7 +113,7 @@ namespace ColorControl.Services.AMD
                 text += "\n" + displayInfo.InfoLine;
             }
 
-            FormUtils.SetNotifyIconText(_trayIcon, text);
+            _notifyIconManager.SetText(text);
         }
 
         private void AddOrUpdateItemAmd(AmdPreset preset = null)
@@ -171,12 +172,12 @@ namespace ColorControl.Services.AMD
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = KeyboardShortcutManager.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            KeyboardShortcutManager.HandleKeyboardShortcutUp(e);
+            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private AmdPreset GetSelectedAmdPreset()
@@ -253,7 +254,7 @@ namespace ColorControl.Services.AMD
         {
             var shortcut = edtAmdShortcut.Text.Trim();
 
-            if (!KeyboardShortcutManager.ValidateShortcut(shortcut))
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(shortcut))
             {
                 return;
             }
@@ -280,7 +281,7 @@ namespace ColorControl.Services.AMD
 
             AddOrUpdateItemAmd();
 
-            KeyboardShortcutManager.RegisterShortcut(preset.id, preset.shortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
         }
 
         private void btnCloneAmd_Click(object sender, EventArgs e)
@@ -584,12 +585,16 @@ namespace ColorControl.Services.AMD
 
             _config.AmdQuickAccessShortcut = shortcut;
 
-            KeyboardShortcutManager.RegisterShortcut(SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(AmdService.SHORTCUTID_AMDQA, _config.AmdQuickAccessShortcut);
         }
 
         private void lvLgPresets_ColumnClick(object sender, ColumnClickEventArgs e)
         {
             FormUtils.ListViewSort(sender, e);
+        }
+
+        public void Init()
+        {
         }
     }
 }

@@ -42,6 +42,8 @@ namespace ColorControl.Services.Samsung
 
         public List<SamsungDevice> Devices { get; private set; }
 
+        public static readonly int SHORTCUTID_SAMSUNGQA = -204;
+
         public SamsungService(AppContextProvider appContextProvider, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService) : base(appContextProvider)
         {
             _appContext = appContextProvider.GetAppContext();
@@ -56,8 +58,6 @@ namespace ColorControl.Services.Samsung
 
             LoadConfig();
             LoadPresets();
-
-            SetShortcuts(-204, Config.QuickAccessShortcut);
         }
 
         public static async Task<bool> ExecutePresetAsync(string presetName)
@@ -88,6 +88,8 @@ namespace ColorControl.Services.Samsung
         {
             base.InstallEventHandlers();
 
+            SetShortcuts(SHORTCUTID_SAMSUNGQA, Config.QuickAccessShortcut);
+
             _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
             _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOff, PowerModeChanged);
@@ -100,6 +102,11 @@ namespace ColorControl.Services.Samsung
         private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
         {
             await RefreshDevices(afterStartUp: true);
+
+            if (_appContext.StartUpParams.RunningFromScheduledTask)
+            {
+                await ExecutePresetsForEvent(PresetTriggerType.Startup);
+            }
         }
 
         private void LoadConfig()
@@ -194,7 +201,7 @@ namespace ColorControl.Services.Samsung
                 return;
             }
 
-            await ExecuteEventPresets(_serviceManager, new[] { triggerType });
+            await ExecuteEventPresets(_serviceManager, new[] { triggerType }).ConfigureAwait(true);
         }
 
         public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
