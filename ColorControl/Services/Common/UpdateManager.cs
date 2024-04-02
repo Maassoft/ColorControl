@@ -12,7 +12,7 @@ namespace ColorControl.Services.Common;
 
 public class UpdateManager
 {
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
     private readonly ServiceManager _serviceManager;
     private readonly NotifyIconManager _notifyIconManager;
     private readonly WinApiService _winApiService;
@@ -23,14 +23,14 @@ public class UpdateManager
     private string _updateHtmlUrl;
     private string _downloadUrl;
 
-    public UpdateManager(AppContextProvider appContextProvider, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService, WinApiAdminService winApiAdminService)
+    public UpdateManager(GlobalContext globalContext, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService, WinApiAdminService winApiAdminService)
     {
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
         _serviceManager = serviceManager;
         _notifyIconManager = notifyIconManager;
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
-        _config = appContextProvider.GetAppContext().Config;
+        _config = globalContext.Config;
     }
 
     private void trayIconBalloonTip_Clicked(object sender, EventArgs e)
@@ -119,7 +119,7 @@ public class UpdateManager
                     return;
                 }
 
-                _appContextProvider.GetAppContext().UpdateAvailable = true;
+                _globalContext.UpdateAvailable = true;
 
                 if (_notifyIconManager.NotifyIcon.Visible)
                 {
@@ -172,7 +172,7 @@ public class UpdateManager
         else
         {
             _downloadUrl = null;
-            _appContextProvider.GetAppContext().UpdateAvailable = true;
+            _globalContext.UpdateAvailable = true;
         }
     }
 }

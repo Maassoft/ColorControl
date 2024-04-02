@@ -1,10 +1,10 @@
 ﻿using ATI.ADL;
 using ColorControl.Services.Common;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,18 +20,18 @@ namespace ColorControl.Services.AMD
     {
         private readonly AmdService _amdService;
         private readonly NotifyIconManager _notifyIconManager;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private Config _config;
         private string _lastDisplayRefreshRates = string.Empty;
 
-        internal AmdPanel(AmdService amdService, NotifyIconManager notifyIconManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        internal AmdPanel(AmdService amdService, NotifyIconManager notifyIconManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _amdService = amdService;
             _notifyIconManager = notifyIconManager;
-            _appContextProvider = appContextProvider;
+            _globalContext = globalContext;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
-            _config = Shared.Common.GlobalContext.CurrentContext.Config;
+            _config = globalContext.Config;
 
             InitializeComponent();
 
@@ -303,7 +303,7 @@ namespace ColorControl.Services.AMD
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, preset.id);
             }
 
             _amdService.GetPresets().Remove(preset);

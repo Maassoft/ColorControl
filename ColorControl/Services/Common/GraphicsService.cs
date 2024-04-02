@@ -1,5 +1,5 @@
-﻿using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Native;
 using NWin32;
 using NWin32.NativeTypes;
 using System;
@@ -15,7 +15,7 @@ namespace ColorControl.Services.Common
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public GraphicsService(AppContextProvider appContextProvider) : base(appContextProvider)
+        public GraphicsService(GlobalContext globalContext) : base(globalContext)
         {
         }
 

@@ -56,9 +56,6 @@
 		<None Remove="XForms\LogWindow.xaml" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Update="Forms\ElevatedForm.cs">
-			<SubType>Form</SubType>
-		</Compile>
 		<Compile Update="Forms\OptionsPanel.cs">
 		  <SubType>UserControl</SubType>
 		</Compile>

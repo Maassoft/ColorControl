@@ -20,7 +20,7 @@ namespace ColorControl.Shared.Common
         public DateTime StartTime { get; private set; } = DateTime.Now;
         public string MutexId { get; private set; }
         public nint MainHandle { get; set; }
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IServiceProvider ServiceProvider { get; set; }
 
         public string ApplicationTitle { get; private set; }
         public string ApplicationTitleAdmin { get; private set; }

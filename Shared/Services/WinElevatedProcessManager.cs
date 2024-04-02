@@ -1,6 +1,5 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
-using NWin32;
 using System.Diagnostics;
 
 namespace ColorControl.Shared.Services;
@@ -73,36 +72,17 @@ public class WinElevatedProcessManager
         return 0;
     }
 
-
-    private static nint ElevatedProcessWindowHandle = nint.Zero;
+    private static int ElevatedProcessId;
 
     public void CheckElevatedProcess()
     {
-        ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
-
-        if (ElevatedProcessWindowHandle != nint.Zero)
+        if (ElevatedProcessId != 0 && !Process.GetProcessById(ElevatedProcessId).HasExited)
         {
             return;
         }
 
-        ExecuteDirect(StartUpParams.StartElevatedParam, false);
+        ElevatedProcessId = ExecuteDirect(StartUpParams.StartElevatedParam, false);
 
-        var delay = 1000;
-
-        while (delay >= 0)
-        {
-            Thread.Sleep(100);
-
-            ElevatedProcessWindowHandle = NativeMethods.FindWindowW(null, "ElevatedForm");
-
-            if (ElevatedProcessWindowHandle != nint.Zero)
-            {
-                Thread.Sleep(500);
-                break;
-            }
-
-            delay -= 100;
-        }
+        Thread.Sleep(500);
     }
-
 }

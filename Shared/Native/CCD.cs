@@ -3,6 +3,7 @@ using MHC2Gen;
 using NWin32;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ColorControl.Shared.Native
@@ -61,6 +62,19 @@ namespace ColorControl.Shared.Native
                     NativeMethods.SetDisplayConfig(0, null, 0, null, (SdcFlags.Apply | SdcFlags.TopologyClone));
                     break;
             }
+        }
+
+        public static void GetAllPaths()
+        {
+            uint numPathArrayElements;
+            uint numModeInfoArrayElements;
+
+            NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.AllPaths, out numPathArrayElements, out numModeInfoArrayElements);
+
+            var pathArray = new DisplayConfigPathInfo[numPathArrayElements];
+            var modeArray = new DisplayConfigModeInfo[numModeInfoArrayElements];
+
+            var result = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.AllPaths, ref numPathArrayElements, pathArray, ref numModeInfoArrayElements, modeArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
         }
 
         public static LUID GetAdapterId(string displayName = null)

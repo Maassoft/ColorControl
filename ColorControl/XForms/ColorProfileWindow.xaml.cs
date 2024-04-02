@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Forms;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using ColorControl.Shared.XForms;
@@ -18,15 +19,15 @@ namespace ColorControl.XForms
     {
         private ColorProfileViewModel _viewModel;
         private readonly WinApiAdminService _winApiAdminService;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
 
-        public ColorProfileWindow(WinApiAdminService winApiAdminService, AppContextProvider appContextProvider, bool isHDR)
+        public ColorProfileWindow(WinApiAdminService winApiAdminService, GlobalContext globalContext, bool isHDR)
         {
             _winApiAdminService = winApiAdminService;
-            _appContextProvider = appContextProvider;
+            _globalContext = globalContext;
 
             _viewModel = new ColorProfileViewModel(isHDR);
-            _viewModel.SetMinMaxTml = appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml;
+            _viewModel.SetMinMaxTml = globalContext.Config.SetMinTmlAndMaxTml;
 
             DataContext = _viewModel;
             InitializeComponent();
@@ -49,8 +50,8 @@ namespace ColorControl.XForms
             }
 
             var winApiAdminService = Program.ServiceProvider.GetRequiredService<WinApiAdminService>();
-            var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
-            var window = new ColorProfileWindow(winApiAdminService, appContextProvider, isHDR);
+            var globalContext = Program.ServiceProvider.GetRequiredService<GlobalContext>();
+            var window = new ColorProfileWindow(winApiAdminService, globalContext, isHDR);
 
             if (show)
             {

@@ -24,7 +24,7 @@ namespace ColorControl.Services.AMD
 
         public static readonly int SHORTCUTID_AMDQA = -201;
 
-        public AmdService(AppContextProvider appContextProvider) : base(appContextProvider)
+        public AmdService(GlobalContext globalContext) : base(globalContext)
         {
             LoadPresets();
         }
@@ -33,9 +33,9 @@ namespace ColorControl.Services.AMD
         {
             try
             {
-                var appContextProvider = Program.ServiceProvider.GetRequiredService<AppContextProvider>();
+                var globalContext = Program.ServiceProvider.GetRequiredService<GlobalContext>();
 
-                var service = new AmdService(appContextProvider);
+                var service = new AmdService(globalContext);
 
                 var result = await service.ApplyPreset(idOrName);
 
@@ -57,7 +57,7 @@ namespace ColorControl.Services.AMD
         {
             base.InstallEventHandlers();
 
-            SetShortcuts(SHORTCUTID_AMDQA, _appContextProvider.GetAppContext().Config.AmdQuickAccessShortcut);
+            SetShortcuts(SHORTCUTID_AMDQA, _globalContext.Config.AmdQuickAccessShortcut);
         }
 
         protected override List<AmdPreset> GetDefaultPresets()

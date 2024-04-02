@@ -94,16 +94,16 @@ namespace ColorControl
                 Logger.Debug($"Result of setting SetHighDpiMode: {result}");
             }
 
-            var host = CreateHostBuilder().Build();
-            ServiceProvider = host.Services;
-
             var mutexId = $"Global\\{typeof(MainForm).GUID}";
 
-            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
             var startUpParams = StartUpParams.Parse(args);
 
-            AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, ServiceProvider, mutexId);
-            appContextProvider.SetAppContext(AppContext);
+            AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, null, mutexId);
+
+            var host = CreateHostBuilder().Build();
+            ServiceProvider = host.Services;
+            AppContext.ServiceProvider = ServiceProvider;
+
             MessageForms.Title = AppContext.ApplicationTitle;
 
             var existingProcess = Utils.GetProcessByName("ColorControl");
@@ -279,7 +279,6 @@ namespace ColorControl
                     services.AddSingleton<WindowMessageDispatcher>();
                     services.AddSingleton<KeyboardShortcutDispatcher>();
                     services.AddSingleton<MainForm>();
-                    services.AddSingleton<ElevatedForm>();
                     services.AddSingleton<LogWindow>();
                     services.AddTransient<ColorProfileWindow>();
                     services.AddSingleton<RestartDetector>();
@@ -299,6 +298,8 @@ namespace ColorControl
         {
             Logger.Debug("RUNNING SERVICE");
 
+            AppContext = new GlobalContext(null, new StartUpParams(), DataDir, _loggingRule, null);
+
             using IHost host = Host.CreateDefaultBuilder(args)
                 .UseWindowsService(options =>
                 {
@@ -313,17 +314,14 @@ namespace ColorControl
                 .Build();
 
             ServiceProvider = host.Services;
-
-            var appContextProvider = ServiceProvider.GetRequiredService<AppContextProvider>();
-            AppContext = new GlobalContext(null, new StartUpParams(), DataDir, _loggingRule, ServiceProvider);
-            appContextProvider.SetAppContext(AppContext);
+            AppContext.ServiceProvider = ServiceProvider;
 
             await host.RunAsync();
         }
 
         private static void RegisterSharedServices(this IServiceCollection services)
         {
-            services.AddSingleton<AppContextProvider>();
+            services.AddSingleton(AppContext);
             services.AddSingleton<SessionSwitchDispatcher>();
             services.AddSingleton<WinApiAdminService>();
             services.AddSingleton<WinApiService>();

@@ -44,9 +44,9 @@ namespace ColorControl.Services.Samsung
 
         public static readonly int SHORTCUTID_SAMSUNGQA = -204;
 
-        public SamsungService(AppContextProvider appContextProvider, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService) : base(appContextProvider)
+        public SamsungService(GlobalContext globalContext, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService) : base(globalContext)
         {
-            _appContext = appContextProvider.GetAppContext();
+            _appContext = globalContext;
             _allowPowerOn = _appContext.StartUpParams.RunningFromScheduledTask;
             _serviceManager = serviceManager;
             _powerEventDispatcher = powerEventDispatcher;
@@ -106,6 +106,11 @@ namespace ColorControl.Services.Samsung
             if (_appContext.StartUpParams.RunningFromScheduledTask)
             {
                 await ExecutePresetsForEvent(PresetTriggerType.Startup);
+            }
+
+            if (_appContext.StartUpParams.ExecuteSamsungPreset)
+            {
+                await ExecutePresetAsync(_appContext.StartUpParams.SamsungPresetName);
             }
         }
 
@@ -208,7 +213,7 @@ namespace ColorControl.Services.Samsung
         {
             Devices = Config.Devices;
 
-            if (!_appContextProvider.GetAppContext().StartUpParams.NoDeviceRefresh)
+            if (!_globalContext.StartUpParams.NoDeviceRefresh)
             {
                 var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 

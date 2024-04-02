@@ -134,6 +134,16 @@ namespace LgTv
         bool_true
     }
 
+    public enum WhiteBalanceMethod
+    {
+        [Description("2-points")]
+        _2,
+        [Description("20-points")]
+        _10,
+        [Description("22-points")]
+        _22
+    }
+
     public enum GammaExp
     {
         low,

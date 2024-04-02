@@ -404,6 +404,7 @@ namespace ColorControl.Forms
             chkStartMinimized.TabIndex = 3;
             chkStartMinimized.Text = "Start minimized";
             chkStartMinimized.UseVisualStyleBackColor = true;
+            chkStartMinimized.CheckedChanged += chkStartMinimized_CheckedChanged;
             // 
             // chkStartAfterLogin
             // 

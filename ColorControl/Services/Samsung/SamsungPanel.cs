@@ -6,7 +6,6 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using NLog;
 using NStandard;
 using System;
@@ -24,16 +23,16 @@ namespace ColorControl.Services.Samsung
 
         private Config _config;
         private SamsungService _samsungService;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private readonly ServiceManager _serviceManager;
         private string _tabMessage;
         private bool _disableEvents = false;
 
-        public SamsungPanel(SamsungService samsungService, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher, ServiceManager serviceManager)
+        public SamsungPanel(SamsungService samsungService, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher, ServiceManager serviceManager)
         {
             _samsungService = samsungService;
-            _appContextProvider = appContextProvider;
+            _globalContext = globalContext;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _serviceManager = serviceManager;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
@@ -453,7 +452,7 @@ namespace ColorControl.Services.Samsung
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, preset.id);
             }
 
             _samsungService.GetPresets().Remove(preset);

@@ -20,7 +20,7 @@ internal class MainWorker
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private readonly BackgroundWorker _backgroundWorker;
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
     private readonly ServiceManager _serviceManager;
     private readonly Config _config;
     private readonly NotifyIconManager _notifyIconManager;
@@ -37,7 +37,7 @@ internal class MainWorker
     public static int SHORTCUTID_SCREENSAVER = -100;
 
     public MainWorker(
-        AppContextProvider appContextProvider,
+        GlobalContext globalContext,
         ServiceManager serviceManager,
         NotifyIconManager notifyIconManager,
         WindowMessageDispatcher windowMessageDispatcher,
@@ -48,7 +48,7 @@ internal class MainWorker
         UpdateManager updateManager)
     {
         _backgroundWorker = new BackgroundWorker();
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
         _serviceManager = serviceManager;
         _notifyIconManager = notifyIconManager;
         _windowMessageDispatcher = windowMessageDispatcher;
@@ -57,7 +57,7 @@ internal class MainWorker
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
         _updateManager = updateManager;
-        _config = _appContextProvider.GetAppContext().Config;
+        _config = _globalContext.Config;
     }
 
     public async Task DoWork()
@@ -74,6 +74,7 @@ internal class MainWorker
 
             System.Windows.Forms.Application.Run(_windowMessageDispatcher.MessageForm);
 
+            _serviceManager.Save();
             _notifyIconManager.HideIcon();
 
             if (_screenStateNotify != 0)
@@ -88,12 +89,13 @@ internal class MainWorker
 
     private async Task Init()
     {
-        _appContextProvider.GetAppContext().SynchronizationContext = AsyncOperationManager.SynchronizationContext;
+        _globalContext.SynchronizationContext = AsyncOperationManager.SynchronizationContext;
 
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageQueryEndSession, HandleQueryEndSessionEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageClose, HandleCloseEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessagePowerBroadcast, HandlePowerBroadcastEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageShowWindow, HandleShowWindowEvent);
+        _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageUserBringToFront, HandleUserBringToFrontEvent);
 
         _screenStateNotify = WinApi.RegisterPowerSettingNotification(_windowMessageDispatcher.MessageForm.Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
@@ -137,6 +139,11 @@ internal class MainWorker
         {
             Program.OpenMainForm();
         }
+    }
+
+    private void HandleUserBringToFrontEvent(object sender, WindowMessageEventArgs e)
+    {
+        Program.OpenMainForm();
     }
 
     private void HandlePowerBroadcastEvent(object sender, WindowMessageEventArgs e)

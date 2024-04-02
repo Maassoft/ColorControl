@@ -11,17 +11,17 @@ public class ElevationService
 {
     private readonly WinApiService _winApiService;
     private readonly WinApiAdminService _winApiAdminService;
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
 
     private readonly Config _config;
 
-    public ElevationService(WinApiService winApiService, WinApiAdminService winApiAdminService, AppContextProvider appContextProvider)
+    public ElevationService(WinApiService winApiService, WinApiAdminService winApiAdminService, GlobalContext globalContext)
     {
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
 
-        _config = appContextProvider.GetAppContext().Config;
+        _config = globalContext.Config;
     }
 
     public void SetElevationMethod(ElevationMethod elevationMethod, bool startAfterLoginChecked = false)

@@ -37,11 +37,11 @@ public class ProcessEventDispatcher : EventDispatcher<ProcessChangedEventArgs>
 
     protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-    private AppContextProvider _appContextProvider { get; }
+    private GlobalContext _globalContext { get; }
 
-    public ProcessEventDispatcher(AppContextProvider appContextProvider)
+    public ProcessEventDispatcher(GlobalContext globalContext)
     {
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
 
         IsRunning = true;
 
@@ -62,7 +62,7 @@ public class ProcessEventDispatcher : EventDispatcher<ProcessChangedEventArgs>
 
         while (IsRunning)
         {
-            await Task.Delay(_appContextProvider.GetAppContext().Config.ProcessMonitorPollingInterval);
+            await Task.Delay(_globalContext.Config.ProcessMonitorPollingInterval);
 
             if (!HasHandlers(Event_ProcessChanged))
             {

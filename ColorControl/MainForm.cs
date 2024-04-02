@@ -11,7 +11,6 @@ using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using NWin32;
@@ -49,14 +48,12 @@ namespace ColorControl
 
         private GamePanel _gamePanel;
 
-        public MainForm(AppContextProvider appContextProvider, ServiceManager serviceManager,
+        public MainForm(GlobalContext globalContext, ServiceManager serviceManager,
             IServiceProvider serviceProvider, ElevationService elevationService, NotifyIconManager notifyIconManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, UpdateManager updateManager)
         {
             InitializeComponent();
 
             Icon = Resources.AppIcon;
-
-            var appContext = appContextProvider.GetAppContext();
 
             _serviceManager = serviceManager;
             _serviceProvider = serviceProvider;
@@ -66,7 +63,7 @@ namespace ColorControl
             _updateManager = updateManager;
             _config = Program.Config;
 
-            Text = appContext.ApplicationTitleAdmin;
+            Text = globalContext.ApplicationTitleAdmin;
 
             LoadConfig();
 
@@ -360,6 +357,31 @@ namespace ColorControl
             //Environment.Exit(0);
             //InstallUpdate("");
             //await Test();
+
+            //var dm = DisplayManager.Create(DisplayManagerOptions.None);
+
+            //var targets = dm.GetCurrentTargets();
+
+            //var monitor = targets.First().TryGetMonitor();
+
+            //var result = dm.TryReadCurrentStateForAllTargets();
+            //var state = result.State;
+
+            //var res2 = state.TryFunctionalize(DisplayStateFunctionalizeOptions.None);
+
+            ////var path = state.ConnectTarget(targets.First());
+            //var path = state.GetPathForTarget(targets.First());
+
+            //var res3 = state.TryApply(DisplayStateApplyOptions.None);
+
+            //path.IsInterlaced = false;
+            //path.Scaling = DisplayPathScaling.Identity;
+            //path.SourcePixelFormat = Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized;
+            //path.PresentationRate = null;
+            //path.Properties.Clear();
+            //path.WireFormat = null;
+
+            //var modes = path.FindModes(DisplayModeQueryOptions.None);
 
             _serviceManager.NvService?.TestResolution();
         }

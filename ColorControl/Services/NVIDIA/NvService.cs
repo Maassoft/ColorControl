@@ -222,7 +222,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static readonly int SHORTCUTID_NVQA = -200;
 
-        public NvService(AppContextProvider appContextProvider, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager) : base(appContextProvider)
+        public NvService(GlobalContext globalContext, WinApiService winApiService, RpcClientService rpcClientService, PowerEventDispatcher powerEventDispatcher, ServiceManager serviceManager) : base(globalContext)
         {
             _winApiService = winApiService;
             _rpcClientService = rpcClientService;
@@ -238,11 +238,11 @@ namespace ColorControl.Services.NVIDIA
 
         public override void InstallEventHandlers()
         {
-            SetShortcuts(SHORTCUTID_NVQA, _appContextProvider.GetAppContext().Config.NvQuickAccessShortcut);
+            SetShortcuts(SHORTCUTID_NVQA, _globalContext.Config.NvQuickAccessShortcut);
 
             GetDisplayInfos(false);
 
-            MainViewModel.ConfigPath = _appContextProvider.GetAppContext().DataPath;
+            MainViewModel.ConfigPath = _globalContext.DataPath;
             if (Config.ApplyNovideoOnStartup)
             {
                 MainWindow.CreateAndShow(false);
@@ -481,7 +481,7 @@ namespace ColorControl.Services.NVIDIA
 
                 if (preset.ColorProfileSettings.ProfileName != null)
                 {
-                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml);
+                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml);
                 }
             }
 
@@ -1291,12 +1291,23 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetColorProfile(Display display, string name)
         {
-            CCD.SetDisplayDefaultColorProfile(display.Name, name, _appContextProvider.GetAppContext().Config.SetMinTmlAndMaxTml);
+            CCD.SetDisplayDefaultColorProfile(display.Name, name, _globalContext.Config.SetMinTmlAndMaxTml);
         }
 
         public void TestResolution()
         {
-            SetDithering(NvDitherState.Enabled, 1, 4, setRegistryKey: true);
+            //var display = GetCurrentDisplay();
+
+            //var configs = DisplayApi.GetDisplayConfig();
+
+            //var displayDevice = display.DisplayDevice;
+
+            //var output = displayDevice.Output;
+            //var bytes = File.ReadAllBytes(@"d:\S95C_mod.bin");
+
+            //displayDevice.PhysicalGPU.WriteEDIDData(output, bytes);
+
+            //SetDithering(NvDitherState.Enabled, 1, 4, setRegistryKey: true);
 
             //GetHdrMetaData();
 
@@ -1449,13 +1460,13 @@ namespace ColorControl.Services.NVIDIA
                 {
                     var preset = GetPresetForDisplay(display, true, displays.Count());
 
-                    var values = preset.GetDisplayValues(_appContextProvider.GetAppContext().Config);
+                    var values = preset.GetDisplayValues(_globalContext.Config);
                     var displayInfo = new NvDisplayInfo(display, values, preset.InfoLine, preset.displayName);
 
                     list.Add(displayInfo);
                 }
 
-                var notifyIconManager = _appContextProvider.GetAppContext().ServiceProvider.GetService<NotifyIconManager>();
+                var notifyIconManager = _globalContext.ServiceProvider.GetService<NotifyIconManager>();
 
                 if (notifyIconManager != null)
                 {

@@ -34,18 +34,18 @@ namespace ColorControl.Services.NVIDIA
         private Config _config;
         private NvService _nvService;
         private readonly NotifyIconManager _notifyIconManager;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
         private string _lastDisplayRefreshRates = string.Empty;
         private RpcClientService _rpcService;
         private readonly WinApiAdminService _winApiAdminService;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
-        public NvPanel(NvService nvService, NotifyIconManager notifyIconManager, AppContextProvider appContextProvider, RpcClientService rpcService, WinApiAdminService winApiAdminService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        public NvPanel(NvService nvService, NotifyIconManager notifyIconManager, GlobalContext globalContext, RpcClientService rpcService, WinApiAdminService winApiAdminService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _nvService = nvService;
             _notifyIconManager = notifyIconManager;
-            _appContextProvider = appContextProvider;
-            _config = appContextProvider.GetAppContext().Config;
+            _globalContext = globalContext;
+            _config = globalContext.Config;
             _rpcService = rpcService;
             _winApiAdminService = winApiAdminService;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
@@ -157,7 +157,7 @@ namespace ColorControl.Services.NVIDIA
                     item.Font = new Font(item.Font, item.Font.Style | FontStyle.Bold);
                     //item.BackColor = Color.LightGray;
                 }
-                item.BackColor = _appContextProvider.GetAppContext().Config.UseDarkMode ? Color.DimGray : Color.LightGray;
+                item.BackColor = _globalContext.Config.UseDarkMode ? Color.DimGray : Color.LightGray;
 
                 var values = displayInfo.Values;
 
@@ -245,7 +245,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, preset.id);
             }
 
             _nvService.GetPresets().Remove(preset);

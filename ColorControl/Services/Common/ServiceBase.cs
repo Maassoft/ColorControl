@@ -1,7 +1,7 @@
-﻿using ColorControl.Shared.EventDispatcher;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NStandard;
@@ -37,14 +37,14 @@ namespace ColorControl.Services.Common
         protected T _lastTriggeredPreset;
         protected int _quickAccessShortcutId;
 
-        protected AppContextProvider _appContextProvider;
+        protected GlobalContext _globalContext;
 
         private List<JsonConverter> _jsonConverters;
 
-        public ServiceBase(AppContextProvider appContextProvider)
+        public ServiceBase(GlobalContext globalContext)
         {
-            _appContextProvider = appContextProvider;
-            _dataPath = appContextProvider.GetAppContext().DataPath;
+            _globalContext = globalContext;
+            _dataPath = globalContext.DataPath;
             _jsonConverters = new List<JsonConverter>();
 
             Initialize();
@@ -114,7 +114,7 @@ namespace ColorControl.Services.Common
         {
             _quickAccessShortcutId = quickAccessShortcutId;
 
-            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+            var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
 
             if (keyboardShortcutDispatcher == null)
             {

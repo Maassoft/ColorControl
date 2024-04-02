@@ -1,10 +1,10 @@
-﻿using ColorControl.Forms;
-using ColorControl.Services.AMD;
+﻿using ColorControl.Services.AMD;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
@@ -19,7 +19,7 @@ namespace ColorControl
         {
             if (startUpParams.StartElevated)
             {
-                StartElevated();
+                await StartElevated();
                 return true;
             }
 
@@ -105,13 +105,17 @@ Options:
             return result;
         }
 
-        private static void StartElevated()
+        private static async Task StartElevated()
         {
             try
             {
-                var elevatedForm = Program.ServiceProvider.GetRequiredService<ElevatedForm>();
+                var backgroundService = Program.ServiceProvider.GetRequiredService<ColorControlBackgroundService>();
 
-                Application.Run(elevatedForm);
+                backgroundService.PipeName = "elevatedpipe";
+
+                await backgroundService.StartAndStopWithMutex();
+
+                Application.Run();
             }
             catch (Exception ex)
             {

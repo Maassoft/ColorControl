@@ -26,17 +26,17 @@ namespace ColorControl.Services.LG
         private Config _config;
         private LgService _lgService;
         private readonly ServiceManager _serviceManager;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
         private string _lgTabMessage;
         private bool _disableEvents = false;
 
-        internal LgPanel(LgService lgService, ServiceManager serviceManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        internal LgPanel(LgService lgService, ServiceManager serviceManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _lgService = lgService;
             _serviceManager = serviceManager;
-            _appContextProvider = appContextProvider;
+            _globalContext = globalContext;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
@@ -443,7 +443,7 @@ namespace ColorControl.Services.LG
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, preset.id);
             }
 
             _lgService.GetPresets().Remove(preset);
@@ -1208,7 +1208,7 @@ Do you want to continue?";
 
             if (string.IsNullOrEmpty(shortcutGB))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, LgService.SHORTCUTID_GAMEBAR);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, LgService.SHORTCUTID_GAMEBAR);
             }
             else
             {

@@ -3,6 +3,7 @@ using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Services;
 using NLog;
@@ -27,12 +28,12 @@ public class ServiceManager
     internal GameService GameService { get; set; }
     internal SamsungService SamsungService { get; set; }
 
-    public ServiceManager(WinApiAdminService winApiAdminService, IServiceProvider serviceProvider, AppContextProvider appContextProvider)
+    public ServiceManager(WinApiAdminService winApiAdminService, IServiceProvider serviceProvider, GlobalContext globalContext)
     {
         _winApiAdminService = winApiAdminService;
         _serviceProvider = serviceProvider;
 
-        _config = appContextProvider.GetAppContext().Config;
+        _config = globalContext.Config;
     }
 
     public void LoadModules()

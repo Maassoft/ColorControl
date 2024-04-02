@@ -24,14 +24,14 @@ namespace ColorControl.Services.GameLauncher
         private Config _config;
         private GameService _gameService;
         private readonly ServiceManager _serviceManager;
-        private readonly AppContextProvider _appContextProvider;
+        private readonly GlobalContext _globalContext;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
-        public GamePanel(GameService gameService, ServiceManager serviceManager, AppContextProvider appContextProvider, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        public GamePanel(GameService gameService, ServiceManager serviceManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _gameService = gameService;
             _serviceManager = serviceManager;
-            _appContextProvider = appContextProvider;
+            _globalContext = globalContext;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _config = Shared.Common.GlobalContext.CurrentContext.Config;
 
@@ -258,7 +258,7 @@ namespace ColorControl.Services.GameLauncher
 
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
-                WinApi.UnregisterHotKey(_appContextProvider.GetAppContext().MainHandle, preset.id);
+                WinApi.UnregisterHotKey(_globalContext.MainHandle, preset.id);
             }
             _gameService.GetPresets().Remove(preset);
 

@@ -1,4 +1,4 @@
-﻿using ColorControl.Shared.Services;
+﻿using ColorControl.Shared.Common;
 using NWin32;
 
 namespace ColorControl.Shared.EventDispatcher;
@@ -22,9 +22,10 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     public const string Event_WindowMessageClose = "WindowMessageClose";
     public const string Event_WindowMessagePowerBroadcast = "WindowMessagePowerBroadcast";
     public const string Event_WindowMessageShowWindow = "WindowMessageShowWindow";
+    public const string Event_WindowMessageUserBringToFront = "WindowMessageUserBringToFront";
 
     private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
 
     public DummyForm MessageForm { get; set; }
 
@@ -34,16 +35,17 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
         { NativeConstants.WM_QUERYENDSESSION, Event_WindowMessageQueryEndSession },
         { NativeConstants.WM_CLOSE, Event_WindowMessageClose },
         { NativeConstants.WM_POWERBROADCAST, Event_WindowMessagePowerBroadcast },
-        { NativeConstants.WM_SHOWWINDOW, Event_WindowMessageShowWindow }
+        { NativeConstants.WM_SHOWWINDOW, Event_WindowMessageShowWindow },
+        { Utils.WM_BRINGTOFRONT, Event_WindowMessageUserBringToFront }
     };
 
-    public WindowMessageDispatcher(AppContextProvider appContextProvider)
+    public WindowMessageDispatcher(GlobalContext globalContext)
     {
         MessageForm = new DummyForm();
         MessageForm.OnMessage += MessageForm_OnMessage;
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
 
-        _appContextProvider.GetAppContext().MainHandle = MessageForm.Handle;
+        _globalContext.MainHandle = MessageForm.Handle;
     }
 
     private void MessageForm_OnMessage(object sender, Message e)

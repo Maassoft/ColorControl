@@ -73,7 +73,8 @@ namespace ColorControl.Services.LG
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public static List<string> DefaultActionsOnGameBar = new() { "backlight", "contrast", "brightness", "color" };
 
-        private static List<string> IreValueLabels = new() { "IRE 2.5", "IRE 5", "IRE 7.5", "IRE 10", "IRE 15", "IRE 20", "IRE 25", "IRE 30", "IRE 35", "IRE 40", "IRE 45", "IRE 50", "IRE 55", "IRE 60", "IRE 65", "IRE 70", "IRE 75", "IRE 80", "IRE 85", "IRE 90", "IRE 95", "IRE 100" };
+        private static List<string> IreValueLabels = ["IRE 2.5", "IRE 5", "IRE 7.5", "IRE 10", "IRE 15", "IRE 20", "IRE 25", "IRE 30", "IRE 35", "IRE 40", "IRE 45", "IRE 50", "IRE 55", "IRE 60", "IRE 65", "IRE 70", "IRE 75", "IRE 80", "IRE 85", "IRE 90", "IRE 95", "IRE 100"];
+        private static List<string> Ire10ptValueLabels = ["IRE 10", "IRE 20", "IRE 30", "IRE 40", "IRE 50", "IRE 60", "IRE 70", "IRE 80", "IRE 90", "IRE 100"];
 
         public string Name { get; private set; }
         public string IpAddress { get; private set; }
@@ -252,6 +253,16 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("whiteBalanceBlue", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
             AddGenericPictureAction("whiteBalanceGreen", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
             AddGenericPictureAction("whiteBalanceRed", minValue: -50, maxValue: 50, numberOfValues: 22, valueLabels: IreValueLabels);
+            AddGenericPictureAction("whiteBalanceBlue10pt", minValue: -50, maxValue: 50, numberOfValues: 10, valueLabels: Ire10ptValueLabels);
+            AddGenericPictureAction("whiteBalanceGreen10pt", minValue: -50, maxValue: 50, numberOfValues: 10, valueLabels: Ire10ptValueLabels);
+            AddGenericPictureAction("whiteBalanceRed10pt", minValue: -50, maxValue: 50, numberOfValues: 10, valueLabels: Ire10ptValueLabels);
+            AddGenericPictureAction("whiteBalanceBlueOffset", minValue: -50, maxValue: 50, title: "White Balance - Blue Offset");
+            AddGenericPictureAction("whiteBalanceBlueGain", minValue: -50, maxValue: 50, title: "White Balance - Blue Gain");
+            AddGenericPictureAction("whiteBalanceGreenOffset", minValue: -50, maxValue: 50, title: "White Balance - Green Offset");
+            AddGenericPictureAction("whiteBalanceGreenGain", minValue: -50, maxValue: 50, title: "White Balance - Green Gain");
+            AddGenericPictureAction("whiteBalanceRedOffset", minValue: -50, maxValue: 50, title: "White Balance - Red Offset");
+            AddGenericPictureAction("whiteBalanceRedGain", minValue: -50, maxValue: 50, title: "White Balance - Red Gain");
+            AddGenericPictureAction("whiteBalanceMethod", typeof(WhiteBalanceMethod), title: "White Balance - Method");
             AddInvokableAction("turnScreenOff", TurnScreenOffAction);
             AddInvokableAction("turnScreenOn", TurnScreenOnAction);
 

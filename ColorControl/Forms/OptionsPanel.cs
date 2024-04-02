@@ -16,20 +16,20 @@ public partial class OptionsPanel : UserControl
 {
     private readonly WinApiService _winApiService;
     private readonly WinApiAdminService _winApiAdminService;
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
     private readonly ElevationService _elevationService;
     private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
     private bool _initialized;
     private Config _config;
 
-    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, AppContextProvider appContextProvider, ElevationService elevationService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, GlobalContext globalContext, ElevationService elevationService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
     {
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
         _elevationService = elevationService;
         _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
-        _config = appContextProvider.GetAppContext().Config;
+        _config = globalContext.Config;
 
         InitializeComponent();
 
@@ -363,4 +363,11 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
         ColorProfileWindow.CreateAndShow(isHDR: false);
     }
 
+    private void chkStartMinimized_CheckedChanged(object sender, EventArgs e)
+    {
+        if (_initialized)
+        {
+            _config.StartMinimized = chkStartMinimized.Checked;
+        }
+    }
 }

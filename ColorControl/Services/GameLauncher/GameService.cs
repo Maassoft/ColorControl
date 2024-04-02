@@ -34,7 +34,7 @@ namespace ColorControl.Services.GameLauncher
 
         public static readonly int SHORTCUTID_GAMEQA = -203;
 
-        public GameService(AppContextProvider appContextProvider, ServiceManager serviceManager, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService, WinApiService winApiService) : base(appContextProvider)
+        public GameService(GlobalContext globalContext, ServiceManager serviceManager, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService, WinApiService winApiService) : base(globalContext)
         {
             LoadConfig();
             LoadPresets();
@@ -49,7 +49,7 @@ namespace ColorControl.Services.GameLauncher
         {
             base.InstallEventHandlers();
 
-            SetShortcuts(SHORTCUTID_GAMEQA, _appContextProvider.GetAppContext().Config.GameQuickAccessShortcut);
+            SetShortcuts(SHORTCUTID_GAMEQA, _globalContext.Config.GameQuickAccessShortcut);
         }
 
         private async Task ProcessChanged(object sender, ProcessChangedEventArgs e, CancellationToken token)

@@ -4,9 +4,9 @@ using ColorControl.Services.GameLauncher;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
-using ColorControl.Shared.Services;
 using novideo_srgb;
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace ColorControl.Services.Common;
 
 public class NotifyIconManager
 {
-    private readonly AppContextProvider _appContextProvider;
+    private readonly GlobalContext _globalContext;
     private readonly ServiceManager _serviceManager;
     private readonly Config _config;
 
@@ -30,11 +30,11 @@ public class NotifyIconManager
     private ToolStripMenuItem _samsungTrayMenu;
     private ToolStripMenuItem _gameTrayMenu;
 
-    public NotifyIconManager(AppContextProvider appContextProvider, ServiceManager serviceManager)
+    public NotifyIconManager(GlobalContext globalContext, ServiceManager serviceManager)
     {
-        _appContextProvider = appContextProvider;
+        _globalContext = globalContext;
         _serviceManager = serviceManager;
-        _config = appContextProvider.GetAppContext().Config;
+        _config = globalContext.Config;
     }
 
     public void Build()
@@ -234,7 +234,7 @@ public class NotifyIconManager
 
     internal void SetText(string text = null)
     {
-        var fullText = $"{_appContextProvider.GetAppContext().ApplicationTitleAdmin}{(text == null ? "" : $"\n{text}")}";
+        var fullText = $"{_globalContext.ApplicationTitleAdmin}{(text == null ? "" : $"\n{text}")}";
 
         FormUtils.SetNotifyIconText(NotifyIcon, fullText.Trim());
     }

@@ -249,5 +249,31 @@ namespace ColorControl.Svc
                 }
             }
         }
+
+        internal async Task StartAndStopWithMutex()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = cancellationTokenSource.Token;
+
+            var _ = Task.Run(() => CheckMutexAsync(cancellationTokenSource));
+
+            await StartAsync(cancellationToken);
+        }
+
+        private void CheckMutexAsync(CancellationTokenSource cancellationTokenSource)
+        {
+            var mutex = new Mutex(false, GlobalContext.CurrentContext.MutexId, out var _);
+            try
+            {
+                mutex.WaitOne();
+            }
+            catch (AbandonedMutexException)
+            {
+            }
+
+            cancellationTokenSource.Cancel();
+
+            Environment.Exit(0);
+        }
     }
 }

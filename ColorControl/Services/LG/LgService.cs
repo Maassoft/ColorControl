@@ -70,9 +70,9 @@ namespace ColorControl.Services.LG
         public static readonly int SHORTCUTID_LGQA = -202;
         public static readonly int SHORTCUTID_GAMEBAR = -101;
 
-        public LgService(AppContextProvider appContextProvider, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector, WinApiService winApiService, WinApiAdminService winApiAdminService) : base(appContextProvider)
+        public LgService(GlobalContext globalContext, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector, WinApiService winApiService, WinApiAdminService winApiAdminService) : base(globalContext)
         {
-            _allowPowerOn = appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask;
+            _allowPowerOn = globalContext.StartUpParams.RunningFromScheduledTask;
             _powerEventDispatcher = powerEventDispatcher;
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
             _processEventDispatcher = processEventDispatcher;
@@ -82,7 +82,7 @@ namespace ColorControl.Services.LG
             _restartDetector = restartDetector;
             _winApiService = winApiService;
             _winApiAdminService = winApiAdminService;
-            _syncContext = appContextProvider.GetAppContext().SynchronizationContext;
+            _syncContext = globalContext.SynchronizationContext;
             LgTvApiCore.SyncContext = _syncContext;
 
             LoadConfig();
@@ -286,7 +286,7 @@ namespace ColorControl.Services.LG
         {
             Devices = Config.Devices;
 
-            if (!_appContextProvider.GetAppContext().StartUpParams.NoDeviceRefresh)
+            if (!_globalContext.StartUpParams.NoDeviceRefresh)
             {
                 var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
@@ -446,7 +446,7 @@ namespace ColorControl.Services.LG
 
             SetShortcuts(SHORTCUTID_LGQA, Config.QuickAccessShortcut);
 
-            var keyboardShortcutDispatcher = _appContextProvider.GetAppContext().ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+            var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
             if (keyboardShortcutDispatcher != null)
             {
                 keyboardShortcutDispatcher.RegisterShortcut(SHORTCUTID_GAMEBAR, Config.GameBarShortcut);
@@ -468,9 +468,15 @@ namespace ColorControl.Services.LG
         {
             await RefreshDevices(afterStartUp: true);
 
-            if (_appContextProvider.GetAppContext().StartUpParams.RunningFromScheduledTask)
+            if (_globalContext.StartUpParams.RunningFromScheduledTask)
             {
                 await ExecutePresetsForEvent(PresetTriggerType.Startup);
+            }
+
+
+            if (_globalContext.StartUpParams.ExecuteLgPreset)
+            {
+                await ExecutePresetAsync(_globalContext.StartUpParams.LgPresetName);
             }
         }
 
