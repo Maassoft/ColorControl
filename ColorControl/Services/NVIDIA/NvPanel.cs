@@ -547,6 +547,9 @@ namespace ColorControl.Services.NVIDIA
             if (mnuRefreshRate.DropDownItems.Count == 1)
             {
                 var refreshRates = _nvService.GetAvailableRefreshRates(preset);
+
+                //var v2 = _nvService.GetAvailableRefreshRatesV2(preset);
+
                 _lastDisplayRefreshRates = displayName;
 
                 foreach (var refreshRate in refreshRates)

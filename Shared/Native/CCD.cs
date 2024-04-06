@@ -77,6 +77,27 @@ namespace ColorControl.Shared.Native
             var result = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.AllPaths, ref numPathArrayElements, pathArray, ref numModeInfoArrayElements, modeArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
         }
 
+        public static void SetDisplayConfig()
+        {
+            uint numPathArrayElements;
+            uint numModeInfoArrayElements;
+
+            NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.AllPaths, out numPathArrayElements, out numModeInfoArrayElements);
+
+            var pathArray = new DisplayConfigPathInfo[numPathArrayElements];
+            var modeArray = new DisplayConfigModeInfo[numModeInfoArrayElements];
+
+            var result = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.AllPaths, ref numPathArrayElements, pathArray, ref numModeInfoArrayElements, modeArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+
+            var sourceIndex = pathArray[0].sourceInfo.modeInfoIdx;
+            var targetIndex = pathArray[0].targetInfo.modeInfoIdx;
+
+            modeArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = 1000, numerator = 145000 };
+
+            result = NativeMethods.SetDisplayConfig(1, pathArray, 2, modeArray, SdcFlags.Apply | SdcFlags.UseSuppliedDisplayConfig | SdcFlags.AllowChanges);
+        }
+
+
         public static LUID GetAdapterId(string displayName = null)
         {
             return ExecuteForModeConfig((modeInfo) =>
@@ -786,8 +807,8 @@ namespace ColorControl.Shared.Native
         [StructLayout(LayoutKind.Sequential)]
         struct DisplayConfigRational
         {
-            uint numerator;
-            uint denominator;
+            public uint numerator;
+            public uint denominator;
         }
 
         [Flags]
@@ -886,36 +907,36 @@ namespace ColorControl.Shared.Native
         [StructLayout(LayoutKind.Sequential)]
         struct DisplayConfigVideoSignalInfo
         {
-            long pixelRate;
-            DisplayConfigRational hSyncFreq;
-            DisplayConfigRational vSyncFreq;
-            DisplayConfig2DRegion activeSize;
-            DisplayConfig2DRegion totalSize;
+            public long pixelRate;
+            public DisplayConfigRational hSyncFreq;
+            public DisplayConfigRational vSyncFreq;
+            public DisplayConfig2DRegion activeSize;
+            public DisplayConfig2DRegion totalSize;
 
-            D3DmdtVideoSignalStandard videoStandard;
-            DisplayConfigScanLineOrdering ScanLineOrdering;
+            public D3DmdtVideoSignalStandard videoStandard;
+            public DisplayConfigScanLineOrdering ScanLineOrdering;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         struct DisplayConfigTargetMode
         {
-            DisplayConfigVideoSignalInfo targetVideoSignalInfo;
+            public DisplayConfigVideoSignalInfo targetVideoSignalInfo;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         struct PointL
         {
-            int x;
-            int y;
+            public int x;
+            public int y;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         struct DisplayConfigSourceMode
         {
-            uint width;
-            uint height;
-            DisplayConfigPixelFormat pixelFormat;
-            PointL position;
+            public uint width;
+            public uint height;
+            public DisplayConfigPixelFormat pixelFormat;
+            public PointL position;
         }
 
         [StructLayout(LayoutKind.Sequential)]

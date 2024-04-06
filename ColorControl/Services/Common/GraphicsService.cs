@@ -1,7 +1,9 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Native;
 using NWin32;
 using NWin32.NativeTypes;
+using Shared.Native;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -97,6 +99,18 @@ namespace ColorControl.Services.Common
                 i++;
             }
             return list;
+        }
+
+        protected List<Rational> GetAvailableRefreshRatesV2(string displayName, bool portrait, int horizontal, int vertical)
+        {
+            var dxWrapper = new DXWrapper();
+
+            var modes = dxWrapper.GetModes(displayName, (uint)horizontal, (uint)vertical);
+
+            var refreshRates = modes.Select(m => m.RefreshRate).DistinctBy(r => r.ToString())
+                .Select(r => new Rational(r.Numerator, r.Denominator));
+
+            return refreshRates.ToList();
         }
 
         protected uint GetCurrentRefreshRate(string displayName)

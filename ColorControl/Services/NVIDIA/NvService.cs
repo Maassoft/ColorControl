@@ -1081,6 +1081,25 @@ namespace ColorControl.Services.NVIDIA
             return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
         }
 
+        public List<Rational> GetAvailableRefreshRatesV2(NvPreset preset = null)
+        {
+            if (preset != null)
+            {
+                SetCurrentDisplay(preset);
+            }
+
+            var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return [];
+            }
+
+            var portrait = IsDisplayInPortraitMode(display);
+            var desktopRect = GetDesktopRect(display);
+
+            return GetAvailableRefreshRatesV2(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+        }
+
         private Rectangle GetDesktopRect(Display display)
         {
             try
@@ -1296,6 +1315,12 @@ namespace ColorControl.Services.NVIDIA
 
         public void TestResolution()
         {
+            //CCD.SetDisplayConfig();
+
+            //var dxWrapper = new DXWrapper();
+
+            //dxWrapper.Test();
+
             //var display = GetCurrentDisplay();
 
             //var configs = DisplayApi.GetDisplayConfig();
