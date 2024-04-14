@@ -61,8 +61,6 @@ namespace ColorControl.Services.NVIDIA
             miNvPresetColorEnhancementsIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
             miRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
-            mnuNvResolution = new System.Windows.Forms.ToolStripMenuItem();
-            miNvResolutionIncluded = new System.Windows.Forms.ToolStripMenuItem();
             miNvPresetDithering = new System.Windows.Forms.ToolStripMenuItem();
             miNvPresetApplyDithering = new System.Windows.Forms.ToolStripMenuItem();
             miNvPresetDitheringEnabled = new System.Windows.Forms.ToolStripMenuItem();
@@ -92,6 +90,8 @@ namespace ColorControl.Services.NVIDIA
             miNvHdmiIncluded = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvOverclocking = new System.Windows.Forms.ToolStripMenuItem();
             miNvOverclockingIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvTriggers = new System.Windows.Forms.ToolStripMenuItem();
+            miNvTrigger1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             miNvCopyId = new System.Windows.Forms.ToolStripMenuItem();
             btnApply = new System.Windows.Forms.Button();
             lvNvPresets = new System.Windows.Forms.ListView();
@@ -102,8 +102,10 @@ namespace ColorControl.Services.NVIDIA
             miNvTestDithering = new System.Windows.Forms.ToolStripMenuItem();
             miNVIDIAInfo = new System.Windows.Forms.ToolStripMenuItem();
             lvNvPresetsToolTip = new System.Windows.Forms.ToolTip(components);
-            mnuNvTriggers = new System.Windows.Forms.ToolStripMenuItem();
-            miNvTrigger1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvResolution = new System.Windows.Forms.ToolStripMenuItem();
+            miNvResolutionIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvActiveResolution = new System.Windows.Forms.ToolStripMenuItem();
+            mnuNvVirtualResolution = new System.Windows.Forms.ToolStripMenuItem();
             mnuNvPresets.SuspendLayout();
             mnuNvSettings.SuspendLayout();
             SuspendLayout();
@@ -383,7 +385,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetColorSettings
             // 
             miNvPresetColorSettings.Name = "miNvPresetColorSettings";
-            miNvPresetColorSettings.Size = new System.Drawing.Size(120, 22);
+            miNvPresetColorSettings.Size = new System.Drawing.Size(180, 22);
             miNvPresetColorSettings.Text = "Included";
             miNvPresetColorSettings.Click += miNvPresetColorSettings_Click;
             // 
@@ -397,7 +399,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetColorEnhancementsIncluded
             // 
             miNvPresetColorEnhancementsIncluded.Name = "miNvPresetColorEnhancementsIncluded";
-            miNvPresetColorEnhancementsIncluded.Size = new System.Drawing.Size(120, 22);
+            miNvPresetColorEnhancementsIncluded.Size = new System.Drawing.Size(180, 22);
             miNvPresetColorEnhancementsIncluded.Text = "Included";
             miNvPresetColorEnhancementsIncluded.Click += miNvPresetColorEnhancementsIncluded_Click;
             // 
@@ -411,24 +413,9 @@ namespace ColorControl.Services.NVIDIA
             // miRefreshRateIncluded
             // 
             miRefreshRateIncluded.Name = "miRefreshRateIncluded";
-            miRefreshRateIncluded.Size = new System.Drawing.Size(120, 22);
+            miRefreshRateIncluded.Size = new System.Drawing.Size(180, 22);
             miRefreshRateIncluded.Text = "Included";
             miRefreshRateIncluded.Click += includedToolStripMenuItem_Click;
-            // 
-            // mnuNvResolution
-            // 
-            mnuNvResolution.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvResolutionIncluded });
-            mnuNvResolution.Name = "mnuNvResolution";
-            mnuNvResolution.Size = new System.Drawing.Size(184, 22);
-            mnuNvResolution.Text = "Resolution";
-            // 
-            // miNvResolutionIncluded
-            // 
-            miNvResolutionIncluded.CheckOnClick = true;
-            miNvResolutionIncluded.Name = "miNvResolutionIncluded";
-            miNvResolutionIncluded.Size = new System.Drawing.Size(120, 22);
-            miNvResolutionIncluded.Text = "Included";
-            miNvResolutionIncluded.Click += miNvResolutionIncluded_Click;
             // 
             // miNvPresetDithering
             // 
@@ -440,14 +427,14 @@ namespace ColorControl.Services.NVIDIA
             // miNvPresetApplyDithering
             // 
             miNvPresetApplyDithering.Name = "miNvPresetApplyDithering";
-            miNvPresetApplyDithering.Size = new System.Drawing.Size(122, 22);
+            miNvPresetApplyDithering.Size = new System.Drawing.Size(180, 22);
             miNvPresetApplyDithering.Text = "Included";
             miNvPresetApplyDithering.Click += miNvPresetApplyDithering_Click;
             // 
             // miNvPresetDitheringEnabled
             // 
             miNvPresetDitheringEnabled.Name = "miNvPresetDitheringEnabled";
-            miNvPresetDitheringEnabled.Size = new System.Drawing.Size(122, 22);
+            miNvPresetDitheringEnabled.Size = new System.Drawing.Size(180, 22);
             miNvPresetDitheringEnabled.Text = "Enabled";
             miNvPresetDitheringEnabled.Click += miNvPresetDitheringEnabled_Click;
             // 
@@ -455,7 +442,7 @@ namespace ColorControl.Services.NVIDIA
             // 
             mnuNvDitheringBitDepth.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvDithering6bit, miNvDithering8bit, miNvDithering10bit });
             mnuNvDitheringBitDepth.Name = "mnuNvDitheringBitDepth";
-            mnuNvDitheringBitDepth.Size = new System.Drawing.Size(122, 22);
+            mnuNvDitheringBitDepth.Size = new System.Drawing.Size(180, 22);
             mnuNvDitheringBitDepth.Text = "Bit depth";
             // 
             // miNvDithering6bit
@@ -486,7 +473,7 @@ namespace ColorControl.Services.NVIDIA
             // 
             mnuNvDitheringMode.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { spatial1ToolStripMenuItem, spatial2ToolStripMenuItem, spatialDynamic2x2ToolStripMenuItem, spatialStatic2x2ToolStripMenuItem, temporalToolStripMenuItem });
             mnuNvDitheringMode.Name = "mnuNvDitheringMode";
-            mnuNvDitheringMode.Size = new System.Drawing.Size(122, 22);
+            mnuNvDitheringMode.Size = new System.Drawing.Size(180, 22);
             mnuNvDitheringMode.Text = "Mode";
             // 
             // spatial1ToolStripMenuItem
@@ -597,7 +584,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvDriverSettingsIncluded
             // 
             miNvDriverSettingsIncluded.Name = "miNvDriverSettingsIncluded";
-            miNvDriverSettingsIncluded.Size = new System.Drawing.Size(120, 22);
+            miNvDriverSettingsIncluded.Size = new System.Drawing.Size(180, 22);
             miNvDriverSettingsIncluded.Text = "Included";
             miNvDriverSettingsIncluded.Click += miNvDriverSettingsIncluded_Click;
             // 
@@ -611,7 +598,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvOtherIncluded
             // 
             miNvOtherIncluded.Name = "miNvOtherIncluded";
-            miNvOtherIncluded.Size = new System.Drawing.Size(120, 22);
+            miNvOtherIncluded.Size = new System.Drawing.Size(180, 22);
             miNvOtherIncluded.Text = "Included";
             miNvOtherIncluded.Click += miNvOtherIncluded_Click;
             // 
@@ -625,7 +612,7 @@ namespace ColorControl.Services.NVIDIA
             // miNvHdmiIncluded
             // 
             miNvHdmiIncluded.Name = "miNvHdmiIncluded";
-            miNvHdmiIncluded.Size = new System.Drawing.Size(120, 22);
+            miNvHdmiIncluded.Size = new System.Drawing.Size(180, 22);
             miNvHdmiIncluded.Text = "Included";
             miNvHdmiIncluded.Click += miNvHdmiIncluded_Click;
             // 
@@ -642,6 +629,20 @@ namespace ColorControl.Services.NVIDIA
             miNvOverclockingIncluded.Size = new System.Drawing.Size(120, 22);
             miNvOverclockingIncluded.Text = "Included";
             miNvOverclockingIncluded.Click += miNvOverclockingIncluded_Click;
+            // 
+            // mnuNvTriggers
+            // 
+            mnuNvTriggers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvTrigger1ToolStripMenuItem });
+            mnuNvTriggers.Name = "mnuNvTriggers";
+            mnuNvTriggers.Size = new System.Drawing.Size(184, 22);
+            mnuNvTriggers.Text = "Triggers";
+            // 
+            // miNvTrigger1ToolStripMenuItem
+            // 
+            miNvTrigger1ToolStripMenuItem.Name = "miNvTrigger1ToolStripMenuItem";
+            miNvTrigger1ToolStripMenuItem.Size = new System.Drawing.Size(119, 22);
+            miNvTrigger1ToolStripMenuItem.Text = "Trigger 1";
+            miNvTrigger1ToolStripMenuItem.Click += miNvTrigger1ToolStripMenuItem_Click;
             // 
             // miNvCopyId
             // 
@@ -727,19 +728,31 @@ namespace ColorControl.Services.NVIDIA
             miNVIDIAInfo.Text = "NVIDIA Info";
             miNVIDIAInfo.Click += miNVIDIAInfo_Click;
             // 
-            // mnuNvTriggers
+            // mnuNvResolution
             // 
-            mnuNvTriggers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvTrigger1ToolStripMenuItem });
-            mnuNvTriggers.Name = "mnuNvTriggers";
-            mnuNvTriggers.Size = new System.Drawing.Size(184, 22);
-            mnuNvTriggers.Text = "Triggers";
+            mnuNvResolution.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miNvResolutionIncluded, mnuNvActiveResolution, mnuNvVirtualResolution });
+            mnuNvResolution.Name = "mnuNvResolution";
+            mnuNvResolution.Size = new System.Drawing.Size(184, 22);
+            mnuNvResolution.Text = "Resolution";
             // 
-            // miNvTrigger1ToolStripMenuItem
+            // miNvResolutionIncluded
             // 
-            miNvTrigger1ToolStripMenuItem.Name = "miNvTrigger1ToolStripMenuItem";
-            miNvTrigger1ToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            miNvTrigger1ToolStripMenuItem.Text = "Trigger 1";
-            miNvTrigger1ToolStripMenuItem.Click += miNvTrigger1ToolStripMenuItem_Click;
+            miNvResolutionIncluded.Name = "miNvResolutionIncluded";
+            miNvResolutionIncluded.Size = new System.Drawing.Size(180, 22);
+            miNvResolutionIncluded.Text = "Included";
+            miNvResolutionIncluded.Click += miNvResolutionIncluded_Click;
+            // 
+            // mnuNvActiveResolution
+            // 
+            mnuNvActiveResolution.Name = "mnuNvActiveResolution";
+            mnuNvActiveResolution.Size = new System.Drawing.Size(180, 22);
+            mnuNvActiveResolution.Text = "Active";
+            // 
+            // mnuNvVirtualResolution
+            // 
+            mnuNvVirtualResolution.Name = "mnuNvVirtualResolution";
+            mnuNvVirtualResolution.Size = new System.Drawing.Size(180, 22);
+            mnuNvVirtualResolution.Text = "Virtual";
             // 
             // NvPanel
             // 
@@ -817,8 +830,6 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.ToolStripMenuItem miNvCopyId;
         private System.Windows.Forms.Label lblNvPresetName;
         private System.Windows.Forms.TextBox edtNvPresetName;
-        private System.Windows.Forms.ToolStripMenuItem mnuNvResolution;
-        private System.Windows.Forms.ToolStripMenuItem miNvResolutionIncluded;
         private System.Windows.Forms.ToolStripMenuItem mnuNvDriverSettings;
         private System.Windows.Forms.ToolStripMenuItem miNvDriverSettingsIncluded;
         private System.Windows.Forms.CheckBox chkNvShowInQuickAccess;
@@ -852,5 +863,9 @@ namespace ColorControl.Services.NVIDIA
         private System.Windows.Forms.ToolStripMenuItem miHDROutputModeHDR10Plus;
         private System.Windows.Forms.ToolStripMenuItem mnuNvTriggers;
         private System.Windows.Forms.ToolStripMenuItem miNvTrigger1ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvResolution;
+        private System.Windows.Forms.ToolStripMenuItem miNvResolutionIncluded;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvActiveResolution;
+        private System.Windows.Forms.ToolStripMenuItem mnuNvVirtualResolution;
     }
 }

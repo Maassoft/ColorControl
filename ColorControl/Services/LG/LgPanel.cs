@@ -18,7 +18,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.LG
 {
-    public partial class LgPanel : UserControl, IModulePanel
+    partial class LgPanel : UserControl, IModulePanel
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -31,7 +31,7 @@ namespace ColorControl.Services.LG
         private string _lgTabMessage;
         private bool _disableEvents = false;
 
-        internal LgPanel(LgService lgService, ServiceManager serviceManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        public LgPanel(LgService lgService, ServiceManager serviceManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _lgService = lgService;
             _serviceManager = serviceManager;

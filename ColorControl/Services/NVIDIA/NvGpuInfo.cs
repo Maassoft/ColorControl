@@ -204,8 +204,8 @@ namespace ColorControl.Services.NVIDIA
             var bla = GPUApi.GetClockBoostMask(GPU.Handle);
 
             var masks = bla._Masks;
-            Logger.Debug("MASKS: " + masks[0]);
-            Logger.Debug("MASK: " + bla._Unknown1[0]);
+            //Logger.Debug("MASKS: " + masks[0]);
+            //Logger.Debug("MASK: " + bla._Unknown1[0]);
 
             CurveV1 = GPUApi.GetVFPCurve(GPU.Handle, masks);
 
@@ -215,12 +215,12 @@ namespace ColorControl.Services.NVIDIA
             var minV = CurveV1.GPUCurveEntries.Min(e => e.VoltageInMicroV);
             var maxV = CurveV1.GPUCurveEntries.Max(e => e.VoltageInMicroV);
 
-            Logger.Debug($"CurveV1: L: {length}, MinF: {minFreq}, MaxF: {maxFreq}, MinV: {minV}, MaxV: {maxV}");
+            //Logger.Debug($"CurveV1: L: {length}, MinF: {minFreq}, MaxF: {maxFreq}, MinV: {minV}, MaxV: {maxV}");
 
-            foreach (var entry in CurveV1.GPUCurveEntries)
-            {
-                Logger.Debug($"CurveV1: Freq: {entry.FrequencyInkHz}, Volt: {entry.VoltageInMicroV}");
-            }
+            //foreach (var entry in CurveV1.GPUCurveEntries)
+            //{
+            //    Logger.Debug($"CurveV1: Freq: {entry.FrequencyInkHz}, Volt: {entry.VoltageInMicroV}");
+            //}
 
             return true;
         }

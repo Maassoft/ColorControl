@@ -30,7 +30,6 @@ internal class MainWorker
     private readonly WinApiService _winApiService;
     private readonly WinApiAdminService _winApiAdminService;
     private readonly UpdateManager _updateManager;
-    private bool _isInitialized;
     private bool _queryEndSession;
     private nint _screenStateNotify;
 
@@ -62,28 +61,22 @@ internal class MainWorker
 
     public async Task DoWork()
     {
-        while (!_backgroundWorker.CancellationPending)
+        if (_backgroundWorker.CancellationPending)
         {
+            return;
+        }
 
-            if (!_isInitialized)
-            {
-                await Init();
-            }
+        await Init();
 
-            //await Task.Delay(1000);
+        System.Windows.Forms.Application.Run(_windowMessageDispatcher.MessageForm);
 
-            System.Windows.Forms.Application.Run(_windowMessageDispatcher.MessageForm);
+        _serviceManager.Save();
+        _notifyIconManager.HideIcon();
 
-            _serviceManager.Save();
-            _notifyIconManager.HideIcon();
-
-            if (_screenStateNotify != 0)
-            {
-                WinApi.UnregisterPowerSettingNotification(_screenStateNotify);
-                _screenStateNotify = 0;
-            }
-
-            break;
+        if (_screenStateNotify != 0)
+        {
+            WinApi.UnregisterPowerSettingNotification(_screenStateNotify);
+            _screenStateNotify = 0;
         }
     }
 
@@ -116,8 +109,6 @@ internal class MainWorker
 
         _keyboardShortcutDispatcher.RegisterShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut);
         _keyboardShortcutDispatcher.RegisterEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HandleHotKeyEvent);
-
-        _isInitialized = true;
     }
 
     private bool _startupSent = false;

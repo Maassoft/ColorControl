@@ -23,7 +23,6 @@ using NvAPIWrapper.Native.GPU.Structures;
 using NvAPIWrapper.Native.Helpers;
 using NvAPIWrapper.Native.Interfaces.Display;
 using NWin32;
-using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -422,11 +421,6 @@ namespace ColorControl.Services.NVIDIA
                 return false;
             }
 
-            if (preset.applyOther && preset.scaling.HasValue)
-            {
-                SetScaling(display, preset.scaling.Value);
-            }
-
             var hdrEnabled = IsHDREnabled();
 
             var newHdrEnabled = preset.applyHDR && (preset.HDREnabled || (preset.toggleHDR && !hdrEnabled));
@@ -434,12 +428,13 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyColorData && (ColorDataDiffers(preset.colorData) || (!newHdrEnabled && preset.applyColorData && preset.colorData.Colorimetry != ColorDataColorimetry.Auto)))
             {
-                if (preset.applyRefreshRate || preset.applyResolution)
+                if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution)
                 {
                     var timing = display.DisplayDevice.CurrentTiming;
-                    if ((preset.applyRefreshRate && preset.refreshRate < timing.Extra.RefreshRate) || (preset.applyResolution && preset.resolutionWidth < timing.HorizontalVisible))
+                    if ((preset.DisplayConfig.ApplyRefreshRate && preset.DisplayConfig.RefreshRate.MilliValue < timing.Extra.FrequencyInMillihertz) ||
+                        (preset.DisplayConfig.ApplyResolution && preset.DisplayConfig.Resolution.ActiveWidth < timing.HorizontalVisible))
                     {
-                        SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true);
+                        SetMode(preset.DisplayConfig, true);
                     }
                 }
 
@@ -464,9 +459,9 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
-            if (preset.applyRefreshRate || preset.applyResolution)
+            if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution)
             {
-                if (!SetMode(preset.applyResolution ? preset.resolutionWidth : 0, preset.applyResolution ? preset.resolutionHeight : 0, preset.applyRefreshRate ? preset.refreshRate : 0, true))
+                if (!SetMode(preset.DisplayConfig, true))
                 {
                     result = false;
                 }
@@ -482,6 +477,11 @@ namespace ColorControl.Services.NVIDIA
                 if (preset.ColorProfileSettings.ProfileName != null)
                 {
                     CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml);
+                }
+
+                if (preset.scaling.HasValue)
+                {
+                    SetScaling(display, preset.scaling.Value);
                 }
             }
 
@@ -1035,50 +1035,26 @@ namespace ColorControl.Services.NVIDIA
             return dither;
         }
 
-        public bool SetMode(uint resolutionWidth = 0, uint resolutionHeight = 0, uint refreshRate = 0, bool updateRegistry = false)
+        public bool SetMode(VirtualResolution resolution = null, Rational refreshRate = null, bool updateRegistry = false, NvPreset preset = null)
         {
-            var display = GetCurrentDisplay();
+            var display = preset == null ? GetCurrentDisplay() : GetPresetDisplay(preset);
             if (display == null)
             {
                 return false;
             }
 
-            var desktopRect = GetDesktopRect(display);
-
-            if (refreshRate == 0)
-            {
-                var timing = display.DisplayDevice.CurrentTiming;
-                refreshRate = (uint)timing.Extra.RefreshRate;
-            }
-
-            if (resolutionWidth == 0)
-            {
-                resolutionWidth = (uint)desktopRect.Width;
-                resolutionHeight = (uint)desktopRect.Height;
-            }
-
-            var portrait = IsDisplayInPortraitMode(display);
-
-            return SetRefreshRateInternal(display.Name, (int)refreshRate, portrait, (int)resolutionWidth, (int)resolutionHeight, updateRegistry);
+            return SetMode(display.Name, resolution, refreshRate, updateRegistry);
         }
 
-        public List<uint> GetAvailableRefreshRates(NvPreset preset = null)
+        public bool SetMode(DisplayConfig displayConfig, bool updateRegistry = false, NvPreset preset = null)
         {
-            if (preset != null)
-            {
-                SetCurrentDisplay(preset);
-            }
-
-            var display = GetCurrentDisplay();
+            var display = preset == null ? GetCurrentDisplay() : GetPresetDisplay(preset);
             if (display == null)
             {
-                return new List<uint>();
+                return false;
             }
 
-            var portrait = IsDisplayInPortraitMode(display);
-            var desktopRect = GetDesktopRect(display);
-
-            return GetAvailableRefreshRatesInternal(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+            return SetMode(display.Name, displayConfig, updateRegistry);
         }
 
         public List<Rational> GetAvailableRefreshRatesV2(NvPreset preset = null)
@@ -1094,10 +1070,25 @@ namespace ColorControl.Services.NVIDIA
                 return [];
             }
 
-            var portrait = IsDisplayInPortraitMode(display);
             var desktopRect = GetDesktopRect(display);
 
-            return GetAvailableRefreshRatesV2(display.Name, portrait, desktopRect.Width, desktopRect.Height);
+            return GetAvailableRefreshRatesV2(display.Name, desktopRect.Width, desktopRect.Height);
+        }
+
+        public List<VirtualResolution> GetAvailableResolutionsV2(NvPreset preset = null)
+        {
+            if (preset != null)
+            {
+                SetCurrentDisplay(preset);
+            }
+
+            var display = GetCurrentDisplay();
+            if (display == null)
+            {
+                return [];
+            }
+
+            return GetAvailableResolutionsInternalV2(display.Name);
         }
 
         private Rectangle GetDesktopRect(Display display)
@@ -1124,25 +1115,6 @@ namespace ColorControl.Services.NVIDIA
             {
                 return false;
             }
-        }
-
-        public List<DEVMODEA> GetAvailableResolutions(NvPreset preset = null)
-        {
-            if (preset != null)
-            {
-                SetCurrentDisplay(preset);
-            }
-
-            var display = GetCurrentDisplay();
-            if (display == null)
-            {
-                return new List<DEVMODEA>();
-            }
-
-            var portrait = IsDisplayInPortraitMode(display);
-            var timing = display.DisplayDevice.CurrentTiming;
-
-            return GetAvailableResolutionsInternal(display.Name, portrait, (uint)(timing.Extra.RefreshRate));
         }
 
         public bool IsHDREnabled(Display currentDisplay = null)
@@ -1537,11 +1509,7 @@ namespace ColorControl.Services.NVIDIA
             preset.scaling = GetScaling(display);
             preset.ColorProfileSettings.ProfileName = CCD.GetDisplayDefaultColorProfile(display.Name, preset.HDREnabled ? COLORPROFILESUBTYPE.CPST_EXTENDED_DISPLAY_COLOR_MODE : COLORPROFILESUBTYPE.CPST_STANDARD_DISPLAY_COLOR_MODE);
 
-            var mode = GetCurrentMode(display.Name);
-
-            preset.refreshRate = mode.dmDisplayFrequency;
-            preset.resolutionHeight = mode.dmPelsHeight;
-            preset.resolutionWidth = mode.dmPelsWidth;
+            preset.DisplayConfig = CCD.GetDisplayConfig(display.Name);
 
             var ditherInfo = GetDithering(display);
 

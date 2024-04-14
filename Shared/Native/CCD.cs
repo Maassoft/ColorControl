@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Forms;
+﻿using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
 using MHC2Gen;
 using NWin32;
 using System.ComponentModel;
@@ -12,6 +13,9 @@ namespace ColorControl.Shared.Native
     public static class CCD
     {
         delegate (T, bool) DisplayConfigModeInfoDelegate<T>(DisplayConfigModeInfo modeInfo);
+        delegate (T, bool) DisplayConfigModeInfosDelegate<T>(DisplayConfigPathInfo pathInfo, DisplayConfigModeInfo sourceMode, DisplayConfigModeInfo targetMode);
+
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public enum DisplayTopology
         {
@@ -19,6 +23,13 @@ namespace ColorControl.Shared.Native
             External,
             Extend,
             Clone
+        }
+
+        public static double GetDpiForSystem()
+        {
+            var dpi = NativeMethods.GetDpiForSystem();
+
+            return dpi / 96.0;
         }
 
         public static DisplayTopology GetDisplayTopology()
@@ -64,39 +75,99 @@ namespace ColorControl.Shared.Native
             }
         }
 
-        public static void GetAllPaths()
+        public static DisplayConfig GetDisplayConfig(string displayName)
         {
-            uint numPathArrayElements;
-            uint numModeInfoArrayElements;
+            var config = new DisplayConfig();
 
-            NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.AllPaths, out numPathArrayElements, out numModeInfoArrayElements);
+            ExecuteForModeConfigs((pathInfo, sourceMode, targetMode) =>
+            {
+                config.RefreshRate.Numerator = targetMode.targetMode.targetVideoSignalInfo.vSyncFreq.numerator;
+                config.RefreshRate.Denominator = targetMode.targetMode.targetVideoSignalInfo.vSyncFreq.denominator;
+                config.Resolution.ActiveWidth = targetMode.targetMode.targetVideoSignalInfo.activeSize.cx;
+                config.Resolution.ActiveHeight = targetMode.targetMode.targetVideoSignalInfo.activeSize.cy;
 
-            var pathArray = new DisplayConfigPathInfo[numPathArrayElements];
-            var modeArray = new DisplayConfigModeInfo[numModeInfoArrayElements];
+                config.Resolution.VirtualWidth = sourceMode.sourceMode.width;
+                config.Resolution.VirtualHeight = sourceMode.sourceMode.height;
 
-            var result = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.AllPaths, ref numPathArrayElements, pathArray, ref numModeInfoArrayElements, modeArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+                config.Scaling = pathInfo.targetInfo.scaling;
+                config.Rotation = pathInfo.targetInfo.rotation;
+
+                return (default(DisplayConfigModeInfo), true);
+            }, displayName
+            );
+
+            return config;
         }
 
-        public static void SetDisplayConfig()
+        public static bool SetDisplayConfig(string displayName, DisplayConfig displayConfig, bool updateRegistry)
         {
-            uint numPathArrayElements;
-            uint numModeInfoArrayElements;
+            uint pathCount, modeCount;
 
-            NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.AllPaths, out numPathArrayElements, out numModeInfoArrayElements);
+            var err = NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.OnlyActivePaths, out pathCount, out modeCount);
+            try
+            {
+                if (err != NativeConstants.ERROR_SUCCESS)
+                {
+                    return false;
+                }
+                var pathsArray = new DisplayConfigPathInfo[pathCount];
+                var modesArray = new DisplayConfigModeInfo[modeCount];
 
-            var pathArray = new DisplayConfigPathInfo[numPathArrayElements];
-            var modeArray = new DisplayConfigModeInfo[numModeInfoArrayElements];
+                err = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.OnlyActivePaths, ref pathCount, pathsArray, ref modeCount, modesArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+                if (err != NativeConstants.ERROR_SUCCESS)
+                {
+                    return false;
+                }
 
-            var result = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.AllPaths, ref numPathArrayElements, pathArray, ref numModeInfoArrayElements, modeArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+                var resolution = displayConfig.Resolution;
+                var refreshRate = displayConfig.RefreshRate;
 
-            var sourceIndex = pathArray[0].sourceInfo.modeInfoIdx;
-            var targetIndex = pathArray[0].targetInfo.modeInfoIdx;
+                foreach (var path in pathsArray)
+                {
+                    if (!MatchDisplayNames(path, displayName))
+                    {
+                        continue;
+                    }
 
-            modeArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = 1000, numerator = 145000 };
+                    var sourceIndex = path.sourceInfo.modeInfoIdx;
+                    var targetIndex = path.targetInfo.modeInfoIdx;
+                    var sourceMode = modesArray[sourceIndex];
+                    var targetMode = modesArray[targetIndex];
 
-            result = NativeMethods.SetDisplayConfig(1, pathArray, 2, modeArray, SdcFlags.Apply | SdcFlags.UseSuppliedDisplayConfig | SdcFlags.AllowChanges);
+                    targetMode.targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = refreshRate.Denominator, numerator = refreshRate.Numerator };
+                    targetMode.targetMode.targetVideoSignalInfo.activeSize.cx = resolution.ActiveWidth;
+                    targetMode.targetMode.targetVideoSignalInfo.activeSize.cy = resolution.ActiveHeight;
+
+                    sourceMode.sourceMode.width = resolution.VirtualWidth;
+                    sourceMode.sourceMode.height = resolution.VirtualHeight;
+
+                    var flags = SdcFlags.Apply | SdcFlags.UseSuppliedDisplayConfig | SdcFlags.AllowChanges;
+
+                    if (updateRegistry)
+                    {
+                        flags |= SdcFlags.SaveToDatabase;
+                    }
+
+                    var path2 = path;
+                    path2.targetInfo.scaling = displayConfig.Scaling == DisplayConfigScaling.Zero ? DisplayConfigScaling.Identity : displayConfig.Scaling;
+                    path2.targetInfo.rotation = displayConfig.Rotation == DisplayConfigRotation.Zero ? DisplayConfigRotation.Identity : displayConfig.Rotation;
+                    path2.targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
+
+                    err = NativeMethods.SetDisplayConfig(1, [path2], 2, [targetMode, sourceMode], flags);
+
+                    return err == 0;
+                }
+
+                return false;
+            }
+            finally
+            {
+                if (err != 0)
+                {
+                    Logger.Warn($"Could not set display config {displayConfig.Resolution}@{displayConfig.RefreshRate} on display {displayName} because: error code {err}");
+                }
+            }
         }
-
 
         public static LUID GetAdapterId(string displayName = null)
         {
@@ -437,7 +508,7 @@ namespace ColorControl.Shared.Native
             );
         }
 
-        private static T ExecuteForModeConfig<T>(DisplayConfigModeInfoDelegate<T> infoDelegate, string displayName = null)
+        private static T ExecuteForModeConfig<T>(DisplayConfigModeInfoDelegate<T> infoDelegate, string displayName = null, QueryDisplayFlags queryDisplayFlags = QueryDisplayFlags.OnlyActivePaths)
         {
             uint pathCount, modeCount;
 
@@ -447,7 +518,14 @@ namespace ColorControl.Shared.Native
                 var pathsArray = new DisplayConfigPathInfo[pathCount];
                 var modesArray = new DisplayConfigModeInfo[modeCount];
 
-                err = NativeMethods.QueryDisplayConfig(QueryDisplayFlags.DatabaseCurrent, ref pathCount, pathsArray, ref modeCount, modesArray, out _);
+                if (queryDisplayFlags == QueryDisplayFlags.OnlyActivePaths)
+                {
+                    err = NativeMethods.QueryDisplayConfig(queryDisplayFlags, ref pathCount, pathsArray, ref modeCount, modesArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+                }
+                else
+                {
+                    err = NativeMethods.QueryDisplayConfig(queryDisplayFlags, ref pathCount, pathsArray, ref modeCount, modesArray, out _);
+                }
                 if (err == NativeConstants.ERROR_SUCCESS)
                 {
                     foreach (var path in pathsArray)
@@ -467,6 +545,56 @@ namespace ColorControl.Shared.Native
                             {
                                 return result.Item1;
                             }
+                        }
+                    }
+                }
+            }
+
+            if (err != NativeConstants.ERROR_SUCCESS)
+            {
+                throw new Win32Exception(err);
+            }
+
+            return default;
+        }
+
+        private static T ExecuteForModeConfigs<T>(DisplayConfigModeInfosDelegate<T> infoDelegate, string displayName = null, QueryDisplayFlags queryDisplayFlags = QueryDisplayFlags.OnlyActivePaths)
+        {
+            uint pathCount, modeCount;
+
+            var err = NativeMethods.GetDisplayConfigBufferSizes(QueryDisplayFlags.OnlyActivePaths, out pathCount, out modeCount);
+            if (err == NativeConstants.ERROR_SUCCESS)
+            {
+                var pathsArray = new DisplayConfigPathInfo[pathCount];
+                var modesArray = new DisplayConfigModeInfo[modeCount];
+
+                if (queryDisplayFlags == QueryDisplayFlags.OnlyActivePaths)
+                {
+                    err = NativeMethods.QueryDisplayConfig(queryDisplayFlags, ref pathCount, pathsArray, ref modeCount, modesArray, out Unsafe.NullRef<DisplayConfigTopologyId>());
+                }
+                else
+                {
+                    err = NativeMethods.QueryDisplayConfig(queryDisplayFlags, ref pathCount, pathsArray, ref modeCount, modesArray, out _);
+                }
+                if (err == NativeConstants.ERROR_SUCCESS)
+                {
+                    foreach (var path in pathsArray)
+                    {
+                        if (!MatchDisplayNames(path, displayName))
+                        {
+                            continue;
+                        }
+
+                        var sourceIndex = path.sourceInfo.modeInfoIdx;
+                        var targetIndex = path.targetInfo.modeInfoIdx;
+                        var sourceMode = modesArray[sourceIndex];
+                        var targetMode = modesArray[targetIndex];
+
+                        var result = infoDelegate(path, sourceMode, targetMode);
+
+                        if (!result.Item2)
+                        {
+                            return result.Item1;
                         }
                     }
                 }
@@ -658,6 +786,8 @@ namespace ColorControl.Shared.Native
 
         private enum DISPLAYCONFIG_DEVICE_INFO_TYPE
         {
+            DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE = -3,
+            DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE = -4,
             DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 1,
             DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME = 2,
             DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_PREFERRED_MODE = 3,
@@ -766,19 +896,23 @@ namespace ColorControl.Shared.Native
         }
 
         [Flags]
-        enum DisplayConfigRotation : uint
+        public enum DisplayConfigRotation : uint
         {
             Zero = 0x0,
 
+            [Description("Landscape")]
             Identity = 1,
+            [Description("Portrait")]
             Rotate90 = 2,
+            [Description("Landscape (flipped)")]
             Rotate180 = 3,
+            [Description("Portrait (flipped)")]
             Rotate270 = 4,
             ForceUint32 = 0xFFFFFFFF
         }
 
         [Flags]
-        enum DisplayConfigPixelFormat : uint
+        public enum DisplayConfigPixelFormat : uint
         {
             Zero = 0x0,
 
@@ -791,13 +925,17 @@ namespace ColorControl.Shared.Native
         }
 
         [Flags]
-        enum DisplayConfigScaling : uint
+        public enum DisplayConfigScaling : uint
         {
             Zero = 0x0,
 
+            [Description("Default")]
             Identity = 1,
+            [Description("Centered")]
             Centered = 2,
+            [Description("Stretched")]
             Stretched = 3,
+            [Description("Aspect Ratio Centered Max")]
             Aspectratiocenteredmax = 4,
             Custom = 5,
             Preferred = 128,
@@ -805,14 +943,14 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DisplayConfigRational
+        public struct DisplayConfigRational
         {
             public uint numerator;
             public uint denominator;
         }
 
         [Flags]
-        enum DisplayConfigScanLineOrdering : uint
+        public enum DisplayConfigScanLineOrdering : uint
         {
             Unspecified = 0,
             Progressive = 1,
@@ -831,7 +969,7 @@ namespace ColorControl.Shared.Native
         }
 
         [Flags]
-        enum DisplayConfigModeInfoType : uint
+        public enum DisplayConfigModeInfoType : uint
         {
             Zero = 0,
 
@@ -841,7 +979,7 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        struct DisplayConfigModeInfo
+        public struct DisplayConfigModeInfo
         {
             [FieldOffset(0)]
             public DisplayConfigModeInfoType infoType;
@@ -860,14 +998,14 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DisplayConfig2DRegion
+        public struct DisplayConfig2DRegion
         {
-            uint cx;
-            uint cy;
+            public uint cx;
+            public uint cy;
         }
 
         [Flags]
-        enum D3DmdtVideoSignalStandard : uint
+        public enum D3DmdtVideoSignalStandard : uint
         {
             Uninitialized = 0,
             VesaDmt = 1,
@@ -905,7 +1043,7 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DisplayConfigVideoSignalInfo
+        public struct DisplayConfigVideoSignalInfo
         {
             public long pixelRate;
             public DisplayConfigRational hSyncFreq;
@@ -918,20 +1056,20 @@ namespace ColorControl.Shared.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DisplayConfigTargetMode
+        public struct DisplayConfigTargetMode
         {
             public DisplayConfigVideoSignalInfo targetVideoSignalInfo;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct PointL
+        public struct PointL
         {
             public int x;
             public int y;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DisplayConfigSourceMode
+        public struct DisplayConfigSourceMode
         {
             public uint width;
             public uint height;
@@ -1119,6 +1257,38 @@ namespace ColorControl.Shared.Native
             CPST_EXTENDED_DISPLAY_COLOR_MODE
         };
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            /*
+            * @brief min value of DPI scaling is always 100, minScaleRel gives no. of steps down from recommended scaling
+            * eg. if minScaleRel is -3 => 100 is 3 steps down from recommended scaling => recommended scaling is 175%
+            */
+            public int minScaleRel;
+
+            /*
+            * @brief currently applied DPI scaling value wrt the recommended value. eg. if recommended value is 175%,
+            * => if curScaleRel == 0 the current scaling is 175%, if curScaleRel == -1, then current scale is 150%
+            */
+            public int curScaleRel;
+
+            /*
+            * @brief maximum supported DPI scaling wrt recommended value
+            */
+            public int maxScaleRel;
+        };
+
+        private struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            /*
+            * @brief The value we want to set. The value should be relative to the recommended DPI scaling value of source.
+            * eg. if scaleRel == 1, and recommended value is 175% => we are trying to set 200% scaling for the source
+            */
+            public int scaleRel;
+        };
+
         enum DeviceClassFlags : UInt32
         {
             // from: c:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\um\Icm.h
@@ -1205,6 +1375,11 @@ namespace ColorControl.Shared.Native
             public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_DISPLAY_INFO requestPacket);
             [DllImport("user32")]
             public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM setPacket);
+
+            [DllImport("user32")]
+            public static extern uint GetDpiForSystem();
+
+
             [DllImport("mscms", CharSet = CharSet.Unicode)]
             public static extern bool InstallColorProfileW(string machineName, string profilename);
 

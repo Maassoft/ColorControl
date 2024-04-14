@@ -313,7 +313,7 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
         }
         if (((uint)mods & (uint)ModKeys.Win) > 0)
         {
-            keys |= Keys.Control;
+            keys |= Keys.LWin;
         }
 
         keys |= (Keys)key;

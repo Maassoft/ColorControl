@@ -43,8 +43,8 @@ namespace ColorControl.Services.Samsung
 
     public enum ServiceMenuType
     {
-        HospitalityMenu,
-        FactoryMenu2024,
+        FactoryMenu,
+        HospitalityMenu
     }
 
     public delegate void GenericDelegate(object sender);
@@ -702,12 +702,12 @@ namespace ColorControl.Services.Samsung
 
         private async Task<bool> ServiceMenuAction(Dictionary<string, object> _)
         {
-            var serviceMenuTypes = new[] { ServiceMenuType.HospitalityMenu, ServiceMenuType.FactoryMenu2024 }.Select(t => Utils.GetDescription(t));
+            var serviceMenuTypes = new[] { ServiceMenuType.FactoryMenu, ServiceMenuType.HospitalityMenu }.Select(t => Utils.GetDescription(t));
 
             var serviceMenuTypeField = new FieldDefinition
             {
                 Label = "Service Menu Access Type",
-                SubLabel = "Both types will not reset your settings. 'Factory Menu 2024' is recommended for 2024 series. Click 'Next >' to continue or 'X' to stop",
+                SubLabel = "Both types will not reset your settings. 'FactoryMenu' is recommended for 2024 series but will also work for older ones. Click 'Next >' to continue or 'X' to stop",
                 FieldType = FieldType.DropDown,
                 Values = serviceMenuTypes,
                 Value = ServiceMenuType.HospitalityMenu
@@ -720,8 +720,8 @@ namespace ColorControl.Services.Samsung
 
             return serviceMenuTypeField.ValueAsEnum<ServiceMenuType>() switch
             {
-                ServiceMenuType.HospitalityMenu => await OpenHospitalityMenu(),
-                ServiceMenuType.FactoryMenu2024 => await OpenFactoryMenu2024()
+                ServiceMenuType.FactoryMenu => await OpenFactoryMenu(),
+                ServiceMenuType.HospitalityMenu => await OpenHospitalityMenu()
             };
         }
 
@@ -776,7 +776,7 @@ namespace ColorControl.Services.Samsung
             return true;
         }
 
-        private async Task<bool> OpenFactoryMenu2024()
+        private async Task<bool> OpenFactoryMenu()
         {
             var preset1 = new SamsungPreset("ServiceMenuStep1", null, ["KEY_INFO", "KEY_FACTORY:2000"]);
             var preset2 = new SamsungPreset("ServiceMenuStep2", null, ["KEY_UP", "KEY_0", "KEY_0", "KEY_9", "KEY_8"]);

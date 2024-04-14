@@ -56,8 +56,6 @@ public class UpdateManager
     private void InitHandleCheckForUpdates(dynamic latest)
     {
         HandleCheckForUpdates(latest);
-
-        //FormUtils.BeginInvokeCheck(() => HandleCheckForUpdates(latest));
     }
 
     private void HandleCheckForUpdates(dynamic latest)

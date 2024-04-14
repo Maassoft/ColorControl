@@ -15,7 +15,6 @@ using NStandard;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native.Display;
-using NWin32.NativeTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -316,7 +315,7 @@ namespace ColorControl.Services.NVIDIA
         {
             var preset = GetSelectedNvPreset();
 
-            preset.applyRefreshRate = !preset.applyRefreshRate;
+            preset.DisplayConfig.ApplyRefreshRate = !preset.DisplayConfig.ApplyRefreshRate;
 
             AddOrUpdateItem();
         }
@@ -342,6 +341,7 @@ namespace ColorControl.Services.NVIDIA
             mnuNvPresetsColorEnhancements.Enabled = preset != null;
             mnuRefreshRate.Enabled = preset != null;
             mnuNvResolution.Enabled = preset != null;
+            mnuNvActiveResolution.Enabled = preset != null;
             miNvPresetDithering.Enabled = preset != null;
             miNvHDR.Enabled = preset != null;
             miNvCopyId.Visible = presetItemsVisible;
@@ -435,8 +435,8 @@ namespace ColorControl.Services.NVIDIA
 
             mnuNvPresetsColorSettings.Font = _menuItemFonts[preset.applyColorData];
             mnuNvPresetsColorEnhancements.Font = _menuItemFonts[preset.ApplyColorEnhancements];
-            mnuRefreshRate.Font = _menuItemFonts[preset.applyRefreshRate];
-            mnuNvResolution.Font = _menuItemFonts[preset.applyResolution];
+            mnuRefreshRate.Font = _menuItemFonts[preset.DisplayConfig.ApplyRefreshRate];
+            mnuNvResolution.Font = _menuItemFonts[preset.DisplayConfig.ApplyResolution];
             miNvPresetDithering.Font = _menuItemFonts[preset.applyDithering];
             miNvHDR.Font = _menuItemFonts[preset.applyHDR];
             mnuNvOverclocking.Font = _menuItemFonts[preset.applyOverclocking];
@@ -538,17 +538,14 @@ namespace ColorControl.Services.NVIDIA
                 {
                     mnuRefreshRate.DropDownItems.RemoveAt(mnuRefreshRate.DropDownItems.Count - 1);
                 }
-                while (mnuNvResolution.DropDownItems.Count > 1)
-                {
-                    mnuNvResolution.DropDownItems.RemoveAt(mnuNvResolution.DropDownItems.Count - 1);
-                }
+
+                mnuNvActiveResolution.DropDownItems.Clear();
+                mnuNvVirtualResolution.DropDownItems.Clear();
             }
 
             if (mnuRefreshRate.DropDownItems.Count == 1)
             {
-                var refreshRates = _nvService.GetAvailableRefreshRates(preset);
-
-                //var v2 = _nvService.GetAvailableRefreshRatesV2(preset);
+                var refreshRates = _nvService.GetAvailableRefreshRatesV2(preset);
 
                 _lastDisplayRefreshRates = displayName;
 
@@ -560,36 +557,64 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
-            if (mnuNvResolution.DropDownItems.Count == 1)
+            var modes = default(List<VirtualResolution>);
+
+            if (mnuNvActiveResolution.DropDownItems.Count == 0)
             {
-                var modes = _nvService.GetAvailableResolutions(preset);
+                modes = _nvService.GetAvailableResolutionsV2(preset);
 
                 foreach (var mode in modes)
                 {
-                    var item = mnuNvResolution.DropDownItems.AddCustom($"{mode.dmPelsWidth}x{mode.dmPelsHeight}");
+                    var item = mnuNvActiveResolution.DropDownItems.AddCustom(mode.ToString());
                     item.Tag = mode;
                     item.Click += resolutionNvMenuItem_Click;
                 }
             }
 
-            miRefreshRateIncluded.Checked = preset.applyRefreshRate;
+            if (mnuNvVirtualResolution.DropDownItems.Count == 0)
+            {
+                modes ??= _nvService.GetAvailableResolutionsV2(preset);
+
+                foreach (var mode in modes)
+                {
+                    var item = mnuNvVirtualResolution.DropDownItems.AddCustom(mode.ToString());
+                    item.Tag = mode;
+                    item.Click += virtualResolutionNvMenuItem_Click;
+                }
+            }
+
+            miRefreshRateIncluded.Checked = preset.DisplayConfig.ApplyRefreshRate;
             foreach (var item in mnuRefreshRate.DropDownItems)
             {
                 if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
                 {
-                    menuItem.Checked = (uint)menuItem.Tag == preset.refreshRate;
+                    menuItem.Checked = ((Rational)menuItem.Tag).Equals(preset.DisplayConfig.RefreshRate);
                 }
             }
 
-            miNvResolutionIncluded.Checked = preset.applyResolution;
-            foreach (var item in mnuNvResolution.DropDownItems)
+            miNvResolutionIncluded.Checked = preset.DisplayConfig.ApplyResolution;
+            foreach (var item in mnuNvActiveResolution.DropDownItems)
             {
                 if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
                 {
-                    var mode = (DEVMODEA)menuItem.Tag;
-                    menuItem.Checked = mode.dmPelsWidth == preset.resolutionWidth && mode.dmPelsHeight == preset.resolutionHeight;
+                    var mode = (VirtualResolution)menuItem.Tag;
+                    menuItem.Checked = mode.ActiveWidth == preset.DisplayConfig.Resolution.ActiveWidth && mode.ActiveHeight == preset.DisplayConfig.Resolution.ActiveHeight;
                 }
             }
+
+            foreach (var item in mnuNvVirtualResolution.DropDownItems)
+            {
+                if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                {
+                    var mode = (VirtualResolution)menuItem.Tag;
+                    menuItem.Checked = mode.VirtualWidth == preset.DisplayConfig.Resolution.VirtualWidth && mode.VirtualHeight == preset.DisplayConfig.Resolution.VirtualHeight;
+                }
+            }
+
+            FormUtils.BuildDropDownMenu(mnuNvResolution, "Scaling/Aspect Ratio", typeof(CCD.DisplayConfigScaling), preset.DisplayConfig, "Scaling", UpdateDisplayConfigScaling, unchanged: false,
+                skipValues: [CCD.DisplayConfigScaling.Zero, CCD.DisplayConfigScaling.Custom, CCD.DisplayConfigScaling.ForceUint32]);
+            FormUtils.BuildDropDownMenu(mnuNvResolution, "Rotation", typeof(CCD.DisplayConfigRotation), preset.DisplayConfig, "Rotation", UpdateDisplayConfigRotation, unchanged: false,
+                skipValues: [CCD.DisplayConfigRotation.Zero, CCD.DisplayConfigRotation.ForceUint32]);
         }
 
         private void UpdateNvPresetMenuFont(bool updateTopItems = false)
@@ -809,6 +834,54 @@ namespace ColorControl.Services.NVIDIA
             AddOrUpdateItem();
         }
 
+        private void UpdateDisplayConfigScaling(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+            var value = (CCD.DisplayConfigScaling)menuItem.Tag;
+
+            var preset = GetSelectedNvPreset(true);
+            var settings = preset.DisplayConfig;
+
+            if (preset.IsDisplayPreset)
+            {
+                var updatedSettings = new DisplayConfig(settings);
+                updatedSettings.Scaling = value;
+
+                _nvService.SetMode(preset.Display.Name, updatedSettings);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.DisplayConfig.Scaling = value;
+
+            AddOrUpdateItem();
+        }
+
+        private void UpdateDisplayConfigRotation(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+            var value = (CCD.DisplayConfigRotation)menuItem.Tag;
+
+            var preset = GetSelectedNvPreset(true);
+            var settings = preset.DisplayConfig;
+
+            if (preset.IsDisplayPreset)
+            {
+                var updatedSettings = new DisplayConfig(settings);
+                updatedSettings.Rotation = value;
+
+                _nvService.SetMode(preset.Display.Name, updatedSettings);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.DisplayConfig.Rotation = value;
+
+            AddOrUpdateItem();
+        }
+
         private void nvPresetBrightnessMenuItem_Click(object sender, EventArgs e)
         {
             var preset = GetSelectedNvPreset(true);
@@ -994,39 +1067,63 @@ namespace ColorControl.Services.NVIDIA
 
         private void refreshRateMenuItem_Click(object sender, EventArgs e)
         {
-            var refreshRate = (uint)((ToolStripItem)sender).Tag;
+            var refreshRate = (Rational)((ToolStripItem)sender).Tag;
 
             var preset = GetSelectedNvPreset(true);
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetMode(refreshRate: refreshRate);
+                _nvService.SetMode(refreshRate: refreshRate, preset: preset);
 
                 UpdateDisplayInfoItems();
                 return;
             }
 
-            preset.refreshRate = refreshRate;
+            preset.DisplayConfig.RefreshRate = refreshRate;
 
             AddOrUpdateItem();
         }
 
         private void resolutionNvMenuItem_Click(object sender, EventArgs e)
         {
-            var mode = (DEVMODEA)((ToolStripItem)sender).Tag;
+            var mode = (VirtualResolution)((ToolStripItem)sender).Tag;
 
             var preset = GetSelectedNvPreset(true);
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetMode(mode.dmPelsWidth, mode.dmPelsHeight);
+                _nvService.SetMode(mode, preset: preset);
 
                 UpdateDisplayInfoItems();
                 return;
             }
 
-            preset.resolutionWidth = mode.dmPelsWidth;
-            preset.resolutionHeight = mode.dmPelsHeight;
+            preset.DisplayConfig.Resolution.ActiveWidth = mode.ActiveWidth;
+            preset.DisplayConfig.Resolution.ActiveHeight = mode.ActiveHeight;
+
+            AddOrUpdateItem();
+        }
+
+        private void virtualResolutionNvMenuItem_Click(object sender, EventArgs e)
+        {
+            var mode = (VirtualResolution)((ToolStripItem)sender).Tag;
+
+            var preset = GetSelectedNvPreset(true);
+
+            var virtualMode = new VirtualResolution(mode);
+            virtualMode.ActiveWidth = preset.DisplayConfig.Resolution.ActiveWidth;
+            virtualMode.ActiveHeight = preset.DisplayConfig.Resolution.ActiveHeight;
+
+            if (preset.IsDisplayPreset)
+            {
+                _nvService.SetMode(virtualMode, preset: preset);
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.DisplayConfig.Resolution.VirtualWidth = virtualMode.VirtualWidth;
+            preset.DisplayConfig.Resolution.VirtualHeight = virtualMode.VirtualHeight;
 
             AddOrUpdateItem();
         }
@@ -1155,7 +1252,9 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var modes = _nvService.GetAvailableResolutions(preset).Select(d => $"{d.dmPelsWidth}x{d.dmPelsHeight}").ToList();
+            var resolutions = _nvService.GetAvailableResolutionsV2(preset);
+
+            var modes = resolutions.Select(r => r.ToString()).ToList();
 
             var modesField = FieldDefinition.CreateDropDownField("Resolution", modes);
 
@@ -1166,12 +1265,12 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var values = modesField.Value.ToString().Split('x').Select(s => Utils.ParseUInt(s)).ToArray();
+            var value = modesField.Value.ToString();
+            var resolution = resolutions.First(r => r.ToString() == value);
 
-            preset.resolutionWidth = values[0];
-            preset.resolutionHeight = values[1];
+            preset.DisplayConfig.Resolution = resolution;
 
-            preset.applyResolution = true;
+            preset.DisplayConfig.ApplyResolution = true;
         }
 
         private void AskRefreshRate(NvPreset preset, bool ask = true)
@@ -1181,9 +1280,11 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var modes = _nvService.GetAvailableRefreshRates(preset).Select(d => d.ToString()).ToList();
+            var modes = _nvService.GetAvailableRefreshRatesV2(preset).ToList();
 
-            var modesField = FieldDefinition.CreateDropDownField("Refresh rate", modes);
+            var stringModes = modes.Select(m => m.ToString()).ToList();
+
+            var modesField = FieldDefinition.CreateDropDownField("Refresh rate", stringModes);
 
             var result = MessageForms.ShowDialog("Refresh rate", new[] { modesField });
 
@@ -1192,10 +1293,14 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var value = modesField.ValueAsUInt;
+            var value = modesField.Value.ToString();
+            var refreshRate = modes.FirstOrDefault(m => m.ToString() == value);
 
-            preset.refreshRate = value;
-            preset.applyRefreshRate = true;
+            if (refreshRate != null)
+            {
+                preset.DisplayConfig.RefreshRate = refreshRate;
+                preset.DisplayConfig.ApplyRefreshRate = true;
+            }
         }
 
         private void miHDRIncluded_Click(object sender, EventArgs e)
@@ -1320,8 +1425,6 @@ namespace ColorControl.Services.NVIDIA
 
         private void edtShortcut_TextChanged(object sender, EventArgs e)
         {
-            var text = edtShortcut.Text;
-
             var preset = GetSelectedNvPreset();
 
             ServiceFormUtils.UpdateShortcutTextBox(edtShortcut, preset);
@@ -1331,7 +1434,7 @@ namespace ColorControl.Services.NVIDIA
         {
             var preset = GetSelectedNvPreset();
 
-            preset.applyResolution = !preset.applyResolution;
+            preset.DisplayConfig.ApplyResolution = !preset.DisplayConfig.ApplyResolution;
 
             AddOrUpdateItem();
         }

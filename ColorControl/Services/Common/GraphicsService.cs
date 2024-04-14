@@ -1,15 +1,9 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Native;
-using NWin32;
-using NWin32.NativeTypes;
 using Shared.Native;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace ColorControl.Services.Common
 {
@@ -28,80 +22,53 @@ namespace ColorControl.Services.Common
 
         public abstract bool HasDisplaysAttached(bool reinitialize = false);
 
-        protected void ToggleHDR(int delay = 1000)
+        public bool SetMode(string displayName, VirtualResolution resolution = null, Rational refreshRate = null, bool updateRegistry = false)
         {
-            Process.Start("ms-settings:display");
-            Thread.Sleep(delay);
+            var displayConfig = CCD.GetDisplayConfig(displayName);
 
-            var process = Process.GetProcessesByName("SystemSettings").FirstOrDefault();
-            if (process != null)
+            if (refreshRate != null)
             {
-                System.Windows.Forms.SendKeys.SendWait("{TAB}");
-                System.Windows.Forms.SendKeys.SendWait("{TAB}");
-                System.Windows.Forms.SendKeys.SendWait(" ");
-                System.Windows.Forms.SendKeys.SendWait("%{F4}");
+                displayConfig.ApplyRefreshRate = true;
+                displayConfig.RefreshRate = refreshRate;
             }
+
+            if (resolution != null)
+            {
+                displayConfig.ApplyResolution = true;
+                displayConfig.Resolution = resolution;
+            }
+
+            return SetMode(displayName, displayConfig, updateRegistry);
         }
 
-        protected void OpenDisplaySettings(int delay = 1000)
+        public bool SetMode(string displayName, DisplayConfig displayConfig, bool updateRegistry = false)
         {
-            Process.Start("ms-settings:display");
-            Thread.Sleep(delay);
+            var currentDisplayConfig = CCD.GetDisplayConfig(displayName);
 
-            var process = Process.GetProcessesByName("SystemSettings").FirstOrDefault();
-            if (process != null)
+            if (displayConfig.ApplyRefreshRate)
             {
-                System.Windows.Forms.SendKeys.SendWait("%{F4}");
+                currentDisplayConfig.RefreshRate = displayConfig.RefreshRate;
             }
+
+            if (displayConfig.ApplyResolution)
+            {
+                currentDisplayConfig.Resolution = displayConfig.Resolution;
+            }
+
+            if (displayConfig.Scaling != CCD.DisplayConfigScaling.Zero)
+            {
+                currentDisplayConfig.Scaling = displayConfig.Scaling;
+            }
+
+            if (displayConfig.Rotation != CCD.DisplayConfigRotation.Zero)
+            {
+                currentDisplayConfig.Rotation = displayConfig.Rotation;
+            }
+
+            return CCD.SetDisplayConfig(displayName, currentDisplayConfig, updateRegistry);
         }
 
-        protected bool SetRefreshRateInternal(string displayName, int refreshRate, bool portrait, int horizontal, int vertical, bool updateRegistry = false)
-        {
-            uint i = 0;
-            DEVMODEA devMode;
-            while (NativeMethods.EnumDisplaySettingsA(displayName, i, out devMode))
-            {
-                // Also compare width with vertical and height with horizontal in case of portrait mode
-                if (((!portrait && devMode.dmPelsWidth == horizontal && devMode.dmPelsHeight == vertical) ||
-                    (portrait && devMode.dmPelsWidth == vertical && devMode.dmPelsHeight == horizontal))
-                    && devMode.dmBitsPerPel == 32 && devMode.dmDisplayFrequency == refreshRate)
-                {
-                    IntPtr bla = Marshal.AllocHGlobal(Marshal.SizeOf(devMode));
-                    Marshal.StructureToPtr(devMode, bla, false);
-                    var result = NativeMethods.ChangeDisplaySettingsExA(displayName, bla, IntPtr.Zero, updateRegistry ? (uint)NativeConstants.CDS_UPDATEREGISTRY : 0, IntPtr.Zero);
-                    if (result != NativeConstants.DISP_CHANGE_SUCCESSFUL)
-                    {
-                        Logger.Error($"Could not set refreshrate {refreshRate} on display {displayName} because ChangeDisplaySettingsExA returned a non-zero return code: {result}");
-                    }
-                    return result == NativeConstants.DISP_CHANGE_SUCCESSFUL;
-                }
-                i++;
-            }
-            Logger.Info($"Could not set refreshrate {refreshRate} on display {displayName} because EnumDisplaySettings did not report it as a valid refreshrate");
-
-            return false;
-        }
-
-        protected List<uint> GetAvailableRefreshRatesInternal(string displayName, bool portrait, int horizontal, int vertical)
-        {
-            var list = new List<uint>();
-
-            uint i = 0;
-            DEVMODEA devMode;
-            while (NativeMethods.EnumDisplaySettingsA(displayName, i, out devMode))
-            {
-                if (((!portrait && devMode.dmPelsWidth == horizontal && devMode.dmPelsHeight == vertical) ||
-                    (portrait && devMode.dmPelsWidth == vertical && devMode.dmPelsHeight == horizontal)) &&
-                    !list.Contains(devMode.dmDisplayFrequency))
-                {
-                    list.Add(devMode.dmDisplayFrequency);
-                }
-                i++;
-            }
-            return list;
-        }
-
-        protected List<Rational> GetAvailableRefreshRatesV2(string displayName, bool portrait, int horizontal, int vertical)
+        protected List<Rational> GetAvailableRefreshRatesV2(string displayName, int horizontal, int vertical)
         {
             var dxWrapper = new DXWrapper();
 
@@ -113,50 +80,16 @@ namespace ColorControl.Services.Common
             return refreshRates.ToList();
         }
 
-        protected uint GetCurrentRefreshRate(string displayName)
+        protected List<VirtualResolution> GetAvailableResolutionsInternalV2(string displayName, Rational refreshRate = null)
         {
-            DEVMODEA devMode;
-            // NativeMethods defines modeNum as an 'uint' but we need to pass '-1'
-            if (WinApi.EnumDisplaySettingsA(displayName, WinApi.ENUM_CURRENT_SETTINGS, out devMode))
-            {
-                return devMode.dmDisplayFrequency;
-            }
-            return 0;
+            var dxWrapper = new DXWrapper();
+
+            var modes = dxWrapper.GetModes(displayName);
+
+            var refreshRates = modes.DistinctBy(m => $"{m.Resolution.width}x{m.Resolution.height}")
+                .Select(m => new VirtualResolution(m.Resolution.width, m.Resolution.height));
+
+            return refreshRates.ToList();
         }
-
-        protected DEVMODEA GetCurrentMode(string displayName)
-        {
-            DEVMODEA devMode;
-            // NativeMethods defines modeNum as an 'uint' but we need to pass '-1'
-            if (WinApi.EnumDisplaySettingsA(displayName, WinApi.ENUM_CURRENT_SETTINGS, out devMode))
-            {
-                return devMode;
-            }
-            return devMode;
-        }
-
-        protected List<DEVMODEA> GetAvailableResolutionsInternal(string displayName, bool portrait, uint refreshRate = 0)
-        {
-            var list = new List<DEVMODEA>();
-
-            uint i = 0;
-            DEVMODEA devMode;
-            while (NativeMethods.EnumDisplaySettingsA(displayName, i, out devMode))
-            {
-                if ((portrait ? devMode.dmPelsWidth < devMode.dmPelsHeight : devMode.dmPelsWidth > devMode.dmPelsHeight) &&
-                    (refreshRate == 0 || devMode.dmDisplayFrequency == refreshRate) &&
-                    !list.Any(m => m.dmPelsWidth == devMode.dmPelsWidth && m.dmPelsHeight == devMode.dmPelsHeight))
-                {
-                    list.Add(devMode);
-                }
-                i++;
-            }
-
-            list.Sort((a, b) => (int)(a.dmPelsWidth - b.dmPelsWidth));
-
-            return list;
-        }
-
-
     }
 }

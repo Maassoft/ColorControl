@@ -16,8 +16,7 @@ namespace ColorControl.Services.AMD
         public bool toggleHDR { get; set; }
         public bool applyDithering { get; set; }
         public ADLDitherState ditherState { get; set; }
-        public bool applyRefreshRate { get; set; }
-        public uint refreshRate { get; set; }
+        public DisplayConfig DisplayConfig { get; set; }
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
 
@@ -29,9 +28,8 @@ namespace ColorControl.Services.AMD
             applyHDR = false;
             HDREnabled = false;
             toggleHDR = false;
-            applyRefreshRate = false;
-            refreshRate = 60;
             primaryDisplay = true;
+            DisplayConfig = new DisplayConfig();
         }
 
         public AmdPreset(AmdPreset preset) : this()
@@ -50,8 +48,7 @@ namespace ColorControl.Services.AMD
             toggleHDR = preset.toggleHDR;
             applyDithering = preset.applyDithering;
             ditherState = preset.ditherState;
-            applyRefreshRate = preset.applyRefreshRate;
-            refreshRate = preset.refreshRate;
+            DisplayConfig = new DisplayConfig(DisplayConfig);
         }
 
         public AmdPreset Clone()
@@ -63,8 +60,7 @@ namespace ColorControl.Services.AMD
 
         public static string[] GetColumnNames()
         {
-            //return new[] { "BPC", "Format", "Dynamic range", "Toggle HDR", "Shortcut" };
-            return new[] { "Name", "Display|140", "Color settings (BPC, format)|260", "Refresh rate|100", "Dithering", "HDR", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format)|260", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -79,7 +75,8 @@ namespace ColorControl.Services.AMD
             var colorSettings = string.Format("{0}: {1}, {2}", applyColorData ? "Included" : "Excluded", colorDepth, pixelFormat);
 
             values.Add(colorSettings);
-            values.Add(string.Format("{0}: {1}Hz", applyRefreshRate ? "Included" : "Excluded", refreshRate));
+            values.Add(string.Format("{0}: {1}Hz", DisplayConfig.ApplyRefreshRate ? "Included" : "Excluded", DisplayConfig.RefreshRate));
+            values.Add(string.Format("{0}{1}", DisplayConfig.ApplyResolution ? "Included" : "Excluded", DisplayConfig.ApplyResolution ? ": " + DisplayConfig.GetResolutionDesc() : ""));
             values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", ditherState));
             values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
             values.Add(shortcut);
@@ -121,9 +118,14 @@ namespace ColorControl.Services.AMD
                     sb.Append(colorSettings);
                     sb.Append(" / ");
                 }
-                if (applyRefreshRate)
+                if (DisplayConfig.ApplyRefreshRate)
                 {
-                    sb.AppendFormat("{0}Hz", refreshRate);
+                    sb.AppendFormat("{0}Hz", DisplayConfig.RefreshRate);
+                    sb.Append(" / ");
+                }
+                if (DisplayConfig.ApplyResolution)
+                {
+                    sb.AppendFormat("{0}", DisplayConfig.GetResolutionDesc());
                     sb.Append(" / ");
                 }
                 if (applyDithering)

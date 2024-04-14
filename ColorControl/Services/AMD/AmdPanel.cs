@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace ColorControl.Services.AMD
 {
-    public partial class AmdPanel : UserControl, IModulePanel
+    partial class AmdPanel : UserControl, IModulePanel
     {
         private readonly AmdService _amdService;
         private readonly NotifyIconManager _notifyIconManager;
@@ -25,7 +25,7 @@ namespace ColorControl.Services.AMD
         private Config _config;
         private string _lastDisplayRefreshRates = string.Empty;
 
-        internal AmdPanel(AmdService amdService, NotifyIconManager notifyIconManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+        public AmdPanel(AmdService amdService, NotifyIconManager notifyIconManager, GlobalContext globalContext, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
         {
             _amdService = amdService;
             _notifyIconManager = notifyIconManager;
@@ -195,11 +195,64 @@ namespace ColorControl.Services.AMD
 
         private void refreshRateMenuItemAmd_Click(object sender, EventArgs e)
         {
-            var refreshRate = (uint)((ToolStripItem)sender).Tag;
+            var refreshRate = (Rational)((ToolStripItem)sender).Tag;
 
             var preset = GetSelectedAmdPreset();
 
-            preset.refreshRate = refreshRate;
+            preset.DisplayConfig.RefreshRate = refreshRate;
+
+            AddOrUpdateItemAmd();
+        }
+
+        private void resolutionAmdMenuItem_Click(object sender, EventArgs e)
+        {
+            var mode = (VirtualResolution)((ToolStripItem)sender).Tag;
+
+            var preset = GetSelectedAmdPreset();
+
+            preset.DisplayConfig.Resolution.ActiveWidth = mode.ActiveWidth;
+            preset.DisplayConfig.Resolution.ActiveHeight = mode.ActiveHeight;
+
+            AddOrUpdateItemAmd();
+        }
+
+        private void virtualResolutionAmdMenuItem_Click(object sender, EventArgs e)
+        {
+            var mode = (VirtualResolution)((ToolStripItem)sender).Tag;
+
+            var preset = GetSelectedAmdPreset();
+
+            var virtualMode = new VirtualResolution(mode);
+            virtualMode.ActiveWidth = preset.DisplayConfig.Resolution.ActiveWidth;
+            virtualMode.ActiveHeight = preset.DisplayConfig.Resolution.ActiveHeight;
+
+            preset.DisplayConfig.Resolution.VirtualWidth = virtualMode.VirtualWidth;
+            preset.DisplayConfig.Resolution.VirtualHeight = virtualMode.VirtualHeight;
+
+            AddOrUpdateItemAmd();
+        }
+
+        private void UpdateDisplayConfigScaling(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+            var value = (CCD.DisplayConfigScaling)menuItem.Tag;
+
+            var preset = GetSelectedAmdPreset();
+
+            preset.DisplayConfig.Scaling = value;
+
+            AddOrUpdateItemAmd();
+        }
+
+        private void UpdateDisplayConfigRotation(object sender, EventArgs e)
+        {
+            var menuItem = (ToolStripMenuItem)sender;
+            var value = (CCD.DisplayConfigRotation)menuItem.Tag;
+
+            var preset = GetSelectedAmdPreset();
+            var settings = preset.DisplayConfig;
+
+            preset.DisplayConfig.Rotation = value;
 
             AddOrUpdateItemAmd();
         }
@@ -321,6 +374,7 @@ namespace ColorControl.Services.AMD
             mnuAmdDisplay.Enabled = preset != null;
             mnuAmdColorSettings.Enabled = preset != null;
             mnuAmdRefreshRate.Enabled = preset != null;
+            mnuAmdResolution.Enabled = preset != null;
             mnuAmdDithering.Enabled = preset != null;
             mnuAmdHDR.Enabled = preset != null;
 
@@ -351,6 +405,8 @@ namespace ColorControl.Services.AMD
                     {
                         mnuAmdRefreshRate.DropDownItems.RemoveAt(mnuAmdRefreshRate.DropDownItems.Count - 1);
                     }
+                    miAmdActiveResolution.DropDownItems.Clear();
+                    miAmdVirtualResolution.DropDownItems.Clear();
                 }
 
                 if (mnuAmdRefreshRate.DropDownItems.Count == 1)
@@ -360,9 +416,35 @@ namespace ColorControl.Services.AMD
 
                     foreach (var refreshRate in refreshRates)
                     {
-                        var item = mnuAmdRefreshRate.DropDownItems.AddCustom(refreshRate.ToString() + "Hz");
+                        var item = mnuAmdRefreshRate.DropDownItems.AddCustom(refreshRate + "Hz");
                         item.Tag = refreshRate;
                         item.Click += refreshRateMenuItemAmd_Click;
+                    }
+                }
+
+                var modes = default(List<VirtualResolution>);
+
+                if (miAmdActiveResolution.DropDownItems.Count == 0)
+                {
+                    modes = _amdService.GetAvailableResolutionsV2(preset);
+
+                    foreach (var mode in modes)
+                    {
+                        var item = miAmdActiveResolution.DropDownItems.AddCustom(mode.ToString());
+                        item.Tag = mode;
+                        item.Click += resolutionAmdMenuItem_Click;
+                    }
+                }
+
+                if (miAmdVirtualResolution.DropDownItems.Count == 0)
+                {
+                    modes ??= _amdService.GetAvailableResolutionsV2(preset);
+
+                    foreach (var mode in modes)
+                    {
+                        var item = miAmdVirtualResolution.DropDownItems.AddCustom(mode.ToString());
+                        item.Tag = mode;
+                        item.Click += virtualResolutionAmdMenuItem_Click;
                     }
                 }
 
@@ -381,7 +463,7 @@ namespace ColorControl.Services.AMD
 
                 miAmdColorSettingsIncluded.Checked = preset.applyColorData;
 
-                miAmdRefreshRateIncluded.Checked = preset.applyRefreshRate;
+                miAmdRefreshRateIncluded.Checked = preset.DisplayConfig.ApplyRefreshRate;
                 foreach (var item in mnuAmdRefreshRate.DropDownItems)
                 {
                     if (item is ToolStripMenuItem)
@@ -389,8 +471,27 @@ namespace ColorControl.Services.AMD
                         var menuItem = (ToolStripMenuItem)item;
                         if (menuItem.Tag != null)
                         {
-                            menuItem.Checked = (uint)menuItem.Tag == preset.refreshRate;
+                            menuItem.Checked = ((Rational)menuItem.Tag).Equals(preset.DisplayConfig.RefreshRate);
                         }
+                    }
+                }
+
+                miAmdResolutionIncluded.Checked = preset.DisplayConfig.ApplyResolution;
+                foreach (var item in miAmdActiveResolution.DropDownItems)
+                {
+                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                    {
+                        var mode = (VirtualResolution)menuItem.Tag;
+                        menuItem.Checked = mode.ActiveWidth == preset.DisplayConfig.Resolution.ActiveWidth && mode.ActiveHeight == preset.DisplayConfig.Resolution.ActiveHeight;
+                    }
+                }
+
+                foreach (var item in miAmdVirtualResolution.DropDownItems)
+                {
+                    if (item is ToolStripMenuItem menuItem && menuItem.Tag != null)
+                    {
+                        var mode = (VirtualResolution)menuItem.Tag;
+                        menuItem.Checked = mode.VirtualWidth == preset.DisplayConfig.Resolution.VirtualWidth && mode.VirtualHeight == preset.DisplayConfig.Resolution.VirtualHeight;
                     }
                 }
 
@@ -401,6 +502,11 @@ namespace ColorControl.Services.AMD
                 miAmdHDRIncluded.Checked = preset.applyHDR;
                 miAmdHDREnabled.Checked = preset.HDREnabled;
                 miAmdHDRToggle.Checked = preset.toggleHDR;
+
+                FormUtils.BuildDropDownMenu(mnuAmdResolution, "Scaling/Aspect Ratio", typeof(CCD.DisplayConfigScaling), preset.DisplayConfig, "Scaling", UpdateDisplayConfigScaling, unchanged: false,
+                    skipValues: [CCD.DisplayConfigScaling.Zero, CCD.DisplayConfigScaling.Custom, CCD.DisplayConfigScaling.ForceUint32]);
+                FormUtils.BuildDropDownMenu(mnuAmdResolution, "Rotation", typeof(CCD.DisplayConfigRotation), preset.DisplayConfig, "Rotation", UpdateDisplayConfigRotation, unchanged: false,
+                    skipValues: [CCD.DisplayConfigRotation.Zero, CCD.DisplayConfigRotation.ForceUint32]);
             }
         }
 
@@ -460,7 +566,16 @@ namespace ColorControl.Services.AMD
         {
             var preset = GetSelectedAmdPreset();
 
-            preset.applyRefreshRate = !preset.applyRefreshRate;
+            preset.DisplayConfig.ApplyRefreshRate = !preset.DisplayConfig.ApplyRefreshRate;
+
+            AddOrUpdateItemAmd();
+        }
+
+        private void miAmdResolutionIncluded_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedAmdPreset();
+
+            preset.DisplayConfig.ApplyResolution = !preset.DisplayConfig.ApplyResolution;
 
             AddOrUpdateItemAmd();
         }

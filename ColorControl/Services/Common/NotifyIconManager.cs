@@ -75,7 +75,6 @@ public class NotifyIconManager
 
         NotifyIcon.MouseDoubleClick += trayIcon_MouseDoubleClick;
         NotifyIcon.ContextMenuStrip.Opened += trayIconContextMenu_Popup;
-        NotifyIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
     }
 
     public void HideIcon()
@@ -106,20 +105,12 @@ public class NotifyIconManager
         Program.OpenMainForm();
     }
 
-    private void trayIconBalloonTip_Clicked(object sender, EventArgs e)
-    {
-        //if (_updateHtmlUrl != null)
-        //{
-        //    _winApiAdminService.StartProcess(_updateHtmlUrl);
-        //}
-    }
-
     private void trayIconContextMenu_Popup(object sender, EventArgs e)
     {
         _nvTrayMenu.Visible = _serviceManager.NvService != null;
         if (_nvTrayMenu.Visible)
         {
-            var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate || x.applyResolution || x.applyDriverSettings || x.applyOther || x.applyOverclocking || x.ApplyColorEnhancements || x.applyHdmiSettings);
+            var presets = _serviceManager.NvService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.DisplayConfig.ApplyRefreshRate || x.DisplayConfig.ApplyResolution || x.applyDriverSettings || x.applyOther || x.applyOverclocking || x.ApplyColorEnhancements || x.applyHdmiSettings);
 
             UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
         }
@@ -133,7 +124,7 @@ public class NotifyIconManager
         _amdTrayMenu.Visible = _serviceManager.AmdService != null;
         if (_amdTrayMenu.Visible)
         {
-            var presets = _serviceManager.AmdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.applyRefreshRate);
+            var presets = _serviceManager.AmdService.GetPresets().Where(x => x.applyColorData || x.applyDithering || x.applyHDR || x.DisplayConfig.ApplyRefreshRate || x.DisplayConfig.ApplyResolution);
 
             UpdateTrayMenu(_amdTrayMenu, presets, TrayMenuItemAmd_Click);
         }
@@ -181,7 +172,7 @@ public class NotifyIconManager
             if (!string.IsNullOrEmpty(preset.shortcut))
             {
                 name += "        " + preset.shortcut;
-                //keys = Utils.ShortcutToKeys(preset.shortcut);
+                //keys = KeyboardShortcutDispatcher.ShortcutToKeys(preset.shortcut);
             }
 
             var item = new ToolStripMenuItem(name, null, null, keys);

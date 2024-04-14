@@ -28,384 +28,395 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.btnAmdSettings = new System.Windows.Forms.Button();
-            this.chkAmdQuickAccess = new System.Windows.Forms.CheckBox();
-            this.lblAmdPresetName = new System.Windows.Forms.Label();
-            this.edtAmdPresetName = new System.Windows.Forms.TextBox();
-            this.btnAddAmd = new System.Windows.Forms.Button();
-            this.lblErrorAMD = new System.Windows.Forms.Label();
-            this.btnDeleteAmd = new System.Windows.Forms.Button();
-            this.btnCloneAmd = new System.Windows.Forms.Button();
-            this.btnAmdPresetSave = new System.Windows.Forms.Button();
-            this.lblAmdShortcut = new System.Windows.Forms.Label();
-            this.edtAmdShortcut = new System.Windows.Forms.TextBox();
-            this.btnChangeAmd = new System.Windows.Forms.Button();
-            this.mnuAmdPresets = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.miAmdApply = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.mnuAmdDisplay = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuAmdColorSettings = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdColorSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuAmdRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuAmdDithering = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdDitheringIncluded = new System.Windows.Forms.ToolStripMenuItem();
-            this.mnuAmdHDR = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdHDRToggle = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
-            this.miAmdCopyId = new System.Windows.Forms.ToolStripMenuItem();
-            this.btnApplyAmd = new System.Windows.Forms.Button();
-            this.lvAmdPresets = new System.Windows.Forms.ListView();
-            this.mnuAmdPresets.SuspendLayout();
-            this.SuspendLayout();
+            components = new System.ComponentModel.Container();
+            btnAmdSettings = new System.Windows.Forms.Button();
+            chkAmdQuickAccess = new System.Windows.Forms.CheckBox();
+            lblAmdPresetName = new System.Windows.Forms.Label();
+            edtAmdPresetName = new System.Windows.Forms.TextBox();
+            btnAddAmd = new System.Windows.Forms.Button();
+            lblErrorAMD = new System.Windows.Forms.Label();
+            btnDeleteAmd = new System.Windows.Forms.Button();
+            btnCloneAmd = new System.Windows.Forms.Button();
+            btnAmdPresetSave = new System.Windows.Forms.Button();
+            lblAmdShortcut = new System.Windows.Forms.Label();
+            edtAmdShortcut = new System.Windows.Forms.TextBox();
+            btnChangeAmd = new System.Windows.Forms.Button();
+            mnuAmdPresets = new System.Windows.Forms.ContextMenuStrip(components);
+            miAmdApply = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdPresetApplyOnStartup = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            mnuAmdDisplay = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdPrimaryDisplay = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdColorSettings = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdColorSettingsIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdRefreshRate = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdRefreshRateIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdResolution = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdResolutionIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdDithering = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdDitheringIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdHDR = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdHDRIncluded = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdHDRToggle = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdHDREnabled = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdCopyId = new System.Windows.Forms.ToolStripMenuItem();
+            btnApplyAmd = new System.Windows.Forms.Button();
+            lvAmdPresets = new System.Windows.Forms.ListView();
+            miAmdActiveResolution = new System.Windows.Forms.ToolStripMenuItem();
+            miAmdVirtualResolution = new System.Windows.Forms.ToolStripMenuItem();
+            mnuAmdPresets.SuspendLayout();
+            SuspendLayout();
             // 
             // btnAmdSettings
             // 
-            this.btnAmdSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnAmdSettings.Location = new System.Drawing.Point(1017, 429);
-            this.btnAmdSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnAmdSettings.Name = "btnAmdSettings";
-            this.btnAmdSettings.Size = new System.Drawing.Size(88, 27);
-            this.btnAmdSettings.TabIndex = 60;
-            this.btnAmdSettings.Text = "Settings...";
-            this.btnAmdSettings.UseVisualStyleBackColor = true;
-            this.btnAmdSettings.Click += new System.EventHandler(this.btnAmdSettings_Click);
+            btnAmdSettings.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
+            btnAmdSettings.Location = new System.Drawing.Point(1017, 429);
+            btnAmdSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnAmdSettings.Name = "btnAmdSettings";
+            btnAmdSettings.Size = new System.Drawing.Size(88, 27);
+            btnAmdSettings.TabIndex = 60;
+            btnAmdSettings.Text = "Settings...";
+            btnAmdSettings.UseVisualStyleBackColor = true;
+            btnAmdSettings.Click += btnAmdSettings_Click;
             // 
             // chkAmdQuickAccess
             // 
-            this.chkAmdQuickAccess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.chkAmdQuickAccess.AutoSize = true;
-            this.chkAmdQuickAccess.Enabled = false;
-            this.chkAmdQuickAccess.Location = new System.Drawing.Point(343, 465);
-            this.chkAmdQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.chkAmdQuickAccess.Name = "chkAmdQuickAccess";
-            this.chkAmdQuickAccess.Size = new System.Drawing.Size(141, 19);
-            this.chkAmdQuickAccess.TabIndex = 46;
-            this.chkAmdQuickAccess.Text = "Show in Quick Access";
-            this.chkAmdQuickAccess.UseVisualStyleBackColor = true;
+            chkAmdQuickAccess.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            chkAmdQuickAccess.AutoSize = true;
+            chkAmdQuickAccess.Enabled = false;
+            chkAmdQuickAccess.Location = new System.Drawing.Point(343, 465);
+            chkAmdQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkAmdQuickAccess.Name = "chkAmdQuickAccess";
+            chkAmdQuickAccess.Size = new System.Drawing.Size(141, 19);
+            chkAmdQuickAccess.TabIndex = 46;
+            chkAmdQuickAccess.Text = "Show in Quick Access";
+            chkAmdQuickAccess.UseVisualStyleBackColor = true;
             // 
             // lblAmdPresetName
             // 
-            this.lblAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblAmdPresetName.AutoSize = true;
-            this.lblAmdPresetName.Location = new System.Drawing.Point(7, 466);
-            this.lblAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblAmdPresetName.Name = "lblAmdPresetName";
-            this.lblAmdPresetName.Size = new System.Drawing.Size(42, 15);
-            this.lblAmdPresetName.TabIndex = 24;
-            this.lblAmdPresetName.Text = "Name:";
+            lblAmdPresetName.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lblAmdPresetName.AutoSize = true;
+            lblAmdPresetName.Location = new System.Drawing.Point(7, 466);
+            lblAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblAmdPresetName.Name = "lblAmdPresetName";
+            lblAmdPresetName.Size = new System.Drawing.Size(42, 15);
+            lblAmdPresetName.TabIndex = 24;
+            lblAmdPresetName.Text = "Name:";
             // 
             // edtAmdPresetName
             // 
-            this.edtAmdPresetName.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.edtAmdPresetName.Enabled = false;
-            this.edtAmdPresetName.Location = new System.Drawing.Point(102, 463);
-            this.edtAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtAmdPresetName.Name = "edtAmdPresetName";
-            this.edtAmdPresetName.Size = new System.Drawing.Size(233, 23);
-            this.edtAmdPresetName.TabIndex = 23;
+            edtAmdPresetName.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            edtAmdPresetName.Enabled = false;
+            edtAmdPresetName.Location = new System.Drawing.Point(102, 463);
+            edtAmdPresetName.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            edtAmdPresetName.Name = "edtAmdPresetName";
+            edtAmdPresetName.Size = new System.Drawing.Size(233, 23);
+            edtAmdPresetName.TabIndex = 23;
             // 
             // btnAddAmd
             // 
-            this.btnAddAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAddAmd.Location = new System.Drawing.Point(385, 429);
-            this.btnAddAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnAddAmd.Name = "btnAddAmd";
-            this.btnAddAmd.Size = new System.Drawing.Size(88, 27);
-            this.btnAddAmd.TabIndex = 18;
-            this.btnAddAmd.Text = "Add";
-            this.btnAddAmd.UseVisualStyleBackColor = true;
-            this.btnAddAmd.Click += new System.EventHandler(this.btnAddAmd_Click);
+            btnAddAmd.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnAddAmd.Location = new System.Drawing.Point(385, 429);
+            btnAddAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnAddAmd.Name = "btnAddAmd";
+            btnAddAmd.Size = new System.Drawing.Size(88, 27);
+            btnAddAmd.TabIndex = 18;
+            btnAddAmd.Text = "Add";
+            btnAddAmd.UseVisualStyleBackColor = true;
+            btnAddAmd.Click += btnAddAmd_Click;
             // 
             // lblErrorAMD
             // 
-            this.lblErrorAMD.AutoSize = true;
-            this.lblErrorAMD.Location = new System.Drawing.Point(7, 7);
-            this.lblErrorAMD.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblErrorAMD.Name = "lblErrorAMD";
-            this.lblErrorAMD.Size = new System.Drawing.Size(53, 15);
-            this.lblErrorAMD.TabIndex = 8;
-            this.lblErrorAMD.Text = "ErrorText";
-            this.lblErrorAMD.Visible = false;
+            lblErrorAMD.AutoSize = true;
+            lblErrorAMD.Location = new System.Drawing.Point(7, 7);
+            lblErrorAMD.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblErrorAMD.Name = "lblErrorAMD";
+            lblErrorAMD.Size = new System.Drawing.Size(53, 15);
+            lblErrorAMD.TabIndex = 8;
+            lblErrorAMD.Text = "ErrorText";
+            lblErrorAMD.Visible = false;
             // 
             // btnDeleteAmd
             // 
-            this.btnDeleteAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnDeleteAmd.Enabled = false;
-            this.btnDeleteAmd.Location = new System.Drawing.Point(290, 429);
-            this.btnDeleteAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnDeleteAmd.Name = "btnDeleteAmd";
-            this.btnDeleteAmd.Size = new System.Drawing.Size(88, 27);
-            this.btnDeleteAmd.TabIndex = 17;
-            this.btnDeleteAmd.Text = "Delete";
-            this.btnDeleteAmd.UseVisualStyleBackColor = true;
-            this.btnDeleteAmd.Click += new System.EventHandler(this.btnDeleteAmd_Click);
+            btnDeleteAmd.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnDeleteAmd.Enabled = false;
+            btnDeleteAmd.Location = new System.Drawing.Point(290, 429);
+            btnDeleteAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnDeleteAmd.Name = "btnDeleteAmd";
+            btnDeleteAmd.Size = new System.Drawing.Size(88, 27);
+            btnDeleteAmd.TabIndex = 17;
+            btnDeleteAmd.Text = "Delete";
+            btnDeleteAmd.UseVisualStyleBackColor = true;
+            btnDeleteAmd.Click += btnDeleteAmd_Click;
             // 
             // btnCloneAmd
             // 
-            this.btnCloneAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnCloneAmd.Enabled = false;
-            this.btnCloneAmd.Location = new System.Drawing.Point(196, 429);
-            this.btnCloneAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnCloneAmd.Name = "btnCloneAmd";
-            this.btnCloneAmd.Size = new System.Drawing.Size(88, 27);
-            this.btnCloneAmd.TabIndex = 16;
-            this.btnCloneAmd.Text = "Clone";
-            this.btnCloneAmd.UseVisualStyleBackColor = true;
-            this.btnCloneAmd.Click += new System.EventHandler(this.btnCloneAmd_Click);
+            btnCloneAmd.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnCloneAmd.Enabled = false;
+            btnCloneAmd.Location = new System.Drawing.Point(196, 429);
+            btnCloneAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnCloneAmd.Name = "btnCloneAmd";
+            btnCloneAmd.Size = new System.Drawing.Size(88, 27);
+            btnCloneAmd.TabIndex = 16;
+            btnCloneAmd.Text = "Clone";
+            btnCloneAmd.UseVisualStyleBackColor = true;
+            btnCloneAmd.Click += btnCloneAmd_Click;
             // 
             // btnAmdPresetSave
             // 
-            this.btnAmdPresetSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnAmdPresetSave.Enabled = false;
-            this.btnAmdPresetSave.Location = new System.Drawing.Point(479, 429);
-            this.btnAmdPresetSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnAmdPresetSave.Name = "btnAmdPresetSave";
-            this.btnAmdPresetSave.Size = new System.Drawing.Size(88, 27);
-            this.btnAmdPresetSave.TabIndex = 15;
-            this.btnAmdPresetSave.Text = "Save";
-            this.btnAmdPresetSave.UseVisualStyleBackColor = true;
-            this.btnAmdPresetSave.Click += new System.EventHandler(this.btnSetAmdShortcut_Click);
+            btnAmdPresetSave.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnAmdPresetSave.Enabled = false;
+            btnAmdPresetSave.Location = new System.Drawing.Point(479, 429);
+            btnAmdPresetSave.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnAmdPresetSave.Name = "btnAmdPresetSave";
+            btnAmdPresetSave.Size = new System.Drawing.Size(88, 27);
+            btnAmdPresetSave.TabIndex = 15;
+            btnAmdPresetSave.Text = "Save";
+            btnAmdPresetSave.UseVisualStyleBackColor = true;
+            btnAmdPresetSave.Click += btnSetAmdShortcut_Click;
             // 
             // lblAmdShortcut
             // 
-            this.lblAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblAmdShortcut.AutoSize = true;
-            this.lblAmdShortcut.Location = new System.Drawing.Point(7, 496);
-            this.lblAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblAmdShortcut.Name = "lblAmdShortcut";
-            this.lblAmdShortcut.Size = new System.Drawing.Size(55, 15);
-            this.lblAmdShortcut.TabIndex = 14;
-            this.lblAmdShortcut.Text = "Shortcut:";
+            lblAmdShortcut.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lblAmdShortcut.AutoSize = true;
+            lblAmdShortcut.Location = new System.Drawing.Point(7, 496);
+            lblAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblAmdShortcut.Name = "lblAmdShortcut";
+            lblAmdShortcut.Size = new System.Drawing.Size(55, 15);
+            lblAmdShortcut.TabIndex = 14;
+            lblAmdShortcut.Text = "Shortcut:";
             // 
             // edtAmdShortcut
             // 
-            this.edtAmdShortcut.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.edtAmdShortcut.Enabled = false;
-            this.edtAmdShortcut.Location = new System.Drawing.Point(102, 493);
-            this.edtAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.edtAmdShortcut.Name = "edtAmdShortcut";
-            this.edtAmdShortcut.ReadOnly = true;
-            this.edtAmdShortcut.Size = new System.Drawing.Size(233, 23);
-            this.edtAmdShortcut.TabIndex = 13;
-            this.edtAmdShortcut.TextChanged += new System.EventHandler(this.edtAmdShortcut_TextChanged);
-            this.edtAmdShortcut.KeyDown += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyDown);
-            this.edtAmdShortcut.KeyUp += new System.Windows.Forms.KeyEventHandler(this.edtShortcut_KeyUp);
+            edtAmdShortcut.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            edtAmdShortcut.Enabled = false;
+            edtAmdShortcut.Location = new System.Drawing.Point(102, 493);
+            edtAmdShortcut.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            edtAmdShortcut.Name = "edtAmdShortcut";
+            edtAmdShortcut.ReadOnly = true;
+            edtAmdShortcut.Size = new System.Drawing.Size(233, 23);
+            edtAmdShortcut.TabIndex = 13;
+            edtAmdShortcut.TextChanged += edtAmdShortcut_TextChanged;
+            edtAmdShortcut.KeyDown += edtShortcut_KeyDown;
+            edtAmdShortcut.KeyUp += edtShortcut_KeyUp;
             // 
             // btnChangeAmd
             // 
-            this.btnChangeAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnChangeAmd.ContextMenuStrip = this.mnuAmdPresets;
-            this.btnChangeAmd.Enabled = false;
-            this.btnChangeAmd.Location = new System.Drawing.Point(102, 429);
-            this.btnChangeAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnChangeAmd.Name = "btnChangeAmd";
-            this.btnChangeAmd.Size = new System.Drawing.Size(88, 27);
-            this.btnChangeAmd.TabIndex = 12;
-            this.btnChangeAmd.Text = "Change...";
-            this.btnChangeAmd.UseVisualStyleBackColor = true;
-            this.btnChangeAmd.Click += new System.EventHandler(this.btnChangeAmd_Click);
+            btnChangeAmd.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnChangeAmd.ContextMenuStrip = mnuAmdPresets;
+            btnChangeAmd.Enabled = false;
+            btnChangeAmd.Location = new System.Drawing.Point(102, 429);
+            btnChangeAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnChangeAmd.Name = "btnChangeAmd";
+            btnChangeAmd.Size = new System.Drawing.Size(88, 27);
+            btnChangeAmd.TabIndex = 12;
+            btnChangeAmd.Text = "Change...";
+            btnChangeAmd.UseVisualStyleBackColor = true;
+            btnChangeAmd.Click += btnChangeAmd_Click;
             // 
             // mnuAmdPresets
             // 
-            this.mnuAmdPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.mnuAmdPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdApply,
-            this.miAmdPresetApplyOnStartup,
-            this.toolStripSeparator2,
-            this.mnuAmdDisplay,
-            this.mnuAmdColorSettings,
-            this.mnuAmdRefreshRate,
-            this.mnuAmdDithering,
-            this.mnuAmdHDR,
-            this.miAmdCopyId});
-            this.mnuAmdPresets.Name = "mnuNvPresets";
-            this.mnuAmdPresets.Size = new System.Drawing.Size(185, 186);
-            this.mnuAmdPresets.Opening += new System.ComponentModel.CancelEventHandler(this.mnuAmdPresets_Opening);
+            mnuAmdPresets.ImageScalingSize = new System.Drawing.Size(20, 20);
+            mnuAmdPresets.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdApply, miAmdPresetApplyOnStartup, toolStripSeparator2, mnuAmdDisplay, mnuAmdColorSettings, mnuAmdRefreshRate, mnuAmdResolution, mnuAmdDithering, mnuAmdHDR, miAmdCopyId });
+            mnuAmdPresets.Name = "mnuNvPresets";
+            mnuAmdPresets.Size = new System.Drawing.Size(185, 208);
+            mnuAmdPresets.Opening += mnuAmdPresets_Opening;
             // 
             // miAmdApply
             // 
-            this.miAmdApply.Name = "miAmdApply";
-            this.miAmdApply.Size = new System.Drawing.Size(184, 22);
-            this.miAmdApply.Text = "Apply";
-            this.miAmdApply.Click += new System.EventHandler(this.btnApplyAmd_Click);
+            miAmdApply.Name = "miAmdApply";
+            miAmdApply.Size = new System.Drawing.Size(184, 22);
+            miAmdApply.Text = "Apply";
+            miAmdApply.Click += btnApplyAmd_Click;
             // 
             // miAmdPresetApplyOnStartup
             // 
-            this.miAmdPresetApplyOnStartup.CheckOnClick = true;
-            this.miAmdPresetApplyOnStartup.Name = "miAmdPresetApplyOnStartup";
-            this.miAmdPresetApplyOnStartup.Size = new System.Drawing.Size(184, 22);
-            this.miAmdPresetApplyOnStartup.Text = "Apply on startup";
-            this.miAmdPresetApplyOnStartup.Click += new System.EventHandler(this.miAmdPresetApplyOnStartup_Click);
+            miAmdPresetApplyOnStartup.CheckOnClick = true;
+            miAmdPresetApplyOnStartup.Name = "miAmdPresetApplyOnStartup";
+            miAmdPresetApplyOnStartup.Size = new System.Drawing.Size(184, 22);
+            miAmdPresetApplyOnStartup.Text = "Apply on startup";
+            miAmdPresetApplyOnStartup.Click += miAmdPresetApplyOnStartup_Click;
             // 
             // toolStripSeparator2
             // 
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(181, 6);
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new System.Drawing.Size(181, 6);
             // 
             // mnuAmdDisplay
             // 
-            this.mnuAmdDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdPrimaryDisplay});
-            this.mnuAmdDisplay.Name = "mnuAmdDisplay";
-            this.mnuAmdDisplay.Size = new System.Drawing.Size(184, 22);
-            this.mnuAmdDisplay.Text = "Display";
+            mnuAmdDisplay.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdPrimaryDisplay });
+            mnuAmdDisplay.Name = "mnuAmdDisplay";
+            mnuAmdDisplay.Size = new System.Drawing.Size(184, 22);
+            mnuAmdDisplay.Text = "Display";
             // 
             // miAmdPrimaryDisplay
             // 
-            this.miAmdPrimaryDisplay.Name = "miAmdPrimaryDisplay";
-            this.miAmdPrimaryDisplay.Size = new System.Drawing.Size(155, 22);
-            this.miAmdPrimaryDisplay.Text = "Primary display";
-            this.miAmdPrimaryDisplay.Click += new System.EventHandler(this.displayMenuItemAmd_Click);
+            miAmdPrimaryDisplay.Name = "miAmdPrimaryDisplay";
+            miAmdPrimaryDisplay.Size = new System.Drawing.Size(155, 22);
+            miAmdPrimaryDisplay.Text = "Primary display";
+            miAmdPrimaryDisplay.Click += displayMenuItemAmd_Click;
             // 
             // mnuAmdColorSettings
             // 
-            this.mnuAmdColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdColorSettingsIncluded});
-            this.mnuAmdColorSettings.Name = "mnuAmdColorSettings";
-            this.mnuAmdColorSettings.Size = new System.Drawing.Size(184, 22);
-            this.mnuAmdColorSettings.Text = "Color settings";
+            mnuAmdColorSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdColorSettingsIncluded });
+            mnuAmdColorSettings.Name = "mnuAmdColorSettings";
+            mnuAmdColorSettings.Size = new System.Drawing.Size(184, 22);
+            mnuAmdColorSettings.Text = "Color settings";
             // 
             // miAmdColorSettingsIncluded
             // 
-            this.miAmdColorSettingsIncluded.Name = "miAmdColorSettingsIncluded";
-            this.miAmdColorSettingsIncluded.Size = new System.Drawing.Size(120, 22);
-            this.miAmdColorSettingsIncluded.Text = "Included";
-            this.miAmdColorSettingsIncluded.Click += new System.EventHandler(this.miAmdColorSettingsIncluded_Click);
+            miAmdColorSettingsIncluded.Name = "miAmdColorSettingsIncluded";
+            miAmdColorSettingsIncluded.Size = new System.Drawing.Size(120, 22);
+            miAmdColorSettingsIncluded.Text = "Included";
+            miAmdColorSettingsIncluded.Click += miAmdColorSettingsIncluded_Click;
             // 
             // mnuAmdRefreshRate
             // 
-            this.mnuAmdRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdRefreshRateIncluded});
-            this.mnuAmdRefreshRate.Name = "mnuAmdRefreshRate";
-            this.mnuAmdRefreshRate.Size = new System.Drawing.Size(184, 22);
-            this.mnuAmdRefreshRate.Text = "Refresh Rate";
+            mnuAmdRefreshRate.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdRefreshRateIncluded });
+            mnuAmdRefreshRate.Name = "mnuAmdRefreshRate";
+            mnuAmdRefreshRate.Size = new System.Drawing.Size(184, 22);
+            mnuAmdRefreshRate.Text = "Refresh Rate";
             // 
             // miAmdRefreshRateIncluded
             // 
-            this.miAmdRefreshRateIncluded.Name = "miAmdRefreshRateIncluded";
-            this.miAmdRefreshRateIncluded.Size = new System.Drawing.Size(120, 22);
-            this.miAmdRefreshRateIncluded.Text = "Included";
-            this.miAmdRefreshRateIncluded.Click += new System.EventHandler(this.miAmdRefreshRateIncluded_Click);
+            miAmdRefreshRateIncluded.Name = "miAmdRefreshRateIncluded";
+            miAmdRefreshRateIncluded.Size = new System.Drawing.Size(180, 22);
+            miAmdRefreshRateIncluded.Text = "Included";
+            miAmdRefreshRateIncluded.Click += miAmdRefreshRateIncluded_Click;
+            // 
+            // mnuAmdResolution
+            // 
+            mnuAmdResolution.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdResolutionIncluded, miAmdActiveResolution, miAmdVirtualResolution });
+            mnuAmdResolution.Name = "mnuAmdResolution";
+            mnuAmdResolution.Size = new System.Drawing.Size(184, 22);
+            mnuAmdResolution.Text = "Resolution";
+            // 
+            // miAmdResolutionIncluded
+            // 
+            miAmdResolutionIncluded.Name = "miAmdResolutionIncluded";
+            miAmdResolutionIncluded.Size = new System.Drawing.Size(180, 22);
+            miAmdResolutionIncluded.Text = "Included";
+            miAmdResolutionIncluded.Click += miAmdResolutionIncluded_Click;
             // 
             // mnuAmdDithering
             // 
-            this.mnuAmdDithering.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdDitheringIncluded});
-            this.mnuAmdDithering.Name = "mnuAmdDithering";
-            this.mnuAmdDithering.Size = new System.Drawing.Size(184, 22);
-            this.mnuAmdDithering.Text = "Dithering";
+            mnuAmdDithering.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdDitheringIncluded });
+            mnuAmdDithering.Name = "mnuAmdDithering";
+            mnuAmdDithering.Size = new System.Drawing.Size(184, 22);
+            mnuAmdDithering.Text = "Dithering";
             // 
             // miAmdDitheringIncluded
             // 
-            this.miAmdDitheringIncluded.Name = "miAmdDitheringIncluded";
-            this.miAmdDitheringIncluded.Size = new System.Drawing.Size(120, 22);
-            this.miAmdDitheringIncluded.Text = "Included";
-            this.miAmdDitheringIncluded.Click += new System.EventHandler(this.miAmdDitheringIncluded_Click);
+            miAmdDitheringIncluded.Name = "miAmdDitheringIncluded";
+            miAmdDitheringIncluded.Size = new System.Drawing.Size(120, 22);
+            miAmdDitheringIncluded.Text = "Included";
+            miAmdDitheringIncluded.Click += miAmdDitheringIncluded_Click;
             // 
             // mnuAmdHDR
             // 
-            this.mnuAmdHDR.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miAmdHDRIncluded,
-            this.miAmdHDRToggle,
-            this.miAmdHDREnabled});
-            this.mnuAmdHDR.Name = "mnuAmdHDR";
-            this.mnuAmdHDR.Size = new System.Drawing.Size(184, 22);
-            this.mnuAmdHDR.Text = "HDR";
+            mnuAmdHDR.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { miAmdHDRIncluded, miAmdHDRToggle, miAmdHDREnabled });
+            mnuAmdHDR.Name = "mnuAmdHDR";
+            mnuAmdHDR.Size = new System.Drawing.Size(184, 22);
+            mnuAmdHDR.Text = "HDR";
             // 
             // miAmdHDRIncluded
             // 
-            this.miAmdHDRIncluded.Name = "miAmdHDRIncluded";
-            this.miAmdHDRIncluded.Size = new System.Drawing.Size(136, 22);
-            this.miAmdHDRIncluded.Text = "Included";
-            this.miAmdHDRIncluded.Click += new System.EventHandler(this.miAmdHDRIncluded_Click);
+            miAmdHDRIncluded.Name = "miAmdHDRIncluded";
+            miAmdHDRIncluded.Size = new System.Drawing.Size(136, 22);
+            miAmdHDRIncluded.Text = "Included";
+            miAmdHDRIncluded.Click += miAmdHDRIncluded_Click;
             // 
             // miAmdHDRToggle
             // 
-            this.miAmdHDRToggle.Name = "miAmdHDRToggle";
-            this.miAmdHDRToggle.Size = new System.Drawing.Size(136, 22);
-            this.miAmdHDRToggle.Text = "Toggle HDR";
-            this.miAmdHDRToggle.Click += new System.EventHandler(this.miAmdHDRToggle_Click);
+            miAmdHDRToggle.Name = "miAmdHDRToggle";
+            miAmdHDRToggle.Size = new System.Drawing.Size(136, 22);
+            miAmdHDRToggle.Text = "Toggle HDR";
+            miAmdHDRToggle.Click += miAmdHDRToggle_Click;
             // 
             // miAmdHDREnabled
             // 
-            this.miAmdHDREnabled.Name = "miAmdHDREnabled";
-            this.miAmdHDREnabled.Size = new System.Drawing.Size(136, 22);
-            this.miAmdHDREnabled.Text = "Enabled";
-            this.miAmdHDREnabled.Click += new System.EventHandler(this.miAmdHDREnabled_Click);
+            miAmdHDREnabled.Name = "miAmdHDREnabled";
+            miAmdHDREnabled.Size = new System.Drawing.Size(136, 22);
+            miAmdHDREnabled.Text = "Enabled";
+            miAmdHDREnabled.Click += miAmdHDREnabled_Click;
             // 
             // miAmdCopyId
             // 
-            this.miAmdCopyId.Name = "miAmdCopyId";
-            this.miAmdCopyId.Size = new System.Drawing.Size(184, 22);
-            this.miAmdCopyId.Text = "Copy Id to Clipboard";
-            this.miAmdCopyId.Click += new System.EventHandler(this.miAmdCopyId_Click);
+            miAmdCopyId.Name = "miAmdCopyId";
+            miAmdCopyId.Size = new System.Drawing.Size(184, 22);
+            miAmdCopyId.Text = "Copy Id to Clipboard";
+            miAmdCopyId.Click += miAmdCopyId_Click;
             // 
             // btnApplyAmd
             // 
-            this.btnApplyAmd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnApplyAmd.Enabled = false;
-            this.btnApplyAmd.Location = new System.Drawing.Point(7, 429);
-            this.btnApplyAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.btnApplyAmd.Name = "btnApplyAmd";
-            this.btnApplyAmd.Size = new System.Drawing.Size(88, 27);
-            this.btnApplyAmd.TabIndex = 11;
-            this.btnApplyAmd.Text = "Apply";
-            this.btnApplyAmd.UseVisualStyleBackColor = true;
-            this.btnApplyAmd.Click += new System.EventHandler(this.btnApplyAmd_Click);
+            btnApplyAmd.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            btnApplyAmd.Enabled = false;
+            btnApplyAmd.Location = new System.Drawing.Point(7, 429);
+            btnApplyAmd.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnApplyAmd.Name = "btnApplyAmd";
+            btnApplyAmd.Size = new System.Drawing.Size(88, 27);
+            btnApplyAmd.TabIndex = 11;
+            btnApplyAmd.Text = "Apply";
+            btnApplyAmd.UseVisualStyleBackColor = true;
+            btnApplyAmd.Click += btnApplyAmd_Click;
             // 
             // lvAmdPresets
             // 
-            this.lvAmdPresets.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lvAmdPresets.CheckBoxes = true;
-            this.lvAmdPresets.ContextMenuStrip = this.mnuAmdPresets;
-            this.lvAmdPresets.FullRowSelect = true;
-            this.lvAmdPresets.Location = new System.Drawing.Point(7, 7);
-            this.lvAmdPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.lvAmdPresets.MultiSelect = false;
-            this.lvAmdPresets.Name = "lvAmdPresets";
-            this.lvAmdPresets.ShowItemToolTips = true;
-            this.lvAmdPresets.Size = new System.Drawing.Size(1098, 415);
-            this.lvAmdPresets.TabIndex = 10;
-            this.lvAmdPresets.UseCompatibleStateImageBehavior = false;
-            this.lvAmdPresets.View = System.Windows.Forms.View.Details;
-            this.lvAmdPresets.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.lvLgPresets_ColumnClick);
-            this.lvAmdPresets.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.lvNvPresets_ItemCheck);
-            this.lvAmdPresets.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lvAmdPresets_ItemChecked);
-            this.lvAmdPresets.SelectedIndexChanged += new System.EventHandler(this.lvAmdPresets_SelectedIndexChanged);
-            this.lvAmdPresets.DoubleClick += new System.EventHandler(this.btnApplyAmd_Click);
+            lvAmdPresets.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            lvAmdPresets.CheckBoxes = true;
+            lvAmdPresets.ContextMenuStrip = mnuAmdPresets;
+            lvAmdPresets.FullRowSelect = true;
+            lvAmdPresets.Location = new System.Drawing.Point(7, 7);
+            lvAmdPresets.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            lvAmdPresets.MultiSelect = false;
+            lvAmdPresets.Name = "lvAmdPresets";
+            lvAmdPresets.ShowItemToolTips = true;
+            lvAmdPresets.Size = new System.Drawing.Size(1098, 415);
+            lvAmdPresets.TabIndex = 10;
+            lvAmdPresets.UseCompatibleStateImageBehavior = false;
+            lvAmdPresets.View = System.Windows.Forms.View.Details;
+            lvAmdPresets.ColumnClick += lvLgPresets_ColumnClick;
+            lvAmdPresets.ItemCheck += lvNvPresets_ItemCheck;
+            lvAmdPresets.ItemChecked += lvAmdPresets_ItemChecked;
+            lvAmdPresets.SelectedIndexChanged += lvAmdPresets_SelectedIndexChanged;
+            lvAmdPresets.DoubleClick += btnApplyAmd_Click;
+            // 
+            // miAmdActiveResolution
+            // 
+            miAmdActiveResolution.Name = "miAmdActiveResolution";
+            miAmdActiveResolution.Size = new System.Drawing.Size(180, 22);
+            miAmdActiveResolution.Text = "Active";
+            // 
+            // miAmdVirtualResolution
+            // 
+            miAmdVirtualResolution.Name = "miAmdVirtualResolution";
+            miAmdVirtualResolution.Size = new System.Drawing.Size(180, 22);
+            miAmdVirtualResolution.Text = "Virtual";
             // 
             // AmdPanel
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.btnAmdSettings);
-            this.Controls.Add(this.chkAmdQuickAccess);
-            this.Controls.Add(this.lblAmdPresetName);
-            this.Controls.Add(this.edtAmdPresetName);
-            this.Controls.Add(this.btnAddAmd);
-            this.Controls.Add(this.lblErrorAMD);
-            this.Controls.Add(this.btnDeleteAmd);
-            this.Controls.Add(this.btnCloneAmd);
-            this.Controls.Add(this.btnAmdPresetSave);
-            this.Controls.Add(this.lblAmdShortcut);
-            this.Controls.Add(this.edtAmdShortcut);
-            this.Controls.Add(this.btnChangeAmd);
-            this.Controls.Add(this.btnApplyAmd);
-            this.Controls.Add(this.lvAmdPresets);
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Name = "AmdPanel";
-            this.Size = new System.Drawing.Size(1114, 539);
-            this.mnuAmdPresets.ResumeLayout(false);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Controls.Add(btnAmdSettings);
+            Controls.Add(chkAmdQuickAccess);
+            Controls.Add(lblAmdPresetName);
+            Controls.Add(edtAmdPresetName);
+            Controls.Add(btnAddAmd);
+            Controls.Add(lblErrorAMD);
+            Controls.Add(btnDeleteAmd);
+            Controls.Add(btnCloneAmd);
+            Controls.Add(btnAmdPresetSave);
+            Controls.Add(lblAmdShortcut);
+            Controls.Add(edtAmdShortcut);
+            Controls.Add(btnChangeAmd);
+            Controls.Add(btnApplyAmd);
+            Controls.Add(lvAmdPresets);
+            Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            Name = "AmdPanel";
+            Size = new System.Drawing.Size(1114, 539);
+            mnuAmdPresets.ResumeLayout(false);
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -441,6 +452,9 @@
         private System.Windows.Forms.ToolStripMenuItem miAmdCopyId;
         private System.Windows.Forms.CheckBox chkAmdQuickAccess;
         private System.Windows.Forms.Button btnAmdSettings;
-
+        private System.Windows.Forms.ToolStripMenuItem mnuAmdResolution;
+        private System.Windows.Forms.ToolStripMenuItem miAmdResolutionIncluded;
+        private System.Windows.Forms.ToolStripMenuItem miAmdActiveResolution;
+        private System.Windows.Forms.ToolStripMenuItem miAmdVirtualResolution;
     }
 }

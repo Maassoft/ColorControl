@@ -27,11 +27,7 @@ namespace ColorControl.Services.NVIDIA
         public bool toggleHDR { get; set; }
         public bool applyDithering { get; set; }
         public bool? ditheringEnabled { get; set; }
-        public bool applyRefreshRate { get; set; }
-        public uint refreshRate { get; set; }
-        public bool applyResolution { get; set; }
-        public uint resolutionWidth { get; set; }
-        public uint resolutionHeight { get; set; }
+        public DisplayConfig DisplayConfig { get; set; }
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
         public uint ditheringBits { get; set; }
@@ -67,11 +63,7 @@ namespace ColorControl.Services.NVIDIA
             applyHDR = false;
             HDREnabled = false;
             toggleHDR = false;
-            applyRefreshRate = false;
-            refreshRate = 60;
-            applyResolution = false;
-            resolutionWidth = 0;
-            resolutionHeight = 0;
+            DisplayConfig = new DisplayConfig();
             primaryDisplay = true;
             ditheringBits = 1;
             ditheringMode = 4;
@@ -108,11 +100,9 @@ namespace ColorControl.Services.NVIDIA
 
             applyDithering = preset.applyDithering;
             ditheringEnabled = preset.ditheringEnabled;
-            applyRefreshRate = preset.applyRefreshRate;
-            refreshRate = preset.refreshRate;
-            applyResolution = preset.applyResolution;
-            resolutionWidth = preset.resolutionWidth;
-            resolutionHeight = preset.resolutionHeight;
+
+            DisplayConfig = new DisplayConfig(DisplayConfig);
+
             applyDriverSettings = preset.applyDriverSettings;
             driverSettings = new Dictionary<uint, uint>(preset.driverSettings);
 
@@ -137,7 +127,7 @@ namespace ColorControl.Services.NVIDIA
 
         public static string[] GetColumnNames()
         {
-            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Color enhancements", "Refresh rate|100", "Resolution|120", "Dithering", "HDR", "Driver settings|300", "HDMI settings|200", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
+            return new[] { "Name", "Display|140", "Color settings (BPC, format, dyn. range, color space)|260", "Color enhancements", "Refresh rate|120", "Resolution|150", "Dithering", "HDR", "Driver settings|300", "HDMI settings|200", "Other|200", "Overclocking|300", "Shortcut", "Apply on startup" };
         }
 
         public override List<string> GetDisplayValues(Config config = null)
@@ -158,11 +148,11 @@ namespace ColorControl.Services.NVIDIA
 
             values.Add(FormatDisplaySetting(GetColorEnhancementsDescription(), isCurrent, ApplyColorEnhancements));
 
-            values.Add(FormatDisplaySetting(string.Format("{0}Hz", refreshRate), isCurrent, applyRefreshRate));
+            values.Add(FormatDisplaySetting(string.Format("{0}Hz", DisplayConfig.RefreshRate), isCurrent, DisplayConfig.ApplyRefreshRate));
 
-            if (applyResolution || resolutionWidth > 0)
+            if (DisplayConfig.ApplyResolution || DisplayConfig.Resolution.ActiveWidth > 0)
             {
-                values.Add(FormatDisplaySetting(string.Format("{0}x{1}", resolutionWidth, resolutionHeight), isCurrent, applyResolution));
+                values.Add(FormatDisplaySetting(string.Format("{0}", DisplayConfig.GetResolutionDesc()), isCurrent, DisplayConfig.ApplyResolution));
             }
             else
             {
@@ -190,7 +180,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (isCurrent)
             {
-                InfoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", displayName, colorSettings, refreshRate, HDREnabled ? "Yes" : "No");
+                InfoLine = string.Format("{0}: {1}, {2}Hz, {3}, HDR: {4}", displayName, colorSettings, DisplayConfig.RefreshRate, DisplayConfig.GetResolutionDesc(), HDREnabled ? "Yes" : "No");
             }
 
             return values;
@@ -380,14 +370,14 @@ namespace ColorControl.Services.NVIDIA
                     sb.Append(colorSettings);
                     sb.Append(" / ");
                 }
-                if (applyRefreshRate)
+                if (DisplayConfig.ApplyRefreshRate)
                 {
-                    sb.AppendFormat("{0}Hz", refreshRate);
+                    sb.AppendFormat("{0}Hz", DisplayConfig.RefreshRate);
                     sb.Append(" / ");
                 }
-                if (applyResolution)
+                if (DisplayConfig.ApplyResolution)
                 {
-                    sb.AppendFormat("{0}x{1}", resolutionWidth, resolutionHeight);
+                    sb.AppendFormat("{0}", DisplayConfig.GetResolutionDesc());
                     sb.Append(" / ");
                 }
                 if (applyDithering)

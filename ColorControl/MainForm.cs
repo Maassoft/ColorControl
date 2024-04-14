@@ -38,7 +38,6 @@ namespace ColorControl
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private readonly UpdateManager _updateManager;
         private Config _config;
-        private bool _setVisibleCalled = false;
 
         private LgPanel _lgPanel;
         private SamsungPanel _samsungPanel;
@@ -48,8 +47,8 @@ namespace ColorControl
 
         private GamePanel _gamePanel;
 
-        public MainForm(GlobalContext globalContext, ServiceManager serviceManager,
-            IServiceProvider serviceProvider, ElevationService elevationService, NotifyIconManager notifyIconManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, UpdateManager updateManager)
+        public MainForm(GlobalContext globalContext, ServiceManager serviceManager, IServiceProvider serviceProvider, ElevationService elevationService,
+            NotifyIconManager notifyIconManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, UpdateManager updateManager)
         {
             InitializeComponent();
 
@@ -117,6 +116,8 @@ namespace ColorControl
                 panel.Size = tabPage.ClientSize;
                 panel.BackColor = SystemColors.Window;
 
+                //Logger.Debug($"Panel {panel.GetType().Name}, size: {panel.Size.Width}x{panel.Size.Height}");
+
                 return panel;
             }
             catch (Exception ex)
@@ -136,7 +137,12 @@ namespace ColorControl
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (!(SystemShutdown || EndSession || Program.UserExit) && _config.MinimizeOnClose)
+            if (Program.UserExit)
+            {
+                return;
+            }
+
+            if (!(SystemShutdown || EndSession) && _config.MinimizeOnClose)
             {
                 e.Cancel = true;
                 WindowState = FormWindowState.Minimized;
@@ -149,9 +155,9 @@ namespace ColorControl
             if (SystemShutdown)
             {
                 Logger.Debug($"MainForm_FormClosing: SystemShutdown");
-
-                //_powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
             }
+
+            Program.Exit();
         }
 
         private void GlobalSave()
@@ -232,31 +238,11 @@ namespace ColorControl
             Utils.WriteObject(Program.ConfigFilename, _config);
         }
 
-        private async void MainForm_Shown(object sender, EventArgs e)
+        private void MainForm_Shown(object sender, EventArgs e)
         {
             InitSelectedTab();
 
             _elevationService.CheckElevationMethod();
-        }
-
-        protected override void SetVisibleCore(bool value)
-        {
-            //if (!_setVisibleCalled && _config.StartMinimized && !Debugger.IsAttached)
-            //{
-            //    _setVisibleCalled = true;
-            //    if (_config.MinimizeToTray)
-            //    {
-            //        value = false;
-            //    }
-            //    else
-            //    {
-            //        WindowState = FormWindowState.Minimized;
-            //    }
-            //}
-            if (!IsDisposed)
-            {
-                base.SetVisibleCore(value);
-            }
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -282,7 +268,7 @@ namespace ColorControl
 
         private void InitOptionsTab()
         {
-            if (tabInfo.Controls.Count > 0)
+            if (tabOptions.Controls.Count > 0)
             {
                 return;
             }
@@ -328,10 +314,6 @@ namespace ColorControl
             {
                 await _amdPanel.AfterInitialized();
             }
-            //if (_trayIcon.Visible)
-            //{
-            //    await CheckForUpdates();
-            //}
         }
 
         private void MainForm_Deactivate(object sender, EventArgs e)

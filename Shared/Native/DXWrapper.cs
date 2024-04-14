@@ -3799,18 +3799,18 @@ public class SafeNativeMethods
 
 public class DXWrapper : DXNativeMethods
 {
-    private IDXGIFactory2 @interface;
+    private IDXGIFactory1 @interface;
     //private readonly IList<Adapter> adapters = new List<Adapter>(1);
 
     public IEnumerable<MODE_DESC1> GetModes(string displayName, uint width = 0, uint height = 0)
     {
-        int hr = CreateDXGIFactory2(
-#if DEBUG
-                            CREATE_FACTORY.DEBUG,
-#else
-                    CREATE_FACTORY.NONE,
-#endif
-                            typeof(IDXGIFactory4).GUID,
+        int hr = CreateDXGIFactory1(
+                            //#if DEBUG
+                            //                            CREATE_FACTORY.DEBUG,
+                            //#else
+                            //                    CREATE_FACTORY.NONE,
+                            //#endif
+                            typeof(IDXGIFactory1).GUID,
                         out var result);
 
         if (Failed(hr))
@@ -3819,15 +3819,15 @@ public class DXWrapper : DXNativeMethods
         }
         else
         {
-            @interface = result as IDXGIFactory4;
+            @interface = result as IDXGIFactory1;
         }
         if (@interface == null)
         {
-            throw new NotImplementedException("IDXGIFactory4");
+            throw new NotImplementedException("IDXGIFactory2");
         }
         else
         {
-            SetPrivateString(@interface, "Factory4");
+            SetPrivateString(@interface, "Factory2");
         }
 
         return GetModesFromAdapter(displayName, width, height);
@@ -3865,7 +3865,7 @@ public class DXWrapper : DXNativeMethods
                     continue;
                 }
 
-                OUTPUT_DESC outputDesc = new OUTPUT_DESC();
+                var outputDesc = new OUTPUT_DESC();
                 output1.GetDesc(out outputDesc);
 
                 if (outputDesc.DeviceName == displayName)

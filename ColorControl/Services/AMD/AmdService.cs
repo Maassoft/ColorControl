@@ -1,8 +1,8 @@
 ﻿using ATI.ADL;
 using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -153,11 +153,11 @@ namespace ColorControl.Services.AMD
                 //}
             }
 
-            if (preset.applyRefreshRate)
+            if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution)
             {
+                if (!SetMode(preset.DisplayConfig, true))
                 {
-                    if (!SetRefreshRate(preset.refreshRate))
-                        result = false;
+                    result = false;
                 }
             }
 
@@ -219,20 +219,14 @@ namespace ColorControl.Services.AMD
             return Screen.PrimaryScreen.DeviceName;
         }
 
-        public bool SetRefreshRate(uint refreshRate)
+        public bool SetMode(DisplayConfig displayConfig, bool updateRegistry = false)
         {
-            var horizontal = 3840;
-            var vertical = 2160;
             var display = GetCurrentDisplay();
 
-            ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
-
-            var portrait = vertical > horizontal;
-
-            return SetRefreshRateInternal(GetDisplayDeviceName(display), (int)refreshRate, portrait, horizontal, vertical);
+            return SetMode(GetDisplayDeviceName(display), displayConfig, updateRegistry);
         }
 
-        public List<uint> GetAvailableRefreshRates(AmdPreset preset = null)
+        public List<Rational> GetAvailableRefreshRates(AmdPreset preset = null)
         {
             if (preset != null)
             {
@@ -245,9 +239,24 @@ namespace ColorControl.Services.AMD
 
             ADLWrapper.GetDisplayResolution(display, ref horizontal, ref vertical);
 
-            var portrait = vertical > horizontal;
+            return GetAvailableRefreshRatesV2(GetDisplayDeviceName(display), horizontal, vertical);
+        }
 
-            return GetAvailableRefreshRatesInternal(GetDisplayDeviceName(display), portrait, horizontal, vertical);
+        public List<VirtualResolution> GetAvailableResolutionsV2(AmdPreset preset = null)
+        {
+            if (preset != null)
+            {
+                SetCurrentDisplay(preset);
+            }
+
+            var display = GetCurrentDisplay();
+            var deviceName = GetDisplayDeviceName(display);
+            if (deviceName == null)
+            {
+                return [];
+            }
+
+            return GetAvailableResolutionsInternalV2(deviceName);
         }
 
         public bool IsHDREnabled()
@@ -337,8 +346,11 @@ namespace ColorControl.Services.AMD
                 var colorSettings = $"{colorDepth.GetDescription()}, {pixelFormat.GetDescription()}";
                 values.Add(colorSettings);
 
-                var refreshRate = GetCurrentRefreshRate(screen?.DeviceName);
-                values.Add($"{refreshRate}Hz");
+                var displayConfig = CCD.GetDisplayConfig(screen?.DeviceName);
+
+                values.Add($"{displayConfig.RefreshRate}Hz");
+
+                values.Add($"{displayConfig.GetResolutionDesc()}");
 
                 var ditherState = GetDithering(display);
                 values.Add(ditherState.GetDescription());
@@ -346,7 +358,7 @@ namespace ColorControl.Services.AMD
                 var hdrEnabled = IsHDREnabled();
                 values.Add(hdrEnabled ? "Yes" : "No");
 
-                var infoLine = string.Format("{0}: {1}, {2}Hz, HDR: {3}", name, colorSettings, refreshRate, hdrEnabled ? "Yes" : "No");
+                var infoLine = string.Format("{0}: {1}, {2}Hz, {3}, HDR: {4}", name, colorSettings, displayConfig.RefreshRate, displayConfig.GetResolutionDesc(), hdrEnabled ? "Yes" : "No");
 
                 var displayInfo = new AmdDisplayInfo(display, values, infoLine);
 
