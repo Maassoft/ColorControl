@@ -41,6 +41,7 @@
         public List<Module> Modules { get; set; }
         public bool UseRawInput { get; set; }
         public bool SetMinTmlAndMaxTml { get; set; }
+        public bool DisableErrorPopupWhenApplyingPreset { get; set; }
 
         public Config()
         {

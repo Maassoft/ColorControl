@@ -93,7 +93,10 @@ namespace ColorControl.Services.Common
             {
                 Logger.Error(e);
 
-                MessageForms.ErrorOk($"Error applying {ServiceName}-preset ({e.TargetSite.Name}): {e.Message}");
+                if (!_globalContext.Config.DisableErrorPopupWhenApplyingPreset)
+                {
+                    MessageForms.ErrorOk($"Error applying {ServiceName}-preset ({preset.IdOrName}): {e.Message}");
+                }
                 return false;
             }
         }

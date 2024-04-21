@@ -30,7 +30,6 @@ internal class MainWorker
     private readonly WinApiService _winApiService;
     private readonly WinApiAdminService _winApiAdminService;
     private readonly UpdateManager _updateManager;
-    private bool _queryEndSession;
     private nint _screenStateNotify;
 
     public static int SHORTCUTID_SCREENSAVER = -100;
@@ -85,7 +84,6 @@ internal class MainWorker
         _globalContext.SynchronizationContext = AsyncOperationManager.SynchronizationContext;
 
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageQueryEndSession, HandleQueryEndSessionEvent);
-        _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageClose, HandleCloseEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessagePowerBroadcast, HandlePowerBroadcastEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageShowWindow, HandleShowWindowEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageUserBringToFront, HandleUserBringToFrontEvent);
@@ -151,21 +149,12 @@ internal class MainWorker
         }
     }
 
-    private void HandleCloseEvent(object sender, WindowMessageEventArgs e)
-    {
-        if (_queryEndSession)
-        {
-            Logger.Debug($"MainWorker: SystemShutdown");
-
-            _powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
-        }
-    }
-
     private void HandleQueryEndSessionEvent(object sender, WindowMessageEventArgs e)
     {
-        Logger.Debug("MainWorker: QueryEndSession");
+        Logger.Debug($"MainWorker: QueryEndSession");
+        Logger.Debug($"MainWorker: SystemShutdown");
 
-        _queryEndSession = true;
+        _powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
     }
 
     private void HandleHotKeyEvent(object sender, KeyboardShortcutEventArgs args)

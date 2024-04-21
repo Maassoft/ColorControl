@@ -19,6 +19,7 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     public const string Event_WindowMessageHotKey = "WindowMessageHotKey";
     public const string Event_WindowMessageInput = "WindowMessageInput";
     public const string Event_WindowMessageQueryEndSession = "WindowMessageQueryEndSession";
+    public const string Event_WindowMessageEndSession = "WindowMessageEndSession";
     public const string Event_WindowMessageClose = "WindowMessageClose";
     public const string Event_WindowMessagePowerBroadcast = "WindowMessagePowerBroadcast";
     public const string Event_WindowMessageShowWindow = "WindowMessageShowWindow";
@@ -27,12 +28,14 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
     private readonly GlobalContext _globalContext;
 
-    public DummyForm MessageForm { get; set; }
+    public DummyForm MessageForm { get; private set; }
+
 
     private static Dictionary<int, string> Messages = new() {
         { NativeConstants.WM_HOTKEY, Event_WindowMessageHotKey },
         { NativeConstants.WM_INPUT, Event_WindowMessageInput },
         { NativeConstants.WM_QUERYENDSESSION, Event_WindowMessageQueryEndSession },
+        { NativeConstants.WM_ENDSESSION, Event_WindowMessageEndSession },
         { NativeConstants.WM_CLOSE, Event_WindowMessageClose },
         { NativeConstants.WM_POWERBROADCAST, Event_WindowMessagePowerBroadcast },
         { NativeConstants.WM_SHOWWINDOW, Event_WindowMessageShowWindow },
@@ -60,25 +63,12 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     {
         public event EventHandler<Message> OnMessage;
 
-        private bool _systemShutdown;
-
         public DummyForm()
         {
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             Load += DummyForm_Load;
             Shown += DummyForm_Shown;
-            FormClosing += DummyForm_FormClosing;
-        }
-
-        private void DummyForm_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            Logger.Debug($"FormClosing: {_systemShutdown}");
-
-            if (_systemShutdown)
-            {
-                OnMessage?.Invoke(this, new Message { Msg = NativeConstants.WM_CLOSE });
-            }
         }
 
         private void DummyForm_Shown(object sender, EventArgs e)
@@ -95,7 +85,7 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
         {
             if (m.Msg == NativeConstants.WM_QUERYENDSESSION)
             {
-                _systemShutdown = true;
+                Logger.Debug("WM_QUERYENDSESSION");
             }
 
             OnMessage?.Invoke(this, m);

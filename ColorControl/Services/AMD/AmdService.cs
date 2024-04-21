@@ -305,10 +305,11 @@ namespace ColorControl.Services.AMD
             var index = 0;
             foreach (var screen in Screen.AllScreens)
             {
-                Logger.Debug($"SCREEN[{index}]: {screen.DeviceName}, {screen.DeviceFriendlyName()}, {screen.Primary}");
+                var info = CCD.GetDisplayInfo(screen.DeviceName);
+                Logger.Debug($"SCREEN[{index}]: {screen.DeviceName}, {info?.FriendlyName}, {screen.Primary}");
                 index++;
             }
-            return Screen.AllScreens.FirstOrDefault(x => x.DeviceFriendlyName().Equals(display.DisplayName));
+            return Screen.AllScreens.FirstOrDefault(x => CCD.GetDisplayInfo(x.DeviceName)?.FriendlyName.Equals(display.DisplayName) ?? false);
         }
 
         public List<AmdDisplayInfo> GetDisplayInfos()
@@ -328,9 +329,10 @@ namespace ColorControl.Services.AMD
 
             foreach (var display in displays)
             {
-                var values = new List<string>();
-
-                values.Add("Current settings");
+                var values = new List<string>
+                {
+                    "Current settings"
+                };
 
                 var screen = GetScreenForDisplay(display);
 

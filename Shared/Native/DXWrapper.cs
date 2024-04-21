@@ -3851,9 +3851,9 @@ public class DXWrapper : DXNativeMethods
             //ADAPTER_DESC1 aDAPTER_DESC1 = new ADAPTER_DESC1();
             //adapter.GetDesc1(out aDAPTER_DESC1);
 
-            for (var o = 0; ; o++)
+            for (uint o = 0; ; o++)
             {
-                if (!Ok(adapter.EnumOutputs(0, out var output)))
+                if (!Ok(adapter.EnumOutputs(o, out var output)))
                 {
                     break;
                 }

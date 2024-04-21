@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using novideo_srgb;
 using nspector.Common;
 using nspector.Common.Meta;
+using NStandard;
 using NvAPIWrapper.Display;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
@@ -275,9 +276,9 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public Display GetCurrentDisplay()
+        public Display GetCurrentDisplay(bool checkDisplays = true)
         {
-            if (!HasDisplaysAttached())
+            if (checkDisplays && !HasDisplaysAttached())
             {
                 _currentDisplay = null;
                 return null;
@@ -341,12 +342,19 @@ namespace ColorControl.Services.NVIDIA
 
         private Display GetPresetDisplay(NvPreset preset)
         {
+            if (preset.Display != null)
+            {
+                return preset.Display;
+            }
+
             if (preset.primaryDisplay)
             {
                 return GetPrimaryDisplay();
             }
 
-            return Display.GetDisplays().FirstOrDefault(x => x.Name.Equals(preset.displayName));
+            var displays = GetSimpleDisplayInfos();
+
+            return displays.FirstOrDefault(d => d.DisplayId == preset.DisplayId)?.Display;
         }
 
         public Display GetPrimaryDisplay()
@@ -937,24 +945,13 @@ namespace ColorControl.Services.NVIDIA
 
             if (setRegistryKey)
             {
-                var displays = WindowsDisplayAPI.Display.GetDisplays();
-                var path = displays.FirstOrDefault(x => x.DisplayName == display.Name)?.DevicePath;
+                var info = CCD.GetDisplayInfo(display.Name);
+                var regId = info?.DisplayId;
 
-                if (path == null)
+                if (regId.IsNullOrEmpty())
                 {
-                    Logger.Debug($"Cannot find path for display {display.Name}");
                     return false;
                 }
-
-                var parts = path.Split('#');
-
-                if (parts.Length < 2)
-                {
-                    Logger.Debug($"Incorrect path for display {display.Name}");
-                    return false;
-                }
-
-                var regId = parts[1];
 
                 result = SetDitherRegistryKey(regId, (uint)state, bits, mode);
 
@@ -1064,13 +1061,15 @@ namespace ColorControl.Services.NVIDIA
                 SetCurrentDisplay(preset);
             }
 
-            var display = GetCurrentDisplay();
+            var display = GetCurrentDisplay(false);
             if (display == null)
             {
                 return [];
             }
 
-            var desktopRect = GetDesktopRect(display);
+            var desktopRect = preset?.DisplayConfig.ApplyResolution == true && preset?.DisplayConfig.Resolution.ActiveWidth > 0 ?
+                new Rectangle(0, 0, (int)preset.DisplayConfig.Resolution.ActiveWidth, (int)preset.DisplayConfig.Resolution.ActiveHeight) :
+                GetDesktopRect(display);
 
             return GetAvailableRefreshRatesV2(display.Name, desktopRect.Width, desktopRect.Height);
         }
@@ -1082,7 +1081,7 @@ namespace ColorControl.Services.NVIDIA
                 SetCurrentDisplay(preset);
             }
 
-            var display = GetCurrentDisplay();
+            var display = GetCurrentDisplay(false);
             if (display == null)
             {
                 return [];
@@ -1218,6 +1217,11 @@ namespace ColorControl.Services.NVIDIA
         {
             var displayDevice = display.DisplayDevice;
 
+            if (displayDevice.ConnectionType != NvAPIWrapper.Native.GPU.MonitorConnectionType.HDMI)
+            {
+                return null;
+            }
+
             return Logger.Swallow(() => displayDevice.HDMIVideoFrameOverrideInformation) ?? Logger.Swallow(() => displayDevice.HDMIVideoFrameCurrentInformation);
         }
 
@@ -1237,7 +1241,10 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetScaling(Display display, Scaling scaling)
         {
-            var pathInfo = GetPathInfoForDisplay(display);
+            var pathInfos = DisplayApi.GetDisplayConfig().ToList();
+
+            var pathInfo = pathInfos.FirstOrDefault(c => c.TargetsInfo.Any(ti => ti.DisplayId == display.DisplayDevice.DisplayId));
+            var pathInfoIndex = pathInfos.IndexOf(pathInfo);
 
             var pathTargetInfo = pathInfo.TargetsInfo.FirstOrDefault(ti => ti.DisplayId == display.DisplayDevice.DisplayId);
 
@@ -1254,7 +1261,10 @@ namespace ColorControl.Services.NVIDIA
 
             var newPathInfo = new PathInfoV2(new[] { newPathTargetInfo }, pathInfo.SourceModeInfo);
 
-            DisplayApi.SetDisplayConfig(new IPathInfo[] { newPathInfo }, DisplayConfigFlags.SaveToPersistence);
+            var newPathInfos = pathInfos.ToArray();
+            newPathInfos[pathInfoIndex] = newPathInfo;
+
+            DisplayApi.SetDisplayConfig(newPathInfos, DisplayConfigFlags.SaveToPersistence);
         }
 
         private IPathTargetInfo? GetTargetInfoForDisplay(Display display)
@@ -1431,9 +1441,7 @@ namespace ColorControl.Services.NVIDIA
 
             foreach (var display in displays)
             {
-                var name = FormUtils.ExtendedDisplayName(display.Name);
-
-                var displayInfo = new NvDisplayInfo(display, null, null, name);
+                var displayInfo = new NvDisplayInfo(display, null, null);
 
                 list.Add(displayInfo);
             }
@@ -1445,7 +1453,6 @@ namespace ColorControl.Services.NVIDIA
         {
             try
             {
-                var displays = GetDisplays();
                 var list = new List<NvDisplayInfo>();
 
                 if (refreshSettings)
@@ -1453,12 +1460,15 @@ namespace ColorControl.Services.NVIDIA
                     RefreshProfileSettings();
                 }
 
-                foreach (var display in displays)
-                {
-                    var preset = GetPresetForDisplay(display, true, displays.Count());
+                var displayInfos = GetSimpleDisplayInfos();
 
+                foreach (var displayInfo in displayInfos)
+                {
+                    var preset = GetPresetForDisplay(displayInfo, true, displayInfos.Count());
                     var values = preset.GetDisplayValues(_globalContext.Config);
-                    var displayInfo = new NvDisplayInfo(display, values, preset.InfoLine, preset.displayName);
+
+                    displayInfo.Values = values;
+                    displayInfo.InfoLine = preset.InfoLine;
 
                     list.Add(displayInfo);
                 }
@@ -1479,21 +1489,22 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public NvPreset GetPresetForDisplay(string displayName, bool driverSettings = false)
+        public NvPreset GetPresetForDisplay(string name, bool driverSettings = false)
         {
-            var displays = GetDisplays();
-
-            var display = displays.FirstOrDefault(d => displayName.StartsWith(d.Name));
+            var displays = GetSimpleDisplayInfos();
+            var display = displays.FirstOrDefault(d => name.StartsWith(d.Name));
 
             return GetPresetForDisplay(display, driverSettings, displays.Count());
         }
 
-        public NvPreset GetPresetForDisplay(Display display, bool driverSettings = false, int displayCount = 1)
+        public NvPreset GetPresetForDisplay(NvDisplayInfo displayInfo, bool driverSettings = false, int displayCount = 1)
         {
-            if (display == null)
+            if (displayInfo == null)
             {
                 return null;
             }
+
+            var display = displayInfo.Display;
 
             var isPrimaryDisplay = displayCount == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
             var preset = new NvPreset { Display = display, IsDisplayPreset = true, applyColorData = false, primaryDisplay = isPrimaryDisplay };
@@ -1501,7 +1512,8 @@ namespace ColorControl.Services.NVIDIA
             preset.HDREnabled = IsHDREnabled(display);
             preset.HdrSettings.OutputMode = preset.HDREnabled && OutputModeAvailable ? GetOutputMode(display) : null;
 
-            preset.displayName = FormUtils.ExtendedDisplayName(display.Name);
+            preset.DisplayId = displayInfo.DisplayId;
+            preset.displayName = displayInfo.Name;
             preset.colorData = GetCurrentColorData(display);
             preset.ColorEnhancementSettings = GetCurrentColorEnhancements(display);
             preset.HdmiInfoFrameSettings = GetHdmiSettings(display);

@@ -1,6 +1,7 @@
 ﻿using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using MHC2Gen;
+using NStandard;
 using NWin32;
 using System.ComponentModel;
 using System.IO;
@@ -9,6 +10,30 @@ using System.Runtime.InteropServices;
 
 namespace ColorControl.Shared.Native
 {
+    public class DisplayInfo(string displayName, string friendlyName, string devicePath)
+    {
+        public string DisplayName { get; } = displayName;
+        public string FriendlyName { get; } = friendlyName;
+        public string DevicePath { get; } = devicePath;
+
+        private string _displayId;
+        public string DisplayId
+        {
+            get
+            {
+                if (_displayId == null)
+                {
+                    _displayId = CCD.GetDisplayIdByPath(DevicePath);
+                }
+                return _displayId;
+            }
+        }
+
+        public string ExtendedName => $"{FriendlyName} ({DisplayId})";
+
+        public override string ToString() => ExtendedName;
+    }
+
     // This class takes care of wrapping "Connecting and Configuring Displays(CCD) Win32 API"
     public static class CCD
     {
@@ -23,6 +48,25 @@ namespace ColorControl.Shared.Native
             External,
             Extend,
             Clone
+        }
+
+        public static string GetDisplayIdByPath(string displayPath)
+        {
+            if (displayPath == null)
+            {
+                Logger.Debug($"Cannot find path for display with path {displayPath}");
+                return null;
+            }
+
+            var parts = displayPath.Split('#');
+
+            if (parts.Length < 2)
+            {
+                Logger.Debug($"Incorrect path for display with path {displayPath}");
+                return null;
+            }
+
+            return parts[1];
         }
 
         public static double GetDpiForSystem()
@@ -119,28 +163,60 @@ namespace ColorControl.Shared.Native
                     return false;
                 }
 
+                var pathIndex = pathsArray.IndexOf(p => MatchDisplayNames(p, displayName));
+
+                if (pathIndex == -1)
+                {
+                    return false;
+                }
+
+                var sourceIndex = pathsArray[pathIndex].sourceInfo.modeInfoIdx;
+                var targetIndex = pathsArray[pathIndex].targetInfo.modeInfoIdx;
+
                 var resolution = displayConfig.Resolution;
                 var refreshRate = displayConfig.RefreshRate;
 
-                foreach (var path in pathsArray)
+                var isModeChangeNeeded = false;
+
+                if (modesArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq.numerator != refreshRate.Numerator ||
+                    modesArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq.denominator != refreshRate.Denominator)
                 {
-                    if (!MatchDisplayNames(path, displayName))
-                    {
-                        continue;
-                    }
+                    modesArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = refreshRate.Denominator, numerator = refreshRate.Numerator };
+                    isModeChangeNeeded = true;
+                }
 
-                    var sourceIndex = path.sourceInfo.modeInfoIdx;
-                    var targetIndex = path.targetInfo.modeInfoIdx;
-                    var sourceMode = modesArray[sourceIndex];
-                    var targetMode = modesArray[targetIndex];
+                if (modesArray[targetIndex].targetMode.targetVideoSignalInfo.activeSize.cx != resolution.ActiveWidth ||
+                    modesArray[targetIndex].targetMode.targetVideoSignalInfo.activeSize.cy != resolution.ActiveHeight)
+                {
+                    modesArray[targetIndex].targetMode.targetVideoSignalInfo.activeSize.cx = resolution.ActiveWidth;
+                    modesArray[targetIndex].targetMode.targetVideoSignalInfo.activeSize.cy = resolution.ActiveHeight;
+                    isModeChangeNeeded = true;
+                }
 
-                    targetMode.targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = refreshRate.Denominator, numerator = refreshRate.Numerator };
-                    targetMode.targetMode.targetVideoSignalInfo.activeSize.cx = resolution.ActiveWidth;
-                    targetMode.targetMode.targetVideoSignalInfo.activeSize.cy = resolution.ActiveHeight;
+                if (modesArray[sourceIndex].sourceMode.width != resolution.VirtualWidth || modesArray[sourceIndex].sourceMode.height != resolution.VirtualHeight)
+                {
+                    modesArray[sourceIndex].sourceMode.width = resolution.VirtualWidth;
+                    modesArray[sourceIndex].sourceMode.height = resolution.VirtualHeight;
+                    isModeChangeNeeded = true;
+                }
 
-                    sourceMode.sourceMode.width = resolution.VirtualWidth;
-                    sourceMode.sourceMode.height = resolution.VirtualHeight;
+                var newScaling = displayConfig.Scaling == DisplayConfigScaling.Zero ? DisplayConfigScaling.Identity : displayConfig.Scaling;
+                if (pathsArray[pathIndex].targetInfo.scaling != newScaling)
+                {
+                    pathsArray[pathIndex].targetInfo.scaling = newScaling;
+                    isModeChangeNeeded = true;
+                }
 
+                var newRotation = displayConfig.Rotation == DisplayConfigRotation.Zero ? DisplayConfigRotation.Identity : displayConfig.Rotation;
+                if (pathsArray[pathIndex].targetInfo.rotation != newRotation)
+                {
+                    pathsArray[pathIndex].targetInfo.rotation = newRotation;
+                    isModeChangeNeeded = true;
+                }
+                //pathsArray[pathIndex].targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
+
+                if (isModeChangeNeeded)
+                {
                     var flags = SdcFlags.Apply | SdcFlags.UseSuppliedDisplayConfig | SdcFlags.AllowChanges;
 
                     if (updateRegistry)
@@ -148,17 +224,10 @@ namespace ColorControl.Shared.Native
                         flags |= SdcFlags.SaveToDatabase;
                     }
 
-                    var path2 = path;
-                    path2.targetInfo.scaling = displayConfig.Scaling == DisplayConfigScaling.Zero ? DisplayConfigScaling.Identity : displayConfig.Scaling;
-                    path2.targetInfo.rotation = displayConfig.Rotation == DisplayConfigRotation.Zero ? DisplayConfigRotation.Identity : displayConfig.Rotation;
-                    path2.targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
-
-                    err = NativeMethods.SetDisplayConfig(1, [path2], 2, [targetMode, sourceMode], flags);
-
-                    return err == 0;
+                    err = NativeMethods.SetDisplayConfig(pathCount, pathsArray, modeCount, modesArray, flags);
                 }
 
-                return false;
+                return err == 0;
             }
             finally
             {
@@ -363,7 +432,7 @@ namespace ColorControl.Shared.Native
 
         public static bool GetUsePerUserDisplayProfiles(string displayName)
         {
-            var deviceKey = GetDisplayDeviceKey(displayName);
+            var deviceKey = GetDisplayDeviceRegistryKey(displayName);
 
             if (deviceKey == null)
             {
@@ -385,7 +454,7 @@ namespace ColorControl.Shared.Native
 
         public static bool SetUsePerUserDisplayProfiles(string displayName, bool usePerUserProfiles)
         {
-            var deviceKey = GetDisplayDeviceKey(displayName);
+            var deviceKey = GetDisplayDeviceRegistryKey(displayName);
 
             if (deviceKey == null)
             {
@@ -397,7 +466,7 @@ namespace ColorControl.Shared.Native
             return result;
         }
 
-        private static string GetDisplayDeviceKey(string displayName)
+        private static string GetDisplayDeviceRegistryKey(string displayName)
         {
             var hMonitor = FormUtils.GetMonitorForDisplayName(displayName);
 
@@ -421,6 +490,33 @@ namespace ColorControl.Shared.Native
             }
 
             return dd.DeviceKey;
+        }
+
+        public static DisplayInfo GetDisplayInfo(string displayName)
+        {
+            return ExecuteForModeConfig((modeInfo) =>
+            {
+                if (modeInfo.infoType == DisplayConfigModeInfoType.Target)
+                {
+                    var requestpacket = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
+                    requestpacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                    requestpacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+                    requestpacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
+
+                    requestpacket.header.adapterId = modeInfo.adapterId;
+                    requestpacket.header.id = modeInfo.id;
+
+                    var err = NativeMethods.DisplayConfigGetDeviceInfo(ref requestpacket);
+
+                    if (err == NativeConstants.ERROR_SUCCESS)
+                    {
+                        return (new DisplayInfo(displayName, requestpacket.monitorFriendlyDeviceName, requestpacket.monitorDevicePath), false);
+                    }
+                }
+
+                return (null, true);
+            }, displayName
+            );
         }
 
         public static uint GetSDRWhiteLevel(string displayName = null)
@@ -1219,7 +1315,7 @@ namespace ColorControl.Shared.Native
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
             public string monitorFriendlyDeviceName;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-            public string monitorDevicePat;
+            public string monitorDevicePath;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

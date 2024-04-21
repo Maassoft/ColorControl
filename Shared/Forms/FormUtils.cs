@@ -1,6 +1,5 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Native;
 using NStandard;
 using NWin32;
 using System.Collections;
@@ -521,18 +520,6 @@ namespace ColorControl.Shared.Forms
             var eventHandlerList = propertyInfo.GetValue(ctrl) as EventHandlerList;
 
             eventHandlerList.Dispose();
-        }
-
-        public static string ExtendedDisplayName(string displayName)
-        {
-            var name = displayName;
-            var screen = Screen.AllScreens.FirstOrDefault(x => x.DeviceName.Equals(name));
-            if (screen != null)
-            {
-                name += " (" + screen.DeviceFriendlyName() + ")";
-            }
-
-            return name;
         }
 
         public static IntPtr GetMonitorForDisplayName(string displayName)

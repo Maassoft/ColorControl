@@ -710,7 +710,7 @@ namespace ColorControl.Services.Samsung
                 SubLabel = "Both types will not reset your settings. 'FactoryMenu' is recommended for 2024 series but will also work for older ones. Click 'Next >' to continue or 'X' to stop",
                 FieldType = FieldType.DropDown,
                 Values = serviceMenuTypes,
-                Value = ServiceMenuType.HospitalityMenu
+                Value = ServiceMenuType.FactoryMenu
             };
 
             if (!MessageForms.ShowDialog($"Access Service Menu", [serviceMenuTypeField], okButtonText: "Next >").Any())

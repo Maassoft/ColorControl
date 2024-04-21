@@ -53,7 +53,7 @@ public class CustomDisplay
 
     public override string ToString()
     {
-        return $"{FormUtils.ExtendedDisplayName(Display.DisplayName)} on {Display.Adapter.DeviceName}";
+        return $"{CCD.GetDisplayInfo(Display.DisplayName)} on {Display.Adapter.DeviceName}";
     }
 }
 

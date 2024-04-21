@@ -30,6 +30,7 @@ namespace ColorControl.Services.NVIDIA
         public DisplayConfig DisplayConfig { get; set; }
         public bool primaryDisplay { get; set; }
         public string displayName { get; set; }
+        public string DisplayId { get; set; }
         public uint ditheringBits { get; set; }
         public uint ditheringMode { get; set; }
         public bool applyOther { get; set; }
@@ -88,6 +89,7 @@ namespace ColorControl.Services.NVIDIA
 
             primaryDisplay = preset.primaryDisplay;
             displayName = preset.displayName;
+            DisplayId = preset.DisplayId;
 
             var colorData = preset.colorData;
             this.colorData = new ColorData(colorData.ColorFormat, dynamicRange: colorData.DynamicRange, colorDepth: colorData.ColorDepth, colorSelectionPolicy: ColorDataSelectionPolicy.User);
@@ -139,7 +141,7 @@ namespace ColorControl.Services.NVIDIA
                 isCurrent ? "Current settings" : name
             };
 
-            var display = isCurrent ? displayName : string.Format("{0}", primaryDisplay ? "Primary" : displayName);
+            var display = isCurrent ? displayName : string.Format("{0}", primaryDisplay ? "Primary" : !displayName.IsNullOrEmpty() ? displayName : DisplayId);
             values.Add(display);
 
             var colorSettings = FormatDisplaySetting(string.Format("{0}, {1}, {2}, {3}", colorData.ColorDepth, colorData.ColorFormat, colorData.DynamicRange, colorData.Colorimetry), isCurrent, applyColorData);

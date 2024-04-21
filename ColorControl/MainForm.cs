@@ -37,6 +37,7 @@ namespace ColorControl
         public NotifyIconManager _notifyIconManager;
         private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
         private readonly UpdateManager _updateManager;
+        private readonly WindowMessageDispatcher _windowMessageDispatcher;
         private Config _config;
 
         private LgPanel _lgPanel;
@@ -48,7 +49,7 @@ namespace ColorControl
         private GamePanel _gamePanel;
 
         public MainForm(GlobalContext globalContext, ServiceManager serviceManager, IServiceProvider serviceProvider, ElevationService elevationService,
-            NotifyIconManager notifyIconManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, UpdateManager updateManager)
+            NotifyIconManager notifyIconManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, UpdateManager updateManager, WindowMessageDispatcher windowMessageDispatcher)
         {
             InitializeComponent();
 
@@ -60,6 +61,7 @@ namespace ColorControl
             _notifyIconManager = notifyIconManager;
             _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
             _updateManager = updateManager;
+            _windowMessageDispatcher = windowMessageDispatcher;
             _config = Program.Config;
 
             Text = globalContext.ApplicationTitleAdmin;
@@ -178,10 +180,8 @@ namespace ColorControl
             if (m.Msg == NativeConstants.WM_QUERYENDSESSION)
             {
                 SystemShutdown = true;
-            }
-            else if (m.Msg == NativeConstants.WM_ENDSESSION)
-            {
                 EndSession = true;
+                _windowMessageDispatcher.DispatchEvent(WindowMessageDispatcher.Event_WindowMessageQueryEndSession, new WindowMessageEventArgs(m));
             }
             else if (m.Msg == Utils.WM_BRINGTOFRONT)
             {

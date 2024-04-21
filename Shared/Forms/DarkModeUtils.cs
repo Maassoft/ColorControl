@@ -12,6 +12,7 @@ namespace ColorControl.Shared.Forms
         private static ToolStripRenderer _defaultRenderer;
         private static Type[] _windowColorTypes = new[] { typeof(GroupBox), typeof(TabPage), typeof(UserControl) };
         public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        public static readonly Color ListViewDarkModeBackColor = Color.FromArgb(80, 80, 80);
 
         public class DarkModeToolStripRenderer : ToolStripProfessionalRenderer
         {

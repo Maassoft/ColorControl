@@ -65,9 +65,10 @@ namespace ColorControl.Services.AMD
 
         public override List<string> GetDisplayValues(Config config = null)
         {
-            var values = new List<string>();
-
-            values.Add(name);
+            var values = new List<string>
+            {
+                name
+            };
 
             var display = string.Format("{0}", primaryDisplay ? "Primary" : displayName);
             values.Add(display);

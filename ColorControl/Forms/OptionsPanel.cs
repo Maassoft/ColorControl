@@ -311,8 +311,15 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             SubLabel = "When this is enabled MinTML and MaxTML will be automatically be set to respectively the minimum luminance and the maximum luminance of the color profile",
             Value = _config.SetMinTmlAndMaxTml
         };
+        var disableErrorPopupField = new FieldDefinition
+        {
+            FieldType = FieldType.CheckBox,
+            Label = "Disable error popup when applying presets",
+            SubLabel = "Check this to disable the error popup when there was an error applying a preset",
+            Value = _config.DisableErrorPopupWhenApplyingPreset
+        };
 
-        var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField, setMinTmlAndMaxTmlField });
+        var values = MessageForms.ShowDialog("Advanced settings", new[] { processPollingIntervalField, useRawInputField, setMinTmlAndMaxTmlField, disableErrorPopupField });
 
         if (values?.Any() != true)
         {
@@ -322,6 +329,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
         _config.ProcessMonitorPollingInterval = processPollingIntervalField.ValueAsInt;
         _config.UseRawInput = useRawInputField.ValueAsBool;
         _config.SetMinTmlAndMaxTml = setMinTmlAndMaxTmlField.ValueAsBool;
+        _config.DisableErrorPopupWhenApplyingPreset = disableErrorPopupField.ValueAsBool;
 
         _keyboardShortcutDispatcher.SetUseRawInput(_config.UseRawInput);
     }

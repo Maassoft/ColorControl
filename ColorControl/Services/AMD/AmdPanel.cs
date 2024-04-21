@@ -92,7 +92,7 @@ namespace ColorControl.Services.AMD
                     item = lvAmdPresets.Items.Add(display.DisplayName);
                     item.ImageIndex = id;
                     item.Font = new Font(item.Font, item.Font.Style | FontStyle.Bold);
-                    item.BackColor = Color.LightGray;
+                    item.BackColor = _globalContext.Config.UseDarkMode ? DarkModeUtils.ListViewDarkModeBackColor : Color.LightGray;
                 }
 
                 var values = displayInfo.Values;
