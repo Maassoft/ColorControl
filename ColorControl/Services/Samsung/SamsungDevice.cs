@@ -47,6 +47,12 @@ namespace ColorControl.Services.Samsung
         HospitalityMenu
     }
 
+    public enum ExitServiceMenuType
+    {
+        Exit,
+        Reboot
+    }
+
     public delegate void GenericDelegate(object sender);
 
     class SamsungDevice
@@ -233,7 +239,14 @@ namespace ColorControl.Services.Samsung
 
         internal async Task PowerOffAsync()
         {
-            await SendKeyAsync("KEY_POWER");
+            try
+            {
+                await SendKeyAsync("KEY_POWER").WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(true);
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Debug($"Timeout when turning off tv: {ex.Message}");
+            }
 
             PoweredOn = false;
             PoweredOffAt = DateTimeOffset.Now;
@@ -781,6 +794,7 @@ namespace ColorControl.Services.Samsung
             var preset1 = new SamsungPreset("ServiceMenuStep1", null, ["KEY_INFO", "KEY_FACTORY:2000"]);
             var preset2 = new SamsungPreset("ServiceMenuStep2", null, ["KEY_UP", "KEY_0", "KEY_0", "KEY_9", "KEY_8"]);
             var rebootPreset = new SamsungPreset("ServiceMenuStep4", null, ["KEY_POWER:5000", "WOL"]);
+            var exitPreset = new SamsungPreset("ServiceMenuStep3", null, ["KEY_FACTORY:1000", "KEY_FACTORY"]);
 
             await ExecutePresetWithProgressAsync(preset1, "Step 1: opening Service Menu. It is normal to see messages like 'Not Available'.");
 
@@ -797,18 +811,29 @@ namespace ColorControl.Services.Samsung
                 await ExecutePresetWithProgressAsync(preset2, "Step 2: accessing Advanced Service Menu...");
             }
 
-            if (!MessageForms.ShowDialog($"Reboot TV - Final Step", new[] {
-                    new FieldDefinition
-                    {
-                        Label = "Reboot TV",
-                        SubLabel = "After you have made the necessary changes, click 'Reboot TV' to reboot the TV or click 'X' to close. If the TV turns not back on automatically, power it on manually.",
-                        FieldType = FieldType.Label
-                    } }, okButtonText: "Reboot TV").Any())
+            var exitServiceMenuTypes = new[] { ExitServiceMenuType.Exit, ExitServiceMenuType.Reboot }.Select(t => Utils.GetDescription(t));
+
+            var exitServiceMenuTypeField = new FieldDefinition
+            {
+                Label = "Exit Service Menu Type",
+                SubLabel = "Choose how to exit the service menu. You can either reboot the TV or just exit the service menu (if, for example, no changes have been made)",
+                FieldType = FieldType.DropDown,
+                Values = exitServiceMenuTypes,
+                Value = ExitServiceMenuType.Exit
+            };
+
+            if (!MessageForms.ShowDialog($"Exit Service Menu", [exitServiceMenuTypeField], okButtonText: "Next >").Any())
             {
                 return true;
             }
 
-            await ExecutePresetWithProgressAsync(rebootPreset, "Final Step: rebooting TV...");
+            var task = exitServiceMenuTypeField.ValueAsEnum<ExitServiceMenuType>() switch
+            {
+                ExitServiceMenuType.Exit => ExecutePresetWithProgressAsync(exitPreset, "Final Step: exiting service menu..."),
+                ExitServiceMenuType.Reboot => ExecutePresetWithProgressAsync(rebootPreset, "Final Step: rebooting TV...")
+            };
+
+            await task;
 
             return true;
         }

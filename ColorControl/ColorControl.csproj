@@ -127,6 +127,7 @@
 		</Page>
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\ColorControl.UI\ColorControl.UI.csproj" />
 		<ProjectReference Include="..\MHC2Gen\MHC2Gen.csproj" />
 		<ProjectReference Include="..\NLogViewer\NLogViewer.csproj" />
 		<ProjectReference Include="..\novideo_srgb\novideo_srgb.csproj" />

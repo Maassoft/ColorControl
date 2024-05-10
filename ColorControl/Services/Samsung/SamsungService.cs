@@ -156,7 +156,7 @@ namespace ColorControl.Services.Samsung
             {
                 case PowerOnOffState.StandBy:
                     {
-                        _ = ExecutePresetsForEvent(PresetTriggerType.Standby).ConfigureAwait(true);
+                        //_ = ExecutePresetsForEvent(PresetTriggerType.Standby).ConfigureAwait(true);
 
                         var devices = Devices.Where(d => d.Options.PowerOffOnStandby);
                         PowerOffDevices(devices, PowerOnOffState.StandBy);
@@ -415,6 +415,7 @@ namespace ColorControl.Services.Samsung
             }
 
             Logger.Debug("Powering off tv(s)...");
+
             var tasks = new List<Task>();
             foreach (var device in devices)
             {
@@ -425,15 +426,28 @@ namespace ColorControl.Services.Samsung
 
             if (state == PowerOnOffState.StandBy)
             {
-                var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
-                if (File.Exists(standByScript))
+                var task = Task.Run(() =>
                 {
-                    _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true);
-                }
+                    var standByScript = Path.Combine(Program.DataDir, "StandByScript.bat");
+                    if (File.Exists(standByScript))
+                    {
+                        _winApiAdminService.StartProcess(standByScript, hidden: true, wait: true, useShellExecute: false);
+                    }
+                });
+
+                tasks.Add(task);
             }
 
             // We can't use async here because we need to stay on the main thread...
-            var _ = Task.WhenAll(tasks.ToArray()).ConfigureAwait(true);
+            var i = 0;
+            while (tasks.Any(t => t.Status < TaskStatus.WaitingForChildrenToComplete) && i < 200)
+            {
+                Thread.Sleep(10);
+                System.Windows.Forms.Application.DoEvents();
+                i++;
+            }
+
+            //var _ = Task.WhenAll(tasks.ToArray());
 
             Logger.Debug("Done powering off tv(s)");
         }

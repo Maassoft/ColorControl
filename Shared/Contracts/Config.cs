@@ -1,4 +1,5 @@
-﻿namespace ColorControl.Shared.Contracts
+﻿
+namespace ColorControl.Shared.Contracts
 {
     public enum ElevationMethod
     {
@@ -10,6 +11,7 @@
 
     public class Config
     {
+        public bool AutoStart { get; set; }
         public bool StartMinimized { get; set; }
         public bool MinimizeOnClose { get; set; }
         public bool MinimizeToTray { get; set; }
@@ -45,6 +47,7 @@
 
         public Config()
         {
+            AutoStart = false;
             LogLevel = "DEBUG";
             DisplaySettingsDelay = 1000;
             ScreenSaverShortcut = string.Empty;
@@ -64,6 +67,25 @@
             SamsungPresetsSortState = new ListViewSortState();
             GamePresetsSortState = new ListViewSortState();
             Modules = new List<Module>();
+        }
+
+        public Config(Config config) : this()
+        {
+            Update(config);
+        }
+
+        public void Update(Config config)
+        {
+            AutoStart = config.AutoStart;
+            StartMinimized = config.StartMinimized;
+            MinimizeOnClose = config.MinimizeOnClose;
+            MinimizeToTray = config.MinimizeToTray;
+            CheckForUpdates = config.CheckForUpdates;
+            AutoInstallUpdates = config.AutoInstallUpdates;
+            UseDarkMode = config.UseDarkMode;
+            ScreenSaverShortcut = config.ScreenSaverShortcut;
+            FixChromeFonts = config.FixChromeFonts;
+            UseGdiScaling = config.UseGdiScaling;
         }
     }
 }

@@ -1,0 +1,52 @@
+﻿@page "/options"
+@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+@rendermode InteractiveServer
+@inject OptionsService _optionsService
+
+<PageTitle>Options</PageTitle>
+
+<h1>Options</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">General</h5>
+    </div>
+    <form class="ms-3">
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" @bind="config.AutoStart" id="startAfterLogin">
+            <label class="form-check-label" for="startAfterLogin">
+                Automatically start after login
+            </label>
+        </div>
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" @bind="config.StartMinimized" id="startMinimized">
+            <label class="form-check-label" for="startMinimized">
+                Start minimized
+            </label>
+        </div>
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" @bind="config.MinimizeToTray" id="minimizeToTray">
+            <label class="form-check-label" for="minimizeToTray">
+                Minimize to tray
+            </label>
+        </div>
+        <div class="mb-3">
+            <button class="btn btn-primary" @onclick="SaveConfig">Save</button>
+        </div>
+    </form>
+</div>
+
+@code {
+    private Config config;
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = _optionsService.GetConfig();
+    }
+
+    private void SaveConfig()
+    {
+        _optionsService.SetConfig(config);
+    }
+}

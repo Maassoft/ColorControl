@@ -212,6 +212,23 @@ namespace ColorControl
             Environment.Exit(0);
         }
 
+        private static bool UiServerStarted;
+
+        public static async Task OpenNewUi()
+        {
+            if (!UiServerStarted)
+            {
+                var _ = Task.Run(ColorControl.UI.Blazor.Start);
+                UiServerStarted = true;
+
+                await Task.Delay(500);
+            }
+
+            var winApi = AppContext.ServiceProvider.GetRequiredService<WinApiAdminService>();
+
+            winApi.StartProcess("http://localhost:5000");
+        }
+
         private static void InitLogger(bool runAsService, bool runElevated)
         {
             var config = new LoggingConfiguration();

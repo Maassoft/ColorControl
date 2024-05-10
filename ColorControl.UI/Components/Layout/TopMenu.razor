@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+@rendermode InteractiveServer
+
+<div class="top-row px-4 pt-2">
+    <button type="button" class="btn btn-primary me-2" @onclick="ChangeTheme">@ThemeTransitionName</button>
+    <a href="https://github.com/Maassoft/ColorControl" target="_blank">GitHub</a>
+</div>
+
+@code {
+
+    private string ThemeTransitionName = "Dark";
+
+    protected override async Task OnInitializedAsync()
+    {
+        ThemeTransitionName = AppState.SelectedTheme == "light" ? "Dark theme" : "Light theme";
+    }
+
+    private void ChangeTheme()
+    {
+        AppState.SetTheme(AppState.SelectedTheme == "light" ? "dark" : "light");
+        ThemeTransitionName = AppState.SelectedTheme == "light" ? "Dark theme" : "Light theme";
+        _navigationManager.Refresh();
+    }
+}

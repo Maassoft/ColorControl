@@ -7718,8 +7718,8 @@
 			<HexValue>0x00000190</HexValue>
 		</CustomSettingValue>
 		<CustomSettingValue>
-			<UserfriendlyName>1200</UserfriendlyName>
-			<HexValue>0x000004B0</HexValue>
+			<UserfriendlyName>1500</UserfriendlyName>
+			<HexValue>0x000005DC</HexValue>
 		</CustomSettingValue>
 	  </SettingValues>
 	  <SettingMasks />

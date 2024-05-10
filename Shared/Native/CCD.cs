@@ -136,6 +136,8 @@ namespace ColorControl.Shared.Native
                 config.Scaling = pathInfo.targetInfo.scaling;
                 config.Rotation = pathInfo.targetInfo.rotation;
 
+                config.IsPrimary = sourceMode.sourceMode.position.x == 0 && sourceMode.sourceMode.position.y == 0;
+
                 return (default(DisplayConfigModeInfo), true);
             }, displayName
             );
@@ -214,6 +216,39 @@ namespace ColorControl.Shared.Native
                     isModeChangeNeeded = true;
                 }
                 //pathsArray[pathIndex].targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
+
+                var currentX = modesArray[sourceIndex].sourceMode.position.x;
+                var currentY = modesArray[sourceIndex].sourceMode.position.y;
+                if (displayConfig.IsPrimary == true && (currentX != 0 || currentY != 0))
+                {
+                    var shiftX = -currentX;
+                    var shiftY = -currentY;
+                    isModeChangeNeeded = true;
+
+                    for (var i = 0; i < modesArray.Length; i++)
+                    {
+                        if (modesArray[i].infoType != DisplayConfigModeInfoType.Source)
+                        {
+                            continue;
+                        }
+
+                        if (i == sourceIndex)
+                        {
+                            modesArray[sourceIndex].sourceMode.position.x = 0;
+                            modesArray[sourceIndex].sourceMode.position.y = 0;
+                            continue;
+                        }
+
+                        if (modesArray[i].sourceMode.position.x < currentX || modesArray[i].sourceMode.position.x > currentX)
+                        {
+                            modesArray[i].sourceMode.position.x += shiftX;
+                        }
+                        if (modesArray[i].sourceMode.position.y < currentY || modesArray[i].sourceMode.position.y > currentY)
+                        {
+                            modesArray[i].sourceMode.position.y += shiftY;
+                        }
+                    }
+                }
 
                 if (isModeChangeNeeded)
                 {

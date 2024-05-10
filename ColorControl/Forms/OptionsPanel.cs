@@ -167,7 +167,7 @@ public partial class OptionsPanel : UserControl
     {
         if (_initialized)
         {
-            _config.StartMinimized = chkStartMinimized.Checked;
+            _config.MinimizeToTray = chkMinimizeToSystemTray.Checked;
             Program.GetNotifyIcon().Visible = _config.MinimizeToTray;
         }
     }

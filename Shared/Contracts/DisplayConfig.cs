@@ -11,6 +11,7 @@ public class DisplayConfig
     public Rational RefreshRate { get; set; }
     public DisplayConfigScaling Scaling { get; set; }
     public DisplayConfigRotation Rotation { get; set; }
+    public bool? IsPrimary { get; set; }
 
     public DisplayConfig()
     {

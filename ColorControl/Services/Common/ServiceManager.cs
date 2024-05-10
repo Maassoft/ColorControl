@@ -111,6 +111,12 @@ public class ServiceManager
 
             return true;
         }
+        else if (serviceName.Equals("StartCmd", StringComparison.OrdinalIgnoreCase))
+        {
+            _winApiAdminService.StartProcess(parameters[0], parameters.Length > 1 ? string.Join(" ", parameters.Skip(1)) : null, wait: true, useShellExecute: false);
+
+            return true;
+        }
 
         return false;
     }

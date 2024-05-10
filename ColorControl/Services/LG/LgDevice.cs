@@ -455,6 +455,8 @@ namespace ColorControl.Services.LG
                             SetModelYear();
                         }
 
+                        Logger.Debug($"LG TV with ip-address {IpAddress} has model name {ModelName}");
+
                         await _lgTvApi.SubscribeVolume(VolumeChanged);
                         await _lgTvApi.SubscribePowerState(PowerStateChanged);
                         await _lgTvApi.SubscribePictureSettings(PictureSettingsChanged);

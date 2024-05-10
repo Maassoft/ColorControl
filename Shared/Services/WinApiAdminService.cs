@@ -112,15 +112,23 @@ namespace ColorControl.Shared.Services
             }
         }
 
-        public Process StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0)
+        public Process StartProcess(string fileName, string arguments = null, bool hidden = false, bool wait = false, bool setWorkingDir = false, bool elevate = false, uint affinityMask = 0, uint priorityClass = 0, bool? useShellExecute = null)
         {
             var process = Process.Start(new ProcessStartInfo(fileName, arguments)
             {
                 Verb = elevate ? "runas" : string.Empty, // indicates to elevate privileges
-                UseShellExecute = true,
+                UseShellExecute = useShellExecute.HasValue ? useShellExecute.Value : !hidden || !(fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)),
                 WindowStyle = hidden ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
                 WorkingDirectory = setWorkingDir ? Path.GetDirectoryName(fileName) : null
             });
+
+            if (process == null)
+            {
+                Logger.Debug($"Process {fileName} could not be started: null returned");
+                return null;
+            }
+
+            Logger.Debug($"Started process {fileName} with process-id {process.Id}: has exited {process.HasExited}");
 
             if (affinityMask > 0)
             {

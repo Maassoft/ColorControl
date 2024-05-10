@@ -7,6 +7,7 @@ using ColorControl.Services.Samsung;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
+using ColorControl.Shared.Services;
 using novideo_srgb;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,8 @@ public class NotifyIconManager
 {
     private readonly GlobalContext _globalContext;
     private readonly ServiceManager _serviceManager;
+    private readonly WinApiAdminService _winApiAdminService;
+    private readonly WinApiService _winApiService;
     private readonly Config _config;
 
     public NotifyIcon NotifyIcon { get; private set; }
@@ -30,10 +33,15 @@ public class NotifyIconManager
     private ToolStripMenuItem _samsungTrayMenu;
     private ToolStripMenuItem _gameTrayMenu;
 
-    public NotifyIconManager(GlobalContext globalContext, ServiceManager serviceManager)
+    private ToolStripMenuItem _stopServiceAndExitMenuItem;
+    private ToolStripMenuItem _openNewUiMenuItem;
+
+    public NotifyIconManager(GlobalContext globalContext, ServiceManager serviceManager, WinApiAdminService winApiAdminService, WinApiService winApiService)
     {
         _globalContext = globalContext;
         _serviceManager = serviceManager;
+        _winApiAdminService = winApiAdminService;
+        _winApiService = winApiService;
         _config = globalContext.Config;
     }
 
@@ -68,8 +76,10 @@ public class NotifyIconManager
                     _gameTrayMenu,
                     new ToolStripSeparator(),
                     new ToolStripMenuItem("Open", null, OpenForm),
+                    _openNewUiMenuItem = new ToolStripMenuItem("Open new UI", null, OpenNewUi),
                     new ToolStripSeparator(),
                     new ToolStripMenuItem("Restart", null, Restart),
+                    _stopServiceAndExitMenuItem = new ToolStripMenuItem("Stop Service And Exit", null, StopServiceAndExit),
                     new ToolStripMenuItem("Exit", null, Exit)
                 });
 
@@ -85,6 +95,13 @@ public class NotifyIconManager
         }
     }
 
+    private void StopServiceAndExit(object sender, EventArgs e)
+    {
+        _winApiAdminService.StopService();
+
+        Program.Exit();
+    }
+
     private void Exit(object sender, EventArgs e)
     {
         Program.Exit();
@@ -98,6 +115,11 @@ public class NotifyIconManager
     private void OpenForm(object sender, EventArgs e)
     {
         Program.OpenMainForm();
+    }
+
+    private async void OpenNewUi(object sender, EventArgs e)
+    {
+        await Program.OpenNewUi();
     }
 
     private void trayIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -158,6 +180,8 @@ public class NotifyIconManager
 
             UpdateTrayMenu(_gameTrayMenu, presets, TrayMenuItemGame_Click);
         }
+
+        _stopServiceAndExitMenuItem.Visible = _winApiService.IsServiceRunning();
     }
 
     private void UpdateTrayMenu(ToolStripMenuItem menu, IEnumerable<PresetBase> presets, EventHandler eventHandler)

@@ -17,7 +17,7 @@ namespace nspector.Common.CustomSettings
         {
             var settings = XMLHelper<CustomSettingNames>.DeserializeFromXMLFile(filename);
 
-            var interpolatedSettings = settings.Settings.Where(s => s.SettingValues.Count == 2 && s.SettingValues[1].SettingValue <= 1200 && (s.SettingValues[1].SettingValue - s.SettingValues[0].SettingValue) >= 50).ToList();
+            var interpolatedSettings = settings.Settings.Where(s => s.SettingValues.Count == 2 && s.SettingValues[1].SettingValue <= 2000 && (s.SettingValues[1].SettingValue - s.SettingValues[0].SettingValue) >= 50).ToList();
 
             foreach (var setting in interpolatedSettings)
             {
