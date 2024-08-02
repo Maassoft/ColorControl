@@ -1,0 +1,117 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.LG
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+
+<FieldsModal ModalId="executeActionModal" Fields="Fields" Title="@Title" ConfirmCaption="Apply" OnConfirm="ConfirmClick"></FieldsModal>
+
+@code {
+
+    [Parameter]
+    public InvokableActionDto<LgPreset>? Action { get; set; }
+
+    [Parameter]
+    public List<LgDeviceDto>? Devices { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnConfirm { get; set; }
+
+    public string? Title { get; set; }
+
+    public List<FieldDefinition>? Fields { get; set; }
+
+    private FieldDefinition? Field;
+    private FieldDefinition? DeviceField;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Action == null)
+        {
+            return;
+        }
+
+        Title = $"Execute action {Action.Title}";
+
+        Field = CreateField(Action);
+
+        if (Devices?.Any() == true)
+        {
+            DeviceField = FieldDefinition.CreateDropDownField("Device", Devices.Select(d => d.ToString()).ToList());
+            DeviceField.Value = Devices.FirstOrDefault(d => d.IsSelected)?.ToString();
+
+            Fields = [DeviceField, Field];
+        }
+        else
+        {
+            Fields = [Field];
+        }
+    }
+
+    private FieldDefinition CreateField(InvokableActionDto<LgPreset> action)
+    {
+        var fieldType = FieldType.Numeric;
+        var strValue = default(string);
+        var subLabel = default(string);
+        var label = action.Title;
+
+        if (action.EnumType != null)
+        {
+            fieldType = FieldType.DropDown;
+            strValue = Enum.GetNames(action.EnumType).First();
+            subLabel = "Note: not all values are available on all models.";
+        }
+        else if (action.MinValue == action.MaxValue)
+        {
+            fieldType = FieldType.Label;
+            label = $"This will execute {action.Title}. Press Apply to continue.";
+        }
+
+        var field = new FieldDefinition 
+        { 
+            FieldType = fieldType,
+            Label = label, 
+            SubLabel = subLabel,
+            ValueType = action.EnumType, 
+            MinValue = action.MinValue,
+            MaxValue = action.MaxValue,
+        };
+
+        if (fieldType == FieldType.Numeric)
+        {
+            field.IntValue = action.CurrentValue;
+        }
+        else
+        {
+            field.StringValue = strValue;
+        }
+
+        return field;
+    }
+
+    private async Task ConfirmClick()
+    {
+        if (Action == null || Field == null)
+        {
+            return;
+        }
+
+        if (Devices != null && DeviceField != null)
+        {
+            Action.SelectedDevice = Devices.FirstOrDefault(d => d.ToString() == DeviceField.Value?.ToString());
+        }
+
+        var parameters = new List<string> { Field.StringValue };
+
+        await _rpcClientService.CallAsync<bool>("LgService", "ExecuteInvokableAction", Action, parameters);
+
+        if (OnConfirm != null)
+        {
+            await OnConfirm();
+        }
+    }
+}

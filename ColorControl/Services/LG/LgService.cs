@@ -1,6 +1,7 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.LG;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
@@ -8,6 +9,7 @@ using LgTv;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Newtonsoft.Json;
+using NStandard;
 using NWin32;
 using System;
 using System.Collections.Generic;
@@ -77,7 +79,8 @@ namespace ColorControl.Services.LG
             _sessionSwitchDispatcher = sessionSwitchDispatcher;
             _processEventDispatcher = processEventDispatcher;
             _serviceManager = serviceManager;
-            LgPreset.LgApps = _lgApps;
+            LgPreset.GetDeviceName += LgPreset_GetDeviceName;
+            LgPreset.GetAppName += LgPreset_GetAppName;
 
             _restartDetector = restartDetector;
             _winApiService = winApiService;
@@ -88,6 +91,30 @@ namespace ColorControl.Services.LG
             LoadConfig();
             LoadPresets();
             LoadRemoteControlButtons();
+        }
+
+        private string LgPreset_GetAppName(string appId)
+        {
+            var name = appId;
+
+            var item = _lgApps.FirstOrDefault(x => x.appId.Equals(appId));
+            if (item != null)
+            {
+                name = item.title + " (" + appId + ")";
+            }
+
+            return name;
+        }
+
+        private string LgPreset_GetDeviceName(string macAddress)
+        {
+            var device = Devices?.FirstOrDefault(d => !string.IsNullOrEmpty(d.MacAddress) && d.MacAddress.Equals(macAddress));
+            if (device != null)
+            {
+                return device.Name;
+            }
+
+            return "Unknown: device not found";
         }
 
         ~LgService()
@@ -104,6 +131,11 @@ namespace ColorControl.Services.LG
                 ToggleGameBar();
                 return;
             }
+        }
+
+        public override List<string> GetInfo()
+        {
+            return [$"{_presets.Count} presets", $"{Devices?.Count ?? 0} devices"];
         }
 
         public static async Task<bool> ExecutePresetAsync(string presetName)
@@ -169,8 +201,6 @@ namespace ColorControl.Services.LG
                 Logger.Error($"LoadConfig: {ex.Message}");
             }
             Config ??= new LgServiceConfig();
-
-            LgPreset.LgDevices = Config.Devices;
         }
 
         private void LoadRemoteControlButtons()
@@ -347,19 +377,6 @@ namespace ColorControl.Services.LG
         private void Device_PictureSettingsChangedEvent(object sender, EventArgs e)
         {
             //
-        }
-
-        public async Task<bool> ApplyPreset(string presetName)
-        {
-            var preset = _presets.FirstOrDefault(p => p.name.Equals(presetName, StringComparison.OrdinalIgnoreCase));
-            if (preset != null)
-            {
-                return await ApplyPreset(preset);
-            }
-            else
-            {
-                return false;
-            }
         }
 
         public override async Task<bool> ApplyPreset(LgPreset preset)
@@ -1015,6 +1032,197 @@ namespace ColorControl.Services.LG
             {
                 _gameBarForm?.Hide();
             }
+        }
+
+        public List<LgDeviceDto> GetDevices()
+        {
+            if (Devices == null)
+            {
+                return new List<LgDeviceDto>();
+            }
+
+            return Devices.Select(d => new LgDeviceDto
+            {
+                Name = d.Name,
+                MacAddress = d.MacAddress,
+                IpAddress = d.IpAddress,
+                IsCustom = d.IsCustom,
+                IsDummy = d.IsDummy,
+                Options = new LgDeviceOptions
+                {
+                    HandleManualScreenSaver = d.HandleManualScreenSaver,
+                    HDMIPortNumber = d.HDMIPortNumber,
+                    PowerOffByWindows = d.PowerOffByWindows,
+                    PowerOffOnScreenSaver = d.PowerOffOnScreenSaver,
+                    PowerOffOnShutdown = d.PowerOffOnShutdown,
+                    PowerOffOnStandby = d.PowerOffOnStandby,
+                    PowerOnAfterManualPowerOff = d.PowerOnAfterManualPowerOff,
+                    PowerOnAfterResume = d.PowerOnAfterResume,
+                    PowerOnAfterScreenSaver = d.PowerOnAfterScreenSaver,
+                    PowerOnAfterStartup = d.PowerOnAfterStartup,
+                    PowerOnByWindows = d.PowerOnByWindows,
+                    ScreenSaverMinimalDuration = d.ScreenSaverMinimalDuration,
+                    TriggersEnabled = d.TriggersEnabled,
+                    TurnScreenOffOnScreenSaver = d.TurnScreenOffOnScreenSaver,
+                    TurnScreenOnAfterScreenSaver = d.TurnScreenOnAfterScreenSaver,
+                    UseSecureConnection = d.UseSecureConnection
+                },
+                IsConnected = d.IsConnected(),
+                IsSelected = d == SelectedDevice
+            }).ToList();
+        }
+
+        public async Task<bool> UpdateDevice(LgDeviceDto deviceSpec)
+        {
+            if (Devices == null)
+            {
+                return false;
+            }
+
+            var device = Devices.FirstOrDefault(d => d.MacAddress == deviceSpec.MacAddress);
+
+            if (device == null)
+            {
+                device = new LgDevice(deviceSpec);
+
+                Devices.Add(device);
+            }
+            else
+            {
+                var reconnect = device.Update(deviceSpec);
+
+                if (reconnect)
+                {
+                    await device.Connect();
+                }
+            }
+
+            return true;
+        }
+
+        public async Task<bool> TestDevice(LgDeviceDto deviceSpec)
+        {
+            if (Devices == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var device = new LgDevice(deviceSpec);
+
+                return await device.TestConnection();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public LgServiceConfigDto GetConfig()
+        {
+            return new LgServiceConfigDto
+            {
+                DefaultButtonDelay = Config.DefaultButtonDelay,
+                DeviceSearchKey = Config.DeviceSearchKey,
+                //Devices = GetDevices(),
+                PowerOnAfterStartup = Config.PowerOnAfterStartup,
+                PowerOnRetries = Config.PowerOnRetries,
+                PreferredMacAddress = Config.PreferredMacAddress,
+                QuickAccessShortcut = Config.QuickAccessShortcut,
+                SetSelectedDeviceByPowerOn = Config.SetSelectedDeviceByPowerOn,
+                ShowAdvancedActions = Config.ShowAdvancedActions,
+                ShutdownDelay = Config.ShutdownDelay,
+                GameBarShortcut = Config.GameBarShortcut,
+                GameBarShowingTime = Config.GameBarShowingTime
+            };
+        }
+
+        public bool UpdateConfig(LgServiceConfigDto config)
+        {
+            Config.Update(config);
+
+            SetShortcuts(SHORTCUTID_LGQA, Config.QuickAccessShortcut);
+
+            return true;
+        }
+
+        public bool UpdatePreset(LgPreset specPreset)
+        {
+            var currentPreset = _presets.FirstOrDefault(p => p.id == specPreset.id);
+
+            if (currentPreset != null)
+            {
+                currentPreset.Update(specPreset);
+                return true;
+            }
+
+            var newPreset = new LgPreset(specPreset);
+            newPreset.name = specPreset.name;
+
+            _presets.Add(newPreset);
+
+            return true;
+        }
+
+        public List<InvokableActionDto<LgPreset>> GetInvokableActions()
+        {
+            return SelectedDevice?.GetInvokableActions(Config.ShowAdvancedActions).Select(a => new InvokableActionDto<LgPreset>
+            {
+                Advanced = a.Advanced,
+                Category = Utils.FirstCharUpperCase(a.Category ?? "Misc"),
+                CurrentValue = a.CurrentValue,
+                EnumType = a.EnumType,
+                MaxValue = a.MaxValue,
+                MinValue = a.MinValue,
+                Name = a.Name,
+                NumberOfValues = a.NumberOfValues,
+                Preset = a.Preset,
+                Title = a.Title ?? Utils.FirstCharUpperCase(a.Name),
+                ValueLabels = a.ValueLabels
+            }).ToList();
+        }
+
+        public async Task<bool> ExecuteInvokableAction(InvokableActionDto<LgPreset> invokableAction, List<string> parameters = null)
+        {
+            var device = SelectedDevice;
+
+            if (invokableAction.SelectedDevice != null)
+            {
+                device = MatchDevice(invokableAction.SelectedDevice) ?? SelectedDevice;
+            }
+
+            if (invokableAction.Preset != null)
+            {
+                await SelectedDevice?.ExecutePreset(invokableAction.Preset, false, Config);
+
+                return true;
+            }
+
+            return await device?.ExecuteInvokableAction(invokableAction, parameters);
+        }
+
+        public bool SetSelectedDevice(LgDeviceDto deviceDto)
+        {
+            if (deviceDto == null)
+            {
+                return false;
+            }
+
+            var device = MatchDevice(deviceDto);
+            if (device == null)
+            {
+                return false;
+            }
+
+            SelectedDevice = device;
+
+            return true;
+        }
+
+        private LgDevice MatchDevice(LgDeviceDto deviceDto)
+        {
+            return Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress);
         }
     }
 }

@@ -88,16 +88,26 @@ namespace MHC2Gen
             {
                 var (_, value) = CmsFunctions.SrgbAcm(i, whiteLuminance, blackLuminance, gamma, lutSize - 1);
 
+                // TODO: average between sSRB and Piecewise gamma
+                //var piecewiseValue = (double)i / 1023;
+
+                //value = (value + piecewiseValue) / 2;
+
                 for (var c = 0; c < 3; c++)
                 {
+                    //var tempPercentage = boostPercentage * ((double)i / lutSize);
+
+                    //var amplifier = tempPercentage == 0 ? 1 : tempPercentage > 0 ? 1 + tempPercentage / 100 : 1 - tempPercentage / 100;
+
                     RegammaLUT[c, i] = value * amplifier;
                 }
             }
         }
 
-        public void ApplyPiecewise()
+        public void ApplyPiecewise(double boostPercentage = 0)
         {
             var lutSize = 1024;
+            var amplifier = boostPercentage == 0 ? 1 : boostPercentage > 0 ? 1 + boostPercentage / 100 : 1 - boostPercentage / 100;
 
             RegammaLUT = new double[3, lutSize];
 
@@ -107,7 +117,7 @@ namespace MHC2Gen
 
                 for (var c = 0; c < 3; c++)
                 {
-                    RegammaLUT[c, i] = value;
+                    RegammaLUT[c, i] = value * amplifier;
                 }
             }
         }
@@ -960,7 +970,7 @@ namespace MHC2Gen
             //}
             if (!command.IsHDRProfile || command.SDRTransferFunction == SDRTransferFunction.Piecewise)
             {
-                MHC2.ApplyPiecewise();
+                MHC2.ApplyPiecewise(command.SDRBrightnessBoost);
             }
             else if (command.SDRTransferFunction == SDRTransferFunction.PurePower)
             {

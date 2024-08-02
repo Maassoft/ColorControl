@@ -1,0 +1,184 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.LG
+@using ColorControl.Shared.Services
+@using ColorControl.UI.Components.Pages.Generic
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common
+@using static ColorControl.UI.Components.Pages.Generic.StepsInput<ColorControl.Shared.Contracts.LG.LgPreset>
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(Preset?.id == 0 ? $"Settings for new preset" : $"Settings of preset {Preset?.IdOrName}")</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => IsVisible = false"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1 needs-validation @WasValidated" novalidate>
+                    @if (Preset == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+                            <label class="form-label" for="name">Name</label>
+                            <input class="form-control" id="name" type="text" @bind="Preset.name" required />
+                        </div>
+                        @if (Devices != null)
+                        {
+                            <div class="mb-2">
+                                <label class="form-label" for="device">Device</label>
+                                <select class="form-select" id="device" @bind="Preset.DeviceMacAddress">
+                                    <option value="">Globally selected device</option>
+                                    @foreach (var device in Devices)
+                                    {
+                                        <option value="@device.MacAddress">@device.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" @bind="Preset.ShowInQuickAccess" id="showInQuickAccess">
+                            <label class="form-check-label" for="showInQuickAccess">
+                                Show in Quick Access
+                            </label>
+                        </div>
+                        <ShortcutInput Label="Shortcut" @bind-Shortcut="Preset.shortcut" />
+
+                        <div class="accordion accordion-flush" id="presetAccordion">
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettings">
+                                        Advanced settings
+                                    </button>
+                                </h2>
+                                <div id="advancedSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <TriggerInput Triggers="Preset.Triggers"></TriggerInput>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#steps">
+                                        Steps
+                                    </button>
+                                </h2>
+                                <div id="steps" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <StepsInput Label="Steps" @bind-Steps="Preset.steps" CustomItems="CustomItems" ActionItems="CustomActions" LgPresetsEnabled="false" TPreset="LgPreset"></StepsInput>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="description">Description</label>
+                                            <textarea class="form-control" id="description" type="text" @bind="Preset.Description" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="@(!IsValid() ? "" : "modal")" @onclick="ApplyClick">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LgPreset? Preset;
+
+    [Parameter]
+    public LgPreset? PresetParam { get; set; }
+
+    [Parameter]
+    public List<LgDeviceDto>? Devices { get; set; }
+
+    [Parameter]
+    public Func<LgPreset, Task>? AfterApply { get; set; }
+
+    private List<CustomStepItem>? CustomItems;
+    private List<ActionStepItem>? CustomActions;
+
+    private string WasValidated = "";
+    private bool IsVisible;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (PresetParam == null)
+        {
+            return;
+        }
+
+        Preset = PresetParam.CloneWithId();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CustomItems = [new CustomStepItem("RC buttons", Enum.GetValues<ButtonType>().Select(b =>
+        {
+            var result = b.ToString();
+
+            if (result[0] == '_') 
+            {
+                result = result.Substring(1);
+            }
+
+            return result;
+        }).ToList())];
+
+
+        var actions = await _rpcClientService.CallAsync<List<InvokableActionDto<LgPreset>>>("LgService", "GetInvokableActions");
+
+        if (actions != null)
+        {
+            CustomActions = [new ActionStepItem("Actions", actions.Where(a => !a.Advanced).ToList())];
+        }
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Preset == null)
+        {
+            return;
+        }
+
+        if (!IsValid())
+        {
+            WasValidated = "was-validated";
+            return;
+        }
+
+        var result = await _rpcClientService.CallAsync<bool>("LgService", "UpdatePreset", Preset);
+
+        if (AfterApply != null)
+        {
+            await AfterApply.Invoke(Preset);
+        }
+    }
+
+    private void ModalOnFocus(FocusEventArgs e)
+    {
+        if (!IsVisible)
+        {
+            WasValidated = "";
+            IsVisible = true;
+        }
+    }
+
+    private bool IsValid()
+    {
+        return !string.IsNullOrEmpty(Preset?.name);
+    }
+}

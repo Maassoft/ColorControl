@@ -1,4 +1,8 @@
-﻿@inject AppState AppState
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services
+@inject AppState AppState
+@inject RpcUiClientService ClientService;
+@inject NavigationManager _navigationManager;
 @implements IDisposable
 @attribute [StreamRendering]
 
@@ -9,7 +13,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="ColorControl.UI.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -23,8 +28,18 @@
 
 </html>
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var config = await ClientService.CallAsync<Config>("OptionsService", "GetConfig");
+
+        var newTheme = config.UseDarkMode ? "dark" : "light";
+
+        if (newTheme != AppState.SelectedTheme)
+        {
+            AppState.SelectedTheme = config.UseDarkMode ? "dark" : "light";
+            _navigationManager.Refresh();
+        }
+
         AppState.OnChange += StateHasChanged;
     }
 

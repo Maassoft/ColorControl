@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ColorControl.Shared.Contracts.Samsung;
+using System.Collections.Generic;
 
 namespace ColorControl.Services.Samsung
 {
@@ -22,6 +23,20 @@ namespace ColorControl.Services.Samsung
             PowerOnRetries = 10;
             DefaultButtonDelay = 500;
             Devices = new List<SamsungDevice>();
+        }
+
+        internal void Update(SamsungServiceConfigDto config)
+        {
+            PowerOnAfterStartup = config.PowerOnAfterStartup;
+            PowerOnRetries = config.PowerOnRetries;
+            DefaultButtonDelay = config.DefaultButtonDelay;
+            PreferredMacAddress = config.PreferredMacAddress;
+            DeviceSearchKey = config.DeviceSearchKey;
+            ShutdownDelay = config.ShutdownDelay;
+            SetSelectedDeviceByPowerOn = config.SetSelectedDeviceByPowerOn;
+            QuickAccessShortcut = config.QuickAccessShortcut;
+            DefaultButtonDelay = config.DefaultButtonDelay;
+            ShowAdvancedActions = config.ShowAdvancedActions;
         }
     }
 }

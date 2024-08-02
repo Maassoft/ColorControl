@@ -1,0 +1,63 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@if (Label != null)
+{
+    <div class="mb-2">
+        <label class="form-label" for="name">@Label</label>
+        <input class="form-control" type="text" readonly value="@Shortcut"
+            @onchange="(ChangeEventArgs e) => ShortcutOnChange(e)"
+            @onkeydown="ShortcutOnKeyDown"
+            @onkeyup="(KeyboardEventArgs e) => ShortcutOnKeyUp(e)"
+            @onfocus="ShortcutOnFocus"
+            @onblur="ShortcutOnBlur"/>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public string? Shortcut { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ShortcutChanged { get; set; }
+
+    private async Task ShortcutOnChange(ChangeEventArgs e)
+    {
+        Shortcut = e.Value?.ToString();
+        await ShortcutChanged.InvokeAsync(Shortcut);
+    }
+
+    private void ShortcutOnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Tab")
+        {
+            return;
+        }
+
+        var text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e.ShiftKey, e.CtrlKey, e.AltKey, e.Key, e.Code);
+        Shortcut = text;
+    }
+
+    private async Task ShortcutOnKeyUp(KeyboardEventArgs e)
+    {
+        //KeyboardShortcutDispatcher.HandleKeyboardShortcutUp()
+        await ShortcutChanged.InvokeAsync(Shortcut);
+    }
+
+    private void ShortcutOnFocus(FocusEventArgs e)
+    {
+        KeyboardShortcutDispatcher.IsActive = false;
+    }
+
+    private void ShortcutOnBlur(FocusEventArgs e)
+    {
+        KeyboardShortcutDispatcher.IsActive = true;
+    }
+}

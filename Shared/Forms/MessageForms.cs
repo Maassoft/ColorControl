@@ -1,72 +1,10 @@
-﻿using ColorControl.Shared.Common;
+﻿using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using System.Data;
 using System.Globalization;
 
 namespace ColorControl.Shared.Forms
 {
-    public enum FieldType
-    {
-        Text,
-        Numeric,
-        DropDown,
-        Flags,
-        Shortcut,
-        CheckBox,
-        TrackBar,
-        Label
-    }
-
-    public class FieldDefinition
-    {
-        public string Label { get; set; }
-        public string SubLabel { get; set; }
-        public FieldType FieldType { get; set; } = FieldType.Text;
-        public IEnumerable<string> Values { get; set; }
-        public decimal MinValue { get; set; }
-        public decimal MaxValue { get; set; }
-        public int NumberOfValues { get; set; }
-        public int StepSize { get; set; }
-        public object Value { get; set; }
-
-        public int ValueAsInt => int.Parse(Value.ToString());
-        public uint ValueAsUInt => uint.Parse(Value.ToString());
-        public bool ValueAsBool => bool.Parse(Value.ToString());
-        public T ValueAsEnum<T>() where T : struct => Utils.GetEnumValueByDescription<T>(Value.ToString());
-
-        public static FieldDefinition CreateEnumField<T>(string label, T value) where T : struct, IConvertible
-        {
-            return new FieldDefinition
-            {
-                Label = label,
-                FieldType = FieldType.DropDown,
-                Values = Utils.GetDescriptions(typeof(T), replaceUnderscore: true),
-                Value = value.GetDescription()
-            };
-        }
-
-        public static FieldDefinition CreateDropDownField(string label, IList<string> values)
-        {
-            return new FieldDefinition
-            {
-                Label = label,
-                FieldType = FieldType.DropDown,
-                Values = values,
-                Value = values.FirstOrDefault()
-            };
-        }
-
-        public static FieldDefinition CreateCheckField(string label, bool value = true)
-        {
-            return new FieldDefinition
-            {
-                Label = label,
-                FieldType = FieldType.CheckBox,
-                Value = value
-            };
-        }
-    }
-
     public class MessageForm : Form
     {
         private ToolTip _toolTip;
@@ -74,12 +12,12 @@ namespace ColorControl.Shared.Forms
 
         public void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = MessageForms.KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         public void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            MessageForms.KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         public void TrackBar_Scroll(object sender, EventArgs e)

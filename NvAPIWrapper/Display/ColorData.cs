@@ -1,200 +1,226 @@
-﻿using System;
-using NvAPIWrapper.Native.Display;
+﻿using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.Interfaces.Display;
+using System;
 
 namespace NvAPIWrapper.Display
 {
-    /// <inheritdoc cref="IColorData" />
-    public class ColorData : IColorData, IEquatable<ColorData>
-    {
-        /// <summary>
-        ///     Creates an instance of <see cref="ColorData" /> to modify the color data
-        /// </summary>
-        /// <param name="colorFormat">The color data color format.</param>
-        /// <param name="colorimetry">The color data color space.</param>
-        /// <param name="dynamicRange">The color data dynamic range.</param>
-        /// <param name="colorDepth">The color data color depth.</param>
-        /// <param name="colorSelectionPolicy">The color data selection policy.</param>
-        /// <param name="desktopColorDepth">The color data desktop color depth.</param>
-        public ColorData(
-            ColorDataFormat colorFormat = ColorDataFormat.Auto,
-            ColorDataColorimetry colorimetry = ColorDataColorimetry.Auto,
-            ColorDataDynamicRange? dynamicRange = null,
-            ColorDataDepth? colorDepth = null,
-            ColorDataSelectionPolicy? colorSelectionPolicy = null,
-            ColorDataDesktopDepth? desktopColorDepth = null
-        )
-        {
-            ColorFormat = colorFormat;
-            Colorimetry = colorimetry;
-            DynamicRange = dynamicRange;
-            ColorDepth = colorDepth;
-            SelectionPolicy = colorSelectionPolicy;
-            DesktopColorDepth = desktopColorDepth;
-        }
+	/// <inheritdoc cref="IColorData" />
+	public class ColorData : IColorData, IEquatable<ColorData>
+	{
+		/// <summary>
+		///     Creates an instance of <see cref="ColorData" /> to modify the color data
+		/// </summary>
+		/// <param name="colorFormat">The color data color format.</param>
+		/// <param name="colorimetry">The color data color space.</param>
+		/// <param name="dynamicRange">The color data dynamic range.</param>
+		/// <param name="colorDepth">The color data color depth.</param>
+		/// <param name="colorSelectionPolicy">The color data selection policy.</param>
+		/// <param name="desktopColorDepth">The color data desktop color depth.</param>
+		public ColorData(
+			ColorDataFormat colorFormat = ColorDataFormat.Auto,
+			ColorDataColorimetry colorimetry = ColorDataColorimetry.Auto,
+			ColorDataDynamicRange? dynamicRange = null,
+			ColorDataDepth? colorDepth = null,
+			ColorDataSelectionPolicy? colorSelectionPolicy = null,
+			ColorDataDesktopDepth? desktopColorDepth = null
+		)
+		{
+			ColorFormat = colorFormat;
+			Colorimetry = colorimetry;
+			DynamicRange = dynamicRange;
+			ColorDepth = colorDepth;
+			SelectionPolicy = colorSelectionPolicy;
+			DesktopColorDepth = desktopColorDepth;
+		}
 
-        internal ColorData(IColorData colorData)
-        {
-            ColorDepth = colorData.ColorDepth;
-            DynamicRange = colorData.DynamicRange;
-            ColorFormat = colorData.ColorFormat;
-            Colorimetry = colorData.Colorimetry;
-            SelectionPolicy = colorData.SelectionPolicy;
-            DesktopColorDepth = colorData.DesktopColorDepth;
-        }
+		internal ColorData(IColorData colorData)
+		{
+			ColorDepth = colorData.ColorDepth;
+			DynamicRange = colorData.DynamicRange;
+			ColorFormat = colorData.ColorFormat;
+			Colorimetry = colorData.Colorimetry;
+			SelectionPolicy = colorData.SelectionPolicy;
+			DesktopColorDepth = colorData.DesktopColorDepth;
+		}
 
-        /// <inheritdoc />
-        public ColorDataDepth? ColorDepth { get; }
+		/// <inheritdoc />
+		public ColorDataDepth? ColorDepth { get; set; }
 
-        /// <inheritdoc />
-        public ColorDataFormat ColorFormat { get; }
+		/// <inheritdoc />
+		public ColorDataFormat ColorFormat { get; set; }
 
-        /// <inheritdoc />
-        public ColorDataColorimetry Colorimetry { get; }
+		/// <inheritdoc />
+		public ColorDataColorimetry Colorimetry { get; set; }
 
-        /// <inheritdoc />
-        public ColorDataDesktopDepth? DesktopColorDepth { get; }
+		/// <inheritdoc />
+		public ColorDataDesktopDepth? DesktopColorDepth { get; }
 
-        /// <inheritdoc />
-        public ColorDataDynamicRange? DynamicRange { get; }
+		/// <inheritdoc />
+		public ColorDataDynamicRange? DynamicRange { get; set; }
 
-        /// <inheritdoc />
-        public ColorDataSelectionPolicy? SelectionPolicy { get; }
+		/// <inheritdoc />
+		public ColorDataSelectionPolicy? SelectionPolicy { get; set; }
 
-        /// <inheritdoc />
-        public bool Equals(ColorData other)
-        {
-            if (ReferenceEquals(null, other))
-            {
-                return false;
-            }
+		public bool UseDefaultSettings
+		{
+			get
+			{
+				return SelectionPolicy == null || SelectionPolicy == ColorDataSelectionPolicy.Default;
+			}
+			set
+			{
+				SelectionPolicy = value ? ColorDataSelectionPolicy.Default : ColorDataSelectionPolicy.User;
+			}
+		}
 
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
+		public bool IsDifferent(IColorData colorData)
+		{
+			var settingRange = colorData.DynamicRange == ColorDataDynamicRange.Auto ? colorData.ColorFormat == ColorDataFormat.RGB ? ColorDataDynamicRange.VESA : ColorDataDynamicRange.CEA : colorData.DynamicRange;
 
-            return ColorDepth == other.ColorDepth &&
-                   ColorFormat == other.ColorFormat &&
-                   Colorimetry == other.Colorimetry &&
-                   DesktopColorDepth == other.DesktopColorDepth &&
-                   DynamicRange == other.DynamicRange &&
-                   SelectionPolicy == other.SelectionPolicy;
-        }
+			var settingSpace = colorData.Colorimetry;
 
-        /// <summary>
-        ///     Compares two instances of <see cref="ColorData" /> for equality.
-        /// </summary>
-        /// <param name="left">The first instance.</param>
-        /// <param name="right">The second instance.</param>
-        /// <returns>true if two instances are equal; otherwise false.</returns>
-        public static bool operator ==(ColorData left, ColorData right)
-        {
-            return left?.Equals(right) == true;
-        }
+			return colorData.ColorFormat != ColorFormat || colorData.ColorDepth != ColorDepth || settingRange != DynamicRange || settingSpace != Colorimetry || colorData.SelectionPolicy != SelectionPolicy;
+		}
 
-        /// <summary>
-        ///     Compares two instances of <see cref="ColorData" /> for inequality.
-        /// </summary>
-        /// <param name="left">The first instance.</param>
-        /// <param name="right">The second instance.</param>
-        /// <returns>true if two instances are not equal; otherwise false.</returns>
-        public static bool operator !=(ColorData left, ColorData right)
-        {
-            return !(left == right);
-        }
+		/// <inheritdoc />
+		public bool Equals(ColorData other)
+		{
+			if (ReferenceEquals(null, other))
+			{
+				return false;
+			}
 
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
+			if (ReferenceEquals(this, other))
+			{
+				return true;
+			}
 
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
+			return ColorDepth == other.ColorDepth &&
+				   ColorFormat == other.ColorFormat &&
+				   Colorimetry == other.Colorimetry &&
+				   DesktopColorDepth == other.DesktopColorDepth &&
+				   DynamicRange == other.DynamicRange &&
+				   SelectionPolicy == other.SelectionPolicy;
+		}
 
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
+		/// <summary>
+		///     Compares two instances of <see cref="ColorData" /> for equality.
+		/// </summary>
+		/// <param name="left">The first instance.</param>
+		/// <param name="right">The second instance.</param>
+		/// <returns>true if two instances are equal; otherwise false.</returns>
+		public static bool operator ==(ColorData left, ColorData right)
+		{
+			return left?.Equals(right) == true;
+		}
 
-            return Equals((ColorData) obj);
-        }
+		/// <summary>
+		///     Compares two instances of <see cref="ColorData" /> for inequality.
+		/// </summary>
+		/// <param name="left">The first instance.</param>
+		/// <param name="right">The second instance.</param>
+		/// <returns>true if two instances are not equal; otherwise false.</returns>
+		public static bool operator !=(ColorData left, ColorData right)
+		{
+			return !(left == right);
+		}
 
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = ColorDepth.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int) ColorFormat;
-                hashCode = (hashCode * 397) ^ (int) Colorimetry;
-                hashCode = (hashCode * 397) ^ DesktopColorDepth.GetHashCode();
-                hashCode = (hashCode * 397) ^ DynamicRange.GetHashCode();
-                hashCode = (hashCode * 397) ^ SelectionPolicy.GetHashCode();
+		/// <inheritdoc />
+		public override bool Equals(object obj)
+		{
+			if (ReferenceEquals(null, obj))
+			{
+				return false;
+			}
 
-                return hashCode;
-            }
-        }
+			if (ReferenceEquals(this, obj))
+			{
+				return true;
+			}
 
-        internal ColorDataV1 AsColorDataV1(ColorDataCommand command)
-        {
-            return new ColorDataV1(
-                command,
-                ColorFormat,
-                Colorimetry
-            );
-        }
+			if (obj.GetType() != GetType())
+			{
+				return false;
+			}
 
-        internal ColorDataV2 AsColorDataV2(ColorDataCommand command)
-        {
-            return new ColorDataV2(
-                command,
-                ColorFormat,
-                Colorimetry,
-                DynamicRange ?? ColorDataDynamicRange.Auto
-            );
-        }
+			return Equals((ColorData)obj);
+		}
 
-        internal ColorDataV3 AsColorDataV3(ColorDataCommand command)
-        {
-            return new ColorDataV3(
-                command,
-                ColorFormat,
-                Colorimetry,
-                DynamicRange ?? ColorDataDynamicRange.Auto,
-                ColorDepth ?? ColorDataDepth.Default
-            );
-        }
+		/// <inheritdoc />
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = ColorDepth.GetHashCode();
+				hashCode = (hashCode * 397) ^ (int)ColorFormat;
+				hashCode = (hashCode * 397) ^ (int)Colorimetry;
+				hashCode = (hashCode * 397) ^ DesktopColorDepth.GetHashCode();
+				hashCode = (hashCode * 397) ^ DynamicRange.GetHashCode();
+				hashCode = (hashCode * 397) ^ SelectionPolicy.GetHashCode();
 
-        internal ColorDataV4 AsColorDataV4(ColorDataCommand command)
-        {
-            return new ColorDataV4(
-                command,
-                ColorFormat,
-                Colorimetry,
-                DynamicRange ?? ColorDataDynamicRange.Auto,
-                ColorDepth ?? ColorDataDepth.Default,
-                SelectionPolicy ?? ColorDataSelectionPolicy.Default
-            );
-        }
+				return hashCode;
+			}
+		}
 
-        internal ColorDataV5 AsColorDataV5(ColorDataCommand command)
-        {
-            return new ColorDataV5(
-                command,
-                ColorFormat,
-                Colorimetry,
-                DynamicRange ?? ColorDataDynamicRange.Auto,
-                ColorDepth ?? ColorDataDepth.Default,
-                SelectionPolicy ?? ColorDataSelectionPolicy.Default,
-                DesktopColorDepth ?? ColorDataDesktopDepth.Default
-            );
-        }
-    }
+		public override string ToString()
+		{
+			return string.Format("{0}, {1}, {2}, {3}", ColorDepth, ColorFormat, DynamicRange, Colorimetry);
+		}
+
+		internal ColorDataV1 AsColorDataV1(ColorDataCommand command)
+		{
+			return new ColorDataV1(
+				command,
+				ColorFormat,
+				Colorimetry
+			);
+		}
+
+		internal ColorDataV2 AsColorDataV2(ColorDataCommand command)
+		{
+			return new ColorDataV2(
+				command,
+				ColorFormat,
+				Colorimetry,
+				DynamicRange ?? ColorDataDynamicRange.Auto
+			);
+		}
+
+		internal ColorDataV3 AsColorDataV3(ColorDataCommand command)
+		{
+			return new ColorDataV3(
+				command,
+				ColorFormat,
+				Colorimetry,
+				DynamicRange ?? ColorDataDynamicRange.Auto,
+				ColorDepth ?? ColorDataDepth.Default
+			);
+		}
+
+		internal ColorDataV4 AsColorDataV4(ColorDataCommand command)
+		{
+			return new ColorDataV4(
+				command,
+				ColorFormat,
+				Colorimetry,
+				DynamicRange ?? ColorDataDynamicRange.Auto,
+				ColorDepth ?? ColorDataDepth.Default,
+				SelectionPolicy ?? ColorDataSelectionPolicy.Default
+			);
+		}
+
+		internal ColorDataV5 AsColorDataV5(ColorDataCommand command)
+		{
+			return new ColorDataV5(
+				command,
+				ColorFormat,
+				Colorimetry,
+				DynamicRange ?? ColorDataDynamicRange.Auto,
+				ColorDepth ?? ColorDataDepth.Default,
+				SelectionPolicy ?? ColorDataSelectionPolicy.Default,
+				DesktopColorDepth ?? ColorDataDesktopDepth.Default
+			);
+		}
+	}
 }

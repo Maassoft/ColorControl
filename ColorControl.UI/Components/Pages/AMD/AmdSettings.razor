@@ -1,0 +1,64 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.AMD
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+@inject RpcUiClientService _rpcClientService
+
+<div class="modal" id="settingsModal" tabindex="-1" @onfocus="OnFocus">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">AMD settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => Config = null"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1">
+                @if (Config == null)
+                {
+                    <div>Loading...</div>
+                }
+                else
+                {
+                    <ShortcutInput Label="Quick Access Shortcut" @bind-Shortcut="Config.QuickAccessShortcut" />
+                }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => Config = null">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="ApplyClick">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AmdServiceConfig? Config { get; set; }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Config == null)
+        {
+            return;
+        }
+
+        var result = await _rpcClientService.CallAsync<bool>("AmdService", "UpdateConfig", Config);
+
+        if (result)
+        {
+            Config = null;
+        }
+    }
+
+    private async Task OnFocus(FocusEventArgs e)
+    {
+        if (Config != null)
+        {
+            return;
+        }
+
+        Config = await _rpcClientService.CallAsync<AmdServiceConfig>("AmdService", "GetConfig");
+    }
+}

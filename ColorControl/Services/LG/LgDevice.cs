@@ -1,5 +1,7 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.LG;
 using ColorControl.Shared.Services;
 using LgTv;
 using Microsoft.Extensions.DependencyInjection;
@@ -167,8 +169,6 @@ namespace ColorControl.Services.LG
             PictureSettings = new LgDevicePictureSettings();
             ActionsOnGameBar = new List<string>(DefaultActionsOnGameBar);
 
-            _serviceManager = Program.ServiceProvider.GetRequiredService<ServiceManager>();
-
             Name = name;
             IpAddress = ipAddress;
             MacAddress = macAddress;
@@ -283,6 +283,9 @@ namespace ColorControl.Services.LG
             AddGenericPictureAction("autoVolume", typeof(OffToOn), category: "sound", title: "Auto Volume");
             AddGenericPictureAction("virtualSurround", typeof(OffToOn), category: "sound", title: "Virtual Surround");
 
+            AddGenericPictureAction("screenShift", typeof(OffToOn), title: "Screen Shift");
+            AddGenericPictureAction("logoLuminanceAdjust", typeof(LogoLuminance), title: "Logo Luminance");
+
             //AddGenericPictureAction("enableToastPopup", typeof(OffToOn), category: "option", title: "enableToastPopup");
             AddSetConfigAction("tv.conti.supportUsedTime", typeof(BoolFalseToTrue), title: "Total Power On Time");
 
@@ -291,9 +294,53 @@ namespace ColorControl.Services.LG
             AddLunaAction("GSR", typeof(BoolFalseToTrue), title: "Global Sticky/Stress Reduction (GSR)", ModelYear.Series2020);
         }
 
+        public LgDevice(LgDeviceDto device) : this(device.Name, device.IpAddress, device.MacAddress, device.IsCustom, device.IsDummy)
+        {
+            UpdateOptions(device.Options);
+        }
+
+        private void UpdateOptions(LgDeviceOptions options)
+        {
+            UseSecureConnection = options.UseSecureConnection;
+            TurnScreenOffOnScreenSaver = options.TurnScreenOffOnScreenSaver;
+            TurnScreenOnAfterScreenSaver = options.TurnScreenOnAfterScreenSaver;
+            ScreenSaverMinimalDuration = options.ScreenSaverMinimalDuration;
+            HandleManualScreenSaver = options.HandleManualScreenSaver;
+            PowerOffOnScreenSaver = options.PowerOffOnScreenSaver;
+            PowerOnAfterScreenSaver = options.PowerOnAfterScreenSaver;
+            PowerOnAfterManualPowerOff = options.PowerOnAfterManualPowerOff;
+            PowerOnAfterResume = options.PowerOnAfterResume;
+            PowerOffOnStandby = options.PowerOffOnStandby;
+            PowerOffOnShutdown = options.PowerOffOnShutdown;
+            PowerOffByWindows = options.PowerOffByWindows;
+            PowerOnByWindows = options.PowerOnByWindows;
+            PowerOnAfterStartup = options.PowerOnAfterStartup;
+            TriggersEnabled = options.TriggersEnabled;
+            HDMIPortNumber = options.HDMIPortNumber;
+        }
+
         ~LgDevice()
         {
             ClearPowerOffTask();
+        }
+
+        public bool Update(LgDeviceDto device)
+        {
+            var reconnect = false;
+
+            Name = device.Name;
+            if (IpAddress != device.IpAddress)
+            {
+                IpAddress = device.IpAddress;
+                reconnect = true;
+            }
+            MacAddress = device.MacAddress;
+            IsCustom = device.IsCustom;
+            IsDummy = device.IsDummy;
+
+            UpdateOptions(device.Options);
+
+            return reconnect;
         }
 
         private void AddInvokableAction(string name, Func<Dictionary<string, object>, Task<bool>> function)
@@ -314,7 +361,8 @@ namespace ColorControl.Services.LG
             var action = new InvokableAction
             {
                 Name = preset.name,
-                Preset = preset
+                Preset = preset,
+                Advanced = true
             };
 
             _invokableActions.Add(action);
@@ -774,9 +822,14 @@ namespace ColorControl.Services.LG
 
                     executeKey = false;
                 }
-                if (parameters != null && await _serviceManager.HandleExternalServiceAsync(key, parameters))
+                if (parameters != null)
                 {
-                    executeKey = false;
+                    _serviceManager ??= Program.ServiceProvider.GetRequiredService<ServiceManager>();
+
+                    if (await _serviceManager.HandleExternalServiceAsync(key, parameters))
+                    {
+                        executeKey = false;
+                    }
                 }
 
                 if (executeKey)
@@ -1290,6 +1343,20 @@ namespace ColorControl.Services.LG
             ClearPowerOffTask();
 
             var x = PerformActionOnScreenSaver();
+        }
+
+        internal async Task<bool> ExecuteInvokableAction(InvokableActionDto<LgPreset> invokableAction, List<string> parameters)
+        {
+            var action = _invokableActions.FirstOrDefault(a => a.Name == invokableAction.Name);
+
+            if (action == null)
+            {
+                return false;
+            }
+
+            await ExecuteActionAsync(action, parameters?.ToArray() ?? []);
+
+            return true;
         }
     }
 }

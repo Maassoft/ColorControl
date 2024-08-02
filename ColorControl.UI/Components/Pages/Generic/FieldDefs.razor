@@ -1,0 +1,125 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@inject NavigationManager _navigationManager;
+
+@if (Fields == null)
+{
+    return;
+}
+
+@foreach (var field in Fields)
+{
+    if (field.FieldType == FieldType.Text)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-2">
+            <label class="form-label" for="@fieldId">@field.Label</label>
+            <input class="form-control" type="text" @bind="field.StringValue" id="@fieldId">
+            @if (field.SubLabel != null)
+            {
+                <div id="@(fieldId)_help" class="form-text">
+                    @field.SubLabel
+                </div>
+            }
+        </div>
+    }
+    if (field.FieldType == FieldType.Label)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-2">
+            <label class="form-label" for="@fieldId">@field.Label</label>
+            @if (field.SubLabel != null)
+            {
+                <div id="@(fieldId)_help" class="form-text">
+                    @field.SubLabel
+                </div>
+            }
+        </div>
+    }
+    else if (field.FieldType == FieldType.DropDown)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-2">
+            <label class="form-label" for="@fieldId">@field.Label</label>
+            <select class="form-select" id="@fieldId" @bind="field.StringValue">
+                @if (field.ValueType != null)
+                {
+                    @foreach (var item in Enum.GetValues(field.ValueType))
+                    {
+                        <option value="@item.ToString()">@((item as IConvertible).GetDescription())</option>
+                    }
+                }
+                else if (field.Values != null)
+                {
+                    @foreach (var item in field.Values)
+                    {
+                        <option value="@item.ToString()">@item.ToString()</option>
+                    }
+                }
+            </select>
+            @if (field.SubLabel != null)
+            {
+                <div id="@(fieldId)_help" class="form-text">
+                    @field.SubLabel
+                </div>
+            }
+        </div>
+    }
+    else if (field.FieldType == FieldType.Shortcut)
+    {
+        <ShortcutInput Label="@field.Label" @bind-Shortcut="field.StringValue"></ShortcutInput>
+    }
+    else if (field.FieldType == FieldType.CheckBox)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" @bind="field.BoolValue" id="@fieldId">
+            <label class="form-check-label" for="@fieldId">
+                @field.Label
+            </label>
+        </div>
+    }
+    else if (field.FieldType == FieldType.Numeric && (field.MaxValue - field.MinValue) <= 50)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-2">
+            <label class="form-label" for="@fieldId">@field.Label</label>
+            <input class="form-control" type="number" @bind="field.IntValue" min="@((int)field.MinValue)" max="@((int)field.MaxValue)" id="@fieldId">
+            @if (field.SubLabel != null)
+            {
+                <div id="@(fieldId)_help" class="form-text">
+                    @field.SubLabel
+                </div>
+            }
+        </div>
+    }
+    else if (field.FieldType == FieldType.Numeric && (field.MaxValue - field.MinValue) > 50)
+    {
+        var fieldId = $"fld_{Random.Shared.Next()}";
+
+        <div class="mb-2">
+            <label class="form-range" for="@fieldId">@field.Label (Current value: @field.IntValue)</label>
+            <input class="form-range" type="range" min="@((int)field.MinValue)" max="@((int)field.MaxValue)" @bind="field.IntValue" id="@fieldId">
+            @if (field.SubLabel != null)
+            {
+                <div id="@(fieldId)_help" class="form-text">
+                    @field.SubLabel
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public List<FieldDefinition>? Fields { get; set; }
+}

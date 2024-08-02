@@ -7718,8 +7718,8 @@
 			<HexValue>0x00000190</HexValue>
 		</CustomSettingValue>
 		<CustomSettingValue>
-			<UserfriendlyName>1500</UserfriendlyName>
-			<HexValue>0x000005DC</HexValue>
+			<UserfriendlyName>2000</UserfriendlyName>
+			<HexValue>0x000007D0</HexValue>
 		</CustomSettingValue>
 	  </SettingValues>
 	  <SettingMasks />
@@ -7776,6 +7776,40 @@
 	  <SettingMasks />
 	</CustomSetting>
 
+    <CustomSetting>
+      <UserfriendlyName>RTX HDR - Flags</UserfriendlyName>
+      <HexSettingID>0x00432F84</HexSettingID>
+      <GroupName>9 - RTX</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off (0x00)</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enabled (Low Quality) (0x06)</UserfriendlyName>
+          <HexValue>0x00000006</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enabled (Medium Quality) (0x0A)</UserfriendlyName>
+          <HexValue>0x0000000A</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enabled (VeryHigh Quality) (0x02)</UserfriendlyName>
+          <HexValue>0x00000002</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enable + Indicator (0x03)</UserfriendlyName>
+          <HexValue>0x00000003</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Enable + Indicator + Debug (0x23)</UserfriendlyName>
+          <HexValue>0x00000023</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
+
 	<CustomSetting>
 	  <UserfriendlyName>RTX Dynamic Vibrance - Intensity</UserfriendlyName>
 	  <HexSettingID>0x00ABAB22</HexSettingID>
@@ -7810,6 +7844,75 @@
 	  </SettingValues>
 	  <SettingMasks />
 	</CustomSetting>
+
+    <CustomSetting>
+      <UserfriendlyName>DLSS/DLAA: Force DLAA (base profile only)</UserfriendlyName>
+      <HexSettingID>0x10E41DF4</HexSettingID>
+      <Description />
+      <GroupName>8 - Extra</GroupName>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>On - All levels will act as DLAA (base profile only)</UserfriendlyName>
+          <HexValue>0x00000001</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+    </CustomSetting>
+    <CustomSetting>
+      <UserfriendlyName>DLSS/DLAA: Override Scale Ratio</UserfriendlyName>
+      <HexSettingID>0x10E41DF5</HexSettingID>
+      <Description />
+      <GroupName>8 - Extra</GroupName>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Off</UserfriendlyName>
+          <HexValue>0x00000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.33x native</UserfriendlyName>
+          <HexValue>0x3EAAAAAB</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.5x native</UserfriendlyName>
+          <HexValue>0x3F000000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.625x native</UserfriendlyName>
+          <HexValue>0x3F200000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.75x native</UserfriendlyName>
+          <HexValue>0x3F400000</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.80x native</UserfriendlyName>
+          <HexValue>0x3F4CCCCD</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.85x native</UserfriendlyName>
+          <HexValue>0x3F59999A</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.9x native</UserfriendlyName>
+          <HexValue>0x3F666666</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.95x native</UserfriendlyName>
+          <HexValue>0x3F733333</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 0.99x native</UserfriendlyName>
+          <HexValue>0x3F7D70A4</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Render at 1.00x native</UserfriendlyName>
+          <HexValue>0x3F800000</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+    </CustomSetting>
 	
 	</Settings>
 </CustomSettingNames>

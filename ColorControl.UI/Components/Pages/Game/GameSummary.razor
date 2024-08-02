@@ -1,0 +1,160 @@
+﻿@page "/Game"
+
+@using ColorControl.Shared.Contracts;
+@using ColorControl.Shared.Contracts.Game;
+@using ColorControl.Shared.Services;
+@using ColorControl.UI.Components.Pages.Generic
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Generics
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject ProtectedLocalStorage _localStorage
+
+<PageTitle>Game launcher</PageTitle>
+
+<GameSettings />
+
+<div class="d-flex align-items-center">
+	<h1>Game launcher</h1>
+	<div class="d-flex ms-auto">
+		<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
+			Settings
+		</button>
+	</div>
+</div>
+
+<div class="mb-2 d-flex align-items-center">
+	<h2>Presets</h2>
+	<div class="d-flex ms-auto">
+		<select class="form-select me-2" id="presetOrder" @bind="PresetOrder" @bind:after="PresetOrderChanged">
+			@foreach (var order in Enum.GetValues<PresetOrder>())
+			{
+				<option value="@order">Order by: @order.GetDescription()</option>
+			}
+		</select>
+		<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => AddPresetOnClick()">
+			Add
+		</button>
+	</div>
+</div>
+
+<GamePresetPage PresetParam="CurrentPreset" AfterApply="AfterPresetApplied" />
+<ConfirmModal Title="Delete preset" Message="Are you sure you want to delete the preset?" OnConfirm="PresetOnDeleteConfirmed" />
+
+@if (Presets == null)
+{
+	<div>Loading...</div>
+}
+else
+{
+	<div class="row mb-3">
+		<div class="col">
+			<div class="list-group">
+				@foreach (var preset in Presets)
+				{
+					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)">
+						<div class="d-flex align-items-start justify-content-between">
+							<div>
+								<h5 class="mb-1">
+									@preset.name
+									@if (preset.ShowInQuickAccess)
+									{
+										<span class="ms-2 badge text-bg-warning" title="Show in Quick Access">QA</span>
+									}
+								</h5>
+							</div>
+							<span>
+								<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Delete</button>
+								<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Clone</button>
+								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
+							</span>
+						</div>
+					</a>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+@code {
+	private List<GamePreset>? Presets;
+	private GamePreset? CurrentPreset;
+
+	private PresetOrder PresetOrder;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await RefreshPresets();
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstTime)
+	{
+		if (firstTime)
+		{
+			PresetOrder = await _localStorage.TryGet<PresetOrder>("GamePresetOrder");
+			Presets = Presets?.OrderPresetsBy(PresetOrder);
+
+			StateHasChanged();
+		}
+	}
+
+	private async Task PresetOnClick(GamePreset preset)
+	{
+		await _rpcClientService.CallAsync<bool>("GameService", "ApplyPresetWithId", preset.id);
+	}
+
+	private async Task PresetOnEditClick(GamePreset preset)
+	{
+		CurrentPreset = preset;
+	}
+
+	private async Task PresetOnCloneClick(GamePreset preset)
+	{
+		CurrentPreset = new GamePreset(preset);
+		CurrentPreset.SetCloneValues();
+	}
+
+	private async Task PresetOnDeleteClick(GamePreset preset)
+	{
+		CurrentPreset = preset;
+	}
+
+	private async Task PresetOnDeleteConfirmed()
+	{
+		if (CurrentPreset == null)
+		{
+			return;
+		}
+
+		await _rpcClientService.CallAsync<bool>("GameService", "DeletePreset", CurrentPreset.id);
+		await RefreshPresets();
+		StateHasChanged();
+	}
+
+	private async Task AddPresetOnClick()
+	{
+		CurrentPreset = new GamePreset();
+	}
+
+	private async Task AfterPresetApplied(GamePreset preset)
+	{
+		await RefreshPresets();
+		StateHasChanged();
+	}
+
+	private async Task PresetOrderChanged()
+	{
+		await _localStorage.SetAsync("GamePresetOrder", PresetOrder);
+		await RefreshPresets();
+	}
+
+	private async Task RefreshPresets()
+	{
+		Presets = await _rpcClientService.CallAsync<List<GamePreset>>("GameService", "GetPresets");
+
+		Presets = Presets?.OrderPresetsBy(PresetOrder);
+	}
+}

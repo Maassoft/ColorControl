@@ -7,6 +7,12 @@ namespace ColorControl.Shared.Contracts;
 
 public class Module
 {
+    public const string NvModule = "NVIDIA controller";
+    public const string AmdModule = "AMD controller";
+    public const string LgModule = "LG controller";
+    public const string SamsungModule = "Samsung controller";
+    public const string GameModule = "Game launcher";
+
     public bool IsActive { get; set; }
     public string DisplayName { get; set; }
     [JsonIgnore]
@@ -19,6 +25,7 @@ public class ModuleEx<T> where T : class
 
     public bool IsActive { get; set; }
     public string DisplayName { get; set; }
+    public T ServiceInstance { get; set; }
 
     public T CreateService(IServiceProvider serviceProvider)
     {
@@ -26,11 +33,11 @@ public class ModuleEx<T> where T : class
         {
             Logger.Debug($"Initializing {typeof(T).Name}...");
 
-            var service = serviceProvider.GetRequiredService<T>();
+            ServiceInstance = serviceProvider.GetRequiredService<T>();
 
             Logger.Debug($"Initializing {typeof(T).Name}...Done");
 
-            return service;
+            return ServiceInstance;
         }
         catch (Exception ex)
         {

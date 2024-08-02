@@ -1,5 +1,6 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts.Game;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Services;
 using Newtonsoft.Json;
@@ -49,7 +50,12 @@ namespace ColorControl.Services.GameLauncher
         {
             base.InstallEventHandlers();
 
-            SetShortcuts(SHORTCUTID_GAMEQA, _globalContext.Config.GameQuickAccessShortcut);
+            SetShortcuts(SHORTCUTID_GAMEQA, Config.QuickAccessShortcut);
+        }
+
+        public override List<string> GetInfo()
+        {
+            return [$"{_presets.Count} presets"];
         }
 
         private async Task ProcessChanged(object sender, ProcessChangedEventArgs e, CancellationToken token)
@@ -147,19 +153,6 @@ namespace ColorControl.Services.GameLauncher
         {
             SavePresets();
             SaveConfig();
-        }
-
-        public async Task<bool> ApplyPreset(string idOrName)
-        {
-            var preset = GetPresetByIdOrName(idOrName);
-            if (preset != null)
-            {
-                return await ApplyPreset(preset);
-            }
-            else
-            {
-                return false;
-            }
         }
 
         public override async Task<bool> ApplyPreset(GamePreset preset)
@@ -294,6 +287,49 @@ namespace ColorControl.Services.GameLauncher
         private void SaveConfig()
         {
             Utils.WriteObject(_configFilename, Config);
+        }
+
+        public GameServiceConfig GetConfig()
+        {
+            return Config;
+        }
+
+        public bool UpdateConfig(GameServiceConfig config)
+        {
+            Config.Update(config);
+
+            SetShortcuts(SHORTCUTID_GAMEQA, Config.QuickAccessShortcut);
+
+            return true;
+        }
+
+        public bool UpdatePreset(GamePreset presetSpec)
+        {
+            var preset = _presets.FirstOrDefault(x => x.id == presetSpec.id);
+
+            if (preset != null)
+            {
+                preset.Update(presetSpec);
+            }
+            else
+            {
+                preset = new GamePreset(presetSpec);
+                _presets.Add(preset);
+            }
+
+            return true;
+        }
+
+        public string SelectPath()
+        {
+            var fileInfo = Utils.SelectFile();
+
+            if (fileInfo == null)
+            {
+                return null;
+            }
+
+            return fileInfo.FullName;
         }
     }
 }

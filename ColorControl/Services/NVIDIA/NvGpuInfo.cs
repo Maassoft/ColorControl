@@ -1,6 +1,6 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Contracts.NVIDIA;
-using ColorControl.Shared.Forms;
 using NvAPIWrapper.GPU;
 using NvAPIWrapper.Native;
 using NvAPIWrapper.Native.GPU;

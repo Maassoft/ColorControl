@@ -1,4 +1,13 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">ColorControl Web App</a>
     </div>
@@ -9,29 +18,50 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link px-3" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+        @if (modules != null)
+        {
+            @foreach (var module in modules.Where(m => m.IsActive))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link px-3" href="@module.Link">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> @module.DisplayName
+                    </NavLink>
+                </div>
+            }
+        }
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="options">
+            <NavLink class="nav-link px-3" href="options">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Options
             </NavLink>
         </div>
 
+        <div class="nav-item px-3">
+            <NavLink class="nav-link px-3" href="logging">
+                <span class="bi bi-list-logging-nav-menu" aria-hidden="true"></span> Logging
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link px-3" href="info">
+                <span class="bi bi-list-logging-nav-menu" aria-hidden="true"></span> Info
+            </NavLink>
+        </div>
     </nav>
 </div>
 
+@code {
+    private Config? config;
+    private List<ModuleDto>? modules;
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
+        modules = config?.Modules?.Select(m => new ModuleDto { DisplayName = m.DisplayName, IsActive = m.IsActive, Link = m.DisplayName.Split(' ')[0] }).ToList();
+    }
+}

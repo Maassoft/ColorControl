@@ -16,20 +16,20 @@ public partial class OptionsPanel : UserControl
 {
     private readonly WinApiService _winApiService;
     private readonly WinApiAdminService _winApiAdminService;
-    private readonly GlobalContext _globalContext;
     private readonly ElevationService _elevationService;
     private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
+    private readonly OptionsService _optionsService;
     private bool _initialized;
     private Config _config;
 
-    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, GlobalContext globalContext, ElevationService elevationService, KeyboardShortcutDispatcher keyboardShortcutDispatcher)
+    public OptionsPanel(WinApiService winApiService, WinApiAdminService winApiAdminService, ElevationService elevationService, KeyboardShortcutDispatcher keyboardShortcutDispatcher, OptionsService optionsService)
     {
         _winApiService = winApiService;
         _winApiAdminService = winApiAdminService;
-        _globalContext = globalContext;
         _elevationService = elevationService;
         _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
-        _config = globalContext.Config;
+        _optionsService = optionsService;
+        _config = _optionsService.GetConfig();
 
         InitializeComponent();
 
@@ -87,6 +87,9 @@ public partial class OptionsPanel : UserControl
                 ElevationMethod.UseElevatedProcess => rbElevationProcess.Checked = true,
                 _ => false
             };
+
+
+            cbxUiType.SelectedIndex = (int)_config.UiType;
         }
         finally
         {
@@ -121,12 +124,12 @@ public partial class OptionsPanel : UserControl
 
     private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
     {
-        ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
+        ((TextBox)sender).Text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
     }
 
     private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
     {
-        _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
+        KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
     }
 
     private void btnSetShortcutScreenSaver_Click(object sender, EventArgs e)
@@ -167,8 +170,7 @@ public partial class OptionsPanel : UserControl
     {
         if (_initialized)
         {
-            _config.MinimizeToTray = chkMinimizeToSystemTray.Checked;
-            Program.GetNotifyIcon().Visible = _config.MinimizeToTray;
+            _optionsService.SetMinimizeToTray(chkMinimizeToSystemTray.Checked);
         }
     }
 
@@ -193,7 +195,7 @@ public partial class OptionsPanel : UserControl
             return;
         }
         var enabled = chkStartAfterLogin.Checked;
-        _elevationService.RegisterScheduledTask(enabled);
+        _optionsService.SetStartAfterLogin(enabled);
 
         rbElevationAdmin.Enabled = enabled;
         if (!enabled && rbElevationAdmin.Checked)
@@ -281,9 +283,7 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
             return;
         }
 
-        _config.UseDarkMode = chkOptionsUseDarkMode.Checked;
-
-        Program.SetTheme(_config.UseDarkMode);
+        _optionsService.SetDarkMode(chkOptionsUseDarkMode.Checked);
     }
 
     private void btnOptionsAdvanced_Click(object sender, EventArgs e)
@@ -377,5 +377,15 @@ Currently ColorControl is {(_winApiService.IsAdministrator() ? "" : "not ")}runn
         {
             _config.StartMinimized = chkStartMinimized.Checked;
         }
+    }
+
+    private void cbxUiType_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        _config.UiType = (UiType)cbxUiType.SelectedIndex;
     }
 }

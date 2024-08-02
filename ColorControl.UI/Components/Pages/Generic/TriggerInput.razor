@@ -1,0 +1,49 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@if (Triggers != null)
+{
+    foreach (var trigger in Triggers)
+    {
+        <div class="mb-2">
+            <label class="form-label" for="triggerType">Trigger type</label>
+            <select class="form-select" id="triggerType" @bind="trigger.Trigger">
+                @foreach (var type in Enum.GetValues<PresetTriggerType>())
+                {
+                    <option value="@type.ToString()">@type.GetDescription()</option>
+                }
+            </select>
+        </div>
+        <FlagsInput Label="Conditions" Value="@((uint)trigger.Conditions)" Labels="ConditionLabels" Col="6" ValueChanged="ConditionsChanged"></FlagsInput>
+        <div class="mb-2">
+            <label class="form-label" for="includedProcesses">Included processes</label>
+            <input class="form-control" type="text" @bind="trigger.IncludedProcessesAsString" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="excludedProcesses">Excluded processes</label>
+            <input class="form-control" type="text" @bind="trigger.ExcludedProcessesAsString" />
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public List<PresetTrigger>? Triggers { get; set; }
+
+    private List<string> ConditionLabels = Utils.GetDescriptions<PresetConditionType>(fromValue: 1).ToList();
+
+    public void ConditionsChanged(uint value)
+    {
+        if (Triggers == null || !Triggers.Any())
+        {
+            return;
+        }
+
+        var trigger = Triggers.First();
+        trigger.Conditions = (PresetConditionType)value;
+    }
+}

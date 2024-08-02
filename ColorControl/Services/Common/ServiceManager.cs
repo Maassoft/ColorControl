@@ -21,6 +21,7 @@ public class ServiceManager
     private readonly IServiceProvider _serviceProvider;
     private readonly Config _config;
     public Dictionary<string, object> Modules { get; } = new();
+    public Dictionary<string, IServiceBase> Services { get; } = new();
 
     internal NvService NvService { get; set; }
     internal LgService LgService { get; set; }
@@ -36,22 +37,53 @@ public class ServiceManager
         _config = globalContext.Config;
     }
 
-    public void LoadModules()
+    public void LoadModules(string displayName = null)
     {
-        NvService = AddModule<NvService>("NVIDIA controller");
-        AmdService = AddModule<AmdService>("AMD controller");
-        LgService = AddModule<LgService>("LG controller");
-        SamsungService = AddModule<SamsungService>("Samsung controller");
-        GameService = AddModule<GameService>("Game launcher");
+        if (displayName == null || displayName == Module.NvModule)
+        {
+            NvService = AddModule<NvService>(Module.NvModule);
+        }
 
-        var names = Modules.Select(m => m.Key).ToList();
-        _config.Modules = _config.Modules.OrderBy(m => names.IndexOf(m.DisplayName)).ToList();
+        if (displayName == null || displayName == Module.AmdModule)
+        {
+            AmdService = AddModule<AmdService>(Module.AmdModule);
+        }
+
+        if (displayName == null || displayName == Module.LgModule)
+        {
+            LgService = AddModule<LgService>(Module.LgModule);
+        }
+
+        if (displayName == null || displayName == Module.SamsungModule)
+        {
+            SamsungService = AddModule<SamsungService>(Module.SamsungModule);
+        }
+
+        if (displayName == null || displayName == Module.GameModule)
+        {
+            GameService = AddModule<GameService>(Module.GameModule);
+        }
+
+        if (displayName == null)
+        {
+            var names = Modules.Select(m => m.Key).ToList();
+            _config.Modules = _config.Modules.OrderBy(m => names.IndexOf(m.DisplayName)).ToList();
+        }
     }
 
     private T AddModule<T>(string displayName) where T : class, IServiceBase
     {
-        var moduleEx = new ModuleEx<T> { DisplayName = displayName };
-        Modules.Add(displayName, moduleEx);
+        ModuleEx<T> moduleEx;
+
+        if (Modules.TryGetValue(displayName, out var moduleObject))
+        {
+            moduleEx = moduleObject as ModuleEx<T>;
+        }
+        else
+        {
+            moduleEx = new ModuleEx<T> { DisplayName = displayName };
+            Modules.Add(displayName, moduleEx);
+        }
 
         var existingModule = _config.Modules.FirstOrDefault(m => m.DisplayName == displayName);
 
@@ -65,12 +97,26 @@ public class ServiceManager
         {
             var service = moduleEx.CreateService(_serviceProvider);
 
-            service?.InstallEventHandlers();
+            if (service != null)
+            {
+                service.InstallEventHandlers();
+                Services.Add(displayName, service);
+            }
 
             return service;
         }
 
         return default;
+    }
+
+    public void ActivateModule(Module module)
+    {
+        if (!module.IsActive)
+        {
+            return;
+        }
+
+        LoadModules(module.DisplayName);
     }
 
     public async Task<bool> HandleExternalServiceAsync(string serviceName, string[] parameters)
@@ -128,5 +174,17 @@ public class ServiceManager
         LgService?.GlobalSave();
         GameService?.GlobalSave();
         SamsungService?.GlobalSave();
+
+        Utils.WriteObject(Program.ConfigFilename, _config);
+    }
+
+    internal List<string> GetServiceInfo(string displayName)
+    {
+        if (Services.TryGetValue(displayName, out var service))
+        {
+            return service.GetInfo();
+        }
+
+        return new List<string>();
     }
 }

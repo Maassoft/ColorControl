@@ -16,6 +16,10 @@ public class VirtualResolution
 
     }
 
+    public VirtualResolution()
+    {
+    }
+
     public VirtualResolution(VirtualResolution resolution)
     {
         ActiveWidth = resolution.ActiveWidth;
@@ -33,11 +37,26 @@ public class VirtualResolution
 
         if (VirtualWidth == 0 && VirtualHeight == 0)
         {
-            return $"{ActiveWidth}x{ActiveHeight}";
+            return GetActiveString();
         }
 
         return ActiveWidth == VirtualWidth && ActiveHeight == VirtualHeight ?
-            $"{ActiveWidth}x{ActiveHeight}" :
-            $"{VirtualWidth}x{VirtualHeight} ({ActiveWidth}x{ActiveHeight})";
+            GetActiveString() :
+            $"{GetVirtualString()} ({GetActiveString()})";
+    }
+
+    public string GetActiveString()
+    {
+        return $"{ActiveWidth}x{ActiveHeight}";
+    }
+
+    public string GetVirtualString()
+    {
+        return $"{VirtualWidth}x{VirtualHeight}";
+    }
+
+    public bool IsDifferent(VirtualResolution resolution)
+    {
+        return ActiveWidth != resolution.ActiveWidth || ActiveHeight != resolution.ActiveHeight || VirtualWidth != resolution.VirtualWidth || VirtualHeight != resolution.VirtualHeight;
     }
 }

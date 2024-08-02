@@ -42,5 +42,14 @@ namespace ColorControl.Shared.Contracts.NVIDIA
 
             return value;
         }
+
+        public bool IsDifferent(NvHdmiInfoFrameSettings settings)
+        {
+            return
+                ColorFormat != settings.ColorFormat ||
+                Colorimetry != settings.Colorimetry ||
+                ExtendedColorimetry != settings.ExtendedColorimetry ||
+                ContentType != settings.ContentType;
+        }
     }
 }

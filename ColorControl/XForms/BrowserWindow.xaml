@@ -1,0 +1,21 @@
+﻿<src:BaseWindow x:Class="ColorControl.XForms.BrowserWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        mc:Ignorable="d"
+        Title="ColorControl"
+        ResizeMode="CanResize"
+        Width="1280"
+        Height="720"
+        WindowStartupLocation="CenterOwner"
+        SnapsToDevicePixels="True"
+        Style="{DynamicResource CustomWindowStyle}"
+        xmlns:src="clr-namespace:ColorControl.Shared.XForms;assembly=Shared"
+        d:DesignHeight="720" d:DesignWidth="1280" Loaded="Window_Loaded">
+    <DockPanel>
+        <wv2:WebView2 Name="webView" DefaultBackgroundColor="#212529"
+                  Source="{Binding Url}"/>
+    </DockPanel>
+</src:BaseWindow>

@@ -4972,43 +4972,6 @@
       <SettingMasks />
     </CustomSetting>
     <CustomSetting>
-      <UserfriendlyName>DLSS/DLAA: Force DLAA</UserfriendlyName>
-      <HexSettingID>0x10E41DF4</HexSettingID>
-      <Description />
-      <GroupName>8 - Extra</GroupName>
-    </CustomSetting>
-    <CustomSetting>
-      <UserfriendlyName>DLSS/DLAA: Override Scale Ratio</UserfriendlyName>
-      <HexSettingID>0x10E41DF5</HexSettingID>
-      <Description />
-      <GroupName>8 - Extra</GroupName>
-    </CustomSetting>
-    <CustomSetting>
-      <UserfriendlyName>RTX HDR - Flags</UserfriendlyName>
-      <HexSettingID>0x00432F84</HexSettingID>
-      <GroupName>9 - RTX</GroupName>
-      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
-      <SettingValues>
-        <CustomSettingValue>
-          <UserfriendlyName>Off (0x00)</UserfriendlyName>
-          <HexValue>0x00000000</HexValue>
-        </CustomSettingValue>
-        <CustomSettingValue>
-          <UserfriendlyName>Enable (0x02)</UserfriendlyName>
-          <HexValue>0x00000002</HexValue>
-        </CustomSettingValue>
-        <CustomSettingValue>
-          <UserfriendlyName>Enable + Indicator (0x03)</UserfriendlyName>
-          <HexValue>0x00000003</HexValue>
-        </CustomSettingValue>
-        <CustomSettingValue>
-          <UserfriendlyName>Enable + Indicator + Debug (0x23)</UserfriendlyName>
-          <HexValue>0x00000023</HexValue>
-        </CustomSettingValue>
-      </SettingValues>
-      <SettingMasks />
-    </CustomSetting>
-    <CustomSetting>
       <UserfriendlyName>RTX HDR - Unknown</UserfriendlyName>
       <HexSettingID>0x1077A11A</HexSettingID>
       <GroupName>9 - RTX</GroupName>

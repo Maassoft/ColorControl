@@ -2,10 +2,14 @@
 using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.AMD;
 using ColorControl.Shared.Native;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -24,9 +28,13 @@ namespace ColorControl.Services.AMD
 
         public static readonly int SHORTCUTID_AMDQA = -201;
 
+        private string _configFilename;
+        public AmdServiceConfig Config { get; private set; }
+
         public AmdService(GlobalContext globalContext) : base(globalContext)
         {
             LoadPresets();
+            LoadConfig();
         }
 
         public static async Task<bool> ExecutePresetAsync(string idOrName)
@@ -57,12 +65,34 @@ namespace ColorControl.Services.AMD
         {
             base.InstallEventHandlers();
 
-            SetShortcuts(SHORTCUTID_AMDQA, _globalContext.Config.AmdQuickAccessShortcut);
+            SetShortcuts(SHORTCUTID_AMDQA, Config.QuickAccessShortcut);
+        }
+
+        private void LoadConfig()
+        {
+            _configFilename = Path.Combine(_dataPath, "AmdConfig.json");
+            try
+            {
+                if (File.Exists(_configFilename))
+                {
+                    Config = JsonConvert.DeserializeObject<AmdServiceConfig>(File.ReadAllText(_configFilename));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"LoadConfig: {ex.Message}");
+            }
+            Config ??= new AmdServiceConfig();
         }
 
         protected override List<AmdPreset> GetDefaultPresets()
         {
             return AmdPreset.GetDefaultPresets();
+        }
+
+        public override List<string> GetInfo()
+        {
+            return [$"{_presets.Count} presets"];
         }
 
         private void SavePresets()
@@ -73,6 +103,7 @@ namespace ColorControl.Services.AMD
         public void GlobalSave()
         {
             SavePresets();
+            SaveConfig();
         }
 
         public override bool HasDisplaysAttached(bool reinitialize = false)
@@ -110,19 +141,6 @@ namespace ColorControl.Services.AMD
             return _currentDisplay;
         }
 
-        public async Task<bool> ApplyPreset(string idOrName)
-        {
-            var preset = GetPresetByIdOrName(idOrName);
-            if (preset != null)
-            {
-                return await ApplyPreset(preset);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         public override async Task<bool> ApplyPreset(AmdPreset preset)
         {
             SetCurrentDisplay(preset);
@@ -151,6 +169,13 @@ namespace ColorControl.Services.AMD
                 //{
                 //    ToggleHDR(config.DisplaySettingsDelay);
                 //}
+
+                if (preset.SDRBrightness.HasValue)
+                {
+                    var deviceName = GetDisplayDeviceName(_currentDisplay);
+
+                    SetSDRBrightness(deviceName, preset.SDRBrightness.Value);
+                }
             }
 
             if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution)
@@ -259,9 +284,67 @@ namespace ColorControl.Services.AMD
             return GetAvailableResolutionsInternalV2(deviceName);
         }
 
-        public bool IsHDREnabled()
+        public bool SetMode(VirtualResolution resolution = null, Rational refreshRate = null, bool updateRegistry = false, AmdPreset preset = null)
         {
-            var display = GetCurrentDisplay();
+            var display = preset == null ? GetCurrentDisplay() : GetPresetDisplay(preset);
+            if (display.Equals(default(ADLDisplayInfo)))
+            {
+                return false;
+            }
+
+            return SetMode(GetDisplayDeviceName(display), resolution, refreshRate, updateRegistry);
+        }
+
+        public bool SetMode(DisplayConfig displayConfig, bool updateRegistry = false, AmdPreset preset = null)
+        {
+            var display = preset == null ? GetCurrentDisplay() : GetPresetDisplay(preset);
+            if (display.DisplayID.DisplayPhysicalIndex == 0)
+            {
+                return false;
+            }
+
+            return SetMode(GetDisplayDeviceName(display), displayConfig, updateRegistry);
+        }
+
+        public ADLDisplayInfo GetPresetDisplay(AmdPreset preset)
+        {
+            return GetCurrentDisplay();
+        }
+
+        public List<Rational> GetAvailableRefreshRatesV2(AmdPreset preset = null)
+        {
+            if (preset != null)
+            {
+                SetCurrentDisplay(preset);
+            }
+
+            var display = _currentDisplay;
+            if (_currentDisplay.DisplayID.DisplayLogicalAdapterIndex == 0)
+            {
+                return [];
+            }
+
+            var desktopRect = preset?.DisplayConfig.ApplyResolution == true && preset?.DisplayConfig.Resolution.ActiveWidth > 0 ?
+                new Rectangle(0, 0, (int)preset.DisplayConfig.Resolution.ActiveWidth, (int)preset.DisplayConfig.Resolution.ActiveHeight) :
+                GetDesktopRect(display);
+
+            return GetAvailableRefreshRatesV2(Screen.PrimaryScreen.DeviceName, desktopRect.Width, desktopRect.Height);
+        }
+
+        private Rectangle GetDesktopRect(ADLDisplayInfo display)
+        {
+            // TODO: improve this
+            var screen = Screen.AllScreens.First();
+
+            return screen.Bounds;
+        }
+
+        public bool IsHDREnabled(ADLDisplayInfo display = default)
+        {
+            if (display.Equals(default(ADLDisplayInfo)))
+            {
+                display = GetCurrentDisplay();
+            }
 
             var supported = false;
             var enabled = false;
@@ -312,7 +395,7 @@ namespace ColorControl.Services.AMD
             return Screen.AllScreens.FirstOrDefault(x => CCD.GetDisplayInfo(x.DeviceName)?.FriendlyName.Equals(display.DisplayName) ?? false);
         }
 
-        public List<AmdDisplayInfo> GetDisplayInfos()
+        public List<AmdDisplayInfo> GetSimpleDisplayInfos()
         {
             List<ADLDisplayInfo> displays;
             try
@@ -325,63 +408,225 @@ namespace ColorControl.Services.AMD
                 return null;
             }
 
+            return displays.Select(d => new AmdDisplayInfo(d, null, null)).ToList();
+
+            //var list = new List<AmdDisplayInfo>();
+
+            //foreach (var display in displays)
+            //{
+            //    var values = new List<string>
+            //    {
+            //        "Current settings"
+            //    };
+
+            //    var screen = GetScreenForDisplay(display);
+
+            //    var name = GetFullDisplayName(display);
+            //    values.Add(name);
+
+            //    var colorDepth = ADLColorDepth.UNKNOWN;
+            //    ADLWrapper.GetDisplayColorDepth(display, ref colorDepth);
+
+            //    var pixelFormat = ADLPixelFormat.UNKNOWN;
+            //    ADLWrapper.GetDisplayPixelFormat(display, ref pixelFormat);
+
+            //    var colorSettings = $"{colorDepth.GetDescription()}, {pixelFormat.GetDescription()}";
+            //    values.Add(colorSettings);
+
+            //    var displayConfig = CCD.GetDisplayConfig(screen?.DeviceName);
+
+            //    values.Add($"{displayConfig.RefreshRate}Hz");
+
+            //    values.Add($"{displayConfig.GetResolutionDesc()}");
+
+            //    var ditherState = GetDithering(display);
+            //    values.Add(ditherState.GetDescription());
+
+            //    var hdrEnabled = IsHDREnabled();
+            //    values.Add(hdrEnabled ? "Yes" : "No");
+
+            //    var infoLine = string.Format("{0}: {1}, {2}Hz, {3}, HDR: {4}", name, colorSettings, displayConfig.RefreshRate, displayConfig.GetResolutionDesc(), hdrEnabled ? "Yes" : "No");
+
+            //    var displayInfo = new AmdDisplayInfo(display, values, infoLine);
+
+            //    list.Add(displayInfo);
+            //}
+
+            //return list;
+        }
+
+        public List<AmdDisplayInfo> GetDisplayInfos()
+        {
             var list = new List<AmdDisplayInfo>();
 
-            foreach (var display in displays)
+            var displayInfos = GetSimpleDisplayInfos();
+
+            foreach (var displayInfo in displayInfos)
             {
-                var values = new List<string>
-                {
-                    "Current settings"
-                };
+                var preset = GetPresetForDisplay(displayInfo, displayInfos.Count());
 
-                var screen = GetScreenForDisplay(display);
-
-                var name = GetFullDisplayName(display);
-                values.Add(name);
-
-                var colorDepth = ADLColorDepth.UNKNOWN;
-                ADLWrapper.GetDisplayColorDepth(display, ref colorDepth);
-
-                var pixelFormat = ADLPixelFormat.UNKNOWN;
-                ADLWrapper.GetDisplayPixelFormat(display, ref pixelFormat);
-
-                var colorSettings = $"{colorDepth.GetDescription()}, {pixelFormat.GetDescription()}";
-                values.Add(colorSettings);
-
-                var displayConfig = CCD.GetDisplayConfig(screen?.DeviceName);
-
-                values.Add($"{displayConfig.RefreshRate}Hz");
-
-                values.Add($"{displayConfig.GetResolutionDesc()}");
-
-                var ditherState = GetDithering(display);
-                values.Add(ditherState.GetDescription());
-
-                var hdrEnabled = IsHDREnabled();
-                values.Add(hdrEnabled ? "Yes" : "No");
-
-                var infoLine = string.Format("{0}: {1}, {2}Hz, {3}, HDR: {4}", name, colorSettings, displayConfig.RefreshRate, displayConfig.GetResolutionDesc(), hdrEnabled ? "Yes" : "No");
-
-                var displayInfo = new AmdDisplayInfo(display, values, infoLine);
+                displayInfo.Values = preset.GetDisplayValues(_globalContext.Config);
+                displayInfo.InfoLine = preset.InfoLine;
 
                 list.Add(displayInfo);
             }
 
             return list;
-        }
 
+            //List<ADLDisplayInfo> displays;
+            //try
+            //{
+            //    displays = GetDisplays();
+            //}
+            //catch (Exception e)
+            //{
+            //    Logger.Error("Error while getting displays: " + e.ToLogString());
+            //    return null;
+            //}
+
+            //var list = new List<AmdDisplayInfo>();
+
+            //foreach (var display in displays)
+            //{
+            //    var values = new List<string>
+            //    {
+            //        "Current settings"
+            //    };
+
+            //    var screen = GetScreenForDisplay(display);
+
+            //    var name = GetFullDisplayName(display);
+            //    values.Add(name);
+
+            //    var colorDepth = ADLColorDepth.UNKNOWN;
+            //    ADLWrapper.GetDisplayColorDepth(display, ref colorDepth);
+
+            //    var pixelFormat = ADLPixelFormat.UNKNOWN;
+            //    ADLWrapper.GetDisplayPixelFormat(display, ref pixelFormat);
+
+            //    var colorSettings = $"{colorDepth.GetDescription()}, {pixelFormat.GetDescription()}";
+            //    values.Add(colorSettings);
+
+            //    var displayConfig = CCD.GetDisplayConfig(screen?.DeviceName);
+
+            //    values.Add($"{displayConfig.RefreshRate}Hz");
+
+            //    values.Add($"{displayConfig.GetResolutionDesc()}");
+
+            //    var ditherState = GetDithering(display);
+            //    values.Add(ditherState.GetDescription());
+
+            //    var hdrEnabled = IsHDREnabled();
+            //    values.Add(hdrEnabled ? "Yes" : "No");
+
+            //    var infoLine = string.Format("{0}: {1}, {2}Hz, {3}, HDR: {4}", name, colorSettings, displayConfig.RefreshRate, displayConfig.GetResolutionDesc(), hdrEnabled ? "Yes" : "No");
+
+            //    var displayInfo = new AmdDisplayInfo(display, values, infoLine);
+
+            //    list.Add(displayInfo);
+            //}
+
+            //return list;
+        }
 
         protected override void Initialize()
         {
             if (!ADLWrapper.Initialize())
             {
-                throw new InvalidOperationException("Cannot load AMD API");
+                //throw new InvalidOperationException("Cannot load AMD API");
             }
         }
 
         protected override void Uninitialize()
         {
             ADLWrapper.Uninitialze();
+        }
+
+        public List<AmdPreset> GetDisplayPresets()
+        {
+            try
+            {
+                var list = new List<AmdPreset>();
+
+                var displayInfos = GetSimpleDisplayInfos();
+
+                foreach (var displayInfo in displayInfos)
+                {
+                    var preset = GetPresetForDisplay(displayInfo, displayInfos.Count());
+
+                    displayInfo.Values = preset.GetDisplayValues(_globalContext.Config);
+                    displayInfo.InfoLine = preset.InfoLine;
+
+                    list.Add(preset);
+                }
+
+                return list;
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Error while getting displays: " + e.ToLogString());
+                return null;
+            }
+        }
+
+        public AmdPreset GetPresetForDisplay(AmdDisplayInfo displayInfo, int displayCount = 1)
+        {
+            if (displayInfo == null)
+            {
+                return null;
+            }
+
+            var display = displayInfo.Display;
+
+            var colorDepth = ADLColorDepth.UNKNOWN;
+            ADLWrapper.GetDisplayColorDepth(display, ref colorDepth);
+
+            var pixelFormat = ADLPixelFormat.UNKNOWN;
+            ADLWrapper.GetDisplayPixelFormat(display, ref pixelFormat);
+
+            var ditherState = GetDithering(display);
+
+            var screen = GetScreenForDisplay(display);
+            var displayConfig = CCD.GetDisplayConfig(screen?.DeviceName);
+
+            var ccdDisplay = screen != null ? CCD.GetDisplayInfo(screen.DeviceName) : null;
+
+            var hdrEnabled = IsHDREnabled(display);
+
+            var preset = new AmdPreset
+            {
+                IsDisplayPreset = true,
+                displayName = display.DisplayName,
+                DisplayId = ccdDisplay?.DisplayId,
+                primaryDisplay = screen?.Primary == true,
+                colorDepth = colorDepth,
+                pixelFormat = pixelFormat,
+                ditherState = ditherState,
+                DisplayConfig = displayConfig,
+                SDRBrightness = hdrEnabled ? GetSDRBrightness(screen?.DeviceName) : null,
+                HDREnabled = hdrEnabled,
+            };
+
+            return preset;
+        }
+
+        private void SaveConfig()
+        {
+            Utils.WriteObject(_configFilename, Config);
+        }
+
+        public AmdServiceConfig GetConfig()
+        {
+            return Config;
+        }
+
+        public bool UpdateConfig(AmdServiceConfig config)
+        {
+            Config.Update(config);
+
+            SetShortcuts(SHORTCUTID_AMDQA, Config.QuickAccessShortcut);
+
+            return true;
         }
     }
 }

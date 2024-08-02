@@ -67,10 +67,11 @@ namespace nspector.Common.Meta
             return value;
         }
 
-        public (uint intValue, bool isDefault) ToIntValue(string valueText)
+        public (uint intValue, bool isDefault, uint defaultValue) ToIntValue(string valueText)
         {
             var isDefault = true;
             var intValue = default(uint);
+            var defaultValue = default(uint);
 
             if (SettingType == NVDRS_SETTING_TYPE.NVDRS_DWORD_TYPE)
             {
@@ -78,16 +79,18 @@ namespace nspector.Common.Meta
 
                 intValue = settingValue?.Value ?? UnsetDwordValue;
                 isDefault = intValue == DefaultDwordValue || intValue == UnsetDwordValue;
+                defaultValue = DefaultDwordValue;
             }
             else if (SettingType == NVDRS_SETTING_TYPE.NVDRS_BINARY_TYPE)
             {
                 var settingValue = BinaryValues?.FirstOrDefault(s => s.ValueName.StartsWith(valueText));
 
                 intValue = settingValue != null ? BitConverter.ToUInt32(settingValue?.Value) : UnsetDwordValue;
-                isDefault = DefaultBinaryValue == null ? intValue == 0 : intValue == BitConverter.ToUInt32(DefaultBinaryValue);
+                defaultValue = DefaultBinaryValue == null ? 0 : BitConverter.ToUInt32(DefaultBinaryValue);
+                isDefault = DefaultBinaryValue == null ? intValue == 0 : intValue == defaultValue;
             }
 
-            return (intValue, isDefault);
+            return (intValue, isDefault, defaultValue);
         }
     }
 }

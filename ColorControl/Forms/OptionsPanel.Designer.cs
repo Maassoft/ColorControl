@@ -46,7 +46,6 @@ namespace ColorControl.Forms
             grpGeneralOptions = new System.Windows.Forms.GroupBox();
             btnOptionsLog = new System.Windows.Forms.Button();
             btnOptionsAdvanced = new System.Windows.Forms.Button();
-            chkOptionsUseDarkMode = new System.Windows.Forms.CheckBox();
             chkAutoInstallUpdates = new System.Windows.Forms.CheckBox();
             btnStartStopService = new System.Windows.Forms.Button();
             btnElevationInfo = new System.Windows.Forms.Button();
@@ -55,26 +54,31 @@ namespace ColorControl.Forms
             rbElevationAdmin = new System.Windows.Forms.RadioButton();
             label8 = new System.Windows.Forms.Label();
             rbElevationNone = new System.Windows.Forms.RadioButton();
-            chkGdiScaling = new System.Windows.Forms.CheckBox();
             chkCheckForUpdates = new System.Windows.Forms.CheckBox();
+            chkStartAfterLogin = new System.Windows.Forms.CheckBox();
+            chkOptionsUseDarkMode = new System.Windows.Forms.CheckBox();
+            chkGdiScaling = new System.Windows.Forms.CheckBox();
             chkMinimizeToSystemTray = new System.Windows.Forms.CheckBox();
             chkMinimizeOnClose = new System.Windows.Forms.CheckBox();
             chkStartMinimized = new System.Windows.Forms.CheckBox();
-            chkStartAfterLogin = new System.Windows.Forms.CheckBox();
             mnuColorProfiles = new System.Windows.Forms.ContextMenuStrip(components);
             miCreateHDRColorProfile = new System.Windows.Forms.ToolStripMenuItem();
             miCreateSDRColorProfile = new System.Windows.Forms.ToolStripMenuItem();
+            lblUiType = new System.Windows.Forms.Label();
+            cbxUiType = new System.Windows.Forms.ComboBox();
+            grpUi = new System.Windows.Forms.GroupBox();
             grpOptionsModules.SuspendLayout();
             grpMiscellaneousOptions.SuspendLayout();
             grpGeneralOptions.SuspendLayout();
             mnuColorProfiles.SuspendLayout();
+            grpUi.SuspendLayout();
             SuspendLayout();
             // 
             // grpOptionsModules
             // 
             grpOptionsModules.Controls.Add(label1);
             grpOptionsModules.Controls.Add(chkModules);
-            grpOptionsModules.Location = new Point(11, 223);
+            grpOptionsModules.Location = new Point(14, 344);
             grpOptionsModules.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpOptionsModules.Name = "grpOptionsModules";
             grpOptionsModules.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -112,7 +116,7 @@ namespace ColorControl.Forms
             grpMiscellaneousOptions.Controls.Add(edtBlankScreenSaverShortcut);
             grpMiscellaneousOptions.Controls.Add(lblFixChromeFontsDescription);
             grpMiscellaneousOptions.Controls.Add(chkFixChromeFonts);
-            grpMiscellaneousOptions.Location = new Point(11, 360);
+            grpMiscellaneousOptions.Location = new Point(14, 481);
             grpMiscellaneousOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpMiscellaneousOptions.Name = "grpMiscellaneousOptions";
             grpMiscellaneousOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
@@ -190,7 +194,6 @@ namespace ColorControl.Forms
             // 
             grpGeneralOptions.Controls.Add(btnOptionsLog);
             grpGeneralOptions.Controls.Add(btnOptionsAdvanced);
-            grpGeneralOptions.Controls.Add(chkOptionsUseDarkMode);
             grpGeneralOptions.Controls.Add(chkAutoInstallUpdates);
             grpGeneralOptions.Controls.Add(btnStartStopService);
             grpGeneralOptions.Controls.Add(btnElevationInfo);
@@ -199,24 +202,20 @@ namespace ColorControl.Forms
             grpGeneralOptions.Controls.Add(rbElevationAdmin);
             grpGeneralOptions.Controls.Add(label8);
             grpGeneralOptions.Controls.Add(rbElevationNone);
-            grpGeneralOptions.Controls.Add(chkGdiScaling);
             grpGeneralOptions.Controls.Add(chkCheckForUpdates);
-            grpGeneralOptions.Controls.Add(chkMinimizeToSystemTray);
-            grpGeneralOptions.Controls.Add(chkMinimizeOnClose);
-            grpGeneralOptions.Controls.Add(chkStartMinimized);
             grpGeneralOptions.Controls.Add(chkStartAfterLogin);
             grpGeneralOptions.Location = new Point(7, 6);
             grpGeneralOptions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             grpGeneralOptions.Name = "grpGeneralOptions";
             grpGeneralOptions.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            grpGeneralOptions.Size = new Size(662, 211);
+            grpGeneralOptions.Size = new Size(662, 202);
             grpGeneralOptions.TabIndex = 2;
             grpGeneralOptions.TabStop = false;
             grpGeneralOptions.Text = "General";
             // 
             // btnOptionsLog
             // 
-            btnOptionsLog.Location = new Point(103, 172);
+            btnOptionsLog.Location = new Point(405, 47);
             btnOptionsLog.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnOptionsLog.Name = "btnOptionsLog";
             btnOptionsLog.Size = new Size(88, 27);
@@ -227,7 +226,7 @@ namespace ColorControl.Forms
             // 
             // btnOptionsAdvanced
             // 
-            btnOptionsAdvanced.Location = new Point(7, 172);
+            btnOptionsAdvanced.Location = new Point(405, 17);
             btnOptionsAdvanced.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnOptionsAdvanced.Name = "btnOptionsAdvanced";
             btnOptionsAdvanced.Size = new Size(88, 27);
@@ -236,22 +235,10 @@ namespace ColorControl.Forms
             btnOptionsAdvanced.UseVisualStyleBackColor = true;
             btnOptionsAdvanced.Click += btnOptionsAdvanced_Click;
             // 
-            // chkOptionsUseDarkMode
-            // 
-            chkOptionsUseDarkMode.AutoSize = true;
-            chkOptionsUseDarkMode.Location = new Point(216, 47);
-            chkOptionsUseDarkMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            chkOptionsUseDarkMode.Name = "chkOptionsUseDarkMode";
-            chkOptionsUseDarkMode.Size = new Size(164, 19);
-            chkOptionsUseDarkMode.TabIndex = 67;
-            chkOptionsUseDarkMode.Text = "Dark Mode (experimental)";
-            chkOptionsUseDarkMode.UseVisualStyleBackColor = true;
-            chkOptionsUseDarkMode.CheckedChanged += chkOptionsUseDarkMode_CheckedChanged;
-            // 
             // chkAutoInstallUpdates
             // 
             chkAutoInstallUpdates.AutoSize = true;
-            chkAutoInstallUpdates.Location = new Point(7, 147);
+            chkAutoInstallUpdates.Location = new Point(7, 72);
             chkAutoInstallUpdates.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             chkAutoInstallUpdates.Name = "chkAutoInstallUpdates";
             chkAutoInstallUpdates.Size = new Size(179, 19);
@@ -263,7 +250,7 @@ namespace ColorControl.Forms
             // btnStartStopService
             // 
             btnStartStopService.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnStartStopService.Location = new Point(614, 129);
+            btnStartStopService.Location = new Point(405, 150);
             btnStartStopService.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnStartStopService.Name = "btnStartStopService";
             btnStartStopService.Size = new Size(40, 27);
@@ -275,7 +262,7 @@ namespace ColorControl.Forms
             // btnElevationInfo
             // 
             btnElevationInfo.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnElevationInfo.Location = new Point(329, 67);
+            btnElevationInfo.Location = new Point(120, 88);
             btnElevationInfo.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnElevationInfo.Name = "btnElevationInfo";
             btnElevationInfo.Size = new Size(22, 27);
@@ -287,7 +274,7 @@ namespace ColorControl.Forms
             // rbElevationService
             // 
             rbElevationService.AutoSize = true;
-            rbElevationService.Location = new Point(216, 133);
+            rbElevationService.Location = new Point(7, 154);
             rbElevationService.Name = "rbElevationService";
             rbElevationService.Size = new Size(136, 19);
             rbElevationService.TabIndex = 63;
@@ -300,7 +287,7 @@ namespace ColorControl.Forms
             // rbElevationProcess
             // 
             rbElevationProcess.AutoSize = true;
-            rbElevationProcess.Location = new Point(216, 154);
+            rbElevationProcess.Location = new Point(7, 175);
             rbElevationProcess.Name = "rbElevationProcess";
             rbElevationProcess.Size = new Size(189, 19);
             rbElevationProcess.TabIndex = 62;
@@ -313,7 +300,7 @@ namespace ColorControl.Forms
             // rbElevationAdmin
             // 
             rbElevationAdmin.AutoSize = true;
-            rbElevationAdmin.Location = new Point(216, 112);
+            rbElevationAdmin.Location = new Point(7, 133);
             rbElevationAdmin.Name = "rbElevationAdmin";
             rbElevationAdmin.Size = new Size(97, 19);
             rbElevationAdmin.TabIndex = 61;
@@ -326,7 +313,7 @@ namespace ColorControl.Forms
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(216, 73);
+            label8.Location = new Point(7, 94);
             label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label8.Name = "label8";
             label8.Size = new Size(105, 15);
@@ -336,7 +323,7 @@ namespace ColorControl.Forms
             // rbElevationNone
             // 
             rbElevationNone.AutoSize = true;
-            rbElevationNone.Location = new Point(216, 91);
+            rbElevationNone.Location = new Point(7, 112);
             rbElevationNone.Name = "rbElevationNone";
             rbElevationNone.Size = new Size(54, 19);
             rbElevationNone.TabIndex = 10;
@@ -346,22 +333,10 @@ namespace ColorControl.Forms
             rbElevationNone.UseVisualStyleBackColor = true;
             rbElevationNone.CheckedChanged += rbElevationNone_CheckedChanged;
             // 
-            // chkGdiScaling
-            // 
-            chkGdiScaling.AutoSize = true;
-            chkGdiScaling.Location = new Point(216, 22);
-            chkGdiScaling.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            chkGdiScaling.Name = "chkGdiScaling";
-            chkGdiScaling.Size = new Size(197, 19);
-            chkGdiScaling.TabIndex = 7;
-            chkGdiScaling.Text = "Use GDI Scaling (requires restart)";
-            chkGdiScaling.UseVisualStyleBackColor = true;
-            chkGdiScaling.CheckedChanged += chkGdiScaling_CheckedChanged;
-            // 
             // chkCheckForUpdates
             // 
             chkCheckForUpdates.AutoSize = true;
-            chkCheckForUpdates.Location = new Point(7, 122);
+            chkCheckForUpdates.Location = new Point(7, 47);
             chkCheckForUpdates.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             chkCheckForUpdates.Name = "chkCheckForUpdates";
             chkCheckForUpdates.Size = new Size(197, 19);
@@ -369,6 +344,42 @@ namespace ColorControl.Forms
             chkCheckForUpdates.Text = "Automatically check for updates";
             chkCheckForUpdates.UseVisualStyleBackColor = true;
             chkCheckForUpdates.CheckedChanged += chkCheckForUpdates_CheckedChanged;
+            // 
+            // chkStartAfterLogin
+            // 
+            chkStartAfterLogin.AutoSize = true;
+            chkStartAfterLogin.Location = new Point(7, 22);
+            chkStartAfterLogin.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkStartAfterLogin.Name = "chkStartAfterLogin";
+            chkStartAfterLogin.Size = new Size(183, 19);
+            chkStartAfterLogin.TabIndex = 2;
+            chkStartAfterLogin.Text = "Automatically start after login";
+            chkStartAfterLogin.UseVisualStyleBackColor = true;
+            chkStartAfterLogin.CheckedChanged += chkStartAfterLogin_CheckedChanged;
+            // 
+            // chkOptionsUseDarkMode
+            // 
+            chkOptionsUseDarkMode.AutoSize = true;
+            chkOptionsUseDarkMode.Location = new Point(329, 22);
+            chkOptionsUseDarkMode.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkOptionsUseDarkMode.Name = "chkOptionsUseDarkMode";
+            chkOptionsUseDarkMode.Size = new Size(224, 19);
+            chkOptionsUseDarkMode.TabIndex = 67;
+            chkOptionsUseDarkMode.Text = "Dark Mode (WinForms: experimental)";
+            chkOptionsUseDarkMode.UseVisualStyleBackColor = true;
+            chkOptionsUseDarkMode.CheckedChanged += chkOptionsUseDarkMode_CheckedChanged;
+            // 
+            // chkGdiScaling
+            // 
+            chkGdiScaling.AutoSize = true;
+            chkGdiScaling.Location = new Point(329, 47);
+            chkGdiScaling.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            chkGdiScaling.Name = "chkGdiScaling";
+            chkGdiScaling.Size = new Size(257, 19);
+            chkGdiScaling.TabIndex = 7;
+            chkGdiScaling.Text = "WinForms: Use GDI Scaling (requires restart)";
+            chkGdiScaling.UseVisualStyleBackColor = true;
+            chkGdiScaling.CheckedChanged += chkGdiScaling_CheckedChanged;
             // 
             // chkMinimizeToSystemTray
             // 
@@ -406,18 +417,6 @@ namespace ColorControl.Forms
             chkStartMinimized.UseVisualStyleBackColor = true;
             chkStartMinimized.CheckedChanged += chkStartMinimized_CheckedChanged;
             // 
-            // chkStartAfterLogin
-            // 
-            chkStartAfterLogin.AutoSize = true;
-            chkStartAfterLogin.Location = new Point(7, 22);
-            chkStartAfterLogin.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            chkStartAfterLogin.Name = "chkStartAfterLogin";
-            chkStartAfterLogin.Size = new Size(183, 19);
-            chkStartAfterLogin.TabIndex = 2;
-            chkStartAfterLogin.Text = "Automatically start after login";
-            chkStartAfterLogin.UseVisualStyleBackColor = true;
-            chkStartAfterLogin.CheckedChanged += chkStartAfterLogin_CheckedChanged;
-            // 
             // mnuColorProfiles
             // 
             mnuColorProfiles.ImageScalingSize = new Size(20, 20);
@@ -439,13 +438,52 @@ namespace ColorControl.Forms
             miCreateSDRColorProfile.Text = "Create SDR Color Profile...";
             miCreateSDRColorProfile.Click += miCreateSDRColorProfile_Click;
             // 
+            // lblUiType
+            // 
+            lblUiType.AutoSize = true;
+            lblUiType.Location = new Point(6, 21);
+            lblUiType.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblUiType.Name = "lblUiType";
+            lblUiType.Size = new Size(62, 15);
+            lblUiType.TabIndex = 70;
+            lblUiType.Text = "Default UI:";
+            // 
+            // cbxUiType
+            // 
+            cbxUiType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cbxUiType.FormattingEnabled = true;
+            cbxUiType.Items.AddRange(new object[] { "WinForms", "Web (default browser)", "Web (embedded browser)" });
+            cbxUiType.Location = new Point(105, 18);
+            cbxUiType.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cbxUiType.Name = "cbxUiType";
+            cbxUiType.Size = new Size(208, 23);
+            cbxUiType.TabIndex = 69;
+            cbxUiType.SelectedIndexChanged += cbxUiType_SelectedIndexChanged;
+            // 
+            // grpUi
+            // 
+            grpUi.Controls.Add(lblUiType);
+            grpUi.Controls.Add(chkStartMinimized);
+            grpUi.Controls.Add(chkOptionsUseDarkMode);
+            grpUi.Controls.Add(cbxUiType);
+            grpUi.Controls.Add(chkMinimizeOnClose);
+            grpUi.Controls.Add(chkMinimizeToSystemTray);
+            grpUi.Controls.Add(chkGdiScaling);
+            grpUi.Location = new Point(7, 214);
+            grpUi.Name = "grpUi";
+            grpUi.Size = new Size(662, 124);
+            grpUi.TabIndex = 8;
+            grpUi.TabStop = false;
+            grpUi.Text = "UI-settings";
+            // 
             // OptionsPanel
             // 
+            Controls.Add(grpUi);
             Controls.Add(grpOptionsModules);
             Controls.Add(grpMiscellaneousOptions);
             Controls.Add(grpGeneralOptions);
             Name = "OptionsPanel";
-            Size = new Size(732, 523);
+            Size = new Size(732, 615);
             grpOptionsModules.ResumeLayout(false);
             grpOptionsModules.PerformLayout();
             grpMiscellaneousOptions.ResumeLayout(false);
@@ -453,6 +491,8 @@ namespace ColorControl.Forms
             grpGeneralOptions.ResumeLayout(false);
             grpGeneralOptions.PerformLayout();
             mnuColorProfiles.ResumeLayout(false);
+            grpUi.ResumeLayout(false);
+            grpUi.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -491,5 +531,9 @@ namespace ColorControl.Forms
         private System.Windows.Forms.ToolStripMenuItem miCreateSDRColorProfile;
 
         #endregion
+
+        private System.Windows.Forms.Label lblUiType;
+        private System.Windows.Forms.ComboBox cbxUiType;
+        private System.Windows.Forms.GroupBox grpUi;
     }
 }

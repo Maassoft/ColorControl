@@ -24,7 +24,12 @@ public class RpcServerService
         {
             var service = GetServiceInstance(message.ServiceName);
 
-            var method = service.GetType().GetMethod(message.MethodName);
+            var method = GetSuitableMethod(service, message.MethodName, message.Arguments);
+
+            if (method == null)
+            {
+                throw new InvalidOperationException($"No suitable method {message.MethodName} found in service {service.GetType().Name} with {message.Arguments.Length} arguments");
+            }
 
             var convertedArgs = new List<object>();
 
@@ -37,9 +42,21 @@ public class RpcServerService
                 AddArgument(arg, methodParam.ParameterType, convertedArgs);
             }
 
+            while (convertedArgs.Count < methodParams.Length)
+            {
+                convertedArgs.Add(Type.Missing);
+            }
+
             Logger.Debug($"Executing RPC: {message.ServiceName}.{message.MethodName}({string.Join(", ", convertedArgs)})");
 
             var result = method.Invoke(service, convertedArgs.ToArray());
+
+            if (result is Task task)
+            {
+                await task;
+
+                result = task.GetType().GetProperty("Result").GetValue(task);
+            }
 
             var data = JsonConvert.SerializeObject(result);
 
@@ -55,8 +72,20 @@ public class RpcServerService
 
     private void AddArgument(object arg, Type type, List<object> list)
     {
-        if (arg.GetType() != type)
+        if (arg != null && arg.GetType() != type)
         {
+            if (arg.GetType().Name == "JObject")
+            {
+                var obj = JsonConvert.DeserializeObject(arg.ToString(), type);
+                list.Add(obj);
+                return;
+            }
+            else if (arg.GetType().Name == "JArray")
+            {
+                var obj = JsonConvert.DeserializeObject(arg.ToString(), type);
+                list.Add(obj);
+                return;
+            }
             if (type.IsEnum)
             {
                 // Add enum directly to list and not return as 'object'
@@ -97,9 +126,19 @@ public class RpcServerService
                 paramIndex++;
             }
 
+            while (convertedArgs.Count < methodParams.Length)
+            {
+                convertedArgs.Add(Type.Missing);
+            }
+
             Logger.Debug($"Executing RPC-typed: {message.ServiceName}.{message.MethodName}({string.Join(", ", convertedArgs)})");
 
             var result = method.Invoke(service, convertedArgs.ToArray());
+
+            if (result is Task)
+            {
+                await (result as Task);
+            }
 
             var data = JsonConvert.SerializeObject(result);
 
@@ -129,5 +168,45 @@ public class RpcServerService
         var service = _serviceProvider.GetRequiredService(type);
 
         return service;
+    }
+
+    private MethodInfo GetSuitableMethod(object service, string name, object[] arguments)
+    {
+        var methods = service.GetType().GetMethods().Where(m => m.Name == name).ToArray();
+
+        if (methods.Length == 1)
+        {
+            return methods[0];
+        }
+
+        foreach (var method in methods)
+        {
+            var convertedArgs = new List<object>();
+            var methodParams = method.GetParameters();
+
+            if (methodParams.Length != arguments.Length)
+            {
+                continue;
+            }
+
+            try
+            {
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    var arg = arguments[i];
+                    var methodParam = methodParams[i];
+
+                    AddArgument(arg, methodParam.ParameterType, convertedArgs);
+                }
+
+                return method;
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+        }
+
+        return null;
     }
 }

@@ -1,0 +1,181 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.Shared.Services;
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<div class="modal modal-lg" id="ditheringModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test dithering</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1">
+                    <div class="row">
+                        @if (displayPresets != null)
+                        {
+                            <div class="mb-2">
+                                <label class="form-label" for="mode">Display</label>
+                                <select class="form-select" id="mode" @bind="SelectedDisplayId" disabled="@(displayPresets.Count <= 1)">
+                                    @foreach (var display in displayPresets)
+                                    {
+                                        <option value="@display.DisplayId">@display.displayName</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </div>
+
+                    @if (Preset == null)
+                    {
+                            <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="mb-2">
+                                <label class="form-label" for="state">State</label>
+                                <select class="form-select" id="state" @bind="Preset.NvDitherState" @bind:after="ApplyNormalPreset">
+                                    @foreach (var state in Enum.GetValues<NvDitherState>())
+                                    {
+                                        <option value="@state.ToString()">@state.GetDescription()</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label" for="mode">Mode</label>
+                                <select class="form-select" id="mode" @bind="Preset.NvDitherMode" @bind:after="ApplyNormalPreset">
+                                    @foreach (var mode in Enum.GetValues<NvDitherMode>())
+                                    {
+                                        <option value="@mode.ToString()">@mode.GetDescription()</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="bits">Bit depth</label>
+                                <select class="form-select" id="bits" @bind="Preset.NvDitherBits" @bind:after="ApplyNormalPreset">
+                                    @foreach (var bits in Enum.GetValues<NvDitherBits>())
+                                    {
+                                        <option value="@bits.ToString()">@bits.GetDescription()</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="">
+                            <div class="btn-group ms-2 mb-2">
+                                <button type="button" class="btn btn-sm btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Gradient
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" @onclick="() => GradientColor = GrayGradient">Grayscale</a></li>
+                                    <li><a class="dropdown-item" @onclick="() => GradientColor = RedGradient">Red</a></li>
+                                    <li><a class="dropdown-item" @onclick="() => GradientColor = GreenGradient">Green</a></li>
+                                    <li><a class="dropdown-item" @onclick="() => GradientColor = BlueGradient">Blue</a></li>
+                                </ul>
+                            </div>
+                            <div class="mb-2 col-24 mx-2" style="height: 200px; background: linear-gradient(to right, #000000 0%, @GradientColor 100%)">
+                            </div>
+                        </div>
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <span class="me-auto">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="SetDitherRegistryKeyOnClick">Set dither registry key</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="RestartDriverOnClick">Restart driver</button>
+                </span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public const string GrayGradient = "#ffffff";
+    public const string RedGradient = "#ff0000";
+    public const string GreenGradient = "#00ff00";
+    public const string BlueGradient = "#0000ff";
+
+    private bool _visible;
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    public NvPreset? Preset { get; set; }
+
+    private string? SelectedDisplayId { get; set; }
+    private List<NvPreset>? displayPresets;
+    private string GradientColor { get; set; } = GrayGradient;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_visible != Visible)
+        {
+            _visible = Visible;
+
+            if (Visible)
+            {
+                await GetSettingsAsync();
+            }
+        }
+    }
+
+    protected async Task GetSettingsAsync()
+    {
+        displayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
+        if (displayPresets?.Any() == true)
+        {
+            Preset = displayPresets.FirstOrDefault(d => d.DisplayConfig.IsPrimary == true) ?? displayPresets.First();
+            SelectedDisplayId = Preset.DisplayId;
+        }
+    }
+
+    private async Task DitherOnChange(EventArgs e)
+    {
+        if (Preset == null)
+        {
+            return;
+        }
+
+        Preset.applyDithering = true;
+
+        await _rpcClientService.CallAsync<bool>("NvService", "ApplyPresetWithId", Preset.id);
+    }
+
+    private async Task ApplyNormalPreset()
+    {
+        await ApplyPreset();
+    }
+
+    private async Task SetDitherRegistryKeyOnClick(MouseEventArgs e)
+    {
+        await ApplyPreset(true);
+    }
+
+    private async Task RestartDriverOnClick(MouseEventArgs e)
+    {
+        await ApplyPreset(true, true);
+    }
+
+    private async Task ApplyPreset(bool setRegistryKey = false, bool restartDriver = false)
+    {
+        if (Preset == null)
+        {
+            return;
+        }
+
+        Preset.applyDithering = true;
+        Preset.SetDitherRegistryKey = setRegistryKey;
+        Preset.RestartDriver = restartDriver;
+
+        await _rpcClientService.CallAsync<bool>("NvService", "ApplyPreset", Preset);
+    }
+}

@@ -1,0 +1,34 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.Samsung
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+@inject RpcUiClientService _rpcClientService
+
+<FieldsModal Title="Samsung settings" ConfirmCaption="Save" ModalId="settingsModal" Fields="Fields" OnConfirm="ApplyClick" OnShow="ModalOnShow"></FieldsModal>
+
+@code {
+    private SamsungServiceConfigDto? Config { get; set; }
+    private List<FieldDefinition>? Fields { get; set; }
+
+    protected async Task ModalOnShow()
+    {
+        Config = await _rpcClientService.CallAsync<SamsungServiceConfigDto>("SamsungService", "GetConfig");
+        Fields = SamsungFields.GetSettingsFields(Config);
+        StateHasChanged();
+    }
+
+    private async Task ApplyClick()
+    {
+        if (Config == null)
+        {
+            return;
+        }
+
+        FieldDefinition.UpdateObject(Fields, Config);
+
+        var result = await _rpcClientService.CallAsync<bool>("SamsungService", "UpdateConfig", Config);
+    }
+}

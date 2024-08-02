@@ -1,0 +1,36 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+<FieldsModal ModalId="confirmModal" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick"></FieldsModal>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnConfirm { get; set; }
+
+    public List<FieldDefinition>? Fields { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Message != null)
+        {
+            Fields = [new FieldDefinition { FieldType = FieldType.Label, Label = Message }];
+        }
+    }
+
+    private async Task ConfirmClick()
+    {
+        if (OnConfirm != null)
+        {
+            await OnConfirm();
+        }
+    }
+}

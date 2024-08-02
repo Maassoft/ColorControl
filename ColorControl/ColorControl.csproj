@@ -18,8 +18,8 @@
 		<PublisherName>Maassoft</PublisherName>
 		<Company>Maassoft</Company> 
 		<ApplicationRevision>0</ApplicationRevision>
-		<ApplicationVersion>9.9.0.1</ApplicationVersion>
-		<Version>9.9.0.1</Version>
+		<ApplicationVersion>10.0.0.0</ApplicationVersion>
+		<Version>10.0.0.0</Version>
 		<UseApplicationTrust>false</UseApplicationTrust>
 		<PublishWizardCompleted>true</PublishWizardCompleted>
 		<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -52,6 +52,7 @@
 		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
 	</PropertyGroup>
 	<ItemGroup>
+		<None Remove="XForms\BrowserWindow.xaml" />
 		<None Remove="XForms\ColorProfileWindow.xaml" />
 		<None Remove="XForms\LogWindow.xaml" />
 	</ItemGroup>
@@ -119,6 +120,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Page Include="XForms\ColorProfileWindow.xaml">
+		  <SubType>Designer</SubType>
+		  <Generator>MSBuild:Compile</Generator>
+		</Page>
+		<Page Include="XForms\BrowserWindow.xaml">
 		  <SubType>Designer</SubType>
 		  <Generator>MSBuild:Compile</Generator>
 		</Page>

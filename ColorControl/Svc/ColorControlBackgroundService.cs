@@ -55,7 +55,7 @@ namespace ColorControl.Svc
                 var ps = new PipeSecurity();
                 ps.AddAccessRule(new PipeAccessRule(securityIdentifier, PipeAccessRights.ReadWrite, AccessControlType.Allow));
 
-                Logger.Debug("EXECUTING BACKGROUND");
+                Logger.Debug($"EXECUTING IN BACKGROUND: {PipeName}");
 
                 while (!stoppingToken.IsCancellationRequested)
                 {

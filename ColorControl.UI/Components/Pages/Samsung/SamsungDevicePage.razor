@@ -1,0 +1,237 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.Samsung
+@using ColorControl.Shared.Services
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<div class="modal" id="deviceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(Device?.Name == null ? $"Add new device" : $"Settings of device {Device.Name}")</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => IsVisible = false"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1 needs-validation @WasValidated" novalidate>
+                    @if (Device == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+                            <label class="form-label" for="name">Name</label>
+                            <input class="form-control" id="name" type="text" @bind="Device.Name" required />
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" @bind="Device.IsCustom" id="isCustom">
+                            <label class="form-check-label" for="isCustom">
+                                Is custom device
+                            </label>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label" for="ipAddress">IP-address</label>
+                            <input class="form-control" id="ipAddress" type="text" @bind="Device.IpAddress" disabled="@(!Device.IsCustom)" required="Device.IsCustom" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="macAddress">MAC-address</label>
+                            <input class="form-control" id="macAddress" type="text" @bind="Device.MacAddress" disabled="@(!Device.IsCustom)" />
+                        </div>
+                        @if (!Device.IsConnected) 
+                        {
+                            <div class="mb-2">
+                                <button class="btn btn-primary me-2" type="button" disabled="@IsTestingConnection" @onclick="TestConnectionClick">
+                                    @if (IsTestingConnection)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                    }
+                                    <span role="status">Test connection</span>
+                                </button>
+                                @if (IsTestConnectionSuccessful != null) 
+                                {
+                                    if (IsTestConnectionSuccessful == true)
+                                    {
+                                        <span class="text-success">Connection test was successful!</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">Connection failed!</span>
+                                    }
+                                }
+                            </div>
+                        }
+
+                        <div class="accordion accordion-flush" id="accordion">
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#deviceOptions">
+                                        Device options
+                                    </button>
+                                </h2>
+                                <div id="deviceOptions" class="accordion-collapse collapse" data-bs-parent="#accordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOnAfterStartup" @bind="Device.Options.PowerOnAfterStartup">
+                                            <label class="form-check-label" for="checkPowerOnAfterStartup">Power on after startup</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOnAfterResume" @bind="Device.Options.PowerOnAfterResume">
+                                            <label class="form-check-label" for="checkPowerOnAfterResume">Power on after resume from standby</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOffOnShutdown" @bind="Device.Options.PowerOffOnShutdown">
+                                            <label class="form-check-label" for="checkPowerOffOnShutdown">Power off on shutdown</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOffOnStandby" @bind="Device.Options.PowerOffOnStandby">
+                                            <label class="form-check-label" for="checkPowerOffOnStandby">Power off on standby</label>
+                                        </div>
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOffOnScreensaverStart" @bind="Device.Options.PowerOffOnScreenSaver">
+                                            <label class="form-check-label" for="checkPowerOffOnScreensaverStart">Power off when screensaver activates</label>
+                                            <button class="btn btn-sm btn-primary ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#screenSaverSettings" aria-expanded="false" aria-controls="screenSaverSettings">
+                                                Settings
+                                            </button>
+                                        </div>
+                                        <div class="collapse mb-3" id="screenSaverSettings">
+                                            <div class="card card-body">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="minScreenSaverDuration">Minimal screen saver duration (seconds)</label>
+                                                    <input class="form-control" id="minScreenSaverDuration" type="number" @bind="Device.Options.ScreenSaverMinimalDuration" />
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="checkTurnScreenOffInsteadOfPowerOff" @bind="Device.Options.TurnScreenOffOnScreenSaver">
+                                                    <label class="form-check-label" for="checkTurnScreenOffInsteadOfPowerOff">Turn screen off instead of power off</label>
+                                                    <div class="form-text">NOTE: turning the screen off might not work correctly on all models</div>
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="checkTurnScreenOnInsteadOfPowerOn" @bind="Device.Options.TurnScreenOnAfterScreenSaver">
+                                                    <label class="form-check-label" for="checkTurnScreenOnInsteadOfPowerOn">Turn screen on instead of power on</label>
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" role="switch" id="checkPerformActionOnManualScreenSaver" @bind="Device.Options.HandleManualScreenSaver">
+                                                    <label class="form-check-label" for="checkPerformActionOnManualScreenSaver">Perform action even on manually executed screen saver</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOnOnScreensaverEnd" @bind="Device.Options.PowerOnAfterScreenSaver">
+                                            <label class="form-check-label" for="checkPowerOnOnScreensaverEnd">Power on when screensaver deactivates</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOnAfterManualPowerOff" @bind="Device.Options.PowerOnAfterManualPowerOff">
+                                            <label class="form-check-label" for="checkPowerOnAfterManualPowerOff">Power on even after manual power off</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkAllowTriggers" @bind="Device.Options.TriggersEnabled">
+                                            <label class="form-check-label" for="checkAllowTriggers">Allow triggers to be fired for this device</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkWindowsPowerOn" @bind="Device.Options.PowerOnByWindows">
+                                            <label class="form-check-label" for="checkWindowsPowerOn">Use Windows power settings to power on</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkWindowsPowerOff" @bind="Device.Options.PowerOffByWindows">
+                                            <label class="form-check-label" for="checkWindowsPowerOff">Use Windows power settings to power off</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkUseSecureConnection" @bind="Device.Options.UseSecureConnection">
+                                            <label class="form-check-label" for="checkUseSecureConnection">Use secure connection</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="@(IsValid() ? "modal" : "")" @onclick="ApplyClick">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SamsungDeviceDto? _device;
+
+    [Parameter]
+    public SamsungDeviceDto? Device { get; set; }
+
+    [Parameter]
+    public Func<SamsungDeviceDto, Task>? AfterApply { get; set; }
+
+    private bool IsTestingConnection;
+    private bool? IsTestConnectionSuccessful;
+
+    private string WasValidated = "";
+    private bool IsVisible;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_device != Device)
+        {
+            _device = Device;
+        }
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Device == null)
+        {
+            return;
+        }
+
+        if (!IsValid())
+        {
+            WasValidated = "was-validated";
+            return;
+        }
+
+        var result = await _rpcClientService.CallAsync<bool>("SamsungService", "UpdateDevice", Device);
+
+        if (AfterApply != null)
+        {
+            await AfterApply.Invoke(Device);
+        }
+    }
+
+    private async Task TestConnectionClick(MouseEventArgs e)
+    {
+        IsTestingConnection = true;
+        try
+        {
+            IsTestConnectionSuccessful = await _rpcClientService.CallWithOptionsAsync<bool>("SamsungService", "TestDevice", new RpcUiClientOptions { Timeout = 120000 }, Device);
+        }
+        finally
+        {
+            IsTestingConnection = false;
+        }
+    }
+
+    private void ModalOnFocus(FocusEventArgs e)
+    {
+        if (!IsVisible)
+        {
+            WasValidated = "";
+            IsVisible = true;
+        }
+    }
+
+    private bool IsValid()
+    {
+        return !string.IsNullOrEmpty(Device?.Name) && (Device?.IsCustom != true || !string.IsNullOrEmpty(Device?.IpAddress));
+    }
+}

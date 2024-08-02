@@ -1,0 +1,205 @@
+﻿@page "/logging"
+
+@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<PageTitle>Logging</PageTitle>
+
+<h1>Logging</h1>
+
+@if (config == null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="row mb-3">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Settings</h5>
+                </div>
+                <form class="ms-3 me-3">
+                    <div class="mb-3 col-md-3">
+                        <label class="form-label" for="logLevel">
+                            Log Level
+                        </label>
+                        <select class="form-select" @bind="logLevel" id="logLevel" @oninput="LogLevelInput">
+                            @foreach (var level in logLevels)
+                            {
+                                <option value="@level.Name">@level.Name</option>
+                            }
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-3">
+            <label class="form-label" for="logSource">
+                Show log from
+            </label>
+            <select class="form-select" @bind="logSource" id="logSource" @bind:after="GetLog">
+                <option value="0">Main application</option>
+                <option value="1">Service</option>
+            </select>
+        </div>
+        <div class="col-3">
+            <label class="form-label" for="logOrder">
+                Order
+            </label>
+            <select class="form-select" @bind="logOrder" id="logOrder" @bind:after="GetLog">
+                <option value="0">Newest first</option>
+                <option value="1">Oldest first</option>
+            </select>
+        </div>
+        <div class="col-3">
+            <label class="form-label" for="maxLines">
+                Maximum number of lines to show
+            </label>
+            <select class="form-select" @bind="maxLines" id="maxLines" @bind:after="GetLog">
+                <option value="1000">1000</option>
+                <option value="10000">10000</option>
+                <option value="999999999">Show all</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">TimeStamp</th>
+                            <th scope="col">
+                                <select class="form-select fw-bold" id="logLevel" @oninput="LogLevelFilterInput">
+                                    @foreach (var level in logLevels)
+                                    {
+                                        <option class="fw-bold" value="@level.Name">@level.Name</option>
+                                    }
+                                </select>
+                            </th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var logLine in logLines.Where(l => l.Show(logLevelFilter)))
+                        {
+                            <tr class="table-@logLine.BsClass">
+                                <td style="min-width: 220px">@logLine.TimeStamp</td>
+                                <td style="min-width: 120px">@logLine.Level</td>
+                                <td>@logLine.Name</td>
+                                <td>@logLine.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private Config? config;
+    private string logLevel = "0";
+    private int logSource = 0;
+    private int maxLines = 1000;
+    private int logOrder = 0;
+    private List<string>? allLines;
+    private List<LogLine> logLines = new();
+    private string logLevelFilterName = NLog.LogLevel.Debug.Name;
+    private NLog.LogLevel logLevelFilter = NLog.LogLevel.Debug;
+    private List<NLog.LogLevel> logLevels = [NLog.LogLevel.Trace, NLog.LogLevel.Debug, NLog.LogLevel.Info, NLog.LogLevel.Warn, NLog.LogLevel.Error, NLog.LogLevel.Fatal];
+
+    private class LogLine
+    {
+        public string TimeStamp { get; }
+        public string Level { get; }
+        public string Name { get; }
+        public string Message { get; }
+        public NLog.LogLevel LogLevel { get; }
+
+        public LogLine(string timeStamp, string level, string name, string message)
+        {
+            TimeStamp = timeStamp;
+            Level = level;
+            Name = name;
+            Message = message;
+            LogLevel = NLog.LogLevel.FromString(level);
+        }
+
+        public string BsClass => Level switch
+        {
+            "TRACE" => "dark",
+            "DEBUG" => "secondary",
+            "INFO" => "info",
+            "WARN" => "warning",
+            "ERROR" => "danger",
+            "FATAL" => "secondary",
+        };
+
+        public bool Show(NLog.LogLevel level) => LogLevel >= level;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
+        logLevel = config.LogLevel;
+
+        await GetLog();
+    }
+
+    private async Task GetLog()
+    {
+        allLines = await _rpcClientService.CallAsync<List<string>>("LoggingService", "LoadLog", logSource, maxLines, logOrder);
+
+        ProcessLines();
+    }
+
+    private void ProcessLines()
+    {
+        logLines.Clear();
+        if (allLines == null)
+        {
+            return;
+        }
+
+        var lastLogLine = default(LogLine);
+
+        foreach (var line in allLines)
+        {
+            var strings = line.Split('|');
+
+            if (strings.Count() == 4)
+            {
+                lastLogLine = new LogLine(strings[0], strings[1], strings[2], strings[3]);
+
+                logLines.Add(lastLogLine);
+            }
+        }
+    }
+
+
+    private async Task LogLevelInput(ChangeEventArgs e)
+    {
+        var value = e.Value ?? NLog.LogLevel.Debug.Name;
+        await _rpcClientService.CallAsync<bool>("LoggingService", "SetLogLevel", value);
+    }
+
+    private async Task LogLevelFilterInput(ChangeEventArgs e)
+    {
+        var value = e.Value as string ?? NLog.LogLevel.Debug.Name;
+        logLevelFilter = NLog.LogLevel.FromString(value);
+    }
+}

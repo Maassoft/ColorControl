@@ -1,10 +1,10 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NStandard;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,307 +15,344 @@ using System.Threading.Tasks;
 
 namespace ColorControl.Services.Common
 {
-    abstract class ServiceBase<T> : IServiceBase where T : PresetBase, new()
-    {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+	abstract class ServiceBase<T> : IServiceBase where T : PresetBase, new()
+	{
+		private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public event EventHandler<T> AfterApplyPreset;
+		public event EventHandler<T> AfterApplyPreset;
 
-        public abstract string ServiceName
-        {
-            get;
-        }
-        protected abstract string PresetsBaseFilename { get; }
+		public abstract string ServiceName
+		{
+			get;
+		}
+		protected abstract string PresetsBaseFilename { get; }
 
-        protected string _dataPath;
-        protected string _presetsFilename;
-        protected string _presetsBackupFilename;
-        protected bool _initialized = false;
-        protected List<T> _presets;
-        protected T _lastAppliedPreset;
-        protected string _loadPresetsError;
-        protected T _lastTriggeredPreset;
-        protected int _quickAccessShortcutId;
+		protected string _dataPath;
+		protected string _presetsFilename;
+		protected string _presetsBackupFilename;
+		protected bool _initialized = false;
+		protected List<T> _presets;
+		protected T _lastAppliedPreset;
+		protected string _loadPresetsError;
+		protected T _lastTriggeredPreset;
+		protected int _quickAccessShortcutId;
 
-        protected GlobalContext _globalContext;
+		protected GlobalContext _globalContext;
 
-        private List<JsonConverter> _jsonConverters;
+		private List<JsonConverter> _jsonConverters;
 
-        public ServiceBase(GlobalContext globalContext)
-        {
-            _globalContext = globalContext;
-            _dataPath = globalContext.DataPath;
-            _jsonConverters = new List<JsonConverter>();
+		public ServiceBase(GlobalContext globalContext)
+		{
+			_globalContext = globalContext;
+			_dataPath = globalContext.DataPath;
+			_jsonConverters = new List<JsonConverter>();
 
-            Initialize();
-        }
+			Initialize();
+		}
 
-        ~ServiceBase()
-        {
-            Uninitialize();
-        }
+		~ServiceBase()
+		{
+			Uninitialize();
+		}
 
-        public List<T> GetPresets()
-        {
-            return _presets;
-        }
+		public abstract List<string> GetInfo();
 
-        public T GetPresetByIdOrName(string idOrName)
-        {
-            var preset = _presets.FirstOrDefault(p => p.name != null && p.name.Equals(idOrName, StringComparison.OrdinalIgnoreCase));
-            if (preset == null && int.TryParse(idOrName, out var id))
-            {
-                preset = _presets.FirstOrDefault(p => p.id == id);
-            }
+		public List<T> GetPresets()
+		{
+			return _presets;
+		}
 
-            return preset;
-        }
+		public T GetPresetByIdOrName(string idOrName)
+		{
+			var preset = _presets.FirstOrDefault(p => p.name != null && p.name.Equals(idOrName, StringComparison.OrdinalIgnoreCase));
+			if (preset == null && int.TryParse(idOrName, out var id))
+			{
+				preset = _presets.FirstOrDefault(p => p.id == id);
+			}
 
-        public abstract Task<bool> ApplyPreset(T preset);
+			return preset;
+		}
 
-        public async Task<bool> ApplyPresetUi(T preset)
-        {
-            if (preset == null)
-            {
-                return false;
-            }
-            try
-            {
-                var result = await ApplyPreset(preset);
-                if (!result)
-                {
-                    throw new Exception($"Error while applying {ServiceName}-preset. At least one setting could not be applied. Check the log for details.");
-                }
+		public bool DeletePreset(int id)
+		{
+			var preset = _presets.FirstOrDefault(p => p.id == id);
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
+			if (preset != null)
+			{
+				_presets.Remove(preset);
+			}
 
-                if (!_globalContext.Config.DisableErrorPopupWhenApplyingPreset)
-                {
-                    MessageForms.ErrorOk($"Error applying {ServiceName}-preset ({preset.IdOrName}): {e.Message}");
-                }
-                return false;
-            }
-        }
+			return true;
+		}
 
-        public async Task<bool> ApplyPresetById(int id)
-        {
-            var preset = _presets.FirstOrDefault(p => p.id == id);
+		public Task<bool> ApplyPresetWithId(int id)
+		{
+			return ApplyPreset(id.ToString());
+		}
 
-            if (preset == null)
-            {
-                return false;
-            }
+		public async Task<bool> ApplyPreset(string idOrName)
+		{
+			var preset = GetPresetByIdOrName(idOrName);
+			if (preset != null)
+			{
+				return await ApplyPreset(preset);
+			}
+			else
+			{
+				return false;
+			}
+		}
 
-            return await ApplyPresetUi(preset);
-        }
+		public abstract Task<bool> ApplyPreset(T preset);
 
-        protected void SetShortcuts(int quickAccessShortcutId = 0, string shortcut = null)
-        {
-            _quickAccessShortcutId = quickAccessShortcutId;
+		public async Task<bool> ApplyPresetUi(T preset)
+		{
+			if (preset == null)
+			{
+				return false;
+			}
+			try
+			{
+				var result = await ApplyPreset(preset);
+				if (!result)
+				{
+					throw new Exception($"Error while applying {ServiceName}-preset. At least one setting could not be applied. Check the log for details.");
+				}
 
-            var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+				return true;
+			}
+			catch (Exception e)
+			{
+				Logger.Error(e);
 
-            if (keyboardShortcutDispatcher == null)
-            {
-                return;
-            }
+				if (!_globalContext.Config.DisableErrorPopupWhenApplyingPreset)
+				{
+					MessageForms.ErrorOk($"Error applying {ServiceName}-preset ({preset.IdOrName}): {e.Message}");
+				}
+				return false;
+			}
+		}
 
-            if (quickAccessShortcutId != 0 && !shortcut.IsNullOrWhiteSpace())
-            {
-                keyboardShortcutDispatcher.RegisterShortcut(quickAccessShortcutId, shortcut);
-            }
+		public async Task<bool> ApplyPresetById(int id)
+		{
+			var preset = _presets.FirstOrDefault(p => p.id == id);
 
-            foreach (var preset in _presets)
-            {
-                keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
-            }
+			if (preset == null)
+			{
+				return false;
+			}
 
-            keyboardShortcutDispatcher.RegisterAsyncEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HotKeyPressed);
-        }
+			return await ApplyPresetUi(preset);
+		}
 
-        public virtual void InstallEventHandlers()
-        {
+		protected void SetShortcuts(int quickAccessShortcutId = 0, string shortcut = null)
+		{
+			_quickAccessShortcutId = quickAccessShortcutId;
 
-        }
+			var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
 
-        public T GetLastAppliedPreset()
-        {
-            return _lastAppliedPreset;
-        }
+			if (keyboardShortcutDispatcher == null)
+			{
+				return;
+			}
 
-        public virtual T CreateNewPreset()
-        {
-            var preset = new T();
-            preset.name = CreateNewPresetName();
+			if (quickAccessShortcutId != 0)
+			{
+				keyboardShortcutDispatcher.RegisterShortcut(quickAccessShortcutId, shortcut);
+			}
 
-            return preset;
-        }
+			foreach (var preset in _presets)
+			{
+				keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
+			}
 
-        public string CreateNewPresetName()
-        {
-            var name = "New preset";
-            string fullname;
-            var number = 1;
-            do
-            {
-                fullname = $"{name} ({number})";
-                number++;
-            } while (_presets.Any(x => x.name?.Equals(fullname) == true));
+			keyboardShortcutDispatcher.RegisterAsyncEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HotKeyPressed);
+		}
 
-            return fullname;
-        }
+		public virtual void InstallEventHandlers()
+		{
 
-        protected virtual void Initialize()
-        {
+		}
 
-        }
+		public T GetLastAppliedPreset()
+		{
+			return _lastAppliedPreset;
+		}
 
-        protected virtual void Uninitialize()
-        {
+		public virtual T CreateNewPreset()
+		{
+			var preset = new T();
+			preset.name = CreateNewPresetName();
 
-        }
+			return preset;
+		}
 
-        protected void PresetApplied()
-        {
-            AfterApplyPreset?.Invoke(this, _lastAppliedPreset);
-        }
+		public string CreateNewPresetName()
+		{
+			var name = "New preset";
+			string fullname;
+			var number = 1;
+			do
+			{
+				fullname = $"{name} ({number})";
+				number++;
+			} while (_presets.Any(x => x.name?.Equals(fullname) == true));
 
-        protected void LoadPresets()
-        {
-            _presetsFilename = Path.Combine(_dataPath, PresetsBaseFilename);
-            _presetsBackupFilename = Path.Combine(_dataPath, $"{PresetsBaseFilename}.backup");
+			return fullname;
+		}
 
-            try
-            {
-                var presetsExists = File.Exists(_presetsFilename);
-                if (presetsExists)
-                {
-                    try
-                    {
-                        var json = File.ReadAllText(_presetsFilename);
+		protected virtual void Initialize()
+		{
 
-                        // Hack to convert incorrect triggers
-                        json = json.Replace(@"""Triggers"":0", @"""Triggers"":[]");
+		}
 
-                        _presets = JsonConvert.DeserializeObject<List<T>>(json, _jsonConverters.ToArray());
+		protected virtual void Uninitialize()
+		{
 
-                        if (_presets != null)
-                        {
-                            if (File.Exists(_presetsBackupFilename))
-                            {
-                                File.Delete(_presetsBackupFilename);
-                            }
-                            File.Copy(_presetsFilename, _presetsBackupFilename);
-                        }
-                    }
-                    catch (Exception ex1)
-                    {
-                        Logger.Error($"Error while loading presets, reverting to default presets: {ex1.Message}");
-                        _loadPresetsError = ex1.Message;
-                    }
-                }
-                if (!presetsExists || _presets == null)
-                {
-                    Logger.Debug("Reverting to default presets");
-                    try
-                    {
-                        _presets = GetDefaultPresets();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error($"Error loading default presets, reverting to empty list: {e.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"General error while loading presets, reverting to empty list: {ex.Message}");
-                _loadPresetsError = ex.Message;
-            }
-            if (_presets == null)
-            {
-                _presets = new List<T>();
-            }
-        }
+		}
 
-        protected abstract List<T> GetDefaultPresets();
+		protected void PresetApplied()
+		{
+			if (_lastAppliedPreset != null)
+			{
+				_lastAppliedPreset.LastUsed = DateTime.Now;
+			}
 
-        protected void AddJsonConverter(JsonConverter jsonConverter)
-        {
-            _jsonConverters.Add(jsonConverter);
-        }
+			AfterApplyPreset?.Invoke(this, _lastAppliedPreset);
+		}
 
-        public void ToggleQuickAccessForm()
-        {
-            QuickAccessForm<T>.ToggleQuickAccessForm(this);
-        }
+		protected void LoadPresets()
+		{
+			_presetsFilename = Path.Combine(_dataPath, PresetsBaseFilename);
+			_presetsBackupFilename = Path.Combine(_dataPath, $"{PresetsBaseFilename}.backup");
 
-        protected async Task<PresetTriggerContext> CreateTriggerContext(ServiceManager serviceManager, ProcessChangedEventArgs context = null, bool? isHDRActive = null, IList<PresetTriggerType> triggerTypes = null)
-        {
-            triggerTypes ??= new[] { PresetTriggerType.ProcessSwitch };
+			try
+			{
+				var presetsExists = File.Exists(_presetsFilename);
+				if (presetsExists)
+				{
+					try
+					{
+						var json = File.ReadAllText(_presetsFilename);
 
-            var changedProcesses = new List<Process>();
-            if (context?.ForegroundProcess != null)
-            {
-                changedProcesses.Add(context.ForegroundProcess);
-            }
+						// Hack to convert incorrect triggers
+						json = json.Replace(@"""Triggers"":0", @"""Triggers"":[]");
 
-            var isGsyncActive = await serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
+						_presets = JsonConvert.DeserializeObject<List<T>>(json, _jsonConverters.ToArray());
 
-            var triggerContext = new PresetTriggerContext
-            {
-                Triggers = triggerTypes,
-                IsHDRActive = isHDRActive ?? CCD.IsHDREnabled(),
-                IsGsyncActive = isGsyncActive,
-                ForegroundProcess = context?.ForegroundProcess,
-                ForegroundProcessIsFullScreen = context?.ForegroundProcessIsFullScreen ?? false,
-                IsNotificationDisabled = context?.IsNotificationDisabled ?? false,
-                ChangedProcesses = changedProcesses,
-                ScreenSaverTransitionState = context?.ScreenSaverTransitionState ?? ScreenSaverTransitionState.None
-            };
+						if (_presets != null)
+						{
+							if (File.Exists(_presetsBackupFilename))
+							{
+								File.Delete(_presetsBackupFilename);
+							}
+							File.Copy(_presetsFilename, _presetsBackupFilename);
+						}
+					}
+					catch (Exception ex1)
+					{
+						Logger.Error($"Error while loading presets, reverting to default presets: {ex1.Message}");
+						_loadPresetsError = ex1.Message;
+					}
+				}
+				if (!presetsExists || _presets == null)
+				{
+					Logger.Debug("Reverting to default presets");
+					try
+					{
+						_presets = GetDefaultPresets();
+					}
+					catch (Exception e)
+					{
+						Logger.Error($"Error loading default presets, reverting to empty list: {e.Message}");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Logger.Error($"General error while loading presets, reverting to empty list: {ex.Message}");
+				_loadPresetsError = ex.Message;
+			}
+			if (_presets == null)
+			{
+				_presets = new List<T>();
+			}
+		}
 
-            return triggerContext;
-        }
+		protected abstract List<T> GetDefaultPresets();
 
-        protected async Task ExecuteScreenSaverPresets(ServiceManager serviceManager, ProcessChangedEventArgs context, bool? isHDRActive = null)
-        {
-            await ExecuteEventPresets(serviceManager, new[] { PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop }, context, isHDRActive);
-        }
+		protected void AddJsonConverter(JsonConverter jsonConverter)
+		{
+			_jsonConverters.Add(jsonConverter);
+		}
 
-        public async Task ExecuteEventPresets(ServiceManager serviceManager, IList<PresetTriggerType> triggerTypes, ProcessChangedEventArgs context = null, bool? isHDRActive = null)
-        {
-            var triggerContext = await CreateTriggerContext(serviceManager, context, isHDRActive, triggerTypes);
+		public void ToggleQuickAccessForm()
+		{
+			QuickAccessForm<T>.ToggleQuickAccessForm(this);
+		}
 
-            var triggerPresets = _presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
+		protected async Task<PresetTriggerContext> CreateTriggerContext(ServiceManager serviceManager, ProcessChangedEventArgs context = null, bool? isHDRActive = null, IList<PresetTriggerType> triggerTypes = null)
+		{
+			triggerTypes ??= new[] { PresetTriggerType.ProcessSwitch };
 
-            if (!triggerPresets.Any())
-            {
-                return;
-            }
+			var changedProcesses = new List<Process>();
+			if (context?.ForegroundProcess != null)
+			{
+				changedProcesses.Add(context.ForegroundProcess);
+			}
 
-            Logger.Debug($"Executing event: {string.Join(',', triggerTypes)}, presets count: {triggerPresets.Count}");
+			var isGsyncActive = await serviceManager.HandleExternalServiceAsync("GsyncEnabled", new[] { "" });
 
-            foreach (var preset in triggerPresets)
-            {
-                Logger.Debug($"Executing event preset: {preset.name}");
+			var triggerContext = new PresetTriggerContext
+			{
+				Triggers = triggerTypes,
+				IsHDRActive = isHDRActive ?? CCD.IsHDREnabled(),
+				IsGsyncActive = isGsyncActive,
+				ForegroundProcess = context?.ForegroundProcess,
+				ForegroundProcessIsFullScreen = context?.ForegroundProcessIsFullScreen ?? false,
+				IsNotificationDisabled = context?.IsNotificationDisabled ?? false,
+				ChangedProcesses = changedProcesses,
+				ScreenSaverTransitionState = context?.ScreenSaverTransitionState ?? ScreenSaverTransitionState.None
+			};
 
-                await ApplyPreset(preset);
-            }
-        }
+			return triggerContext;
+		}
 
-        protected virtual async Task HotKeyPressed(object sender, KeyboardShortcutEventArgs e, CancellationToken _)
-        {
-            if (e.HotKeyId == _quickAccessShortcutId)
-            {
-                ToggleQuickAccessForm();
-                return;
-            }
+		protected async Task ExecuteScreenSaverPresets(ServiceManager serviceManager, ProcessChangedEventArgs context, bool? isHDRActive = null)
+		{
+			await ExecuteEventPresets(serviceManager, new[] { PresetTriggerType.ScreensaverStart, PresetTriggerType.ScreensaverStop }, context, isHDRActive);
+		}
 
-            await ApplyPresetById(e.HotKeyId);
-        }
-    }
+		public async Task ExecuteEventPresets(ServiceManager serviceManager, IList<PresetTriggerType> triggerTypes, ProcessChangedEventArgs context = null, bool? isHDRActive = null)
+		{
+			var triggerContext = await CreateTriggerContext(serviceManager, context, isHDRActive, triggerTypes);
+
+			var triggerPresets = _presets.Where(p => p.Triggers.Any(t => t.TriggerActive(triggerContext))).ToList();
+
+			if (!triggerPresets.Any())
+			{
+				return;
+			}
+
+			Logger.Debug($"Executing event: {string.Join(',', triggerTypes)}, presets count: {triggerPresets.Count}");
+
+			foreach (var preset in triggerPresets)
+			{
+				Logger.Debug($"Executing event preset: {preset.name}");
+
+				await ApplyPreset(preset);
+			}
+		}
+
+		protected virtual async Task HotKeyPressed(object sender, KeyboardShortcutEventArgs e, CancellationToken _)
+		{
+			if (e.HotKeyId == _quickAccessShortcutId)
+			{
+				ToggleQuickAccessForm();
+				return;
+			}
+
+			await ApplyPresetById(e.HotKeyId);
+		}
+	}
 }

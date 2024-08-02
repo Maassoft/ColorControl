@@ -1,5 +1,7 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.Samsung;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
@@ -55,9 +57,21 @@ namespace ColorControl.Services.Samsung
             _processEventDispatcher = processEventDispatcher;
             _winApiAdminService = winApiAdminService;
             SamTvConnection.SyncContext = _appContext.SynchronizationContext;
+            SamsungPreset.GetDeviceName += SamsungPreset_GetDeviceName;
 
             LoadConfig();
             LoadPresets();
+        }
+
+        private string SamsungPreset_GetDeviceName(string macAddress)
+        {
+            var device = Devices?.FirstOrDefault(d => !string.IsNullOrEmpty(d.MacAddress) && d.MacAddress.Equals(macAddress));
+            if (device != null)
+            {
+                return device.Name;
+            }
+
+            return "Unknown: device not found";
         }
 
         public static async Task<bool> ExecutePresetAsync(string presetName)
@@ -99,6 +113,11 @@ namespace ColorControl.Services.Samsung
             _processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
         }
 
+        public override List<string> GetInfo()
+        {
+            return [$"{_presets.Count} presets", $"{Devices?.Count ?? 0} devices"];
+        }
+
         private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
         {
             await RefreshDevices(afterStartUp: true);
@@ -129,8 +148,6 @@ namespace ColorControl.Services.Samsung
                 Logger.Error($"LoadConfig: {ex.Message}");
             }
             Config ??= new SamsungServiceConfig();
-
-            SamsungPreset.SamsungDevices = Config.Devices;
         }
 
         private async Task PowerModeResume(object sender, PowerStateChangedEventArgs e, CancellationToken _)
@@ -209,7 +226,7 @@ namespace ColorControl.Services.Samsung
             await ExecuteEventPresets(_serviceManager, new[] { triggerType }).ConfigureAwait(true);
         }
 
-        public async Task RefreshDevices(bool connect = true, bool afterStartUp = false)
+        public async Task<bool> RefreshDevices(bool connect = true, bool afterStartUp = false)
         {
             Devices = Config.Devices;
 
@@ -249,9 +266,7 @@ namespace ColorControl.Services.Samsung
                 tempDevice.Wake();
 
                 await Task.Delay(4000);
-                await RefreshDevices();
-
-                return;
+                return await RefreshDevices();
             }
 
             if (connect && SelectedDevice != null)
@@ -265,6 +280,8 @@ namespace ColorControl.Services.Samsung
                     //var _ = SelectedDevice.ConnectAsync();
                 }
             }
+
+            return true;
         }
 
         private async void SelectedDevice_Connected(object sender)
@@ -306,19 +323,6 @@ namespace ColorControl.Services.Samsung
                 ? SelectedDevice
                 : Devices.FirstOrDefault(d => d.MacAddress?.Equals(preset.DeviceMacAddress, StringComparison.OrdinalIgnoreCase) ?? false);
             return device;
-        }
-
-        public async Task<bool> ApplyPreset(string idOrName)
-        {
-            var preset = GetPresetByIdOrName(idOrName);
-            if (preset != null)
-            {
-                return await ApplyPreset(preset, _appContext);
-            }
-            else
-            {
-                return false;
-            }
         }
 
         public override async Task<bool> ApplyPreset(SamsungPreset preset)
@@ -770,6 +774,154 @@ namespace ColorControl.Services.Samsung
         public async Task ExecuteEventPresets(PresetTriggerType triggerType)
         {
             await ExecuteEventPresets(_serviceManager, new[] { triggerType });
+        }
+
+        public List<SamsungDeviceDto> GetDevices()
+        {
+            return Devices?.Select(d => new SamsungDeviceDto
+            {
+                Name = d.Name,
+                MacAddress = d.MacAddress,
+                IpAddress = d.IpAddress,
+                IsCustom = d.IsCustom,
+                IsDummy = d.IsDummy,
+                Token = d.Token,
+                Options = d.Options,
+                IsConnected = d.IsConnected(),
+                IsSelected = d == SelectedDevice
+            }).ToList();
+        }
+
+        public async Task<bool> UpdateDevice(SamsungDeviceDto deviceSpec)
+        {
+            if (Devices == null)
+            {
+                return false;
+            }
+
+            var device = Devices.FirstOrDefault(d => d.MacAddress == deviceSpec.MacAddress);
+
+            if (device == null)
+            {
+                device = new SamsungDevice(deviceSpec);
+
+                Devices.Add(device);
+            }
+            else
+            {
+                var reconnect = device.Update(deviceSpec);
+
+                if (reconnect)
+                {
+                    await device.ConnectAsync(true);
+                }
+            }
+
+            return true;
+        }
+
+        public async Task<bool> TestDevice(SamsungDeviceDto deviceSpec)
+        {
+            if (Devices == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var device = new SamsungDevice(deviceSpec);
+
+                return await device.TestConnectionAsync();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public SamsungServiceConfigDto GetConfig()
+        {
+            return new SamsungServiceConfigDto
+            {
+                DefaultButtonDelay = Config.DefaultButtonDelay,
+                DeviceSearchKey = Config.DeviceSearchKey,
+                Devices = GetDevices(),
+                PowerOnAfterStartup = Config.PowerOnAfterStartup,
+                PowerOnRetries = Config.PowerOnRetries,
+                PreferredMacAddress = Config.PreferredMacAddress,
+                QuickAccessShortcut = Config.QuickAccessShortcut,
+                SetSelectedDeviceByPowerOn = Config.SetSelectedDeviceByPowerOn,
+                ShowAdvancedActions = Config.ShowAdvancedActions,
+                ShutdownDelay = Config.ShutdownDelay,
+            };
+        }
+
+        public bool UpdateConfig(SamsungServiceConfigDto config)
+        {
+            Config.Update(config);
+
+            SetShortcuts(SHORTCUTID_SAMSUNGQA, Config.QuickAccessShortcut);
+
+            return true;
+        }
+
+        public bool UpdatePreset(SamsungPreset specPreset)
+        {
+            var currentPreset = _presets.FirstOrDefault(p => p.id == specPreset.id);
+
+            if (currentPreset != null)
+            {
+                currentPreset.Update(specPreset);
+                return true;
+            }
+
+            var newPreset = new SamsungPreset(specPreset);
+            newPreset.name = specPreset.name;
+
+            _presets.Add(newPreset);
+
+            return true;
+        }
+
+        public List<InvokableActionDto<SamsungPreset>> GetInvokableActions()
+        {
+            return SelectedDevice?.GetInvokableActions(Config.ShowAdvancedActions).Select(a => new InvokableActionDto<SamsungPreset>
+            {
+                Advanced = a.Advanced,
+                Category = Utils.FirstCharUpperCase(a.Category ?? "Misc"),
+                CurrentValue = a.CurrentValue,
+                EnumType = a.EnumType,
+                MaxValue = a.MaxValue,
+                MinValue = a.MinValue,
+                Name = a.Name,
+                NumberOfValues = a.NumberOfValues,
+                Preset = a.Preset,
+                Title = a.Title ?? Utils.FirstCharUpperCase(a.Name),
+                ValueLabels = a.ValueLabels
+            }).ToList();
+        }
+
+        public async Task<bool> ExecuteInvokableAction(InvokableActionDto<SamsungPreset> invokableAction)
+        {
+            return await SelectedDevice?.ExecuteInvokableAction(invokableAction, _appContext, Config);
+        }
+
+        public bool SetSelectedDevice(SamsungDeviceDto deviceDto)
+        {
+            if (deviceDto == null)
+            {
+                return false;
+            }
+
+            var device = Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress);
+            if (device == null)
+            {
+                return false;
+            }
+
+            SelectedDevice = device;
+
+            return true;
         }
     }
 }

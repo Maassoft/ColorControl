@@ -1,4 +1,5 @@
 ﻿
+using ColorControl.Shared.Contracts;
 using System.Windows.Forms;
 
 namespace ColorControl.Services.Common

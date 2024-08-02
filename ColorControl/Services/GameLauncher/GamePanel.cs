@@ -1,10 +1,10 @@
 ﻿using ColorControl.Services.Common;
 using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Contracts.Game;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
-using ColorControl.Shared.Services;
 using nspector;
 using System;
 using System.Collections.Generic;
@@ -49,7 +49,6 @@ namespace ColorControl.Services.GameLauncher
             foreach (var preset in _gameService.GetPresets())
             {
                 AddOrUpdateItemGame(preset);
-                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
         }
 
@@ -65,12 +64,12 @@ namespace ColorControl.Services.GameLauncher
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private GamePreset GetSelectedGamePreset()
@@ -337,7 +336,7 @@ namespace ColorControl.Services.GameLauncher
             {
                 Label = "Quick Access shortcut",
                 FieldType = FieldType.Shortcut,
-                Value = _config.GameQuickAccessShortcut
+                Value = _gameService.Config.QuickAccessShortcut
             };
 
             var applyExternallyLaunched = new FieldDefinition
@@ -359,9 +358,9 @@ namespace ColorControl.Services.GameLauncher
 
             var shortcut = (string)quickAccessField.Value;
 
-            _config.GameQuickAccessShortcut = shortcut;
+            _gameService.Config.QuickAccessShortcut = shortcut;
 
-            _keyboardShortcutDispatcher.RegisterShortcut(GameService.SHORTCUTID_GAMEQA, _config.GameQuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(GameService.SHORTCUTID_GAMEQA, _gameService.Config.QuickAccessShortcut);
 
             _gameService.Config.ApplyExternallyLaunched = applyExternallyLaunched.ValueAsBool;
 

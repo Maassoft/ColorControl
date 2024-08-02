@@ -27,7 +27,9 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
     public nint MainHandle { get; set; }
     public bool UseRawInput { get; private set; }
 
-    private bool WinKeyDown = false;
+    public static bool IsActive = true;
+
+    private static bool WinKeyDown = false;
 
     private static readonly List<Keys> KeysWithoutModifiers = new List<Keys> { Keys.F13, Keys.F14, Keys.F15, Keys.F16, Keys.F17, Keys.F18, Keys.F19, Keys.F20, Keys.F21, Keys.F22, Keys.F23, Keys.F24 };
     private static readonly List<Keys> Modifiers = new List<Keys> { Keys.ControlKey, Keys.Menu, Keys.ShiftKey, Keys.LWin };
@@ -53,7 +55,7 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
 
     private async void HotKeyPressed(object sender, WindowMessageEventArgs e)
     {
-        if (IsShortcutControlFocused())
+        if (!IsActive || IsShortcutControlFocused())
         {
             return;
         }
@@ -215,7 +217,7 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
         }
         else if (clear)
         {
-            shortcutStruct.UnregisterHotKey(id);
+            shortcutStruct.UnregisterHotKey(MainHandle);
 
             _registeredShortcuts.Remove(id);
 
@@ -333,7 +335,60 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
         };
     }
 
-    public string FormatKeyboardShortcut(KeyEventArgs keyEvent)
+    public static string FormatKeyboardShortcut(bool shiftKey, bool ctrlKey, bool altKey, string key, string code)
+    {
+        var keys = Keys.None;
+
+        if (shiftKey)
+        {
+            keys |= Keys.Shift;
+        }
+        if (ctrlKey)
+        {
+            keys |= Keys.Control;
+        }
+        if (altKey)
+        {
+            keys |= Keys.Alt;
+        }
+
+        // Meta (Windows Key) can currently not be combined with other keys...
+        //if (key == "Meta")
+        //{
+        //    keys |= Keys.LWin;
+        //    key = null;
+        //}
+
+        if (key != null && key != "Alt" && key != "Control" && key != "Meta")
+        {
+            if (key.Length == 1)
+            {
+                keys |= (Keys)key.ToUpper()[0];
+            }
+            else
+            {
+                if (!Enum.TryParse<Keys>(key, out var parsedKey))
+                {
+                    var names = Enum.GetNames<Keys>();
+                    var name = names.FirstOrDefault(n => key.StartsWith(n));
+                    if (name != null)
+                    {
+                        parsedKey = Enum.Parse<Keys>(name);
+                    }
+                }
+                if (parsedKey != Keys.None)
+                {
+                    keys |= parsedKey;
+                }
+            }
+        }
+
+        var keyEvent = new KeyEventArgs(keys);
+
+        return FormatKeyboardShortcut(keyEvent);
+    }
+
+    public static string FormatKeyboardShortcut(KeyEventArgs keyEvent)
     {
         var pressedModifiers = keyEvent.Modifiers;
 
@@ -385,7 +440,7 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
         return Enum.TryParse<Keys>(shortcut, out var key) && KeysWithoutModifiers.Contains(key);
     }
 
-    public void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)
+    public static void HandleKeyboardShortcutUp(KeyEventArgs keyEvent)
     {
         if (keyEvent.KeyCode == Keys.LWin)
         {

@@ -1,6 +1,9 @@
-﻿namespace ColorControl.Services.Common;
+﻿using System.Collections.Generic;
 
-internal interface IServiceBase
+namespace ColorControl.Services.Common;
+
+public interface IServiceBase
 {
+    List<string> GetInfo();
     void InstallEventHandlers();
 }

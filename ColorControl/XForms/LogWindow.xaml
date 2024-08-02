@@ -46,5 +46,70 @@
                 <dj:NLogViewer x:Name="logViewerService" />
             </TabItem>
         </TabControl>
+        <GroupBox DockPanel.Dock="Top" Header="Log settings" Padding="6" Height="100">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center"><Run Text="Log level:"/></TextBlock>
+                <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info"/>
+                    <ComboBoxItem Content="Warning"/>
+                    <ComboBoxItem Content="Error"/>
+                    <ComboBoxItem Content="Fatal"/>
+                </ComboBox>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox DockPanel.Dock="Top" Header="Log settings" Padding="6" Height="100">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center"><Run Text="Log level:"/></TextBlock>
+                <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info"/>
+                    <ComboBoxItem Content="Warning"/>
+                    <ComboBoxItem Content="Error"/>
+                    <ComboBoxItem Content="Fatal"/>
+                </ComboBox>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox DockPanel.Dock="Top" Header="Log settings" Padding="6" Height="100">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center"><Run Text="Log level:"/></TextBlock>
+                <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info"/>
+                    <ComboBoxItem Content="Warning"/>
+                    <ComboBoxItem Content="Error"/>
+                    <ComboBoxItem Content="Fatal"/>
+                </ComboBox>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox DockPanel.Dock="Top" Header="Log settings" Padding="6" Height="100">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center"><Run Text="Log level:"/></TextBlock>
+                <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info"/>
+                    <ComboBoxItem Content="Warning"/>
+                    <ComboBoxItem Content="Error"/>
+                    <ComboBoxItem Content="Fatal"/>
+                </ComboBox>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox DockPanel.Dock="Top" Header="Log settings" Padding="6" Height="100">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center"><Run Text="Log level:"/></TextBlock>
+                <ComboBox Width="117" Margin="6,0,0,0" SelectedIndex="{Binding LogLevelIndex}" SelectionChanged="LogLevel_Changed">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info"/>
+                    <ComboBoxItem Content="Warning"/>
+                    <ComboBoxItem Content="Error"/>
+                    <ComboBoxItem Content="Fatal"/>
+                </ComboBox>
+            </StackPanel>
+        </GroupBox>
     </DockPanel>
 </src:BaseWindow>

@@ -1,7 +1,10 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
+using NWin32;
 using Shared.Native;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +13,9 @@ namespace ColorControl.Services.Common
     abstract class GraphicsService<T> : ServiceBase<T> where T : PresetBase, new()
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
+        private int _lastSetSDRBrightness = -1;
+        private int _lastReadSDRBrightness = -1;
 
         public GraphicsService(GlobalContext globalContext) : base(globalContext)
         {
@@ -66,6 +72,43 @@ namespace ColorControl.Services.Common
             }
 
             return CCD.SetDisplayConfig(displayName, currentDisplayConfig, updateRegistry);
+        }
+
+        public void SetSDRBrightness(string displayName, int brightnessPercent)
+        {
+            var hmon = FormUtils.GetMonitorForDisplayName(displayName);
+
+            if (hmon == IntPtr.Zero)
+            {
+                hmon = NativeMethods.MonitorFromWindow(0, 1);
+            }
+
+            var brightness = 1 + (double)brightnessPercent / 20;
+
+            WinApi.DwmpSDRToHDRBoostPtr(hmon, brightness);
+
+            _lastSetSDRBrightness = brightnessPercent;
+        }
+
+        public int GetSDRBrightness(string displayName)
+        {
+            var whiteLevel = CCD.GetSDRWhiteLevel(displayName);
+
+            if (whiteLevel >= 1000)
+            {
+                var newBrightnessPercent = (int)(whiteLevel - 1000) / 50;
+
+                if (_lastSetSDRBrightness >= 0 && newBrightnessPercent == _lastReadSDRBrightness)
+                {
+                    return _lastSetSDRBrightness;
+                }
+
+                _lastReadSDRBrightness = newBrightnessPercent;
+
+                return newBrightnessPercent;
+            }
+
+            return 0;
         }
 
         protected List<Rational> GetAvailableRefreshRatesV2(string displayName, int horizontal, int vertical)

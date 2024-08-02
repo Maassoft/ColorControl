@@ -112,7 +112,6 @@ namespace ColorControl.Services.NVIDIA
                 foreach (var preset in _nvService.GetPresets())
                 {
                     AddOrUpdateItem(preset);
-                    _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
                 }
             }
             finally
@@ -444,7 +443,7 @@ namespace ColorControl.Services.NVIDIA
             FormUtils.BuildMenuItemAndSub(mnuNvPresetsColorEnhancements, "Hue",
                 $"{preset.ColorEnhancementSettings.HueAngle}° (click to change)", nvPresetHueMenuItem_Click);
 
-            FormUtils.BuildMenuItemAndSub(mnuNvOtherSettings, "SDR brightness",
+            FormUtils.BuildMenuItemAndSub(miNvHDR, "SDR brightness",
                 (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)", nvPresetBrightnessMenuItem_Click);
 
             FormUtils.BuildDropDownMenu(mnuNvOtherSettings, "Scaling", typeof(Scaling), preset, "scaling", nvPresetScalingMenuItem_Click, unchanged: true, skipValues: new object[] { Scaling.Customized })
@@ -571,7 +570,7 @@ namespace ColorControl.Services.NVIDIA
                 }
                 else
                 {
-                    (presetSetting, isDefault) = settingMeta.ToIntValue(driverSetting.ValueText);
+                    (presetSetting, isDefault, _) = settingMeta.ToIntValue(driverSetting.ValueText);
                 }
 
                 item.Font = _menuItemFonts[!isDefault];
@@ -596,7 +595,7 @@ namespace ColorControl.Services.NVIDIA
                     subItemUnchanged.Font = _menuItemFonts[subItemUnchanged.Checked];
                 }
 
-                if (NvService.RangeDriverSettings.Contains(driverSetting.SettingId))
+                if (NvSettingConstants.RangeDriverSettings.Contains(driverSetting.SettingId))
                 {
                     var value = settingMeta.DwordValues.FirstOrDefault(v => v.ValueName == driverSetting.ValueText);
 
@@ -604,7 +603,7 @@ namespace ColorControl.Services.NVIDIA
                     var subItem = FormUtils.BuildMenuItem(item.DropDownItems, subItemName, "", onClick: driverSettingFrameRateNvMenuItem_Click);
 
                     var metaValue = settingMeta.DwordValues.FirstOrDefault(v => v.Value == presetSetting);
-                    subItem.Text = $"{metaValue?.ValueName ?? (driverSetting.SettingId == NvService.DRS_FRAME_RATE_LIMITER_V3 ? "??FPS" : "default")} (click to change)";
+                    subItem.Text = $"{metaValue?.ValueName ?? (driverSetting.SettingId == NvSettingConstants.DRS_FRAME_RATE_LIMITER_V3 ? "??FPS" : "default")} (click to change)";
 
                     subItem.Tag = value?.Value ?? 0;
                     subItem.Checked = presetSetting != defaultValue;
@@ -812,7 +811,7 @@ namespace ColorControl.Services.NVIDIA
                     return;
                 }
 
-                _nvService.SetSDRBrightness(preset.Display, value.Value);
+                _nvService.SetSDRBrightness(preset.Display.Name, value.Value);
 
                 UpdateDisplayInfoItems();
                 return;
@@ -1271,7 +1270,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void edtShortcut_KeyDown(object sender, KeyEventArgs e)
         {
-            ((TextBox)sender).Text = _keyboardShortcutDispatcher.FormatKeyboardShortcut(e);
+            ((TextBox)sender).Text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e);
         }
 
         private void btnSetShortcut_Click(object sender, EventArgs e)
@@ -1310,7 +1309,7 @@ namespace ColorControl.Services.NVIDIA
 
         private void edtShortcut_KeyUp(object sender, KeyEventArgs e)
         {
-            _keyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
+            KeyboardShortcutDispatcher.HandleKeyboardShortcutUp(e);
         }
 
         private void edtShortcut_TextChanged(object sender, EventArgs e)
@@ -1369,7 +1368,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            preset.UpdateDriverSetting(settingItem, intValue);
+            preset.UpdateDriverSetting(settingItem.SettingId, intValue);
 
             AddOrUpdateItem();
         }
@@ -1388,7 +1387,7 @@ namespace ColorControl.Services.NVIDIA
             uint presetValue;
             if (preset.IsDisplayPreset)
             {
-                (presetValue, _) = settingMeta.ToIntValue(settingItem.ValueText);
+                (presetValue, _, _) = settingMeta.ToIntValue(settingItem.ValueText);
             }
             else
             {
@@ -1412,7 +1411,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            preset.UpdateDriverSetting(settingItem, settingValue);
+            preset.UpdateDriverSetting(settingItem.SettingId, settingValue);
 
             AddOrUpdateItem();
         }
@@ -1519,7 +1518,7 @@ namespace ColorControl.Services.NVIDIA
             {
                 Label = "Quick Access shortcut",
                 FieldType = FieldType.Shortcut,
-                Value = _config.NvQuickAccessShortcut
+                Value = _nvService.Config.QuickAccessShortcut
             };
 
             var enableOcField = new FieldDefinition
@@ -1548,9 +1547,9 @@ namespace ColorControl.Services.NVIDIA
 
             var shortcut = (string)quickAccessField.Value;
 
-            _config.NvQuickAccessShortcut = shortcut;
+            _nvService.Config.QuickAccessShortcut = shortcut;
 
-            _keyboardShortcutDispatcher.RegisterShortcut(NvService.SHORTCUTID_NVQA, _config.NvQuickAccessShortcut);
+            _keyboardShortcutDispatcher.RegisterShortcut(NvService.SHORTCUTID_NVQA, _nvService.Config.QuickAccessShortcut);
 
             _nvService.Config.ShowOverclocking = enableOcField.ValueAsBool;
             _nvService.Config.ApplyNovideoOnStartup = enableNovideoField.ValueAsBool;

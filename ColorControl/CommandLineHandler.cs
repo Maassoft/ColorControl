@@ -111,7 +111,7 @@ Options:
             {
                 var backgroundService = Program.ServiceProvider.GetRequiredService<ColorControlBackgroundService>();
 
-                backgroundService.PipeName = "elevatedpipe";
+                backgroundService.PipeName = PipeUtils.ElevatedPipe;
 
                 await backgroundService.StartAndStopWithMutex();
 

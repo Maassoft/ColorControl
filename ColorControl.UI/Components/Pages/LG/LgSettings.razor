@@ -1,0 +1,34 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.LG
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+@inject RpcUiClientService _rpcClientService
+
+<FieldsModal Title="Lg settings" ConfirmCaption="Save" ModalId="settingsModal" Fields="Fields" OnConfirm="ApplyClick" OnShow="ModalOnShow"></FieldsModal>
+
+@code {
+    private LgServiceConfigDto? Config { get; set; }
+    private List<FieldDefinition>? Fields { get; set; }
+
+    protected async Task ModalOnShow()
+    {
+        Config = await _rpcClientService.CallAsync<LgServiceConfigDto>("LgService", "GetConfig");
+        Fields = LgFields.GetSettingsFields(Config);
+        StateHasChanged();
+    }
+
+    private async Task ApplyClick()
+    {
+        if (Config == null)
+        {
+            return;
+        }
+
+        FieldDefinition.UpdateObject(Fields, Config);
+
+        var result = await _rpcClientService.CallAsync<bool>("LgService", "UpdateConfig", Config);
+    }
+}

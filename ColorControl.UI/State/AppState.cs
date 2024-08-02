@@ -2,7 +2,7 @@
 
 public class AppState
 {
-    public string SelectedTheme { get; private set; } = "light";
+    public string SelectedTheme { get; set; } = "light";
 
     public event Action? OnChange;
 

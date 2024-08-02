@@ -1,0 +1,61 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.Shared.Contracts.Game
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+@inject RpcUiClientService _rpcClientService
+
+<div class="modal" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">NVIDIA settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1">
+                @if (Config == null)
+                {
+                    <div>Loading...</div>
+                }
+                else
+                {
+                    <ShortcutInput Label="Quick Access Shortcut" @bind-Shortcut="Config.QuickAccessShortcut" />
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="Config.ApplyExternallyLaunched" id="applyExternallyLaunched">
+                        <label class="form-check-label" for="applyExternallyLaunched">
+                            Apply presets when launching games externally
+                        </label>
+                    </div>
+                }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="ApplyClick">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private GameServiceConfig? Config { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Config = await _rpcClientService.CallAsync<GameServiceConfig>("GameService", "GetConfig");
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Config == null)
+        {
+            return;
+        }
+
+        var result = await _rpcClientService.CallAsync<bool>("GameService", "UpdateConfig", Config);
+    }
+}

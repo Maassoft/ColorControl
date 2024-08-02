@@ -1,7 +1,60 @@
 ﻿@page "/"
 
+@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Color Control</h1>
 
-Welcome to your new app.
+<h2>Modules</h2>
+
+@if (Modules == null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var module in Modules.Where(m => m.IsActive))
+        {
+            <div class="col">
+                <div class="card h-100 mb-3">
+                    <div class="card-header">
+                        @module.DisplayName
+                    </div>
+                    <div class="card-body">
+                        <a href="@module.Link" class="btn btn-primary stretched-link mb-2">Open module</a>
+                        <ul>
+                            @foreach (var info in module.Info)
+                            {
+                                <li>@info</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private Config? Config;
+    private List<ModuleDto>? Modules;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Config = await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
+        Modules = await _rpcClientService.CallAsync<List<ModuleDto>>("OptionsService", "GetModules");
+        if (Modules != null)
+        {
+            Modules.ForEach(m => m.Link = m.DisplayName.Split(' ')[0]);
+        }
+    }
+}

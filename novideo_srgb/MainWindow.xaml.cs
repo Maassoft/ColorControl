@@ -148,5 +148,25 @@ namespace novideo_srgb
                 monitor.ReapplyClamp();
             }
         }
+
+        public static void ApplySettings(string monitorId, bool clamp, int targetColorSpace)
+        {
+            CreateAndShow(false);
+
+            _novideoWindow.ApplyClamp(monitorId, clamp, targetColorSpace);
+        }
+
+        private void ApplyClamp(string monitorId, bool clamp, int targetColorSpace)
+        {
+            var monitor = _viewModel.Monitors.FirstOrDefault(m => monitorId == null || m.Path.Contains(monitorId));
+
+            if (monitor == null)
+            {
+                return;
+            }
+
+            monitor.Target = targetColorSpace;
+            monitor.Clamped = clamp;
+        }
     }
 }

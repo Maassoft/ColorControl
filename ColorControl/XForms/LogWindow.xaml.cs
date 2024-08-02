@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -79,7 +80,7 @@ namespace ColorControl.XForms
             base.OnStateChanged(e);
         }
 
-        private void RawLog_Click(object sender, RoutedEventArgs e)
+        private async void RawLog_Click(object sender, RoutedEventArgs e)
         {
             var context = Shared.Common.GlobalContext.CurrentContext;
 
@@ -98,9 +99,7 @@ namespace ColorControl.XForms
                     return;
                 }
 
-                var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
-
-                var result = PipeUtils.SendMessage(message);
+                var result = await PipeUtils.SendMessageAsync(SvcMessageType.GetLog);
 
                 var logData = result?.Data ?? "Cannot get log from service";
 
@@ -118,11 +117,11 @@ namespace ColorControl.XForms
             _winApiAdminService.StartProcess(logFile);
         }
 
-        private void LoadOlder_Click(object sender, RoutedEventArgs e)
+        private async void LoadOlder_Click(object sender, RoutedEventArgs e)
         {
             var viewer = GetCurrentViewer();
 
-            var lines = LoadLog();
+            var lines = await LoadLog();
 
             viewer.LoadLines(lines);
         }
@@ -141,7 +140,7 @@ namespace ColorControl.XForms
             context.SetLogLevel(logLevel);
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             var viewer = GetCurrentViewer();
 
@@ -152,12 +151,12 @@ namespace ColorControl.XForms
 
             var context = Shared.Common.GlobalContext.CurrentContext;
 
-            var lines = LoadLog();
+            var lines = await LoadLog();
 
             viewer.LoadLines(lines, context.StartTime);
         }
 
-        private List<string> LoadLog()
+        private async Task<List<string>> LoadLog()
         {
             string logFile;
 
@@ -170,9 +169,7 @@ namespace ColorControl.XForms
 
             if (winApiService.IsServiceRunning())
             {
-                var message = new SvcMessage { MessageType = SvcMessageType.GetLog };
-
-                var result = PipeUtils.SendMessage(message);
+                var result = await PipeUtils.SendMessageAsync(SvcMessageType.GetLog);
 
                 logFile = result?.Data ?? "Cannot get log from service";
             }
@@ -189,7 +186,7 @@ namespace ColorControl.XForms
             return tabControl.SelectedIndex == 0 ? logViewerApplication : logViewerService;
         }
 
-        private void DeleteLog_Click(object sender, RoutedEventArgs e)
+        private async void DeleteLog_Click(object sender, RoutedEventArgs e)
         {
             if (MessageForms.QuestionYesNo("Are you sure you want to delete the log? This will clear all logging.") != System.Windows.Forms.DialogResult.Yes)
             {
@@ -208,7 +205,7 @@ namespace ColorControl.XForms
             }
             else
             {
-                PipeUtils.SendMessage(SvcMessageType.ClearLog);
+                await PipeUtils.SendMessageAsync(SvcMessageType.ClearLog);
                 logViewerService.ClearCommand.Execute(null);
             }
         }

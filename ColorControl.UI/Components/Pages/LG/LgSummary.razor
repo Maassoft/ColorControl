@@ -1,0 +1,353 @@
+﻿@page "/LG"
+
+@using ColorControl.Shared.Common
+@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.Shared.Contracts.LG
+@using ColorControl.Shared.Services;
+@using ColorControl.UI.Components.Pages.Generic
+@using ColorControl.UI.Generics
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject ProtectedLocalStorage _localStorage
+
+<PageTitle>LG controller</PageTitle>
+
+<LgSettings />
+<LgExecuteActionModal Action="@CurrentInvokableAction" Devices="Devices" />
+
+<div class="d-flex align-items-center">
+	<h1>LG controller</h1>
+	<div class="d-flex ms-auto">
+		<div class="btn-group">
+			<button type="button" class="btn btn-sm btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+				Buttons
+			</button>
+			<ul class="dropdown-menu">
+				@foreach (var button in Enum.GetValues<ButtonType>())
+				{
+					<li>
+						<a class="dropdown-item" @onclick="() => ButtonOnClick(button)">@button.GetDescription()</a>
+					</li>
+				}
+			</ul>
+		</div>
+
+		@if (ActionGroups != null)
+		{
+			<div class="btn-group">
+				<button type="button" class="btn btn-sm btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+					Expert
+				</button>
+				<ul class="dropdown-menu">
+					@foreach (var group in ActionGroups)
+					{
+						<li class="dropstart">
+							<a class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" href="#">@group.Name</a>
+							<ul class="dropdown-menu dropdown-submenu">
+								@foreach (var action in group.Actions)
+								{
+									<li><a class="dropdown-item" @onclick="() => ActionOnclick(action)" data-bs-toggle="modal" data-bs-target="#executeActionModal">@action.Title</a></li>
+								}
+							</ul>
+						</li>
+					}
+				</ul>
+			</div>
+		}
+		<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
+			Settings
+		</button>
+	</div>
+</div>
+
+<LgDevicePage Device="CurrentDevice" />
+<LgPresetPage PresetParam="CurrentPreset" Devices="Devices" AfterApply="AfterPresetApplied" />
+<ConfirmModal Title="Delete preset" Message="Are you sure you want to delete the preset?" OnConfirm="PresetOnDeleteConfirmed" />
+
+@if (Devices == null)
+{
+	<div>Loading...</div>
+}
+else
+{
+	<div class="mb-2 d-flex align-items-center">
+		<h2>Devices</h2>
+		<div class="d-flex ms-auto">
+			<button type="button" class="btn btn-sm btn-primary me-2" disabled="@IsRefreshDisabled" @onclick="RefreshDevicesOnClick">
+				@if (IsRefreshDisabled)
+				{
+					<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+				}
+				<span role="status">Refresh</span>
+			</button>
+			<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#deviceModal" @onclick="() => AddDeviceOnClick()">
+				Add
+			</button>
+		</div>
+	</div>
+	<div class="row mb-3">
+		@if (!Devices.Any())
+		{
+			<span>No devices found</span>
+		}
+		@foreach (var device in Devices)
+		{
+			<div class="col-lg-6 mb-3">
+				<div class="card h-100">
+					<div class="card-header d-flex align-items-baseline">
+						<span>
+							@device.Name
+							@if (device.IsConnected)
+							{
+								<span class="ms-2 badge text-bg-success" title="Device is connected">Connected</span>
+							}
+							else
+							{
+								<span class="ms-2 badge text-bg-danger" title="Device is disconnected">Disconnected</span>
+							}
+							@if (device.IsSelected)
+							{
+								<span class="ms-2 badge text-bg-primary" title="Global device">Primary</span>
+							}
+						</span>
+						<div class="d-flex ms-auto">
+							@if (!device.IsSelected)
+							{
+								<button class="btn btn-sm btn-secondary ms-2" @onclick="() => SetAsPrimaryOnClick(device)">Set as primary</button>
+							}
+							<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#deviceModal" @onclick="() => DeviceOnClick(device)">
+								Settings
+							</button>
+						</div>
+					</div>
+					<div class="card-body">
+						<small class="text-muted">@device.IpAddress (@(device.MacAddress ?? "No MAC-address entered"))</small>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+@if (Presets == null)
+{
+	<div>Loading...</div>
+}
+else
+{
+	<div class="mb-2 d-flex align-items-center">
+		<h2>Presets</h2>
+		<div class="d-flex ms-auto">
+			<select class="form-select me-2" id="presetOrder" @bind="PresetOrder" @bind:after="PresetOrderChanged">
+				@foreach (var order in Enum.GetValues<PresetOrder>())
+				{
+					<option value="@order">Order by: @order.GetDescription()</option>
+				}
+			</select>
+			<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => AddPresetOnClick()">
+				Add
+			</button>
+		</div>
+	</div>
+	<div class="row mb-3">
+		<div class="col">
+			<div class="list-group">
+				@foreach (var preset in Presets)
+				{
+					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+						<div class="d-flex align-items-start justify-content-between">
+							<div>
+								<h5 class="mb-1">@preset.name <small class="text-muted">@GetDeviceName(preset)</small></h5>
+								@if (preset.Triggers.Any(t => t.Trigger != PresetTriggerType.None))
+								{
+									<div><small class="text-muted">Trigger: @preset.Triggers[0].ToString()</small></div>
+								}
+								<div><small class="text-muted">@preset.shortcut</small></div>
+							</div>
+							<span>
+								<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Delete</button>
+								<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Clone</button>
+								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
+							</span>
+						</div>
+					</a>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+@code {
+	private class ActionGroup
+	{
+		public string Name { get; }
+		public List<InvokableActionDto<LgPreset>> Actions { get; }
+
+		public ActionGroup(string name, List<InvokableActionDto<LgPreset>> actions)
+		{
+			Name = (name ?? "Misc");
+			Actions = actions;
+		}
+	}
+
+
+	private List<LgPreset>? Presets;
+	private List<LgDeviceDto>? Devices;
+	private List<InvokableActionDto<LgPreset>>? InvokableActions;
+	private List<ActionGroup>? ActionGroups;
+
+	private LgServiceConfigDto? Config;
+	private LgPreset? CurrentPreset;
+	private LgDeviceDto? CurrentDevice;
+	private bool IsRefreshDisabled;
+	private InvokableActionDto<LgPreset>? CurrentInvokableAction;
+
+	private PresetOrder PresetOrder;
+
+	protected override async Task OnInitializedAsync()
+	{
+		Config = await _rpcClientService.CallAsync<LgServiceConfigDto>("LgService", "GetConfig");
+		await RefreshPresets();
+		Devices = await _rpcClientService.CallAsync<List<LgDeviceDto>>("LgService", "GetDevices");
+		InvokableActions = await _rpcClientService.CallAsync<List<InvokableActionDto<LgPreset>>>("LgService", "GetInvokableActions");
+
+		ActionGroups = InvokableActions.GroupBy(a => a.Category).Select(g => new ActionGroup(g.Key, g.ToList())).ToList();
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstTime)
+	{
+		if (firstTime)
+		{
+			PresetOrder = await _localStorage.TryGet<PresetOrder>("LgPresetOrder");
+			Presets = Presets?.OrderPresetsBy(PresetOrder);
+
+			StateHasChanged();
+		}
+	}
+
+	private async Task PresetOnClick(LgPreset preset)
+	{
+		await _rpcClientService.CallAsync<bool>("LgService", "ApplyPresetWithId", preset.id);
+	}
+
+	private async Task PresetOnEditClick(LgPreset preset)
+	{
+		CurrentPreset = preset;
+	}
+
+	private async Task PresetOnCloneClick(LgPreset preset)
+	{
+		CurrentPreset = new LgPreset(preset);
+		CurrentPreset.SetCloneValues();
+	}
+
+	private async Task PresetOnDeleteClick(LgPreset preset)
+	{
+		CurrentPreset = preset;
+	}
+
+	private async Task PresetOnDeleteConfirmed()
+	{
+		if (CurrentPreset == null)
+		{
+			return;
+		}
+
+		await _rpcClientService.CallAsync<bool>("LgService", "DeletePreset", CurrentPreset.id);
+		await RefreshPresets();
+		StateHasChanged();
+	}
+
+	private async Task DeviceOnClick(LgDeviceDto device)
+	{
+		CurrentDevice = device;
+	}
+
+	private async Task AddDeviceOnClick()
+	{
+		CurrentDevice = new LgDeviceDto { IsCustom = true };
+	}
+
+	private async Task AddPresetOnClick()
+	{
+		CurrentPreset = new LgPreset();
+	}
+
+	private async Task AfterPresetApplied(LgPreset preset)
+	{
+		await RefreshPresets();
+		StateHasChanged();
+	}
+
+	private async Task RefreshDevicesOnClick(MouseEventArgs e)
+	{
+		IsRefreshDisabled = true;
+		try
+		{
+			try
+			{
+				await _rpcClientService.CallAsync<bool>("LgService", "RefreshDevices");
+			}
+			catch
+			{
+
+			}
+			Devices = await _rpcClientService.CallAsync<List<LgDeviceDto>>("LgService", "GetDevices");
+		}
+		finally
+		{
+			IsRefreshDisabled = false;
+		}
+
+		StateHasChanged();
+	}
+
+	private async Task ActionOnclick(InvokableActionDto<LgPreset> action)
+	{
+		CurrentInvokableAction = action;
+	}
+
+	private string GetDeviceName(LgPreset preset)
+	{
+		if (string.IsNullOrEmpty(preset.DeviceMacAddress))
+		{
+			return "Global";
+		}
+
+		return Devices?.FirstOrDefault(d => d.MacAddress == preset.DeviceMacAddress)?.Name ?? preset.DeviceMacAddress;
+	}
+
+	private async Task SetAsPrimaryOnClick(LgDeviceDto device)
+	{
+		var result = await _rpcClientService.CallAsync<bool>("LgService", "SetSelectedDevice", device);
+
+		if (result)
+		{
+			Devices = await _rpcClientService.CallAsync<List<LgDeviceDto>>("LgService", "GetDevices");
+		}
+	}
+
+	private async Task PresetOrderChanged()
+	{
+		await _localStorage.SetAsync("LgPresetOrder", PresetOrder);
+		await RefreshPresets();
+	}
+
+	private async Task RefreshPresets()
+	{
+		Presets = await _rpcClientService.CallAsync<List<LgPreset>>("LgService", "GetPresets");
+
+		Presets = Presets?.OrderPresetsBy(PresetOrder);
+	}
+
+	private async Task ButtonOnClick(ButtonType button)
+	{
+		var preset = new LgPreset(button.ToString(), null, [button.ToString()]);
+
+		await _rpcClientService.CallAsync<bool>("LgService", "ApplyPreset", preset);
+	}
+}

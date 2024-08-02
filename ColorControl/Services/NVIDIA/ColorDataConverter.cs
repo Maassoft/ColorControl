@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using ColorControl.Shared.Contracts.NVIDIA;
+using Newtonsoft.Json;
 using NvAPIWrapper.Display;
 using System;
 using System.Collections.Generic;

@@ -1,11 +1,13 @@
-﻿@inherits LayoutComponentBase
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services
+@inherits LayoutComponentBase
 
 @inject AppState AppState
 @inject NavigationManager _navigationManager;
 @rendermode InteractiveServer
 
-<div class="top-row px-4 pt-2">
-    <button type="button" class="btn btn-primary me-2" @onclick="ChangeTheme">@ThemeTransitionName</button>
+<div class="top-row px-4 pt-3 text-end">
+    @* <button type="button" class="btn btn-primary me-2" @onclick="ChangeTheme">@ThemeTransitionName</button> *@
     <a href="https://github.com/Maassoft/ColorControl" target="_blank">GitHub</a>
 </div>
 

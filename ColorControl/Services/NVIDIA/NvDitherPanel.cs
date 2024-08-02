@@ -1,4 +1,5 @@
 ﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts.NVIDIA;
 using ColorControl.Shared.Forms;
 using System;
 using System.Linq;

@@ -1,0 +1,618 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.Shared.Services;
+@using ColorControl.UI.Components.Pages.Generic
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(Preset?.IsDisplayPreset == true ? $"Settings for display {Preset?.displayName}" : Preset?.id == 0 ? $"Settings for new preset" : $"Settings of preset {Preset?.IdOrName}")</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => IsVisible = false"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1 needs-validation @WasValidated" novalidate>
+                    @if (Preset == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        @if (!Preset.IsDisplayPreset) 
+                        {
+                            <div class="mb-2">
+                                <label class="form-label" for="name">Name</label>
+                                <input class="form-control" type="text" @bind="Preset.name" required />
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="Preset.ShowInQuickAccess" id="showInQuickAccess">
+                                <label class="form-check-label" for="showInQuickAccess">
+                                    Show in Quick Access
+                                </label>
+                            </div>
+                            <ShortcutInput Label="Shortcut" @bind-Shortcut="Preset.shortcut" />
+                        }
+                        <div class="accordion accordion-flush" id="presetAccordion">
+
+                            @if (!Preset.IsDisplayPreset) 
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem; visibility: hidden" type="checkbox">
+                                            }
+                                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
+                                                Display
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="displaySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-2">
+                                                <input class="form-check-input" type="checkbox" @bind="Preset.primaryDisplay" id="primaryDisplay">
+                                                <label class="form-check-label" for="primaryDisplay">
+                                                    Primary display
+                                                </label>
+                                            </div>
+                                            @if (displayPresets != null) 
+                                            {
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="mode">Display</label>
+                                                    <select class="form-select" id="mode" @bind="Preset.DisplayId" disabled="@(Preset.primaryDisplay)">
+                                                    @foreach (var display in displayPresets)
+                                                    {
+                                                        <option value="@display.DisplayId">@display.displayName</option>
+                                                    }
+                                                    </select>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <input class="form-check-input" type="checkbox" @bind="Preset.DisplayConfig.IsPrimary" id="setAsPrimaryDisplay" disabled="@(Preset.primaryDisplay)">
+                                                    <label class="form-check-label" for="setAsPrimaryDisplay">
+                                                        Set display as primary display
+                                                    </label>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (resolutions != null) 
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.DisplayConfig.ApplyResolution" id="applyResolution">
+                                            }
+                                            <button class="accordion-button py-2 @(!Preset.IsDisplayPreset ? "collapsed" : "") @(Preset.DisplayConfig.ApplyResolution ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#resolutionSettings">
+                                                Resolution
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="resolutionSettings" class="accordion-collapse collapse @(Preset.IsDisplayPreset ? "show" : "")" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            @if (resolutions != null)
+                                            {
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="activeResolution">Active resolution</label>
+                                                    <select class="form-select" id="activeResolution" @bind="selectedActiveResolution">
+                                                        <option value="0x0">Not set</option>
+                                                        @foreach (var resolution in resolutions)
+                                                        {
+                                                            <option value="@resolution.GetActiveString()">@resolution.GetActiveString()</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="virtualResolution">Virtual resolution</label>
+                                                    <select class="form-select" id="virtualResolution" @bind="selectedVirtualResolution">
+                                                        <option value="0x0">Not set</option>
+                                                        @foreach (var resolution in resolutions)
+                                                        {
+                                                            <option value="@resolution.GetVirtualString()">@resolution.GetVirtualString()</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            }
+                                            <div class="mb-2">
+                                                <label class="form-label" for="scaling">Scaling/Aspect ratio</label>
+                                                <select class="form-select" id="scaling" @bind="Preset.DisplayConfig.Scaling">
+                                                    @foreach (var scaling in Enum.GetValues<Shared.Native.CCD.DisplayConfigScaling>().Where(s => s != Shared.Native.CCD.DisplayConfigScaling.ForceUint32))
+                                                    {
+                                                        <option value="@scaling.ToString()">@scaling.ToString()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label" for="rotation">Rotation</label>
+                                                <select class="form-select" id="rotation" @bind="Preset.DisplayConfig.Rotation">
+                                                    @foreach (var rotation in Enum.GetValues<Shared.Native.CCD.DisplayConfigRotation>().Where(s => s != Shared.Native.CCD.DisplayConfigRotation.ForceUint32))
+                                                    {
+                                                        <option value="@rotation.ToString()">@rotation.ToString()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (refreshRates != null)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.DisplayConfig.ApplyRefreshRate" id="applyRefreshRate">
+                                            }
+                                            <button class="accordion-button collapsed py-2 @(Preset.DisplayConfig.ApplyRefreshRate ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#refreshRateSettings">
+                                                Refresh Rate
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="refreshRateSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            @if (refreshRates != null)
+                                            {
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="refreshRate">Refresh Rate</label>
+                                                    <select class="form-select" id="refreshRate" @bind="selectedRefreshRate">
+                                                        @foreach (var refreshRate in refreshRates)
+                                                        {
+                                                            <option value="@refreshRate.ToString()">@refreshRate.ToString() Hz</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyColorData" id="applyColorData">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.applyColorData ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#colorSettings">
+                                            Color settings
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="colorSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.colorData.UseDefaultSettings" id="useDefaultSettings">
+                                            <label class="form-check-label" for="useDefaultSettings">
+                                                Use default settings
+                                            </label>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="bitDepth">Bit depth</label>
+                                            <select class="form-select" id="bitDepth" @bind="Preset.colorData.ColorDepth" disabled="@Preset.colorData.UseDefaultSettings">
+                                                @foreach (var bitDepth in Enum.GetValues<ColorDataDepth>())
+                                                {
+                                                    <option value="@bitDepth.ToString()">@bitDepth.ToString()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="colorFormat">Format</label>
+                                            <select class="form-select" id="colorFormat" @bind="Preset.colorData.ColorFormat" disabled="@Preset.colorData.UseDefaultSettings">
+                                                @foreach (var format in Enum.GetValues<ColorDataFormat>())
+                                                {
+                                                    <option value="@format.ToString()">@format.ToString()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="dynamicRange">Dynamic range</label>
+                                            <select class="form-select" id="dynamicRange" @bind="Preset.colorData.DynamicRange" disabled="@Preset.colorData.UseDefaultSettings">
+                                                @foreach (var range in Enum.GetValues<ColorDataDynamicRange>())
+                                                {
+                                                    <option value="@range.ToString()">@range.ToString()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="colorimetry">Color space</label>
+                                            <select class="form-select" id="colorimetry" @bind="Preset.colorData.Colorimetry" disabled="@Preset.colorData.UseDefaultSettings">
+                                                @foreach (var space in Enum.GetValues<ColorDataColorimetry>())
+                                                {
+                                                    <option value="@space.ToString()">@space.ToString()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.ApplyColorEnhancements" id="ApplyColorEnhancements">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.ApplyColorEnhancements ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#colorEnhancements">
+                                            Color enhancements
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="colorEnhancements" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <label class="form-label" for="digitalVibrance">Digital vibrance: @Preset.ColorEnhancementSettings.DigitalVibranceLevel</label>
+                                            <input class="form-range" type="range" min="0" max="100" @bind="Preset.ColorEnhancementSettings.DigitalVibranceLevel" id="digitalVibrance">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="hue">Hue: @Preset.ColorEnhancementSettings.HueAngle°</label>
+                                            <input class="form-range" type="range" min="0" max="359" @bind="Preset.ColorEnhancementSettings.HueAngle" id="hue">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyDriverSettings" id="applyDriverSettings">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.applyDriverSettings ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#driverSettings">
+                                            Driver settings
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="driverSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <button class="btn btn-secondary btn-sm" type="button" data-bs-target="#driverSettingsModal" data-bs-toggle="modal" @onclick="DriverSettingsOnClick">Open driver settings</button>
+                                            <span>@Preset.driverSettings.Count settings configured</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.ApplyNovideoSettings" id="applyNovideo">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.ApplyNovideoSettings ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#novideoSettings">
+                                            Novideo settings
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="novideoSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.NovideoSettings.ApplyClamp" id="applyClamp">
+                                            <label class="form-check-label" for="applyClamp">
+                                                Apply clamp
+                                            </label>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="novideoColorSpace">Target color space</label>
+                                            <select class="form-select" id="novideoColorSpace" @bind="Preset.NovideoSettings.ColorSpace">
+                                                @foreach (var colorSpace in Enum.GetValues<NovideoColorSpace>())
+                                                {
+                                                    <option value="@colorSpace.ToString()">@colorSpace.ToString()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyDithering" id="applyDithering">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.applyDithering ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#ditherSettings">
+                                            Dithering
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="ditherSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <label class="form-label" for="state">State</label>
+                                            <select class="form-select" id="state" @bind="Preset.NvDitherState">
+                                                @foreach (var state in Enum.GetValues<NvDitherState>())
+                                                {
+                                                    <option value="@state.ToString()">@state.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="mode">Mode</label>
+                                            <select class="form-select" id="mode" @bind="Preset.NvDitherMode">
+                                                @foreach (var mode in Enum.GetValues<NvDitherMode>())
+                                                {
+                                                    <option value="@mode.ToString()">@mode.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="bits">Bit depth</label>
+                                                <select class="form-select" id="bits" @bind="Preset.NvDitherBits">
+                                                @foreach (var bits in Enum.GetValues<NvDitherBits>())
+                                                {
+                                                    <option value="@bits.ToString()">@bits.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyHDR" id="applyHDR">
+                                        }
+                                        <button class="accordion-button collapsed py-2 @(Preset.applyHDR ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#hdrSettings">
+                                            HDR
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="hdrSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.HDREnabled" id="hdrEnabled">
+                                            <label class="form-check-label" for="hdrEnabled">
+                                                HDR enabled
+                                            </label>
+                                        </div>
+                                        @if (!Preset.IsDisplayPreset) {
+                                            <div class="mb-2">
+                                                <input class="form-check-input" type="checkbox" @bind="Preset.toggleHDR" id="toggleHdr">
+                                                <label class="form-check-label" for="toggleHdr">
+                                                    Toggle HDR
+                                                </label>
+                                            </div>
+                                        }
+                                        <div class="mb-2">
+                                            <label class="form-label" for="mode">Output mode</label>
+                                            <select class="form-select" id="mode" @bind="Preset.HdrSettings.DisplayOutputMode">
+                                                @foreach (var mode in Enum.GetValues<NvOutputMode>())
+                                                {
+                                                    <option value="@mode.ToString()">@mode.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-range" for="sdrBrightness">SDR brightness (@Preset.SDRBrightness%)</label>
+                                            <input class="form-range" type="range" min="0" max="100" @bind="Preset.SDRBrightness" id="sdrBrightness">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!Preset.IsDisplayPreset || Preset.MonitorConnectionType == NvAPIWrapper.Native.GPU.MonitorConnectionType.HDMI)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyHdmiSettings" id="applyHdmiSettings">
+                                            }
+                                            <button class="accordion-button collapsed py-2 @(Preset.applyHdmiSettings ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#hdmiSettings">
+                                                HDMI settings
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="hdmiSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-2">
+                                                <label class="form-label" for="contentType">Content type</label>
+                                                <select class="form-select" id="contentType" @bind="Preset.HdmiInfoFrameSettings.ContentType" @oninput="HdmiSettingsOnInput">
+                                                    @foreach (var type in Enum.GetValues<InfoFrameVideoContentType>())
+                                                    {
+                                                        <option value="@type.ToString()">@type.GetDescription()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label" for="colorimetry">Colorimetry</label>
+                                                <select class="form-select" id="colorimetry" @bind="Preset.HdmiInfoFrameSettings.Colorimetry" @oninput="HdmiSettingsOnInput">
+                                                    @foreach (var colorimetry in Enum.GetValues<InfoFrameVideoColorimetry>())
+                                                    {
+                                                        <option value="@colorimetry.ToString()">@colorimetry.GetDescription()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label" for="extendedColorimetry">Extended colorimetry</label>
+                                                <select class="form-select" id="extendedColorimetry" @bind="Preset.HdmiInfoFrameSettings.ExtendedColorimetry" @oninput="HdmiSettingsOnInput">
+                                                    @foreach (var extendedColorimetry in Enum.GetValues<InfoFrameVideoExtendedColorimetry>())
+                                                    {
+                                                        <option value="@extendedColorimetry.ToString()">@extendedColorimetry.GetDescription()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
+                <button type="submit" class="btn btn-primary" data-bs-dismiss="@(IsValid() ? "modal" : "")" @onclick="ApplyClick">@(Preset?.IsDisplayPreset == true ? "Apply" : "Save")</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public NvPreset? Preset { get; set; }
+
+    [Parameter]
+    public NvPreset? PresetParam { get; set; }
+
+    [Parameter]
+    public Func<NvPreset, Task>? AfterApply { get; set; }
+
+    [Parameter]
+    public Func<NvPreset, Task>? SetDriverSettingsPreset { get; set; }
+
+    private string? selectedActiveResolution;
+    private string? selectedVirtualResolution;
+    private string? selectedRefreshRate;
+
+    private List<VirtualResolution>? resolutions;
+    private List<Rational>? refreshRates;
+    private List<NvPreset>? displayPresets;
+
+    private string WasValidated = "";
+    private bool IsVisible;
+    private bool IsDriverSettingsOpened;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsDriverSettingsOpened && Preset != null)
+        {
+            return;
+        }
+
+        Preset = PresetParam == null ? null : PresetParam.CloneWithId();
+        if (Preset != null && PresetParam != null)
+        {
+            resolutions = await _rpcClientService.CallAsync<List<VirtualResolution>>("NvService", "GetAvailableResolutionsV2", Preset);
+            refreshRates = await _rpcClientService.CallAsync<List<Rational>>("NvService", "GetAvailableRefreshRatesV2", Preset);
+        }
+        selectedActiveResolution = Preset?.DisplayConfig.Resolution?.GetActiveString();
+        selectedVirtualResolution = Preset?.DisplayConfig.Resolution?.GetVirtualString();
+        selectedRefreshRate = Preset?.DisplayConfig.RefreshRate?.ToString();
+
+        if (Preset?.IsDisplayPreset != true)
+        {
+            displayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // if (IsVisible && Preset?.IsDisplayPreset == false)
+        // {
+        //     Preset.UpdateAutoApplySettings(keepChanges: true);
+        // }
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Preset == null)
+        {
+            return;
+        }
+
+        if (!IsValid())
+        {
+            WasValidated = "was-validated";
+            return;
+        }
+
+        var newResolution = resolutions?.FirstOrDefault(r => r.GetActiveString() == selectedActiveResolution);
+        if (newResolution != null)
+        {
+            if (!string.IsNullOrEmpty(selectedVirtualResolution) && selectedActiveResolution != selectedVirtualResolution)
+            {
+                newResolution = new VirtualResolution(newResolution.ActiveWidth, newResolution.ActiveHeight);
+                var parts = selectedVirtualResolution.Split('x');
+                newResolution.VirtualWidth = uint.Parse(parts[0]);
+                newResolution.VirtualHeight = uint.Parse(parts[1]);
+            }
+            Preset.DisplayConfig.Resolution = newResolution;
+        }
+        else
+        {
+            Preset.DisplayConfig.Resolution = new VirtualResolution(0, 0);
+        }
+
+        var newRefreshRate = refreshRates?.FirstOrDefault(r => r.ToString() == selectedRefreshRate);
+        if (newRefreshRate != null)
+        {
+            Preset.DisplayConfig.RefreshRate = newRefreshRate;
+        }
+
+        Preset.ApplyNovideoSettings = Preset.NovideoSettings.ApplyClamp;
+
+        if (Preset.IsDisplayPreset)
+        {
+            Preset.UpdateAutoApplySettings(PresetParam);
+
+            await ApplyDisplayPreset();
+        }
+        else
+        {
+            var result = await _rpcClientService.CallAsync<bool>("NvService", "UpdatePreset", Preset);
+        }
+
+        if (AfterApply != null)
+        {
+            await AfterApply.Invoke(Preset);
+        }
+    }
+
+    private async Task ApplyDisplayPreset()
+    {
+        var result = await _rpcClientService.CallAsync<bool>("NvService", "ApplyPreset", Preset);
+    }
+
+    private void HdmiSettingsOnInput(ChangeEventArgs e)
+    {
+        Preset!.applyHdmiSettings = true;
+    }
+
+    private async Task DriverSettingsOnClick(MouseEventArgs e)
+    {
+        IsDriverSettingsOpened = true;
+        SetDriverSettingsPreset?.Invoke(Preset!);
+    }
+
+    private void ModalOnFocus(FocusEventArgs e)
+    {
+        if (IsVisible && IsDriverSettingsOpened)
+        {
+            IsDriverSettingsOpened = false;
+            StateHasChanged();
+        }
+
+        if (!IsVisible)
+        {
+            WasValidated = "";
+            IsVisible = true;
+        }
+    }
+
+    private bool IsValid()
+    {
+        return Preset?.IsDisplayPreset == true || !string.IsNullOrEmpty(Preset?.name);
+    }
+}

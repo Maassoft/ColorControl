@@ -1,0 +1,50 @@
+﻿@page "/info"
+
+@using ColorControl.Shared.Common;
+@using ColorControl.Shared.Services;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject AppState AppState
+@inject NavigationManager _navigationManager;
+
+<PageTitle>Logging</PageTitle>
+
+<h1>Information</h1>
+
+@if (info == null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <h3 class="mb-2">@info.ApplicationTitle - @info.LegalCopyright</h3>
+
+    <h5>This app contains the following 3rd party plugins:</h5>
+    <ul class="list-group">
+        <li class="list-group-item">lgtv.net by gr4b4z</li>
+        <li class="list-group-item">Newtonsoft.Json by James Newton-King</li>
+        <li class="list-group-item">NLog by Jarek Kowalski, Kim Christensen, Julian Verdurmen</li>
+        <li class="list-group-item">NvAPIWrapper.Net by Soroush Falahati</li>
+        <li class="list-group-item">NWin32 by zmjack</li>
+        <li class="list-group-item">TaskScheduler by David Hall</li>
+        <li class="list-group-item">NVIDIA Profile Inspector by Orbmu2k</li>
+        <li class="list-group-item">NvidiaML wrapper by LibreHardwareMonitor</li>
+        <li class="list-group-item">Novideo sRGB by ledoge</li>
+        <li class="list-group-item">NLogViewer by dojo90</li>
+        <li class="list-group-item">WPFDarkTheme by AngryCarrot789</li>
+        <li class="list-group-item">Little-CMS by mm2</li>
+        <li class="list-group-item">MHC2 by dantmnf</li>
+    </ul>
+}
+
+@code {
+    private InfoDto? info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        info = await _rpcClientService.CallAsync<InfoDto>("OptionsService", "GetInfo");
+
+    }
+}

@@ -12,11 +12,11 @@ public class RpcClientService
 
     public string Name { get; set; }
 
-    public RpcClientService(WinElevatedProcessManager elevatedProcessManager, WinApiService winApiService, RpcServerService rpcServerService)
+    public RpcClientService(WinElevatedProcessManager elevatedProcessManager, WinApiService winApiService/*, RpcServerService rpcServerService*/)
     {
         _elevatedProcessManager = elevatedProcessManager;
         _winApiService = winApiService;
-        _rpcServerService = rpcServerService;
+        //_rpcServerService = rpcServerService;
     }
 
     public T Call<T>(string method, params object[] arguments)

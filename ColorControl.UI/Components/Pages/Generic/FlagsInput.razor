@@ -1,0 +1,53 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+<div class="row mx-0 mb-2">
+    <label class="form-label ps-0">@Label</label>
+
+    @if (Labels != null)
+    {
+        var index = 1;
+        var checkValue = 1;
+        foreach (var label in Labels)
+        {
+            var name = $"check{index}";
+            var checkIndex = index;
+
+            <div class="form-check form-check-inline col-@(Col)">
+                <input class="form-check-input" type="checkbox" role="switch" id="@name" checked="@((Value & checkValue) == checkValue)" @onchange="(ChangeEventArgs e) => CheckOnChange(e, checkIndex)">
+                <label class="form-check-label" for="@name">@label</label>
+            </div>
+
+            index++;
+            checkValue *= 2;
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<string>? Labels { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public uint Value { get; set; }
+
+    [Parameter]
+    public EventCallback<uint> ValueChanged { get; set; }
+
+    [Parameter]
+    public int Col { get; set; } = 4;
+
+    private async Task CheckOnChange(ChangeEventArgs e, int index)
+    {
+        var checkValue = (uint)Math.Pow(2, index - 1);
+
+        Value += (uint)((e.Value is bool boolValue && boolValue) ? checkValue : -checkValue);
+
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

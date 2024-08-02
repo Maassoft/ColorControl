@@ -126,13 +126,13 @@ internal class MainWorker
 
         if (!_config.StartMinimized /*|| Debugger.IsAttached*/)
         {
-            Program.OpenMainForm();
+            Program.OpenDefaultUi();
         }
     }
 
     private void HandleUserBringToFrontEvent(object sender, WindowMessageEventArgs e)
     {
-        Program.OpenMainForm();
+        Program.OpenDefaultUi();
     }
 
     private void HandlePowerBroadcastEvent(object sender, WindowMessageEventArgs e)

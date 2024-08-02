@@ -1,0 +1,127 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+
+@rendermode InteractiveServer
+
+@inject NavigationManager _navigationManager;
+
+<div class="modal" id="@ModalId" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalFocus">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="OnClose"></button>
+            </div>
+            <div class="modal-body">
+                @if (IsVisible)
+                {
+                    <FieldDefs Fields="Fields"></FieldDefs>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="OnClose">Cancel</button>
+                @if (SecondaryCaption != null)
+                {
+                    <button type="button" class="btn btn-secondary" @onclick="SecondaryClick">@SecondaryCaption</button>
+                }
+                <button class="btn btn-primary" type="button" disabled="@IsNextDisabled" data-bs-dismiss="@Dismiss" @onclick="ConfirmClick">
+                    @if (IsNextDisabled)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
+                    <span role="status">@ConfirmCaption</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? ModalId { get; set; }
+
+    [Parameter]
+    public string? ConfirmCaption { get; set; } = "Yes";
+
+    [Parameter]
+    public string? SecondaryCaption { get; set; }
+
+    [Parameter]
+    public string? Dismiss { get; set; } = "modal";
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public List<FieldDefinition>? Fields { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnConfirm { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnSecondary { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnShow { get; set; }
+
+    private bool IsVisible { get; set; }
+    private bool IsNextDisabled { get; set; }
+
+    private async Task ConfirmClick(MouseEventArgs e)
+    {
+        if (OnConfirm == null)
+        {
+            return;
+        }
+
+        var dismissing = Dismiss == "modal";
+        IsNextDisabled = Dismiss == null;
+        try
+        {
+            await OnConfirm();
+        }
+        finally
+        {
+            IsNextDisabled = false;
+        }
+
+        if (dismissing)
+        {
+            IsVisible = false;
+            Dismiss = "modal";
+        }
+    }
+
+    private async Task SecondaryClick(MouseEventArgs e)
+    {
+        if (OnSecondary == null)
+        {
+            return;
+        }
+
+        await OnSecondary();
+    }
+
+    private async Task ModalFocus(FocusEventArgs e)
+    {
+        if (!IsVisible)
+        {
+            IsVisible = true;
+
+            if (OnShow != null)
+            {
+                await OnShow();
+                //StateHasChanged();
+            }
+        }
+    }
+
+    private async Task OnClose(MouseEventArgs e)
+    {
+        IsVisible = false;
+    }
+}

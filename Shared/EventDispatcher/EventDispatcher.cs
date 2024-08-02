@@ -27,7 +27,10 @@ public class EventDispatcher<T> where T : EventArgs
         }
         else
         {
-            asyncEventHandlers[eventName] += eventHandler;
+            if (!asyncEventHandlers[eventName].GetInvocationList().Any(il => il.Target == eventHandler.Target))
+            {
+                asyncEventHandlers[eventName] += eventHandler;
+            }
         }
     }
 

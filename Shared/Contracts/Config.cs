@@ -9,6 +9,13 @@ namespace ColorControl.Shared.Contracts
         UseElevatedProcess = 3
     }
 
+    public enum UiType
+    {
+        WinForms = 0,
+        WebDefaultBrowser = 1,
+        WebEmbedded = 2
+    }
+
     public class Config
     {
         public bool AutoStart { get; set; }
@@ -22,6 +29,8 @@ namespace ColorControl.Shared.Contracts
         public string ScreenSaverShortcut { get; set; }
         public int FormWidth { get; set; }
         public int FormHeight { get; set; }
+        public double XFormWidth { get; set; }
+        public double XFormHeight { get; set; }
         public int NvPresetId_ApplyOnStartup { get; set; }
         public int AmdPresetId_ApplyOnStartup { get; set; }
         public bool FixChromeFonts { get; set; }
@@ -31,10 +40,8 @@ namespace ColorControl.Shared.Contracts
         public ListViewSortState LgPresetsSortState { get; set; }
         public ListViewSortState SamsungPresetsSortState { get; set; }
         public ListViewSortState GamePresetsSortState { get; set; }
-        public string NvQuickAccessShortcut { get; set; }
         public string AmdQuickAccessShortcut { get; set; }
         public string LgQuickAccessShortcut { get; set; }
-        public string GameQuickAccessShortcut { get; set; }
         public bool UseDedicatedElevatedProcess { get; set; }
         public ElevationMethod ElevationMethod { get; set; }
         public bool ElevationMethodAsked { get; set; }
@@ -44,6 +51,8 @@ namespace ColorControl.Shared.Contracts
         public bool UseRawInput { get; set; }
         public bool SetMinTmlAndMaxTml { get; set; }
         public bool DisableErrorPopupWhenApplyingPreset { get; set; }
+        public UiType UiType { get; set; }
+        public int UiPort { get; set; }
 
         public Config()
         {
@@ -53,6 +62,8 @@ namespace ColorControl.Shared.Contracts
             ScreenSaverShortcut = string.Empty;
             FormWidth = 900;
             FormHeight = 600;
+            XFormWidth = 1280;
+            XFormHeight = 720;
             MinimizeToTray = true;
             CheckForUpdates = true;
             FixChromeFonts = false;
@@ -61,6 +72,8 @@ namespace ColorControl.Shared.Contracts
             ElevationMethod = ElevationMethod.None;
             ElevationMethodAsked = false;
             ProcessMonitorPollingInterval = 1000;
+            UiType = UiType.WinForms;
+            UiPort = 5000;
             LgPresetsSortState = new ListViewSortState();
             NvPresetsSortState = new ListViewSortState();
             AmdPresetsSortState = new ListViewSortState();
@@ -86,6 +99,17 @@ namespace ColorControl.Shared.Contracts
             ScreenSaverShortcut = config.ScreenSaverShortcut;
             FixChromeFonts = config.FixChromeFonts;
             UseGdiScaling = config.UseGdiScaling;
+            ProcessMonitorPollingInterval = config.ProcessMonitorPollingInterval;
+            UseRawInput = config.UseRawInput;
+            SetMinTmlAndMaxTml = config.SetMinTmlAndMaxTml;
+            DisableErrorPopupWhenApplyingPreset = config.DisableErrorPopupWhenApplyingPreset;
+            UiType = config.UiType;
+            UiPort = config.UiPort;
+        }
+
+        public bool HasModule(string name)
+        {
+            return Modules?.Any(m => m.DisplayName == name) == true;
         }
     }
 }

@@ -1,0 +1,233 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.Samsung
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Components.Pages.Generic
+
+@rendermode InteractiveServer
+@inject RpcUiClientService _rpcClientService
+
+<FieldsModal ModalId="serviceMenuModal" Title="@Title" ConfirmCaption="@ConfirmCaption" SecondaryCaption="@SecondaryCaption"
+             Fields="Fields" OnConfirm="NextClick" OnSecondary="SecondaryClick" Dismiss="@Dismiss" OnShow="OnShow"></FieldsModal>
+
+@code {
+    [Parameter]
+    public List<SamsungDeviceDto>? Devices { get; set; }
+
+    private string? Title { get; set; }
+    private string? ConfirmCaption { get; set; }
+    private string? SecondaryCaption { get; set; }
+    private string? Dismiss { get; set; }
+    private List<FieldDefinition>? Fields { get; set; }
+    private FieldDefinition? DeviceField { get; set; }
+    private Func<Task>? NextAction;
+    private Func<Task>? SecondaryAction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // NextAction = FirstStepExit;
+        // Title = "Access Service Menu";
+        // ConfirmCaption = "Next >";
+        // Fields = [AddField("Service Menu Access Type", ServiceMenuType.FactoryMenu, subLabel: "Both types will not reset your settings. 'FactoryMenu' is recommended for 2024 series but will also work for older ones. Click 'Next >' to continue or 'X' to stop")];
+    }
+
+    protected async Task OnShow()
+    {
+        NextAction = FirstStepExit;
+        Title = "Access Service Menu";
+        ConfirmCaption = "Next >";
+        SecondaryCaption = null;
+        SecondaryAction = null;
+        Dismiss = null;
+        Fields = [AddField("Service Menu Access Type", ServiceMenuType.FactoryMenu, subLabel: "Both types will not reset your settings. 'FactoryMenu' is recommended for 2024 series but will also work for older ones. Click 'Next >' to continue or 'X' to stop")];
+
+        if (Devices?.Any() == true)
+        {
+            DeviceField = FieldDefinition.CreateDropDownField("Device", Devices.Select(d => d.ToString()).ToList());
+            DeviceField.Value = Devices.FirstOrDefault(d => d.IsSelected)?.ToString();
+
+            Fields.Insert(0, DeviceField);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task NextClick()
+    {
+        if (NextAction == null)
+        {
+            return;
+        }
+
+        await NextAction();
+    }
+
+    private async Task SecondaryClick()
+    {
+        if (SecondaryAction != null)
+        {
+            await SecondaryAction();
+        }
+    }
+
+    private async Task FirstStepExit()
+    {
+        if (Fields == null)
+        {
+            return;
+        }
+
+        var menuType = Fields.First(f => f.ValueType == typeof(ServiceMenuType)).ValueAsEnum<ServiceMenuType>();
+
+        if (menuType == ServiceMenuType.FactoryMenu)
+        {
+            await FactoryMenuFirstStepEnter();
+        }
+        else
+        {
+            await HospitalityMenuFirstStepEnter();
+        }
+    }
+
+    protected async Task FactoryMenuFirstStepEnter()
+    {
+        await ExecutePreset(SamsungFactoryMenuPresets.Preset1);
+
+        NextAction = FactoryMenuSecondStepEnter;
+        Title = "Access Service Menu - Step 2";
+        ConfirmCaption = "Next >";
+        SecondaryCaption = "Skip";
+        SecondaryAction = FactoryMenuSecondStepEnterWithoutExecute;
+        Fields = [AddField("Service Menu - Advanced", null, FieldType.Label, "If the service menu opened and you want to access the Advanced settings, click 'Next >' or click 'Skip' to skip")];
+
+        StateHasChanged();
+    }
+
+    protected async Task FactoryMenuSecondStepEnterWithoutExecute()
+    {
+        NextAction = FactoryMenuSecondStepExit;
+        Title = "Exit Service Menu";
+        ConfirmCaption = "Next >";
+        SecondaryCaption = null;
+        SecondaryAction = null;
+        Fields = [AddField("Exit Service Menu Type", ExitServiceMenuType.Exit, subLabel: "Choose how to exit the service menu. You can either reboot the TV or just exit the service menu (if, for example, no changes have been made)")];
+
+        StateHasChanged();
+    }
+
+    protected async Task FactoryMenuSecondStepEnter()
+    {
+        await ExecutePreset(SamsungFactoryMenuPresets.PresetAdvanced);
+
+        await FactoryMenuSecondStepEnterWithoutExecute();
+    }
+
+    protected async Task FactoryMenuSecondStepExit()
+    {
+        if (Fields == null)
+        {
+            return;
+        }
+
+        var menuType = Fields.First().ValueAsEnum<ExitServiceMenuType>();
+
+        if (menuType == ExitServiceMenuType.Exit)
+        {
+            await ExitServiceMenuEnter();
+        }
+        else
+        {
+            await RebootTvEnter();
+        }
+    }
+
+    protected async Task ExitServiceMenuEnter()
+    {
+        await ExecutePreset(SamsungFactoryMenuPresets.Exit);
+
+        NextAction = null;
+        Title = "Exited Service Menu";
+        Dismiss = "modal";
+        ConfirmCaption = "OK";
+        SecondaryCaption = "Factory";
+        SecondaryAction = ExecuteFactoryKey;
+        Fields = [AddField("Service Menu - Exited", null, FieldType.Label, "Exited the service menu. Click OK to close. If the TV is stuck on cycling full screen RGB images, use the 'Factory' button below.")];
+
+        StateHasChanged();
+    }
+
+    protected async Task RebootTvEnter()
+    {
+        await ExecutePreset(SamsungGenericPresets.Reboot);
+
+        NextAction = null;
+        Title = "Rebooted TV";
+        Dismiss = "modal";
+        ConfirmCaption = "OK";
+        Fields = [AddField("Service Menu - Rebooted TV", null, FieldType.Label, "Rebooted the TV. Power on the TV manually if the TV does not come on automatically.")];
+
+        StateHasChanged();
+    }
+
+    protected async Task HospitalityMenuFirstStepEnter()
+    {
+        await ExecutePreset(SamsungHospitalityMenuPresets.Preset1);
+
+        NextAction = HospitalityMenuSecondStepEnter;
+        Title = "Access Service Menu - Step 2";
+        ConfirmCaption = "Next >";
+        Fields = [AddField("Service Menu opened?", null, FieldType.Label, "If the menu is opened with the 'Hospitality Mode' item highlighted and the rest disabled, click 'Next >' to continue or 'X' to stop")];
+
+        StateHasChanged();
+    }
+
+    protected async Task HospitalityMenuSecondStepEnter()
+    {
+        await ExecutePreset(SamsungHospitalityMenuPresets.Preset2);
+
+        NextAction = HospitalityMenuThirdStepEnter;
+        Title = "Access Service Menu - Step 3";
+        ConfirmCaption = "Next >";
+        SecondaryCaption = "Skip";
+        Fields = [AddField("Service Menu - Advanced", null, FieldType.Label, "If the 'Advanced' item is highlighted and you want to access these settings, click 'Next >' or click 'Skip' to skip")];
+
+        StateHasChanged();
+    }
+
+    protected async Task HospitalityMenuThirdStepEnter()
+    {
+        await ExecutePreset(SamsungHospitalityMenuPresets.Preset3);
+
+        await FactoryMenuSecondStepEnterWithoutExecute();
+    }
+
+    protected async Task ExecuteFactoryKey()
+    {
+        await ExecutePreset(SamsungFactoryMenuPresets.KeyFactory);
+    }
+
+    private async Task ExecutePreset(SamsungPreset preset)
+    {
+        if (Devices != null && DeviceField?.Value != null)
+        {
+            var device = Devices.FirstOrDefault(d => d.ToString() == DeviceField.Value.ToString());
+            preset.DeviceMacAddress = device?.MacAddress;
+        }
+
+        await _rpcClientService.CallAsync<bool>("SamsungService", "ApplyPreset", preset);
+        //await Task.Delay(2000);
+    }
+
+    private FieldDefinition AddField(string label, object? value, FieldType fieldType = FieldType.DropDown, string? subLabel = null)
+    {
+        return new FieldDefinition
+        {
+            FieldType = fieldType,
+            Value = value,
+            StringValue = value?.ToString(),
+            ValueType = value?.GetType(),
+            Label = label,
+            SubLabel = subLabel
+        };
+    }
+}

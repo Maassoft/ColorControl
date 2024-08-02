@@ -58,7 +58,7 @@ public class UpdateManager
         HandleCheckForUpdates(latest);
     }
 
-    private void HandleCheckForUpdates(dynamic latest)
+    private async void HandleCheckForUpdates(dynamic latest)
     {
         if (latest?.tag_name == null)
         {
@@ -112,7 +112,7 @@ public class UpdateManager
 
                 if (_config.AutoInstallUpdates)
                 {
-                    InstallUpdate();
+                    await InstallUpdate();
 
                     return;
                 }
@@ -142,7 +142,7 @@ public class UpdateManager
         }
     }
 
-    public void InstallUpdate()
+    public async Task InstallUpdate()
     {
         if (_downloadUrl == null) { return; }
 
@@ -152,7 +152,7 @@ public class UpdateManager
             ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
         };
 
-        var result = PipeUtils.SendMessage(message, 30000);
+        var result = await PipeUtils.SendMessageAsync(message, 30000);
 
         if (result != null && !result.Result)
         {
@@ -161,7 +161,7 @@ public class UpdateManager
             return;
         }
 
-        PipeUtils.SendMessage(SvcMessageType.RestartAfterUpdate);
+        await PipeUtils.SendMessageAsync(SvcMessageType.RestartAfterUpdate);
 
         if (MessageForms.QuestionYesNo("Update installed successfully. Do you want to restart the application?") == DialogResult.Yes)
         {
