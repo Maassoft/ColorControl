@@ -150,13 +150,10 @@
 
     protected async Task LoadDriverSettings()
     {
-        if (DriverSettings == null)
+        DriverSettings = await _rpcClientService.CallAsync<List<NvSettingItemDto>>("NvService", "GetDriverSettings", CurrentProfileName);
+        if (DriverSettings != null)
         {
-            DriverSettings = await _rpcClientService.CallAsync<List<NvSettingItemDto>>("NvService", "GetDriverSettings", CurrentProfileName);
-            if (DriverSettings != null)
-            {
-                DriverSettings.ForEach(s => s.ValueChanged = false);
-            }
+            DriverSettings.ForEach(s => s.ValueChanged = false);
         }
 
         if (DriverSettings != null)

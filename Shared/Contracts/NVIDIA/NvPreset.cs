@@ -142,7 +142,7 @@ namespace ColorControl.Shared.Contracts.NVIDIA
 
             applyColorData = keepChanges && applyColorData || colorData.IsDifferent(currentSettings.colorData);
             applyDithering = keepChanges && applyDithering || (ditheringEnabled != currentSettings.ditheringEnabled || ditheringMode != currentSettings.ditheringMode || ditheringBits != currentSettings.ditheringBits);
-            applyHDR = keepChanges && applyHDR || (HDREnabled != currentSettings.HDREnabled || toggleHDR || SDRBrightness != currentSettings.SDRBrightness);
+            applyHDR = keepChanges && applyHDR || (HDREnabled != currentSettings.HDREnabled || toggleHDR || SDRBrightness != currentSettings.SDRBrightness || HdrSettings.OutputMode != currentSettings.HdrSettings.OutputMode);
             DisplayConfig.ApplyResolution = keepChanges && DisplayConfig.ApplyResolution || (DisplayConfig.Resolution.IsDifferent(currentSettings.DisplayConfig.Resolution) ||
                     DisplayConfig.Scaling != currentSettings.DisplayConfig.Scaling || DisplayConfig.Rotation != currentSettings.DisplayConfig.Rotation || DisplayConfig.IsPrimary != null && DisplayConfig.IsPrimary != currentSettings.DisplayConfig.IsPrimary);
             DisplayConfig.ApplyRefreshRate = keepChanges && DisplayConfig.ApplyRefreshRate || !DisplayConfig.RefreshRate.Equals(currentSettings.DisplayConfig.RefreshRate);

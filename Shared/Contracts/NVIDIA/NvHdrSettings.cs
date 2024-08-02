@@ -1,11 +1,14 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace ColorControl.Shared.Contracts.NVIDIA
 {
     public enum NvOutputMode
     {
         Default = 0,
+        [Description("HDR10")]
         Hdr10 = 1,
+        [Description("HDR10+")]
         Hdr10Plus = 2
     }
 
