@@ -49,11 +49,11 @@ else
                             <label class="form-label" for="elevationMethod">
                                 Elevation Method
                             </label>
-                            <select class="form-select" @bind="elevationMethod" id="elevationMethod" @oninput="ElevationMethodInput" aria-describedby="elevationMethodHelp">
-                                <option value="0">None</option>
-                                <option value="1">Run as administrator</option>
-                                <option value="2">Use service</option>
-                                <option value="3">Use elevated process</option>
+                            <select class="form-select" @bind="config.ElevationMethod" id="elevationMethod" @oninput="ElevationMethodInput" aria-describedby="elevationMethodHelp">
+                                @foreach (var method in Enum.GetValues<ElevationMethod>())
+                                {
+                                    <option value="@method">@method.GetDescription()</option>
+                                }
                             </select>
                             <div id="elevationMethodHelp" class="form-text">
                                 Elevation is needed in some cases where ColorControl needs administrator rights.
@@ -186,12 +186,10 @@ else
 
 @code {
     private Config? config;
-    private string elevationMethod = "0";
 
     protected override async Task OnInitializedAsync()
     {
         config = await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
-        elevationMethod = ((int)config.ElevationMethod).ToString();
     }
 
     private async Task SaveConfig()
@@ -299,8 +297,6 @@ else
     {
         var value = e.Value != null ? (ElevationMethod)int.Parse((string)e.Value) : ElevationMethod.None;
         await _rpcClientService.CallAsync<bool>("OptionsService", "SetElevationMethod", value);
-
-        config!.ElevationMethod = value;
     }
 
     private async Task UiTypeOnInput(ChangeEventArgs e)

@@ -27,7 +27,7 @@
                                 <div class="mb-2">
                                     <label class="form-label" for="nvPreset">NVIDIA preset</label>
                                     <select class="form-select" id="nvPreset" @bind="NvPresetToAddId">
-                                        <option value="null">Select preset</option>
+                                        <option value="">Select preset</option>
                                         @foreach (var preset in NvPresets)
                                         {
                                             <option value="@preset.id">@preset.IdOrName</option>
@@ -40,7 +40,7 @@
                                 <div class="mb-2">
                                     <label class="form-label" for="samsungPreset">Samsung preset</label>
                                     <select class="form-select" id="samsungPreset" @bind="SamsungPresetToAddId">
-                                        <option value="null">Select preset</option>
+                                        <option value="">Select preset</option>
                                         @foreach (var preset in SamsungPresets)
                                         {
                                             <option value="@preset.id">@preset.IdOrName</option>
@@ -53,7 +53,7 @@
                                 <div class="mb-2">
                                     <label class="form-label" for="lgPreset">LG preset</label>
                                     <select class="form-select" id="lgPreset" @bind="LgPresetToAddId">
-                                        <option value="null">Select preset</option>
+                                        <option value="">Select preset</option>
                                         @foreach (var preset in LgPresets)
                                         {
                                             <option value="@preset.id">@preset.IdOrName</option>
@@ -68,7 +68,7 @@
                                     <div class="mb-2">
                                         <label class="form-label" for="customItem">@customItem.Name</label>
                                         <select class="form-select" id="customItem" @bind="customItem.SelectedItem">
-                                            <option value="null">Select item</option>
+                                            <option value="">Select item</option>
                                             @foreach (var item in customItem.Items)
                                             {
                                                 <option value="@item">@item</option>
@@ -84,7 +84,7 @@
                                     <div class="mb-2">
                                         <label class="form-label" for="advancedCustomItem">@customItem.Name</label>
                                         <select class="form-select" id="advancedCustomItem" @bind="customItem.SelectedActionName" @bind:after="() => AdvancedItemChanged(customItem)">
-                                            <option value="null">Select action</option>
+                                            <option value="">Select action</option>
                                                 @foreach (var keyValue in customItem.GroupedActions)
                                                 {
                                                     <optgroup label="@keyValue.Key">

@@ -93,7 +93,7 @@
                                             {
                                                 <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.DisplayConfig.ApplyResolution" id="applyResolution">
                                             }
-                                            <button class="accordion-button py-2 @(Preset.DisplayConfig.ApplyResolution ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#resolutionSettings">
+                                            <button class="accordion-button py-2 @(!Preset.IsDisplayPreset ? "collapsed" : "") @(Preset.DisplayConfig.ApplyResolution ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#resolutionSettings">
                                                 Resolution
                                             </button>
                                         </span>
@@ -157,7 +157,7 @@
                                             </button>
                                         </span>
                                     </h2>
-                                    <div id="refreshRateSettings" class="accordion-collapse collapse show" data-bs-parent="#presetAccordion">
+                                    <div id="refreshRateSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
                                         <div class="accordion-body">
                                             <div class="mb-2">
                                                 <label class="form-label" for="refreshRate">Refresh Rate</label>
@@ -356,7 +356,7 @@
 
         if (Preset.IsDisplayPreset)
         {
-            //Preset.UpdateAutoApplySettings(PresetParam);
+            Preset.UpdateAutoApplySettings(PresetParam);
 
             await ApplyDisplayPreset();
             return;

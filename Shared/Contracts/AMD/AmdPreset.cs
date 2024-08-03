@@ -23,9 +23,11 @@ public class AmdPreset : PresetBase
     [JsonIgnore]
     public string InfoLine { get; private set; }
 
+    public static AmdPreset DefaultPreset = new AmdPreset();
+
     public AmdPreset() : base()
     {
-        applyColorData = true;
+        applyColorData = false;
         applyDithering = false;
         ditherState = ADLDitherState.DRIVER_DEFAULT;
         applyHDR = false;
@@ -39,22 +41,7 @@ public class AmdPreset : PresetBase
     {
         id = GetNewId();
 
-        primaryDisplay = preset.primaryDisplay;
-        displayName = preset.displayName;
-        DisplayId = preset.DisplayId;
-
-        applyColorData = preset.applyColorData;
-        colorDepth = preset.colorDepth;
-        pixelFormat = preset.pixelFormat;
-
-        applyHDR = preset.applyHDR;
-        HDREnabled = preset.HDREnabled;
-        toggleHDR = preset.toggleHDR;
-        SDRBrightness = preset.SDRBrightness;
-
-        applyDithering = preset.applyDithering;
-        ditherState = preset.ditherState;
-        DisplayConfig = new DisplayConfig(DisplayConfig);
+        Update(preset);
     }
 
     public AmdPreset Clone()
@@ -72,6 +59,38 @@ public class AmdPreset : PresetBase
         preset.shortcut = shortcut;
 
         return preset;
+    }
+
+    public void Update(AmdPreset preset)
+    {
+        primaryDisplay = preset.primaryDisplay;
+        displayName = preset.displayName;
+        DisplayId = preset.DisplayId;
+
+        applyColorData = preset.applyColorData;
+        colorDepth = preset.colorDepth;
+        pixelFormat = preset.pixelFormat;
+
+        applyHDR = preset.applyHDR;
+        HDREnabled = preset.HDREnabled;
+        toggleHDR = preset.toggleHDR;
+        SDRBrightness = preset.SDRBrightness;
+
+        applyDithering = preset.applyDithering;
+        ditherState = preset.ditherState;
+        DisplayConfig = new DisplayConfig(preset.DisplayConfig);
+    }
+
+    public void UpdateAutoApplySettings(AmdPreset currentSettings = null, bool keepChanges = false)
+    {
+        currentSettings ??= DefaultPreset;
+
+        applyColorData = keepChanges && applyColorData || colorDepth != currentSettings.colorDepth || pixelFormat != currentSettings.pixelFormat;
+        applyDithering = keepChanges && applyDithering || ditherState != currentSettings.ditherState;
+        applyHDR = keepChanges && applyHDR || (HDREnabled != currentSettings.HDREnabled || toggleHDR || SDRBrightness != currentSettings.SDRBrightness);
+        DisplayConfig.ApplyResolution = keepChanges && DisplayConfig.ApplyResolution || (DisplayConfig.Resolution.IsDifferent(currentSettings.DisplayConfig.Resolution) ||
+                DisplayConfig.Scaling != currentSettings.DisplayConfig.Scaling || DisplayConfig.Rotation != currentSettings.DisplayConfig.Rotation || DisplayConfig.IsPrimary != null && DisplayConfig.IsPrimary != currentSettings.DisplayConfig.IsPrimary);
+        DisplayConfig.ApplyRefreshRate = keepChanges && DisplayConfig.ApplyRefreshRate || !DisplayConfig.RefreshRate.Equals(currentSettings.DisplayConfig.RefreshRate);
     }
 
     public static string[] GetColumnNames()

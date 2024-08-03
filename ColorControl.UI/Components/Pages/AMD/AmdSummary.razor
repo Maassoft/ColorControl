@@ -38,31 +38,35 @@
 else
 {
 	<div class="row mb-3">
-		<div class="col">
-			@if (!DisplayPresets.Any())
-			{
-				<span>No displays found</span>
-			}
-			@foreach (var preset in DisplayPresets)
-			{
-				<div class="card">
-					<div class="card-header">
-						@preset.displayName
-						@if (preset.DisplayConfig.IsPrimary == true)
-						{
-							<small class="text-muted ms-2">Primary</small>
-						}
-						<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => DisplayPresetOnClick(preset)">
-							Settings
-						</button>
+		@if (!DisplayPresets.Any())
+		{
+			<span>No displays found</span>
+		}
+		@foreach (var preset in DisplayPresets)
+		{
+			<div class="col-lg-6 mb-3">
+				<div class="card h-100">
+					<div class="card-header d-flex align-items-baseline">
+						<span>
+							@preset.displayName
+							@if (preset.DisplayConfig.IsPrimary == true)
+							{
+								<small class="text-muted ms-2">Primary</small>
+							}
+						</span>
+						<div class="d-flex ms-auto">
+							<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => DisplayPresetOnClick(preset)">
+								Settings
+							</button>
+						</div>
 					</div>
 					<div class="card-body">
 						<small class="text-body">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz</small>
 						<small class="text-muted">@preset.colorDepth, @preset.pixelFormat</small>
 					</div>
 				</div>
-			}
-		</div>
+			</div>
+		}
 	</div>
 }
 
@@ -157,6 +161,7 @@ else
 	private async Task PresetOnCloneClick(AmdPreset preset)
 	{
 		CurrentPreset = new AmdPreset(preset);
+		CurrentPreset.name = preset.name;
 		CurrentPreset.SetCloneValues();
 	}
 

@@ -107,6 +107,11 @@ internal class MainWorker
 
         _keyboardShortcutDispatcher.RegisterShortcut(SHORTCUTID_SCREENSAVER, _config.ScreenSaverShortcut);
         _keyboardShortcutDispatcher.RegisterEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HandleHotKeyEvent);
+
+        if (_config.UiType != UiType.WinForms)
+        {
+            await Program.StartUiServer();
+        }
     }
 
     private bool _startupSent = false;
