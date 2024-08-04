@@ -44,7 +44,7 @@ public class WolService
 
     private bool IsViableWOLInterface(NetworkInterface ni) {
         return ni.NetworkInterfaceType != NetworkInterfaceType.Loopback
-            && !ni.Name.Contains("Hyper-V")
+            && !ni.Description.Contains("Hyper-V")
             && ni.SupportsMulticast
             && ni.GetIPProperties().GetIPv4Properties != null;
     } 
