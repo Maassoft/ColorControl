@@ -1,5 +1,6 @@
 ﻿using ColorControl.Shared.Common;
 using NLog;
+using NStandard;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -14,7 +15,7 @@ public class WolService
 
     private const string ArgumentExceptionInvalidMacAddressLength = "Invalid MAC address length.";
     private const string ArgumentExceptionInvalidPasswordLength = "Invalid password length.";
-    private const int DefaultWolPort = 9;
+    private const int DefaultWolPort = 0;
 
     private readonly WinApiService _winApiService;
     private readonly RpcClientService _rpcService;
@@ -35,11 +36,18 @@ public class WolService
                 return true;
             }
 
-            // If RPC faield, execute local WOL anyway
+            // If RPC failed, execute local WOL anyway
         }
 
         return WakeFunctionToAllNics(macAddress, ipAddress);
     }
+
+    private bool IsViableWOLInterface(NetworkInterface ni) {
+        return ni.NetworkInterfaceType != NetworkInterfaceType.Loopback
+            && ni.Name.Contains("Hyper-V")
+            && ni.SupportsMulticast
+            && ni.GetIPProperties().GetIPv4Properties != null;
+    } 
 
     private bool WakeFunctionToAllNics(string macAddress, string ipAddressString)
     {
@@ -55,51 +63,34 @@ public class WolService
 
             var interfaces = NetworkInterface.GetAllNetworkInterfaces();
 
-            foreach (var ni in interfaces)
-            {
-                if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback/* || ni.Name.Contains("VirtualBox") || ni.Name.Contains("vEthernet") || ni.Description.Contains("Virtual")*/)
+            interfaces
+                .Where(IsViableWOLInterface)
+                .Each(ni =>
                 {
-                    continue;
-                }
-                Logger.Debug($"Found network: {ni.Name} ({ni.Description}), type: {ni.NetworkInterfaceType}");
-                try
-                {
-                    if (ni.SupportsMulticast && ni.GetIPProperties().GetIPv4Properties() == null)
-                    {
-                        continue;
-                    }
-
                     foreach (var uip in ni.GetIPProperties().UnicastAddresses)
                     {
                         if (uip.Address.ToString().StartsWith("169.254") || uip.Address.AddressFamily != AddressFamily.InterNetwork)
                         {
                             continue;
                         }
-
-                        Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}, destination IP-address: {ipAddressString ?? "broadcast"}");
-
-                        if (ipAddress != null && _winApiService.IsAdministrator())
+                        try
                         {
-                            var localEP = new IPEndPoint(uip.Address, 0);
+                            Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}, destination IP-address: {ipAddressString ?? "broadcast"}");
+                            BroadcastWol(uip.Address, IPAddress.Broadcast, data);
 
-                            SendWolToIpAddress(uip.Address, ipAddress, data, physicalAddress);
+                            var parts = uip.Address.ToString().Split(".").ToList();
+                            parts[3] = "0";
+                            var broadcastAddress = IPAddress.Parse(string.Join(".", parts));
+                            BroadcastWol(uip.Address, broadcastAddress, data);
+
+                            result = true;
                         }
-
-                        BroadcastWol(uip.Address, IPAddress.Broadcast, data);
-
-                        var parts = uip.Address.ToString().Split(".").ToList();
-                        parts[3] = "0";
-                        var broadcastAddress = IPAddress.Parse(string.Join(".", parts));
-                        BroadcastWol(uip.Address, broadcastAddress, data);
-
-                        result = true;
+                        catch (Exception ex)
+                        {
+                            Logger.Error($"WakeFunctionToAllNics: while sending to specific network: {ni.Name} ({ni.Description}): {ex.ToLogString()}");
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"WakeFunctionToAllNics: while sending to specific network: {ni.Name} ({ni.Description}): {ex.ToLogString()}");
-                }
-            }
+                });
         }
         catch (Exception ex)
         {
@@ -112,33 +103,23 @@ public class WolService
     /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
     /// <exception cref="ArgumentException">The length of the <see cref="T:System.Byte" /> array <paramref name="macAddress"/> is not 6.</exception>
     /// <exception cref="ArgumentException">The length of the <see cref="T:System.Byte" /> array <paramref name="password"/> is not 0 or 6.</exception>
-    private static byte[] GetWolPacket(byte[] macAddress, byte[] password = null)
+    private static byte[] GetWolPacket(byte[] macAddress)
     {
         if (macAddress == null)
             throw new ArgumentNullException(nameof(macAddress));
         if (macAddress.Length != 6)
             throw new ArgumentException(ArgumentExceptionInvalidMacAddressLength);
 
-        password = password ?? new byte[0];
-        if (password.Length != 0 && password.Length != 6)
-            throw new ArgumentException(ArgumentExceptionInvalidPasswordLength);
+        byte[] packet = new byte[102];
 
-        var packet = new byte[17 * 6 + password.Length];
-
-        int offset, i;
-        for (offset = 0; offset < 6; ++offset)
-            packet[offset] = 0xFF;
-
-        for (offset = 6; offset < 17 * 6; offset += 6)
-            for (i = 0; i < 6; ++i)
-                packet[i + offset] = macAddress[i];
-
-        if (password.Length > 0)
-        {
-            for (offset = 16 * 6 + 6; offset < 17 * 6 + password.Length; offset += 6)
-                for (i = 0; i < 6; ++i)
-                    packet[i + offset] = password[i];
+        foreach (var i in Enumerable.Range(0, 6)) {
+            packet[i] = 0xFF;
         }
+
+        foreach (var i in Enumerable.Range(0, 16)) {
+            macAddress.CopyTo(packet, 6 + i * 6);
+        }
+
         return packet;
     }
 
