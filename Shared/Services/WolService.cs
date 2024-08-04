@@ -125,29 +125,21 @@ public class WolService
 
     private static void BroadcastWol(IPAddress localAddress, IPAddress broadCastAddress, byte[] data)
     {
-        //var localEP = new IPEndPoint(localAddress, 0);
-        var udpc = new UdpClient();
-
+        using var udpc = new UdpClient(new IPEndPoint(localAddress, 0));
         udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-        //udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontRoute, 1);
 
         var target = new IPEndPoint(broadCastAddress, DefaultWolPort);
-
         udpc.Send(data, data.Length, target);
     }
 
     private static void SendWolToIpAddress(IPAddress localAddress, IPAddress remoteAddress, byte[] data, PhysicalAddress physicalAddress)
     {
-        //var localEP = new IPEndPoint(localAddress, 0);
-
         var netLuid = CreateTransientLocalNetEntry(remoteAddress, physicalAddress);
         try
         {
-            var udpc = new UdpClient();
+            using var udpc = new UdpClient(new IPEndPoint(localAddress, 0));
             udpc.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, 1);
-
             var target = new IPEndPoint(remoteAddress, DefaultWolPort);
-
             udpc.Send(data, data.Length, target);
         }
         finally
