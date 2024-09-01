@@ -63,7 +63,14 @@ public partial class BrowserWindow : BaseWindow
         _globalContext.Config.XFormWidth = Width;
         _globalContext.Config.XFormHeight = Height;
 
-        Hide();
+        if (_globalContext.Config.MinimizeOnClose)
+        {
+            Hide();
+
+            return;
+        }
+
+        Program.Exit();
     }
 
     protected override void OnStateChanged(EventArgs e)
@@ -83,5 +90,16 @@ public partial class BrowserWindow : BaseWindow
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
+    }
+
+    private void webView_NavigationStarting(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationStartingEventArgs e)
+    {
+        var core = _window.webView.CoreWebView2;
+
+        if (core != null && !core.Settings.UserAgent.Contains("ColorControlEmbedded"))
+        {
+            core.Settings.UserAgent = core.Settings.UserAgent + " (ColorControlEmbedded)";
+        }
+
     }
 }

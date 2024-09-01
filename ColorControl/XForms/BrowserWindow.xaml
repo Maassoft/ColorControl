@@ -16,6 +16,6 @@
         d:DesignHeight="720" d:DesignWidth="1280" Loaded="Window_Loaded">
     <DockPanel>
         <wv2:WebView2 Name="webView" DefaultBackgroundColor="#212529"
-                  Source="{Binding Url}"/>
+                  Source="{Binding Url}" NavigationStarting="webView_NavigationStarting"/>
     </DockPanel>
 </src:BaseWindow>

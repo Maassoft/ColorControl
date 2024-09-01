@@ -1,10 +1,10 @@
 ﻿@using ColorControl.Shared.Contracts
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.Shared.Common;
 
 @rendermode InteractiveServer
 
-<FieldsModal ModalId="confirmModal" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick"></FieldsModal>
+<FieldsModal ModalId="@ModalId" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick"></FieldsModal>
 
 @code {
     [Parameter]
@@ -15,6 +15,9 @@
 
     [Parameter]
     public Func<Task>? OnConfirm { get; set; }
+
+    [Parameter]
+    public string ModalId { get; set; } = "confirmModal";
 
     public List<FieldDefinition>? Fields { get; set; }
 

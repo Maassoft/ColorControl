@@ -797,7 +797,7 @@ namespace ColorControl.Services.NVIDIA
                 label += " (clear to set to unchanged)";
             }
 
-            var value = SelectValue(0, 100, preset.SDRBrightness, label);
+            var value = MessageForms.SelectIntValue(0, 100, preset.SDRBrightness, label);
 
             if (value == -1)
             {
@@ -831,7 +831,7 @@ namespace ColorControl.Services.NVIDIA
             var display = _nvService.ResolveDisplay(preset);
             var dvControl = display.DigitalVibranceControl;
 
-            var value = SelectValue(dvControl.MinimumLevel, dvControl.MaximumLevel, preset.ColorEnhancementSettings.DigitalVibranceLevel, label);
+            var value = MessageForms.SelectIntValue(dvControl.MinimumLevel, dvControl.MaximumLevel, preset.ColorEnhancementSettings.DigitalVibranceLevel, label);
 
             if (value == -1)
             {
@@ -862,7 +862,7 @@ namespace ColorControl.Services.NVIDIA
             var display = _nvService.ResolveDisplay(preset);
             var hueControl = display.HUEControl;
 
-            var value = SelectValue(hueControl.DefaultAngle, 359, preset.ColorEnhancementSettings.HueAngle, label);
+            var value = MessageForms.SelectIntValue(hueControl.DefaultAngle, 359, preset.ColorEnhancementSettings.HueAngle, label);
 
             if (value == -1)
             {
@@ -1435,36 +1435,6 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var settingValue = (uint)Utils.ParseInt((string)resultFields.First().Value);
-
-            return settingValue;
-        }
-
-        private int? SelectValue(int min, int max, int? currentValue, string label)
-        {
-            var field = new FieldDefinition
-            {
-                MinValue = min,
-                MaxValue = max,
-                Label = label,
-                FieldType = FieldType.Numeric,
-                Value = currentValue
-            };
-
-            var resultFields = MessageForms.ShowDialog(field.Label, new[] { field });
-
-            if (!resultFields.Any())
-            {
-                return -1;
-            }
-
-            var strValue = (string)resultFields.First().Value;
-
-            if (string.IsNullOrWhiteSpace(strValue))
-            {
-                return null;
-            }
-
-            var settingValue = Utils.ParseInt(strValue);
 
             return settingValue;
         }

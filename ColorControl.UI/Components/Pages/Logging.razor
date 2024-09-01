@@ -1,7 +1,7 @@
 ﻿@page "/logging"
 
 @using ColorControl.Shared.Contracts
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 
 @rendermode InteractiveServer
 
@@ -154,10 +154,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        config = await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
+        config ??= await _rpcClientService.CallAsync<Config>("OptionsService", "GetConfig");
         logLevel = config.LogLevel;
 
-        await GetLog();
+        if (allLines == null)
+        {
+            await GetLog();
+        }
     }
 
     private async Task GetLog()

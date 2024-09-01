@@ -1,5 +1,5 @@
 using ColorControl.Shared.Contracts;
-using ColorControl.Shared.Services;
+using ColorControl.UI.Services;
 
 namespace ColorControl.UI;
 
@@ -15,6 +15,9 @@ public static class Blazor
 
         builder.Services.AddSingleton<AppState>(new AppState { SelectedTheme = (config?.UseDarkMode ?? true) ? "dark" : "light" });
         builder.Services.AddTransient<RpcUiClientService>();
+        builder.Services.AddTransient<JSHelper>();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<NotificationService>();
         builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(config?.UiPort > 0 ? config.UiPort : 5000));
 
         var app = builder.Build();

@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Contracts;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using System.Data;
 using System.Globalization;
@@ -502,6 +503,36 @@ namespace ColorControl.Shared.Forms
             prompt.Show(MainForm);
 
             return prompt;
+        }
+
+        public static int? SelectIntValue(int min, int max, int? currentValue, string label)
+        {
+            var field = new FieldDefinition
+            {
+                MinValue = min,
+                MaxValue = max,
+                Label = label,
+                FieldType = FieldType.Numeric,
+                Value = currentValue
+            };
+
+            var resultFields = MessageForms.ShowDialog(field.Label, new[] { field });
+
+            if (!resultFields.Any())
+            {
+                return -1;
+            }
+
+            var strValue = (string)resultFields.First().Value;
+
+            if (string.IsNullOrWhiteSpace(strValue))
+            {
+                return null;
+            }
+
+            var settingValue = Utils.ParseInt(strValue);
+
+            return settingValue;
         }
     }
 }

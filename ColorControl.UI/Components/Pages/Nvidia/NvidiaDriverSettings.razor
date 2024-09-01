@@ -1,6 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
 
@@ -11,7 +11,7 @@
 @inject NavigationManager _navigationManager;
 
 <div class="modal modal-lg" id="driverSettingsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" @onfocus="OnFocus">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@(Preset != null ? Preset.IsDisplayPreset ? $"Driver settings for display {Preset.displayName}" : $"Driver settings for {Preset.IdOrName}" : "Driver settings")</h5>
@@ -37,6 +37,12 @@
                                     <option value="@profileName">@profileName</option>
                                 }
                             </select>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" @bind="OnlyFoundPrograms" id="onlyFoundPrograms" @bind:after="OnlyFoundProgramsOnChange">
+                            <label class="form-check-label" for="onlyFoundPrograms">
+                                Only show found programs
+                            </label>
                         </div>
                     }
 
@@ -137,6 +143,8 @@
 
     private bool IsVisible { get; set; }
 
+    private bool OnlyFoundPrograms = true;
+
     protected override async Task OnParametersSetAsync()
     {
         if (_preset != Preset)
@@ -232,12 +240,17 @@
         await LoadDriverSettings();
     }
 
+    private async Task OnlyFoundProgramsOnChange()
+    {
+        ProfileNames = await _rpcClientService.CallAsync<List<string>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
+    }
+
     private async Task OnFocus(FocusEventArgs e)
     {
         if (!IsVisible)
         {
             IsVisible = true;
-            ProfileNames ??= await _rpcClientService.CallAsync<List<string>>("NvService", "GetDriverProfileNames");
+            ProfileNames ??= await _rpcClientService.CallAsync<List<string>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
             await LoadDriverSettings();
         }
     }

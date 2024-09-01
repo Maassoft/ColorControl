@@ -109,14 +109,16 @@ public class ServiceManager
         return default;
     }
 
-    public void ActivateModule(Module module)
+    public bool ActivateModule(Module module)
     {
         if (!module.IsActive)
         {
-            return;
+            return true;
         }
 
         LoadModules(module.DisplayName);
+
+        return Services.ContainsKey(module.DisplayName);
     }
 
     public async Task<bool> HandleExternalServiceAsync(string serviceName, string[] parameters)

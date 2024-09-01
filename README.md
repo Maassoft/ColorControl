@@ -1,5 +1,18 @@
 # ColorControl
-Easily change NVIDIA and AMD display settings and/or control LG TV's
+Easily change NVIDIA and AMD display settings, control LG and Samsung tv's, Game launcher and color profile management
+
+## Installation
+
+Just extract the .zip file in a folder of your preference. Run ColorControl.exe to start the application.
+Requires .NET 8 with the following runtimes:
+* .NET Desktop Runtime 8
+* .NET ASP.NET Core Runtime 8
+
+ColorControl stores its settings in the following folder:
+* C:\Users\username\AppData\Roaming\Maassoft\ColorControl
+
+If you choose to install the Windows Service then some settings will also be placed here:
+* C:\Windows\System32\config\systemprofile\AppData\Roaming\Maassoft\ColorControl
 
 ## NVIDIA/AMD controller
 
@@ -9,6 +22,8 @@ The NVIDIA controller even has some more options:
 * Dynamic range: VESA (Full RGB) or CEA (Limited RGB/YUV)
 * Color space: to change the color space, but most may not be supported by your tv
 * Dithering: you can define the dithering mode (Temporal or Spatial) and the dithering bit depth
+* HDR: toggle HDR and control the SDR brightness setting
+* NVIDIA: change driver settings
 
 Notes:
 * For a specific setting to be applied, you must include it within the preset. Just click the "Include" menu item and once it is checked, you're good to go.
@@ -18,7 +33,7 @@ Screenshot:
 
 ## LG controller
 
-If you own a recent LG TV (2018 or newer, older might work), you can control your TV through the app (no NVIDIA or AMD graphics card needed).
+If you own a recent LG tv or monitor that uses WebOS as its operating system (2018 or newer, older might work), you can control your tv through the app (no NVIDIA or AMD graphics card needed).
 At startup of the application it will automatically detect your tv's (see below) if they are on the same network as your pc. If a tv is powered on, it will show a popup by which you can allow ColorControl to send commands to you tv. This will only happen the first time or whenever there's a change in the required permissions. A new version of ColorControl might need this.
 It is also possible to add a tv manually by using the "Add" button. A name and ip address are required, the MAC address is only necessary for Wake-On-Lan.
 You can configure as well when to automatically power your tv on or off:
@@ -28,16 +43,37 @@ You can configure as well when to automatically power your tv on or off:
 * Power off on standby
 * Power off on screensaver and on when screensaver deactivates
 
+Besides powering on and off a lot of the settings can be directly changed via ColorControl. 
+
+For experienced users:
+* Open service menu (InStart/EzAdjust)
+* Change TPC/GSR setting directly
+
+## Samsung controller
+
+If you own a recent Samsung tv or monitor that uses Tizen as its operating system (2018 or newer, older might work), you can control your tv through the app (no NVIDIA or AMD graphics card needed).
+At startup of the application it will automatically detect your tv's (see below) if they are on the same network as your pc. If a tv is powered on, it will show a popup by which you can allow ColorControl to send commands to you tv. This will only happen the first time or whenever there's a change in the required permissions. A new version of ColorControl might need this.
+It is also possible to add a tv manually by using the "Add" button. A name and ip address are required, the MAC address is only necessary for Wake-On-Lan.
+You can configure as well when to automatically power your tv on or off:
+* Power on after startup of pc
+* Power on after resume
+* Power off on shutdown
+* Power off on standby
+* Power off on screensaver and on when screensaver deactivates
+
+For experienced users:
+* Open service menu
+
 ### Presets
 
 With the presets you can peform actions on your tv you would normally do via the remote control. Properties of a preset:
 * Name: fill in your own name/description
 * Device: select the tv to perform the action on. Defaults to "Globally selected device", which is the selected device in the top devices drop down.
-* App: select the app to launch that is installed on your tv (optional)
+* App (LG only): select the app to launch that is installed on your tv (optional)
 * Shortcut: enter the global shortcut to execute this preset
 * Steps: steps to execute sequentially. These steps can be:
   * Remote control buttons: like RIGHT, LEFT, ENTER, etc.
-  * Actions: directly change picture settings like backlight, contrast, pictureMode, etc. In a dialog you have to specify the value.
+  * Actions: LG only: directly change picture settings like backlight, contrast, pictureMode, etc. In a dialog you have to specify the value.
   * NVIDIA/AMD presets: add NVIDIA or AMD presets here that have to execute as well
 
 Furthermore, you can add a trigger to a preset which means it will execute automatically when a process on your pc is running. See for more information: https://github.com/Maassoft/ColorControl/releases/tag/v4.0.0.0
@@ -59,14 +95,16 @@ On the Options-tabpage you can finetune some parameters and/or enable some setti
 It is possible to execute presets from the command line. It doesn't matter whether the user interface of Color Control is already running or not.
 This is the syntax:
 ```
-Syntax  : ColorControl.exe command options
+Syntax  : ColorControl command options
 Commands:
 --nvpreset  <preset name or id>: execute NVIDIA-preset
 --amdpreset <preset name or id>: execute AMD-preset
 --lgpreset  <preset name>      : execute LG-preset
+--sampreset <preset name>      : execute Samsung-preset
 --help                         : displays this help info
 Options:
---nogui: starts command from the command line and will not open GUI (is forced when GUI is already running)
+--nogui     : starts command from the command line and will not open GUI (is forced when GUI is already running)
+--no-refresh: when using LG or Samsung-preset: skip refreshing devices (speeds up executing preset)
 ```
 Note: use double quotes if your preset has spaces in it, like this:
 `ColorControl.exe --nvpreset "HDR GSYNC"`

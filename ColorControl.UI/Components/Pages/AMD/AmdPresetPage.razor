@@ -1,15 +1,15 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.AMD
-@using ColorControl.Shared.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.Shared.Common;
+@using ColorControl.UI.Services
 
 @rendermode InteractiveServer
 
 @inject RpcUiClientService _rpcClientService
 
 <div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@(Preset?.IsDisplayPreset == true ? $"Settings for display {Preset?.displayName}" : Preset?.id == 0 ? $"Settings for new preset" : $"Settings of preset {Preset?.IdOrName}")</h5>
@@ -316,7 +316,7 @@
         selectedVirtualResolution = Preset?.DisplayConfig.Resolution?.GetVirtualString();
         selectedRefreshRate = Preset?.DisplayConfig.RefreshRate?.ToString();
 
-        if (Preset?.IsDisplayPreset != true)
+        if (Preset?.IsDisplayPreset == false)
         {
             displayPresets = await _rpcClientService.CallAsync<List<AmdPreset>>("AmdService", "GetDisplayPresets");
         }

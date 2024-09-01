@@ -184,6 +184,8 @@ namespace ColorControl.Shared.Native
                     modesArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq.denominator != refreshRate.Denominator)
                 {
                     modesArray[targetIndex].targetMode.targetVideoSignalInfo.vSyncFreq = new DisplayConfigRational { denominator = refreshRate.Denominator, numerator = refreshRate.Numerator };
+                    pathsArray[pathIndex].targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
+
                     isModeChangeNeeded = true;
                 }
 
@@ -215,7 +217,6 @@ namespace ColorControl.Shared.Native
                     pathsArray[pathIndex].targetInfo.rotation = newRotation;
                     isModeChangeNeeded = true;
                 }
-                //pathsArray[pathIndex].targetInfo.refreshRate = new DisplayConfigRational { numerator = displayConfig.RefreshRate.Numerator, denominator = displayConfig.RefreshRate.Denominator };
 
                 var currentX = modesArray[sourceIndex].sourceMode.position.x;
                 var currentY = modesArray[sourceIndex].sourceMode.position.y;
@@ -499,6 +500,18 @@ namespace ColorControl.Shared.Native
             var result = NativeMethods.WcsSetUsePerUserProfiles(deviceKey, DeviceClassFlags.CLASS_MONITOR, usePerUserProfiles);
 
             return result;
+        }
+
+        public static List<string> GetAllColorProfileNames()
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "spool", "drivers", "color");
+
+            if (!Directory.Exists(folder))
+            {
+                return [];
+            }
+
+            return Directory.EnumerateFiles(folder).Select(n => n.Split("\\").Last()).Where(n => n.EndsWith(".icm", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         private static string GetDisplayDeviceRegistryKey(string displayName)

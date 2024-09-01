@@ -1,13 +1,18 @@
 ﻿@page "/"
 
+@using ColorControl.Shared.Common
 @using ColorControl.Shared.Contracts
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
+@using ColorControl.UI.Generics
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
 @rendermode InteractiveServer
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
 @inject NavigationManager _navigationManager;
+@inject NotificationService _notificationService
+@inject ProtectedSessionStorage _sessionStorage
 
 <PageTitle>Home</PageTitle>
 
@@ -24,10 +29,10 @@ else
     <div class="row">
         @foreach (var module in Modules.Where(m => m.IsActive))
         {
-            <div class="col">
-                <div class="card h-100 mb-3">
+            <div class="col-lg-4 col-xl mb-3">
+                <div class="card h-100">
                     <div class="card-header">
-                        @module.DisplayName
+                        <span class="me-2 bi bi-@module.GetIconClass()" aria-hidden="true"></span>@module.DisplayName
                     </div>
                     <div class="card-body">
                         <a href="@module.Link" class="btn btn-primary stretched-link mb-2">Open module</a>
@@ -47,6 +52,8 @@ else
 @code {
     private Config? Config;
     private List<ModuleDto>? Modules;
+    private InfoDto? Info;
+    private bool IsUpdateAvailable;
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,6 +62,30 @@ else
         if (Modules != null)
         {
             Modules.ForEach(m => m.Link = m.DisplayName.Split(' ')[0]);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || Info != null || Config?.CheckForUpdates != true)
+        {
+            return;
+        }
+
+        var checkedForUpdates = await _sessionStorage.TryGet<bool>("checkedForUpdates");
+
+        if (!checkedForUpdates)
+        {
+            Info = await _rpcClientService.CallAsync<InfoDto>("OptionsService", "GetInfo");
+
+            await _sessionStorage.SetAsync("checkedForUpdates", true);
+
+            if (!IsUpdateAvailable && Info?.UpdateInfoDto?.UpdateAvailable == true)
+            {
+                IsUpdateAvailable = true;
+                var message = $"Update available: version {Info.UpdateInfoDto.NewVersionNumber}";
+                _notificationService.SendNotification(new NotificationDto(message) { InternalUrl = "/info", ScheduledAt = DateTime.UtcNow.AddSeconds(5) });
+            }
         }
     }
 }

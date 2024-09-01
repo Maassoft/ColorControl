@@ -2,7 +2,7 @@
 
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.Shared.Common;
 @using ColorControl.UI.Generics
@@ -74,6 +74,21 @@ else
 					<div class="card-body">
 						<small class="text-body">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz</small>
 						<small class="text-muted">@preset.colorData</small>
+						@if (preset.DitherState != NvDitherState.Auto)
+						{
+							<br />
+							<small class="text-body">Dithering: @preset.DitherState.GetDescription() @preset.NvDitherBits.GetDescription() @preset.NvDitherMode.GetDescription()</small>
+						}
+						@if (preset.HDREnabled)
+						{
+							<br />
+							<small class="text-body">HDR enabled @(preset.HdrSettings.OutputMode.HasValue ? $"({preset.HdrSettings.DisplayOutputMode.GetDescription()})" : ""), SDR brightness: @preset.SDRBrightness%</small>
+						}
+						@if (!string.IsNullOrEmpty(preset.ColorProfileSettings.ProfileName))
+						{
+							<br />
+							<small class="text-body">Color profile: @preset.ColorProfileSettings.ProfileName</small>
+						}
 					</div>
 				</div>
 			</div>
@@ -103,10 +118,14 @@ else
 	</div>
 	<div class="row mb-3">
 		<div class="col">
+			@if (!Presets.Any())
+			{
+				<span>No presets found</span>
+			}
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
-					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+					<span class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
 						<div class="d-flex align-items-start justify-content-between">
 							<div>
 								<h5 class="mb-1">
@@ -117,34 +136,68 @@ else
 									}
 								</h5>
 							</div>
-							<span>
+							<span class="d-none d-lg-block">
 								<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Delete</button>
 								<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Clone</button>
 								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
 							</span>
+							<div class="d-lg-none" @onclick:preventDefault @onclick:stopPropagation>
+								<button type="button" class="btn btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+									<i class="bi bi-three-dots-vertical"></i>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)">Delete</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)">Clone</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)">Edit</a></li>
+								</ul>
+							</div>
 						</div>
-						<p class="mb-1">
-							@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz
-							@(preset.applyColorData ? " " + preset.colorData : "")
-							@if (preset.ApplyColorEnhancements)
-							{
-								<span>, @preset.ColorEnhancementSettings</span>
-							}
-							@if (preset.applyHDR)
-							{
-								<span>, HDR: @preset.GetHdrDescription()</span>
-							}
-							@if (preset.applyDriverSettings)
-							{
-								<span>, @preset.driverSettings.Count changed driver settings</span>
-							}
-							@if (preset.ApplyNovideoSettings)
-							{
-								<span>, @preset.NovideoSettings</span>
-							}
-						</p>
+						<small>
+							<ul class="list-group list-group-horizontal-md mb-1">
+								@if (preset.DisplayConfig.ApplyResolution || preset.DisplayConfig.ApplyRefreshRate)
+								{
+									<li class="list-group-item p-1">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz</li>
+								}
+								@if (preset.applyColorData)
+								{
+									<li class="list-group-item p-1">Color settings: @preset.colorData</li>
+								}
+								@if (preset.applyDithering)
+								{
+									<li class="list-group-item p-1">Dithering: @preset.GetDitheringDescription()</li>
+								}
+								@if (preset.ApplyColorEnhancements)
+								{
+									<li class="list-group-item p-1">@preset.ColorEnhancementSettings</li>
+								}
+								@if (preset.applyHDR)
+								{
+									<li class="list-group-item p-1">HDR: @preset.GetHdrDescription()</li>
+								}
+								@if (preset.applyDriverSettings)
+								{
+									<li class="list-group-item p-1">@preset.driverSettings.Count changed driver settings</li>
+								}
+								@if (preset.ApplyNovideoSettings)
+								{
+									<li class="list-group-item p-1">@preset.NovideoSettings</li>
+								}
+								@if (preset.applyHdmiSettings)
+								{
+									<li class="list-group-item p-1">@preset.GetHdmiSettingsDescription()</li>
+								}
+								@if (preset.applyOverclocking)
+								{
+									<li class="list-group-item p-1">@preset.GetOverclockingSettingsDescription()</li>
+								}
+								@if (preset.applyOther && !string.IsNullOrEmpty(preset.ColorProfileSettings.ProfileName))
+								{
+									<li class="list-group-item p-1">Color profile: @preset.ColorProfileSettings.ProfileName</li>
+								}
+							</ul>
+						</small>
 						<small class="text-muted">@preset.shortcut</small>
-					</a>
+					</span>
 				}
 			</div>
 		</div>

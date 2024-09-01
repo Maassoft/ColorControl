@@ -1,7 +1,7 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
 @using ColorControl.Shared.Contracts.Game
-@using ColorControl.Shared.Services
+@using ColorControl.UI.Services
 @using ColorControl.UI.Components.Pages.Generic
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common
@@ -13,7 +13,7 @@
 @inject NavigationManager _navigationManager;
 
 <div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@(Preset?.id == 0 ? $"Settings for new preset" : $"Settings of preset {Preset?.IdOrName}")</h5>

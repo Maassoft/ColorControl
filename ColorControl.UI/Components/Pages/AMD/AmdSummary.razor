@@ -3,7 +3,7 @@
 @using ColorControl.Shared.Common
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.AMD
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -92,6 +92,10 @@ else
 	</div>
 	<div class="row mb-3">
 		<div class="col">
+			@if (!Presets.Any())
+			{
+				<span>No presets found</span>
+			}
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
@@ -106,11 +110,21 @@ else
 									}
 								</h5>
 							</div>
-							<span>
+							<span class="d-none d-lg-block">
 								<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Delete</button>
 								<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Clone</button>
 								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
 							</span>
+							<div class="d-lg-none" @onclick:preventDefault @onclick:stopPropagation>
+								<button type="button" class="btn btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+									<i class="bi bi-three-dots-vertical"></i>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)">Delete</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)">Clone</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)">Edit</a></li>
+								</ul>
+							</div>
 						</div>
 						<p class="mb-1">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz @(preset.applyColorData ? preset.colorDepth : "")</p>
 						<small class="text-muted">@preset.shortcut</small>
@@ -124,7 +138,6 @@ else
 @code {
 	private List<AmdPreset>? Presets;
 	private List<AmdPreset>? DisplayPresets;
-	private List<VirtualResolution>? Resolutions;
 
 	private AmdPreset? CurrentPreset;
 
@@ -134,7 +147,6 @@ else
 	{
 		await RefreshPresets();
 		DisplayPresets = await _rpcClientService.CallAsync<List<AmdPreset>>("AmdService", "GetDisplayPresets");
-		Resolutions = await _rpcClientService.CallAsync<List<VirtualResolution>>("AmdService", "GetAvailableResolutionsV2", DisplayPresets?.FirstOrDefault());
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstTime)

@@ -19,8 +19,6 @@ public class UpdateManager
     private readonly WinApiAdminService _winApiAdminService;
     private readonly Config _config;
 
-    private bool _checkedForUpdates;
-    private string _updateHtmlUrl;
     private string _downloadUrl;
 
     public UpdateManager(GlobalContext globalContext, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService, WinApiAdminService winApiAdminService)
@@ -35,40 +33,102 @@ public class UpdateManager
 
     private void trayIconBalloonTip_Clicked(object sender, EventArgs e)
     {
-        if (_updateHtmlUrl != null)
+        if (_globalContext.UpdateInfo?.HtmlUrl != null)
         {
-            _winApiAdminService.StartProcess(_updateHtmlUrl);
+            _winApiAdminService.StartProcess(_globalContext.UpdateInfo?.HtmlUrl);
         }
     }
 
-    public async Task CheckForUpdates()
+    public async Task CheckForUpdatesAndInstall()
     {
-        if (!_config.CheckForUpdates || _checkedForUpdates || Debugger.IsAttached)
+        var updateInfo = await CheckForUpdates();
+
+        if (!updateInfo.UpdateAvailable)
         {
             return;
         }
 
-        _checkedForUpdates = true;
+        _notifyIconManager.NotifyIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
+        var newVersion = updateInfo.NewVersionNumber;
 
-        await Utils.GetRestJsonAsync("https://api.github.com/repos/maassoft/colorcontrol/releases/latest", InitHandleCheckForUpdates);
-    }
-
-    private void InitHandleCheckForUpdates(dynamic latest)
-    {
-        HandleCheckForUpdates(latest);
-    }
-
-    private async void HandleCheckForUpdates(dynamic latest)
-    {
-        if (latest?.tag_name == null)
+        if (!string.IsNullOrEmpty(updateInfo.DownloadUrl) && _winApiService.IsServiceRunning())
         {
+            if (_config.AutoInstallUpdates)
+            {
+                await InstallUpdate();
+
+                return;
+            }
+
+            if (_notifyIconManager.NotifyIcon.Visible)
+            {
+                _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click on the Update-button to update", ToolTipIcon.Info);
+            }
+            else
+            {
+                MessageForms.InfoOk($"New version {newVersion} is available. Click on the Update-button to update", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
+            }
+
             return;
+        }
+
+        if (_notifyIconManager.NotifyIcon.Visible)
+        {
+            _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
+        }
+        else
+        {
+            MessageForms.InfoOk($"New version {newVersion} is available. Click on the Help-button to open the GitHub page.", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
+        }
+    }
+
+    public async Task<UpdateInfoDto> CheckForUpdates()
+    {
+        if (_globalContext.UpdateInfo != null)
+        {
+            return _globalContext.UpdateInfo;
+        }
+
+        //if (Debugger.IsAttached)
+        //{
+        //    return _globalContext.UpdateInfo = new UpdateInfoDto
+        //    {
+        //        UpdateAvailable = true,
+        //        NewVersionNumber = "10.0.0.2",
+        //        DownloadUrl = "http://testurl"
+        //    };
+        //}
+
+        if (Debugger.IsAttached)
+        {
+            return new UpdateInfoDto();
+        }
+
+        var json = await Utils.GetRestJsonAsync("https://api.github.com/repos/maassoft/colorcontrol/releases/latest");
+
+        if (json == null)
+        {
+            return new UpdateInfoDto();
+        }
+
+        _globalContext.UpdateInfo = GetUpdateInfo(json);
+
+        return _globalContext.UpdateInfo;
+    }
+
+    private static UpdateInfoDto GetUpdateInfo(dynamic json)
+    {
+        var updateInfo = new UpdateInfoDto();
+
+        if (json?.tag_name == null)
+        {
+            return updateInfo;
         }
 
         var currentVersion = Application.ProductVersion;
         var cvParts = currentVersion.Split(".");
 
-        var newVersion = (string)latest.tag_name.Value.Substring(1);
+        var newVersion = (string)json.tag_name.Value.Substring(1);
         var nvParts = newVersion.Split(".");
 
         bool CompareVersions()
@@ -99,56 +159,36 @@ public class UpdateManager
             return result && aNumberIsLarger;
         }
 
-        if (nvParts.Length != cvParts.Length || CompareVersions())
+        updateInfo.NewVersionNumber = newVersion;
+        updateInfo.UpdateAvailable = nvParts.Length != cvParts.Length || CompareVersions();
+
+        updateInfo.HtmlUrl = json.html_url.Value;
+
+        if (json.assets != null)
         {
-            _notifyIconManager.NotifyIcon.BalloonTipClicked += trayIconBalloonTip_Clicked;
-
-            _updateHtmlUrl = latest.html_url.Value;
-
-            if (latest.assets != null && _winApiService.IsServiceRunning())
-            {
-                var asset = latest.assets[0];
-                _downloadUrl = asset.browser_download_url.Value;
-
-                if (_config.AutoInstallUpdates)
-                {
-                    await InstallUpdate();
-
-                    return;
-                }
-
-                _globalContext.UpdateAvailable = true;
-
-                if (_notifyIconManager.NotifyIcon.Visible)
-                {
-                    _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click on the Update-button to update", ToolTipIcon.Info);
-                }
-                else
-                {
-                    MessageForms.InfoOk($"New version {newVersion} is available. Click on the Update-button to update", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
-                }
-
-                return;
-            }
-
-            if (_notifyIconManager.NotifyIcon.Visible)
-            {
-                _notifyIconManager.NotifyIcon.ShowBalloonTip(5000, "Update available", $"Version {newVersion} is available. Click to open the GitHub page", ToolTipIcon.Info);
-            }
-            else
-            {
-                MessageForms.InfoOk($"New version {newVersion} is available. Click on the Help-button to open the GitHub page.", "Update available", $"https://github.com/Maassoft/ColorControl/releases/tag/v{newVersion}");
-            }
+            var asset = json.assets[0];
+            updateInfo.DownloadUrl = asset.browser_download_url.Value;
         }
+
+        return updateInfo;
     }
 
-    public async Task InstallUpdate()
+    public async Task<bool> InstallUpdate()
     {
-        if (_downloadUrl == null) { return; }
+        if (_globalContext.UpdateInfo?.DownloadUrl == null)
+        {
+            return false;
+        }
+
+        if (Debugger.IsAttached)
+        {
+            await Task.Delay(5000);
+            return true;
+        }
 
         var message = new SvcInstallUpdateMessage
         {
-            DownloadUrl = _downloadUrl,
+            DownloadUrl = _globalContext.UpdateInfo?.DownloadUrl,
             ClientPath = new FileInfo(Application.ExecutablePath).Directory.FullName
         };
 
@@ -156,21 +196,28 @@ public class UpdateManager
 
         if (result != null && !result.Result)
         {
-            MessageForms.ErrorOk($"Error while updating: {result.ErrorMessage}");
+            if (Program.IsMainFormOpened())
+            {
+                MessageForms.ErrorOk($"Error while updating: {result.ErrorMessage}");
+            }
 
-            return;
+            return false;
         }
 
         await PipeUtils.SendMessageAsync(SvcMessageType.RestartAfterUpdate);
 
-        if (MessageForms.QuestionYesNo("Update installed successfully. Do you want to restart the application?") == DialogResult.Yes)
+        if (Program.IsMainFormOpened() && MessageForms.QuestionYesNo("Update installed successfully. Do you want to restart the application?") == DialogResult.Yes)
         {
             Program.Restart();
         }
-        else
-        {
-            _downloadUrl = null;
-            _globalContext.UpdateAvailable = true;
-        }
+
+        return true;
+    }
+
+    public async Task<bool> RestartAfterUpdate()
+    {
+        Program.Restart();
+
+        return true;
     }
 }

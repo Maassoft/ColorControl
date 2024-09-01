@@ -1,0 +1,96 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.Shared.Services;
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Services
+
+@rendermode InteractiveServer
+
+@inject JSHelper jsHelper;
+@inject NotificationService notificationService;
+@inject NavigationManager _navigationManager;
+
+@if (Notifications?.Any() == true)
+{
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container bottom-0 end-0 p-3">
+
+            @foreach (var notification in Notifications)
+            {
+                <div class="toast" id="toast_@notification.Id" role="alert" aria-live="assertive" aria-atomic="true" @onclick="() => NotificationOnClick(notification)">
+                    <div class="toast-header" style="background-color: var(--bs-@notification.Level-bg-subtle)">
+                        <span class="w-100 d-flex">
+                            <div class="alert alert-@notification.Level mb-0 py-1">
+                                <strong class="me-auto">@notification.Category</strong>
+                            </div>
+                        </span>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        @if (notification.InternalUrl != null)
+                        {
+                            <ul class="list-group-flush p-0 mb-0">
+                                <li class="list-group-item">@notification.Message</li>
+                            </ul>
+                        }
+                        else
+                        {
+                            @notification.Message
+                        }
+                    </div>
+                </div>
+
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<NotificationDto> Notifications { get; } = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            notificationService.OnNotification += AddNotification;
+        }
+    }
+
+    protected async Task AddNotification(NotificationDto notification)
+    {
+        RemoveOldNotifications();
+
+        var minShownAt = DateTime.UtcNow.AddSeconds(-5);
+
+        // Suppress duplicate noficiations
+        if (Notifications.Any(n => n.Message == notification.Message && n.Level == notification.Level && n.ShownAt >= minShownAt))
+        {
+            return;
+        }
+
+
+        Notifications.Add(notification);
+
+        await InvokeAsync(StateHasChanged);
+
+        await jsHelper.ShowToast($"toast_{notification.Id}");
+        notification.ShownAt = DateTime.UtcNow;
+    }
+
+    private async Task NotificationOnClick(NotificationDto notification)
+    {
+        if (notification.InternalUrl != null)
+        {
+            _navigationManager.NavigateTo(notification.InternalUrl);
+        }
+
+        Notifications.Remove(notification);
+    }
+
+    private void RemoveOldNotifications()
+    {
+        var minDateTime = DateTime.UtcNow.AddMinutes(-1);
+
+        Notifications.RemoveAll(n => n.ShownAt.HasValue && n.ShownAt <= minDateTime);
+    }
+}

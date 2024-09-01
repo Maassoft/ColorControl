@@ -1,5 +1,5 @@
 ﻿@using ColorControl.Shared.Contracts
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.Shared.Common;
 
 @rendermode InteractiveServer
@@ -7,7 +7,7 @@
 @inject NavigationManager _navigationManager;
 
 <div class="modal" id="@ModalId" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalFocus">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@Title</h5>

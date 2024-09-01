@@ -127,7 +127,10 @@ internal class MainWorker
 
         _ = _powerEventDispatcher.SendEventAsync(PowerEventDispatcher.Event_Startup);
 
-        _ = _updateManager.CheckForUpdates();
+        if (_config.CheckForUpdates)
+        {
+            _ = _updateManager.CheckForUpdatesAndInstall();
+        }
 
         if (!_config.StartMinimized /*|| Debugger.IsAttached*/)
         {
@@ -158,6 +161,8 @@ internal class MainWorker
     {
         Logger.Debug($"MainWorker: QueryEndSession");
         Logger.Debug($"MainWorker: SystemShutdown");
+
+        _serviceManager.Save();
 
         _powerEventDispatcher.SendEvent(PowerEventDispatcher.Event_Shutdown);
     }

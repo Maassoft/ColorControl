@@ -1,13 +1,14 @@
 ﻿@page "/info"
 
 @using ColorControl.Shared.Common;
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 
 @rendermode InteractiveServer
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
 @inject NavigationManager _navigationManager;
+@inject IHttpContextAccessor _httpContextAccessor
 
 <PageTitle>Logging</PageTitle>
 
@@ -20,7 +21,41 @@
 else
 {
     <h3 class="mb-2">@info.ApplicationTitle - @info.LegalCopyright</h3>
+    
+    <div class="d-flex align-items-baseline">
+        @if (IsUpdateInstalled)
+        {
+            if (IsEmbeddedBrowser)
+            {
+                <button type="button" class="btn btn-primary me-2" @onclick="RestartOnClick">Restart</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary me-2" @onclick="ReloadOnClick">Reload</button>
+            }
+            <span>New version @info.UpdateInfoDto.NewVersionNumber is installed. Click the button to restart the application.</span>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary me-2" disabled="@(!info.UpdateInfoDto.UpdateAvailable || IsInstallingUpdate)" @onclick="InstallUpdateOnClick">
+                @if (IsInstallingUpdate)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                }
+                <span role="status">Install update</span>
+            </button>
+            @if (info.UpdateInfoDto.UpdateAvailable)
+            {
+                <span>New version @info.UpdateInfoDto.NewVersionNumber available. Click the button to install the update.</span>
+            }
+            else
+            {
+                <span>You have the latest version</span>
+            }
+        }
+    </div>
 
+    <br/>
     <h5>This app contains the following 3rd party plugins:</h5>
     <ul class="list-group">
         <li class="list-group-item">lgtv.net by gr4b4z</li>
@@ -41,10 +76,46 @@ else
 
 @code {
     private InfoDto? info;
+    private bool IsInstallingUpdate;
+    private bool IsUpdateInstalled;
+    private bool IsEmbeddedBrowser;
 
     protected override async Task OnInitializedAsync()
     {
         info = await _rpcClientService.CallAsync<InfoDto>("OptionsService", "GetInfo");
 
+    }
+
+    private async Task InstallUpdateOnClick(MouseEventArgs e)
+    {
+        IsInstallingUpdate = true;
+        try
+        {
+            var result = await _rpcClientService.CallAsync<bool>("OptionsService", "InstallUpdate");
+
+            if (!result)
+            {
+                return;
+            }
+
+            IsUpdateInstalled = true;
+            IsEmbeddedBrowser = _httpContextAccessor.HttpContext?.Request.Headers["user-agent"].ToString().Contains("ColorControlEmbedded") == true;
+        }
+        finally
+        {
+            IsInstallingUpdate = false;
+        }
+    }
+
+    private async Task RestartOnClick(MouseEventArgs e)
+    {
+        var result = await _rpcClientService.CallAsync<bool>("OptionsService", "RestartAfterUpdate");
+    }
+
+    private async Task ReloadOnClick(MouseEventArgs e)
+    {
+        var result = await _rpcClientService.CallAsync<bool>("OptionsService", "RestartAfterUpdate");
+
+        _navigationManager.Refresh();
     }
 }

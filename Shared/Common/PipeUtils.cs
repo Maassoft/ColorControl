@@ -7,152 +7,131 @@ namespace ColorControl.Shared.Common;
 
 public static class PipeUtils
 {
-    public const string ServicePipe = "servicepipe";
-    public const string ElevatedPipe = "elevatedpipe";
-    public const string MainPipe = "mainpipe";
+	public const string ServicePipe = "servicepipe";
+	public const string ElevatedPipe = "elevatedpipe";
+	public const string MainPipe = "mainpipe";
 
-    private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+	public const int DefaultTimeout = 5000;
 
-    public static async Task<string> SendMessageAsync(string message, int timeout = 2000, string pipeName = ServicePipe)
-    {
-        var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
-        try
-        {
-            await pipeClient.ConnectAsync(timeout);
-            try
-            {
-                var ss = new StreamString(pipeClient);
+	private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-                await ss.WriteStringAsync(message);
+	public static async Task<string> SendMessageAsync(string message, int timeout = DefaultTimeout, string pipeName = ServicePipe)
+	{
+		var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
+		try
+		{
+			await pipeClient.ConnectAsync(timeout);
+			try
+			{
+				var ss = new StreamString(pipeClient);
 
-                var result = await ss.ReadStringAsync();
+				await ss.WriteStringAsync(message);
 
-                return result;
-            }
-            finally
-            {
-                pipeClient.Close();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "PipeUtils.SendMessage");
+				var result = await ss.ReadStringAsync();
 
-            return null;
-        }
-    }
+				return result;
+			}
+			finally
+			{
+				pipeClient.Close();
+			}
+		}
+		catch (Exception ex)
+		{
+			Logger.Error(ex, "PipeUtils.SendMessage");
 
-    public static string SendMessage(string message, int timeout = 2000, string pipeName = ServicePipe)
-    {
-        var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
-        try
-        {
-            pipeClient.Connect(timeout);
-            try
-            {
-                var ss = new StreamString(pipeClient);
+			return null;
+		}
+	}
 
-                ss.WriteString(message);
+	public static string SendMessage(string message, int timeout = 5000, string pipeName = ServicePipe)
+	{
+		var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.None);
+		try
+		{
+			pipeClient.Connect(timeout);
+			try
+			{
+				var ss = new StreamString(pipeClient);
 
-                var result = ss.ReadString();
+				ss.WriteString(message);
 
-                return result;
-            }
-            finally
-            {
-                pipeClient.Close();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "PipeUtils.SendMessage");
+				var result = ss.ReadString();
 
-            return null;
-        }
-    }
+				return result;
+			}
+			finally
+			{
+				pipeClient.Close();
+			}
+		}
+		catch (Exception ex)
+		{
+			Logger.Error(ex, "PipeUtils.SendMessage");
 
-    public static async Task<SvcResultMessage> SendMessageAsync(SvcMessage message, int timeout = 2000)
-    {
-        var messageJson = JsonConvert.SerializeObject(message);
+			return null;
+		}
+	}
 
-        var resultJson = await SendMessageAsync(messageJson, timeout);
+	public static async Task<SvcResultMessage> SendMessageAsync(SvcMessage message, int timeout = DefaultTimeout)
+	{
+		var messageJson = JsonConvert.SerializeObject(message);
 
-        if (resultJson == null)
-        {
-            return null;
-        }
+		var resultJson = await SendMessageAsync(messageJson, timeout);
 
-        var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
+		if (resultJson == null)
+		{
+			return null;
+		}
 
-        return resultMessage;
-    }
+		var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
 
-    public static SvcResultMessage SendMessage(SvcMessage message, int timeout = 2000)
-    {
-        var messageJson = JsonConvert.SerializeObject(message);
+		return resultMessage;
+	}
 
-        var resultJson = SendMessage(messageJson, timeout);
+	public static SvcResultMessage SendMessage(SvcMessage message, int timeout = DefaultTimeout)
+	{
+		var messageJson = JsonConvert.SerializeObject(message);
 
-        if (resultJson == null)
-        {
-            return null;
-        }
+		var resultJson = SendMessage(messageJson, timeout);
 
-        var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
+		if (resultJson == null)
+		{
+			return null;
+		}
 
-        return resultMessage;
-    }
+		var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
 
-    public static async Task<SvcResultMessage> SendMessageAsync(SvcMessageType messageType)
-    {
-        var message = new SvcMessage { MessageType = messageType };
+		return resultMessage;
+	}
 
-        return await SendMessageAsync(message);
-    }
+	public static async Task<SvcResultMessage> SendMessageAsync(SvcMessageType messageType)
+	{
+		var message = new SvcMessage { MessageType = messageType };
 
-    public static async Task<T> SendRpcMessageAsync<T>(SvcRpcMessage message, int timeout = 2000, string pipeName = ServicePipe)
-    {
-        var messageJson = JsonConvert.SerializeObject(message);
+		return await SendMessageAsync(message);
+	}
 
-        var resultJson = await SendMessageAsync(messageJson, timeout, pipeName);
+	public static T SendRpcMessage<T>(SvcRpcMessage message, int timeout = DefaultTimeout, string pipeName = ServicePipe)
+	{
+		var messageJson = JsonConvert.SerializeObject(message);
 
-        if (resultJson == null)
-        {
-            return default;
-        }
+		var resultJson = SendMessage(messageJson, timeout, pipeName);
 
-        var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
+		if (resultJson == null)
+		{
+			return default;
+		}
 
-        if (resultMessage?.Data == null)
-        {
-            return default;
-        }
+		var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
 
-        var result = JsonConvert.DeserializeObject<T>(resultMessage.Data);
+		if (resultMessage?.Data == null)
+		{
+			return default;
+		}
 
-        return result;
-    }
+		var result = JsonConvert.DeserializeObject<T>(resultMessage.Data);
 
-    public static T SendRpcMessage<T>(SvcRpcMessage message, int timeout = 2000, string pipeName = ServicePipe)
-    {
-        var messageJson = JsonConvert.SerializeObject(message);
-
-        var resultJson = SendMessage(messageJson, timeout, pipeName);
-
-        if (resultJson == null)
-        {
-            return default;
-        }
-
-        var resultMessage = JsonConvert.DeserializeObject<SvcResultMessage>(resultJson);
-
-        if (resultMessage?.Data == null)
-        {
-            return default;
-        }
-
-        var result = JsonConvert.DeserializeObject<T>(resultMessage.Data);
-
-        return result;
-    }
+		return result;
+	}
 }

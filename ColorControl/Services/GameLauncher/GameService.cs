@@ -144,11 +144,6 @@ namespace ColorControl.Services.GameLauncher
             return new List<GamePreset>();
         }
 
-        private void SavePresets()
-        {
-            Utils.WriteObject(_presetsFilename, _presets);
-        }
-
         public void GlobalSave()
         {
             SavePresets();
@@ -300,6 +295,8 @@ namespace ColorControl.Services.GameLauncher
 
             SetShortcuts(SHORTCUTID_GAMEQA, Config.QuickAccessShortcut);
 
+            SaveConfig();
+
             return true;
         }
 
@@ -316,6 +313,8 @@ namespace ColorControl.Services.GameLauncher
                 preset = new GamePreset(presetSpec);
                 _presets.Add(preset);
             }
+
+            SavePresets();
 
             return true;
         }

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using NvAPIWrapper.Native.Attributes;
+﻿using NvAPIWrapper.Native.Attributes;
 using NvAPIWrapper.Native.Exceptions;
 using NvAPIWrapper.Native.General.Structures;
 using NvAPIWrapper.Native.GPU;
 using NvAPIWrapper.Native.Helpers;
 using NvAPIWrapper.Native.Interfaces;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NvAPIWrapper.Native.Display.Structures
 {
@@ -18,7 +18,7 @@ namespace NvAPIWrapper.Native.Display.Structures
     {
         internal StructureVersion _Version;
         internal readonly Rotate _Rotation;
-        internal readonly Scaling _Scaling;
+        internal Scaling _Scaling;
         internal readonly uint _RefreshRateInMillihertz;
         internal uint _RawReserved;
         internal readonly ConnectorType _ConnectorType;
@@ -139,14 +139,14 @@ namespace NvAPIWrapper.Native.Display.Structures
         {
             unchecked
             {
-                var hashCode = (int) _Rotation;
-                hashCode = (hashCode * 397) ^ (int) _Scaling;
-                hashCode = (hashCode * 397) ^ (int) _RefreshRateInMillihertz;
+                var hashCode = (int)_Rotation;
+                hashCode = (hashCode * 397) ^ (int)_Scaling;
+                hashCode = (hashCode * 397) ^ (int)_RefreshRateInMillihertz;
                 // ReSharper disable once NonReadonlyMemberInGetHashCode
-                hashCode = (hashCode * 397) ^ (int) _RawReserved;
-                hashCode = (hashCode * 397) ^ (int) _ConnectorType;
-                hashCode = (hashCode * 397) ^ (int) _TVFormat;
-                hashCode = (hashCode * 397) ^ (int) _TimingOverride;
+                hashCode = (hashCode * 397) ^ (int)_RawReserved;
+                hashCode = (hashCode * 397) ^ (int)_ConnectorType;
+                hashCode = (hashCode * 397) ^ (int)_TVFormat;
+                hashCode = (hashCode * 397) ^ (int)_TimingOverride;
                 hashCode = (hashCode * 397) ^ _Timing.GetHashCode();
 
                 return hashCode;
@@ -167,6 +167,7 @@ namespace NvAPIWrapper.Native.Display.Structures
         public Scaling Scaling
         {
             get => _Scaling;
+            set => _Scaling = value;
         }
 
         /// <summary>

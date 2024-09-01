@@ -1,0 +1,452 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.AMD
+@using ColorControl.Shared.Contracts.DisplayInfo
+@using ColorControl.UI.Components.Pages.Generic
+@using ColorControl.Shared.Common;
+@using ColorControl.UI.Services
+@using MHC2Gen
+@using Microsoft.JSInterop;
+
+@rendermode InteractiveServer
+
+@inject RpcUiClientService _rpcClientService
+@inject JSHelper jsHelper;
+
+<div class="modal modal-lg" id="colorProfileModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(ColorProfile?.Name == null ? $"Settings for new color profile" : $"Settings of color profile {ColorProfile.Name}")</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => IsVisible = false"></button>
+            </div>
+            <div class="modal-body">
+                @if (ColorProfile?.HasExtraInfo == false)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        This is not a profile created by ColorControl. Some fields are set to default.
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_rpcClientService.LastErrorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Error: @_rpcClientService.LastErrorMessage
+                    </div>
+                }
+                <form class="row g-1 needs-validation @WasValidated" id="profileForm" novalidate>
+                    @if (ColorProfile == null || DisplayInfo == null || CurrentColorInfo == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+                            <label class="form-label" for="display">Display</label>
+                            <input class="form-control" type="text" id="display" value="@DisplayInfo" disabled />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="name">Name</label>
+                            <input class="form-control" type="text" id="name" @bind="ColorProfile.Name" @bind:after="AfterNameChanged" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="description">Description</label>
+                            <input class="form-control" type="text" id="description" @bind="ColorProfile.Description" />
+                        </div>
+                        <div class="accordion accordion-flush" id="presetAccordion">
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
+                                            Color gamut
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="displaySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-2">
+                                            <div class="row">
+                                                <div class="col">
+                                                    <label class="form-label" for="primariesSource"><small>Show Display Primaries and Luminance values of</small></label>
+                                                    <select class="form-select" id="primariesSource" @bind="DisplayPrimariesSource" @bind:after="DisplayPrimariesSourceChanged">
+                                                        @foreach (var colorInfo in DisplayColors)
+                                                        {
+                                                            <option value="@colorInfo.DisplayPrimariesSource">@(colorInfo.CustomName ?? colorInfo.DisplayPrimariesSource.ToString())</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="col align-content-end">
+                                                    <button class="btn btn-primary" type="button" disabled="@(DisplayPrimariesSource == DisplayPrimariesSource.ColorProfile)" @onclick="OverwritePrimariesOnClick">Overwrite color profile values</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-danger" for="redX">Red X-coordinate</label>
+                                                    <input class="form-control" id="redX" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Red.X" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-danger" for="redY">Red Y-coordinate</label>
+                                                    <input class="form-control" id="redY" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Red.Y" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-success" for="greenX">Green X-coordinate</label>
+                                                    <input class="form-control" id="greenX" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Green.X" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-success" for="greenY">Green Y-coordinate</label>
+                                                    <input class="form-control" id="greenY" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Green.Y" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-primary" for="blueX">Blue X-coordinate</label>
+                                                    <input class="form-control" id="blueX" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Blue.X" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label text-primary" for="blueY">Blue Y-coordinate</label>
+                                                    <input class="form-control" id="blueY" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.Blue.Y" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="whiteX">White X-coordinate</label>
+                                                    <input class="form-control" id="whiteX" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.White.X" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="whiteY">White Y-coordinate</label>
+                                                    <input class="form-control" id="whiteY" type="number" min="0" max="1" step="0.000000000000001" @bind="CurrentColorInfo.RgbPrimaries.White.Y" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="form-label" for="targetGamut">Target gamut</label>
+                                            <select class="form-select" id="targetGamut" @bind="ColorProfile.ColorGamut">
+                                                @foreach (var gamut in Enum.GetValues<ColorGamut>())
+                                                {
+                                                    <option value="@gamut">@gamut.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#luminanceSettings">
+                                            Luminance settings
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="luminanceSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="minLuminance">Minimum luminance (nits)</label>
+                                                    <input class="form-control" id="minLuminance" type="number" min="0" max="10" @bind="CurrentColorInfo.BlackLuminance" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="maxLuminance">Max full frame luminance (nits)</label>
+                                                    <input class="form-control" id="maxLuminance" type="number" min="0" max="10000" @bind="CurrentColorInfo.WhiteLuminance" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="minCLL">Minimum brightness (MinCLL) (nits)</label>
+                                                    <input class="form-control" id="minCLL" type="number" min="0" max="10" @bind="CurrentColorInfo.MinCLL" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="maxCLL">Peak brightness (MaxCLL) (nits)</label>
+                                                    <input class="form-control" id="maxCLL" type="number" min="0" max="10000" @bind="CurrentColorInfo.MaxCLL" disabled="@PrimariesDisabled" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#hdrSettings">
+                                            Advanced EOTF settings
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="hdrSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="sdrTransfer">SDR Transfer Function</label>
+                                                    <select class="form-select" id="sdrTransfer" @bind="ColorProfile.SDRTransferFunction">
+                                                        @foreach (var function in Enum.GetValues<SDRTransferFunction>())
+                                                        {
+                                                            <option value="@function">@function.GetDescription()</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="mb-2">
+                                                    <label class="form-label" for="gamma">Gamma</label>
+                                                    <input class="form-control" id="gamma" type="number" min="0.1" max="10" step="0.01" @bind="ColorProfile.Gamma" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.PurePower)" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if (ColorProfile.IsHDRProfile)
+                                        {
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="minSDR">Minimum SDR brightness (nits)</label>
+                                                        <input class="form-control" id="minSDR" type="number" min="0" max="10" step="0.001" @bind="ColorProfile.SDRMinBrightness" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.PurePower)" />
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="maxSDR">Maximum SDR brightness (nits)</label>
+                                                        <input class="form-control" id="maxSDR" type="number" min="0" max="10000" @bind="ColorProfile.SDRMaxBrightness" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.PurePower)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="brightnessBoost">Brightness boost (%)</label>
+                                                        <input class="form-control" id="brightnessBoost" type="number" min="-100" max="100" @bind="ColorProfile.SDRBrightnessBoost" />
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="shadowDetailBoost">Shadow detail boost (%)</label>
+                                                        <input class="form-control" id="shadowDetailBoost" type="number" min="0" max="100" @bind="ColorProfile.ShadowDetailBoost" disabled="@(ColorProfile.SDRTransferFunction == SDRTransferFunction.Piecewise)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary" @onclick="InstallOnClick" disabled="@(ColorProfile == null)">Install and set as default</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
+                <button type="submit" class="btn btn-primary" @onclick="ApplyClick" disabled="@(ColorProfile == null)">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ColorProfileDto? ColorProfile { get; set; }
+    private DisplayColorInfo? CurrentColorInfo { get; set; }
+    private DisplayColorInfo? ColorProfileColorInfo { get; set; }
+    private List<DisplayColorInfo> DisplayColors { get; set; } = new();
+    private bool PrimariesDisabled = false;
+
+    [Parameter]
+    public string? ColorProfileName { get; set; }
+
+    [Parameter]
+    public bool UseAsTemplate { get; set; }
+
+    [Parameter]
+    public DisplayInfoDto? DisplayInfo { get; set; }
+
+    [Parameter]
+    public Func<ColorProfileDto, Task>? AfterApply { get; set; }
+
+    private string WasValidated = "";
+    private bool IsVisible;
+    private DisplayPrimariesSource DisplayPrimariesSource;
+    private bool IsInstalled;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ColorProfileName == null)
+        {
+            return;
+        }
+
+        if (ColorProfileName == "")
+        {
+            ColorProfile = ColorProfileDto.CreateDefault(DisplayInfo?.IsHdrSupportedAndEnabled ?? false);
+        }
+        else
+        {
+            ColorProfile = await _rpcClientService.CallAsync<ColorProfileDto>("ColorProfileService", "GetColorProfile", ColorProfileName);
+        }
+
+        if (ColorProfile != null)
+        {
+            ColorProfileColorInfo = new DisplayColorInfo
+            {
+                DisplayPrimariesSource = DisplayPrimariesSource.ColorProfile,
+                BlackLuminance = ColorProfile.BlackLuminance,
+                WhiteLuminance = ColorProfile.WhiteLuminance,
+                MinCLL = ColorProfile.MinCLL,
+                MaxCLL = ColorProfile.MaxCLL,
+                RgbPrimaries = new RgbPrimariesDto(ColorProfile.DevicePrimaries)
+            };
+
+            CurrentColorInfo = ColorProfileColorInfo;
+
+            DisplayColors.Clear();
+            DisplayColors.Add(CurrentColorInfo);
+
+            if (DisplayInfo != null)
+            {
+                DisplayColors.AddRange(DisplayInfo.DisplayColors);
+            }
+
+            if (UseAsTemplate)
+            {
+                if (ColorProfile.Name != null)
+                {
+                    ColorProfile.Name = Path.GetFileNameWithoutExtension(ColorProfile.Name) + " (clone).icm";
+                }
+                else
+                {
+                    ColorProfile.Name = "";
+                }
+            }
+        }
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (ColorProfile == null || CurrentColorInfo == null)
+        {
+            return;
+        }
+
+        if (!(await IsValid()))
+        {
+            return;
+        }
+
+        ColorProfile.UpdatePrimariesAndLuminance(CurrentColorInfo);
+
+        var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "UpdateColorProfile", ColorProfile, DisplayInfo?.DeviceName);
+
+        if (result)
+        {
+            await jsHelper.CloseModal("colorProfileModal");
+            IsVisible = false;
+            if (AfterApply != null)
+            {
+                await AfterApply.Invoke(ColorProfile);
+            }
+        }
+    }
+
+    private async Task InstallOnClick()
+    {
+        if (ColorProfile == null || DisplayInfo == null)
+        {
+            return;
+        }
+
+        if (!(await IsValid()))
+        {
+            return;
+        }
+
+        ColorProfile.UpdatePrimariesAndLuminance(CurrentColorInfo);
+
+        var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "InstallAndActivateColorProfile", ColorProfile, DisplayInfo.DeviceName);
+
+        IsInstalled = true;
+    }
+
+    private void ModalOnFocus(FocusEventArgs e)
+    {
+        if (!IsVisible)
+        {
+            WasValidated = "";
+            IsVisible = true;
+            DisplayPrimariesSource = DisplayPrimariesSource.ColorProfile;
+        }
+    }
+
+    private async Task<bool> IsValid()
+    {
+        var valid = await jsHelper.IsFormValid("profileForm");
+
+        if (!valid)
+        {
+            WasValidated = "was-validated";
+        }
+
+        return valid;
+    }
+
+    private void DisplayPrimariesSourceChanged()
+    {
+        if (DisplayInfo == null || ColorProfile == null)
+        {
+            return;
+        }
+
+        CurrentColorInfo = DisplayColors.First(dc => dc.DisplayPrimariesSource == DisplayPrimariesSource);
+        PrimariesDisabled = CurrentColorInfo.DisplayPrimariesSource != DisplayPrimariesSource.ColorProfile;
+    }
+
+    private void OverwritePrimariesOnClick(MouseEventArgs e)
+    {
+        if (ColorProfileColorInfo == null || CurrentColorInfo == null)
+        {
+            return;
+        }
+
+        ColorProfileColorInfo.BlackLuminance = CurrentColorInfo.BlackLuminance;
+        ColorProfileColorInfo.WhiteLuminance = CurrentColorInfo.WhiteLuminance;
+        ColorProfileColorInfo.MinCLL = CurrentColorInfo.MinCLL;
+        ColorProfileColorInfo.MaxCLL = CurrentColorInfo.MaxCLL;
+        ColorProfileColorInfo.RgbPrimaries = new RgbPrimariesDto(CurrentColorInfo.RgbPrimaries);
+    }
+
+    private void AfterNameChanged()
+    {
+        if (ColorProfile?.Name == null)
+        {
+            return;
+        }
+
+        if (!ColorProfile.Name.EndsWith(".icm", StringComparison.InvariantCultureIgnoreCase))
+        {
+            ColorProfile.Name += ".icm";
+        }
+    }
+}

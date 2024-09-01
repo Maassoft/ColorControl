@@ -7,5 +7,5 @@ public class InfoDto
 	public string ApplicationTitle { get; set; }
 	public string ApplicationTitleAdmin { get; set; }
 	public string LegalCopyright { get; set; }
-	public bool UpdateAvailable { get; set; }
+	public UpdateInfoDto UpdateInfoDto { get; set; }
 }

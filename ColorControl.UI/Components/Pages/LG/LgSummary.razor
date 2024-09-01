@@ -4,7 +4,7 @@
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
 @using ColorControl.Shared.Contracts.LG
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -155,6 +155,10 @@ else
 	</div>
 	<div class="row mb-3">
 		<div class="col">
+			@if (!Presets.Any())
+			{
+				<span>No presets found</span>
+			}
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
@@ -168,11 +172,21 @@ else
 								}
 								<div><small class="text-muted">@preset.shortcut</small></div>
 							</div>
-							<span>
+							<span class="d-none d-lg-block">
 								<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Delete</button>
 								<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Clone</button>
 								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
 							</span>
+							<div class="d-lg-none" @onclick:preventDefault @onclick:stopPropagation>
+								<button type="button" class="btn btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+									<i class="bi bi-three-dots-vertical"></i>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmModal" @onclick="() => PresetOnDeleteClick(preset)">Delete</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnCloneClick(preset)">Clone</a></li>
+									<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)">Edit</a></li>
+								</ul>
+							</div>
 						</div>
 					</a>
 				}
@@ -215,7 +229,7 @@ else
 		Devices = await _rpcClientService.CallAsync<List<LgDeviceDto>>("LgService", "GetDevices");
 		InvokableActions = await _rpcClientService.CallAsync<List<InvokableActionDto<LgPreset>>>("LgService", "GetInvokableActions");
 
-		ActionGroups = InvokableActions.GroupBy(a => a.Category).Select(g => new ActionGroup(g.Key, g.ToList())).ToList();
+		ActionGroups = InvokableActions?.GroupBy(a => a.Category).Select(g => new ActionGroup(g.Key, g.ToList())).ToList() ?? new List<ActionGroup>();
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstTime)

@@ -199,6 +199,11 @@ namespace ColorControl
             _mainForm.OpenForm();
         }
 
+        public static bool IsMainFormOpened()
+        {
+            return _mainForm != null;
+        }
+
         public static void Exit()
         {
             UserExit = true;
@@ -397,6 +402,7 @@ namespace ColorControl
             services.AddSingleton<WolService>();
             services.AddSingleton<ColorControlBackgroundService>();
             services.AddSingleton<ServiceManager>();
+            services.AddSingleton<ColorProfileService>();
 
             RpcServerService.ServiceTypes.Add(typeof(NvService));
             RpcServerService.ServiceTypes.Add(typeof(GameService));
@@ -405,6 +411,7 @@ namespace ColorControl
             RpcServerService.ServiceTypes.Add(typeof(SamsungService));
             RpcServerService.ServiceTypes.Add(typeof(LgService));
             RpcServerService.ServiceTypes.Add(typeof(AmdService));
+            RpcServerService.ServiceTypes.Add(typeof(ColorProfileService));
         }
 
         public static int EnumThreadWindows(IntPtr handle, IntPtr param)

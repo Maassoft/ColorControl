@@ -6,6 +6,7 @@ using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ColorControl.Services.Common;
 
@@ -17,8 +18,9 @@ public class OptionsService
     private readonly ServiceManager _serviceManager;
     private readonly KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
     private readonly WinApiAdminService _winApiAdminService;
+    private readonly UpdateManager _updateManager;
 
-    public OptionsService(GlobalContext globalContext, ElevationService elevationService, WinApiService winApiService, ServiceManager serviceManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, WinApiAdminService winApiAdminService)
+    public OptionsService(GlobalContext globalContext, ElevationService elevationService, WinApiService winApiService, ServiceManager serviceManager, KeyboardShortcutDispatcher keyboardShortcutDispatcher, WinApiAdminService winApiAdminService, UpdateManager updateManager)
     {
         _globalContext = globalContext;
         _elevationService = elevationService;
@@ -26,6 +28,7 @@ public class OptionsService
         _serviceManager = serviceManager;
         _keyboardShortcutDispatcher = keyboardShortcutDispatcher;
         _winApiAdminService = winApiAdminService;
+        _updateManager = updateManager;
     }
 
     public Config GetConfig()
@@ -46,22 +49,40 @@ public class OptionsService
         return true;
     }
 
+    public bool SaveSettings()
+    {
+        _serviceManager.Save();
+        return true;
+    }
+
     public List<ModuleDto> GetModules()
     {
         return _globalContext.Config.Modules.Select(m => new ModuleDto { DisplayName = m.DisplayName, IsActive = m.IsActive, Info = _serviceManager.GetServiceInfo(m.DisplayName) }).ToList();
     }
 
-    public InfoDto GetInfo()
+    public async Task<InfoDto> GetInfo()
     {
+        var updateInfo = await _updateManager.CheckForUpdates();
+
         return new InfoDto
         {
             ApplicationTitle = _globalContext.ApplicationTitle,
             ApplicationTitleAdmin = _globalContext.ApplicationTitleAdmin,
             DataPath = _globalContext.DataPath,
             StartTime = _globalContext.StartTime,
-            UpdateAvailable = _globalContext.UpdateAvailable,
+            UpdateInfoDto = updateInfo,
             LegalCopyright = _globalContext.LegalCopyright,
         };
+    }
+
+    public Task<bool> InstallUpdate()
+    {
+        return _updateManager.InstallUpdate();
+    }
+
+    public Task<bool> RestartAfterUpdate()
+    {
+        return _updateManager.RestartAfterUpdate();
     }
 
     public bool SetStartAfterLogin(bool value)
@@ -216,9 +237,14 @@ public class OptionsService
 
         module.IsActive = updateModule.IsActive;
 
-        _serviceManager.ActivateModule(module);
+        var result = _serviceManager.ActivateModule(module);
 
-        return true;
+        if (module.IsActive && !result)
+        {
+            module.IsActive = false;
+        }
+
+        return result;
     }
 }
 

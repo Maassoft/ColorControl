@@ -66,6 +66,8 @@ public class AmdPreset : PresetBase
         primaryDisplay = preset.primaryDisplay;
         displayName = preset.displayName;
         DisplayId = preset.DisplayId;
+        IsDisplayPreset = preset.IsDisplayPreset;
+        ShowInQuickAccess = preset.ShowInQuickAccess;
 
         applyColorData = preset.applyColorData;
         colorDepth = preset.colorDepth;
@@ -121,7 +123,7 @@ public class AmdPreset : PresetBase
         values.Add(string.Format("{0}: {1}Hz", DisplayConfig.ApplyRefreshRate ? "Included" : "Excluded", DisplayConfig.RefreshRate));
         values.Add(string.Format("{0}{1}", DisplayConfig.ApplyResolution ? "Included" : "Excluded", DisplayConfig.ApplyResolution ? ": " + DisplayConfig.GetResolutionDesc() : ""));
         values.Add(string.Format("{0}: {1}", applyDithering ? "Included" : "Excluded", ditherState));
-        values.Add(string.Format("{0}: {1}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled"));
+        values.Add(string.Format("{0}: {1}{2}", applyHDR ? "Included" : "Excluded", toggleHDR ? "Toggle" : HDREnabled ? "Enabled" : "Disabled", SDRBrightness.HasValue ? $", SDR brightness: {SDRBrightness.Value}%" : ""));
         values.Add(shortcut);
         values.Add(string.Format("{0}", config?.AmdPresetId_ApplyOnStartup == id ? "Yes" : string.Empty));
 

@@ -1,6 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
@@ -12,7 +12,7 @@
 @inject NavigationManager _navigationManager;
 
 <div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@(Preset?.IsDisplayPreset == true ? $"Settings for display {Preset?.displayName}" : Preset?.id == 0 ? $"Settings for new preset" : $"Settings of preset {Preset?.IdOrName}")</h5>
@@ -448,6 +448,7 @@
                                             <div class="mb-2">
                                                 <label class="form-label" for="extendedColorimetry">Extended colorimetry</label>
                                                 <select class="form-select" id="extendedColorimetry" @bind="Preset.HdmiInfoFrameSettings.ExtendedColorimetry" @oninput="HdmiSettingsOnInput">
+                                                    <option value="">Not selected</option>
                                                     @foreach (var extendedColorimetry in Enum.GetValues<InfoFrameVideoExtendedColorimetry>())
                                                     {
                                                         <option value="@extendedColorimetry.ToString()">@extendedColorimetry.GetDescription()</option>
@@ -458,6 +459,48 @@
                                     </div>
                                 </div>
                             }
+
+                            @if (ColorProfileNames?.Any() == true)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyOther" id="applyOther">
+                                            }
+                                            <button class="accordion-button collapsed py-2 @(Preset.applyOther ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#otherSettings">
+                                                Other settings
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="otherSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-2">
+                                                <label class="form-label" for="colorProfile">Color profile</label>
+                                                <select class="form-select" id="colorProfile" @bind="Preset.ColorProfileSettings.ProfileName">
+                                                    <option value="">Not selected</option>
+                                                    @foreach (var colorProfile in ColorProfileNames)
+                                                    {
+                                                        <option value="@colorProfile">@colorProfile</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label" for="nvScaling">Scaling</label>
+                                                <select class="form-select" id="nvScaling" @bind="Preset.scaling">
+                                                    <option value="">Not selected</option>
+                                                    @foreach (var scaling in Enum.GetValues<Scaling>())
+                                                    {
+                                                        <option value="@scaling">@scaling.GetDescription()</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
                         </div>
                     }
                 </form>
@@ -489,6 +532,7 @@
     private List<VirtualResolution>? resolutions;
     private List<Rational>? refreshRates;
     private List<NvPreset>? displayPresets;
+    private List<string>? ColorProfileNames;
 
     private string WasValidated = "";
     private bool IsVisible;
@@ -511,9 +555,16 @@
         selectedVirtualResolution = Preset?.DisplayConfig.Resolution?.GetVirtualString();
         selectedRefreshRate = Preset?.DisplayConfig.RefreshRate?.ToString();
 
-        if (Preset?.IsDisplayPreset != true)
+        if (Preset?.IsDisplayPreset == false)
         {
             displayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
+        }
+
+        var deviceName = Preset?.IsDisplayPreset == true ? Preset.DisplayId : Preset?.DisplayId ?? displayPresets?.FirstOrDefault()?.DisplayId;
+
+        if (Preset != null)
+        {
+            ColorProfileNames = await _rpcClientService.CallAsync<List<string>>("ColorProfileService", "GetDisplayColorProfiles", deviceName);
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
-@using ColorControl.Shared.Services;
+@using ColorControl.UI.Services;
+@using ColorControl.UI.Services
 
 @rendermode InteractiveServer
 
@@ -28,28 +29,34 @@
             @foreach (var module in modules.Where(m => m.IsActive))
             {
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link px-3" href="@module.Link">
-                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> @module.DisplayName
+                    <NavLink class="nav-link px-3 align-items-baseline" href="@module.Link">
+                        <span class="bi bi-@module.GetIconClass()" aria-hidden="true"></span> @module.DisplayName
                     </NavLink>
                 </div>
             }
         }
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link px-3" href="options">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Options
+            <NavLink class="nav-link px-3 align-items-baseline" href="options">
+                <span class="bi bi-gear-fill" aria-hidden="true"></span> Options
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link px-3" href="logging">
-                <span class="bi bi-list-logging-nav-menu" aria-hidden="true"></span> Logging
+            <NavLink class="nav-link px-3 align-items-baseline" href="ColorProfile">
+                <span class="bi bi-palette-fill" aria-hidden="true"></span> Color Profiles
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link px-3" href="info">
-                <span class="bi bi-list-logging-nav-menu" aria-hidden="true"></span> Info
+            <NavLink class="nav-link px-3 align-items-baseline" href="logging">
+                <span class="bi bi-list-columns-reverse" aria-hidden="true"></span> Logging
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link px-3 align-items-baseline" href="info">
+                <span class="bi bi-info-circle-fill" aria-hidden="true"></span> Info
             </NavLink>
         </div>
     </nav>

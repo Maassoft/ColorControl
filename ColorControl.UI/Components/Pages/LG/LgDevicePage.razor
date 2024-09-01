@@ -1,6 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.LG
-@using ColorControl.Shared.Services
+@using ColorControl.UI.Services
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common
 
@@ -11,7 +11,7 @@
 @inject NavigationManager _navigationManager;
 
 <div class="modal" id="deviceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@(Device?.Name == null ? $"Settings for new device" : $"Settings of device {Device.Name}")</h5>
