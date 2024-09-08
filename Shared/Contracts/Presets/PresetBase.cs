@@ -3,6 +3,7 @@ using ColorControl.Shared.EventDispatcher;
 using NStandard;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace ColorControl.Shared.Contracts;
 
@@ -26,6 +27,8 @@ public enum PresetTriggerType
 	ScreensaverStart = 7,
 	[Description("Screensaver stop")]
 	ScreensaverStop = 8,
+	[Description("Display Change")]
+	DisplayChange = 9,
 }
 
 [Flags]
@@ -61,6 +64,7 @@ public class PresetTrigger
 	public PresetTriggerType Trigger { get; set; }
 	public List<string> IncludedProcesses { get; set; }
 	public List<string> ExcludedProcesses { get; set; }
+	public string ConnectedDisplaysRegex { get; set; }
 	public PresetConditionType Conditions { get; set; }
 
 	public string IncludedProcessesAsString
@@ -92,10 +96,19 @@ public class PresetTrigger
 	public bool TriggerActive(PresetTriggerContext context)
 	{
 		var active = Conditions == PresetConditionType.None ||
-			 (Conditions.HasFlag(PresetConditionType.SDR) ? !context.IsHDRActive : true) && (Conditions.HasFlag(PresetConditionType.HDR) ? context.IsHDRActive : true) &&
-			 (Conditions.HasFlag(PresetConditionType.GsyncDisabled) ? !context.IsGsyncActive : true) && (Conditions.HasFlag(PresetConditionType.GsyncEnabled) ? context.IsGsyncActive : true);
+			 (!Conditions.HasFlag(PresetConditionType.SDR) || !context.IsHDRActive)
+			 && (!Conditions.HasFlag(PresetConditionType.HDR) || context.IsHDRActive)
+			 && (!Conditions.HasFlag(PresetConditionType.GsyncDisabled) || !context.IsGsyncActive)
+			 && (!Conditions.HasFlag(PresetConditionType.GsyncEnabled) || context.IsGsyncActive);
 
-		if (Trigger == PresetTriggerType.ProcessSwitch && context.Triggers.Contains(Trigger))
+        active = active && context.Triggers.Contains(Trigger);
+
+        if (!ConnectedDisplaysRegex.IsNullOrWhiteSpace())
+		{
+			active = active && Screen.AllScreens.Any(s => Regex.IsMatch(s.DeviceName, ConnectedDisplaysRegex));
+		}
+
+		if (Trigger == PresetTriggerType.ProcessSwitch)
 		{
 			var allProcesses = IncludedProcesses.Contains("*");
 			active = active && (allProcesses || (context.ChangedProcesses?.Any() ?? false));
@@ -114,14 +127,10 @@ public class PresetTrigger
 				active = included && !excluded && screenSizeCheck && notificationsDisabledCheck;
 			}
 		}
-		else if ((Trigger == PresetTriggerType.ScreensaverStart || Trigger == PresetTriggerType.ScreensaverStop) && context.Triggers.Contains(Trigger))
+		else if (Trigger == PresetTriggerType.ScreensaverStart || Trigger == PresetTriggerType.ScreensaverStop)
 		{
-			active = active && (Trigger == PresetTriggerType.ScreensaverStart && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Started ||
-					 Trigger == PresetTriggerType.ScreensaverStop && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Stopped);
-		}
-		else
-		{
-			active = active && context.Triggers.Contains(Trigger);
+			active &= (Trigger == PresetTriggerType.ScreensaverStart && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Started) ||
+					 (Trigger == PresetTriggerType.ScreensaverStop && context.ScreenSaverTransitionState == ScreenSaverTransitionState.Stopped);
 		}
 
 		return active;
@@ -140,7 +149,12 @@ public class PresetTrigger
 		{
 			text += $"of {DisplayProcesses(IncludedProcesses)}{(ExcludedProcesses.Any() ? ", excluding " + DisplayProcesses(ExcludedProcesses) : string.Empty)}";
 		}
-		return text += $"{(Conditions > 0 ? ", only in " + string.Join(", ", Utils.GetDescriptions<PresetConditionType>((int)Conditions)) : string.Empty)}";
+		
+		text += $"{(Conditions > 0 ? ", only in " + string.Join(", ", Utils.GetDescriptions<PresetConditionType>((int)Conditions)) : string.Empty)}";
+
+		text += ConnectedDisplaysRegex.IsNullOrWhiteSpace() ? "" : $", connected display name matching {ConnectedDisplaysRegex}";
+
+		return text;
 	}
 
 	public static string DisplayProcesses(IEnumerable<string> processes)
@@ -235,7 +249,7 @@ public abstract class PresetBase
 		return name;
 	}
 
-	public void UpdateTrigger(PresetTriggerType triggerType, PresetConditionType conditions, string includedProcesses = null, string excludedProcesses = null)
+	public void UpdateTrigger(PresetTriggerType triggerType, PresetConditionType conditions, string includedProcesses = null, string excludedProcesses = null, string connectedDisplaysRegex = null)
 	{
 		if (!Triggers.Any())
 		{
@@ -257,6 +271,8 @@ public abstract class PresetBase
 		}
 		Utils.ParseWords(trigger.IncludedProcesses, includedProcesses);
 		Utils.ParseWords(trigger.ExcludedProcesses, excludedProcesses);
+
+		trigger.ConnectedDisplaysRegex = connectedDisplaysRegex;
 	}
 
 	public PresetTrigger AddTrigger()

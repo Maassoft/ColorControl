@@ -95,6 +95,9 @@
             mnuLgSettings = new System.Windows.Forms.ContextMenuStrip(components);
             miTestPowerOffOn = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
+            edtLgPresetConnectedDisplaysRegex = new System.Windows.Forms.TextBox();
+            lblLgPresetConnectedDisplaysRegex = new System.Windows.Forms.Label();
+            toolTipLgPreset = new System.Windows.Forms.ToolTip(components);
             ((System.ComponentModel.ISupportInitialize)scLgController).BeginInit();
             scLgController.Panel1.SuspendLayout();
             scLgController.SuspendLayout();
@@ -112,6 +115,8 @@
             // 
             // scLgController.Panel1
             // 
+            scLgController.Panel1.Controls.Add(lblLgPresetConnectedDisplaysRegex);
+            scLgController.Panel1.Controls.Add(edtLgPresetConnectedDisplaysRegex);
             scLgController.Panel1.Controls.Add(btnLgDeviceOptionsSettings);
             scLgController.Panel1.Controls.Add(btnLgSettings);
             scLgController.Panel1.Controls.Add(chkLgQuickAccess);
@@ -849,6 +854,29 @@
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
             // 
+            // 
+            // edtLgPresetConnectedDisplaysRegex
+            // 
+            edtLgPresetConnectedDisplaysRegex.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            edtLgPresetConnectedDisplaysRegex.Enabled = false;
+            edtLgPresetConnectedDisplaysRegex.Location = new System.Drawing.Point(915, 688);
+            edtLgPresetConnectedDisplaysRegex.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
+            edtLgPresetConnectedDisplaysRegex.Name = "edtLgPresetConnectedDisplaysRegex";
+            edtLgPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(355, 31);
+            edtLgPresetConnectedDisplaysRegex.TabIndex = 66;
+            toolTipLgPreset.SetToolTip(edtLgPresetConnectedDisplaysRegex, "The preset will be executed only if the supplied Regular Expression matches the device name of at least one of the displays that are connected at the moment the trigger is fired.");
+            // 
+            // lblLgPresetConnectedDisplaysRegex
+            // 
+            lblLgPresetConnectedDisplaysRegex.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lblLgPresetConnectedDisplaysRegex.AutoSize = true;
+            lblLgPresetConnectedDisplaysRegex.Location = new System.Drawing.Point(679, 694);
+            lblLgPresetConnectedDisplaysRegex.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            lblLgPresetConnectedDisplaysRegex.Name = "lblLgPresetConnectedDisplaysRegex";
+            lblLgPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(224, 25);
+            lblLgPresetConnectedDisplaysRegex.TabIndex = 67;
+            lblLgPresetConnectedDisplaysRegex.Text = "Connected Displays Regex:";
+            // 
             // LgPanel
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -935,5 +963,8 @@
         private System.Windows.Forms.ToolStripMenuItem mnuLgSetSvcMenuFlag;
         private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuEnable;
         private System.Windows.Forms.ToolStripMenuItem miLgFullServiceMenuDisable;
+        private System.Windows.Forms.Label lblLgPresetConnectedDisplaysRegex;
+        private System.Windows.Forms.TextBox edtLgPresetConnectedDisplaysRegex;
+        private System.Windows.Forms.ToolTip toolTipLgPreset;
     }
 }

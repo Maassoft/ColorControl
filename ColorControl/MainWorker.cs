@@ -87,6 +87,7 @@ internal class MainWorker
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessagePowerBroadcast, HandlePowerBroadcastEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageShowWindow, HandleShowWindowEvent);
         _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageUserBringToFront, HandleUserBringToFrontEvent);
+        _windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageDisplayChange, HandleDisplayChangeEvent);
 
         _screenStateNotify = WinApi.RegisterPowerSettingNotification(_windowMessageDispatcher.MessageForm.Handle, ref Utils.GUID_CONSOLE_DISPLAY_STATE, 0);
 
@@ -173,6 +174,10 @@ internal class MainWorker
         {
             StartScreenSaver();
         }
+    }
+    
+    private void HandleDisplayChangeEvent(object sender, WindowMessageEventArgs e)
+    {
     }
 
     private void StartScreenSaver()
