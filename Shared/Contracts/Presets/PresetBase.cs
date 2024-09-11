@@ -103,15 +103,15 @@ public class PresetTrigger
 			 && (!Conditions.HasFlag(PresetConditionType.GsyncDisabled) || !context.IsGsyncActive)
 			 && (!Conditions.HasFlag(PresetConditionType.GsyncEnabled) || context.IsGsyncActive);
 
-        active = active && context.Triggers.Contains(Trigger);
+		active = active && context.Triggers.Contains(Trigger);
 
-        if (!ConnectedDisplaysRegex.IsNullOrWhiteSpace())
+		if (!ConnectedDisplaysRegex.IsNullOrWhiteSpace())
 		{
 			active = active && CCD.EnumerateDisplayDeviceNames().Any(s =>
-            {
+			{
 				var extendedDisplayName = CCD.GetDisplayInfo(s)?.ExtendedName;
-                return extendedDisplayName is not null && Regex.IsMatch(extendedDisplayName, ConnectedDisplaysRegex);
-            });
+				return extendedDisplayName is not null && Regex.IsMatch(extendedDisplayName, ConnectedDisplaysRegex);
+			});
 		}
 
 		if (Trigger == PresetTriggerType.ProcessSwitch)

@@ -32,8 +32,8 @@ namespace ColorControl.Services.Samsung
 		private bool _allowPowerOn;
 		private ServiceManager _serviceManager;
 		private readonly PowerEventDispatcher _powerEventDispatcher;
-        private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
-        private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
+		private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
+		private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
 		private readonly RestartDetector _restartDetector;
 		private readonly ProcessEventDispatcher _processEventDispatcher;
 		private readonly WinApiAdminService _winApiAdminService;
@@ -48,21 +48,21 @@ namespace ColorControl.Services.Samsung
 		public static readonly int SHORTCUTID_SAMSUNGQA = -204;
 
 		public SamsungService(
-            GlobalContext globalContext,
-            ServiceManager serviceManager,
-            PowerEventDispatcher powerEventDispatcher,
-            DisplayChangeEventDispatcher displayChangeEventDispatcher,
-            SessionSwitchDispatcher sessionSwitchDispatcher,
-            RestartDetector restartDetector,
-            ProcessEventDispatcher processEventDispatcher,
-            WinApiAdminService winApiAdminService) : base(globalContext)
+			GlobalContext globalContext,
+			ServiceManager serviceManager,
+			PowerEventDispatcher powerEventDispatcher,
+			DisplayChangeEventDispatcher displayChangeEventDispatcher,
+			SessionSwitchDispatcher sessionSwitchDispatcher,
+			RestartDetector restartDetector,
+			ProcessEventDispatcher processEventDispatcher,
+			WinApiAdminService winApiAdminService) : base(globalContext)
 		{
 			_appContext = globalContext;
 			_allowPowerOn = _appContext.StartUpParams.RunningFromScheduledTask;
 			_serviceManager = serviceManager;
 			_powerEventDispatcher = powerEventDispatcher;
-            _displayChangeEventDispatcher = displayChangeEventDispatcher;
-            _sessionSwitchDispatcher = sessionSwitchDispatcher;
+			_displayChangeEventDispatcher = displayChangeEventDispatcher;
+			_sessionSwitchDispatcher = sessionSwitchDispatcher;
 			_restartDetector = restartDetector;
 			_processEventDispatcher = processEventDispatcher;
 			_winApiAdminService = winApiAdminService;
@@ -132,7 +132,7 @@ namespace ColorControl.Services.Samsung
 		private async Task DisplayChanged(object sender, DisplayChangedEventArgs e, CancellationToken ct)
 		{
 			await ExecutePresetsForEvent(PresetTriggerType.DisplayChange);
-        }
+		}
 
 		private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
 		{

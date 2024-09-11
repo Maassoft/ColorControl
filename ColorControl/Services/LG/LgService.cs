@@ -53,8 +53,8 @@ namespace ColorControl.Services.LG
 		private readonly PowerEventDispatcher _powerEventDispatcher;
 		private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
 		private readonly ProcessEventDispatcher _processEventDispatcher;
-        private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
-        private readonly ServiceManager _serviceManager;
+		private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
+		private readonly ServiceManager _serviceManager;
 		private LgDevice _selectedDevice;
 		private string _rcButtonsFilename;
 		private List<LgPreset> _remoteControlButtons;
@@ -74,22 +74,22 @@ namespace ColorControl.Services.LG
 		public static readonly int SHORTCUTID_GAMEBAR = -101;
 
 		public LgService(
-            GlobalContext globalContext,
-            PowerEventDispatcher powerEventDispatcher,
-            SessionSwitchDispatcher sessionSwitchDispatcher,
-            ProcessEventDispatcher processEventDispatcher,
+			GlobalContext globalContext,
+			PowerEventDispatcher powerEventDispatcher,
+			SessionSwitchDispatcher sessionSwitchDispatcher,
+			ProcessEventDispatcher processEventDispatcher,
 			DisplayChangeEventDispatcher displayChangeEventDispatcher,
-            ServiceManager serviceManager,
-            RestartDetector restartDetector,
-            WinApiService winApiService,
-            WinApiAdminService winApiAdminService) : base(globalContext)
+			ServiceManager serviceManager,
+			RestartDetector restartDetector,
+			WinApiService winApiService,
+			WinApiAdminService winApiAdminService) : base(globalContext)
 		{
 			_allowPowerOn = globalContext.StartUpParams.RunningFromScheduledTask;
 			_powerEventDispatcher = powerEventDispatcher;
 			_sessionSwitchDispatcher = sessionSwitchDispatcher;
 			_processEventDispatcher = processEventDispatcher;
-            _displayChangeEventDispatcher = displayChangeEventDispatcher;
-            _serviceManager = serviceManager;
+			_displayChangeEventDispatcher = displayChangeEventDispatcher;
+			_serviceManager = serviceManager;
 			LgPreset.GetDeviceName += LgPreset_GetDeviceName;
 			LgPreset.GetAppName += LgPreset_GetAppName;
 
