@@ -19,10 +19,10 @@ public class DisplayChangeEventDispatcher : EventDispatcher<DisplayChangedEventA
     public const string Event_DisplayChanged = "DisplayChanged";
     public DisplayChangeEventDispatcher(WindowMessageDispatcher windowMessageDispatcher)
     {
-        windowMessageDispatcher.RegisterAsyncEventHandler(WindowMessageDispatcher.Event_WindowMessageDisplayChange, OnWindowMessageDisplayChange);
+        windowMessageDispatcher.RegisterEventHandler(WindowMessageDispatcher.Event_WindowMessageDisplayChange, OnWindowMessageDisplayChange);
     }
 
-    private async Task OnWindowMessageDisplayChange(object sender, WindowMessageEventArgs e, CancellationToken ct)
+    private async void OnWindowMessageDisplayChange(object sender, WindowMessageEventArgs e)
     {
         uint width = (uint)(e.Message.LParam & 0xffff);
         uint height = (uint)(e.Message.LParam >> 16);

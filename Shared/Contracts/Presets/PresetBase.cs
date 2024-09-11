@@ -1,9 +1,11 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.EventDispatcher;
+using ColorControl.Shared.Native;
 using NStandard;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Windows.Navigation;
 
 namespace ColorControl.Shared.Contracts;
 
@@ -105,7 +107,11 @@ public class PresetTrigger
 
         if (!ConnectedDisplaysRegex.IsNullOrWhiteSpace())
 		{
-			active = active && Screen.AllScreens.Any(s => Regex.IsMatch(s.DeviceName, ConnectedDisplaysRegex));
+			active = active && CCD.EnumerateDisplayDeviceNames().Any(s =>
+            {
+				var extendedDisplayName = CCD.GetDisplayInfo(s)?.ExtendedName;
+                return extendedDisplayName is not null && Regex.IsMatch(extendedDisplayName, ConnectedDisplaysRegex);
+            });
 		}
 
 		if (Trigger == PresetTriggerType.ProcessSwitch)
