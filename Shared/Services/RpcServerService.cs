@@ -76,7 +76,8 @@ public class RpcServerService
 		{
 			if (arg.GetType().Name == "JObject" || arg.GetType().Name == "JArray")
 			{
-				var obj = JsonConvert.DeserializeObject(arg.ToString(), type);
+				var jsonString = arg.ToString();
+				var obj = jsonString == "{}" ? Type.Missing : JsonConvert.DeserializeObject(jsonString, type);
 				list.Add(obj);
 				return;
 			}

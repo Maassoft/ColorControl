@@ -279,6 +279,13 @@ namespace ColorControl.Services.Common
             {
                 _presets = new List<T>();
             }
+
+            AfterPresetsLoaded();
+        }
+
+        protected virtual void AfterPresetsLoaded()
+        {
+
         }
 
         protected void SavePresets()

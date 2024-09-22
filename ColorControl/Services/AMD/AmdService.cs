@@ -37,6 +37,12 @@ namespace ColorControl.Services.AMD
             LoadConfig();
         }
 
+        protected override void AfterPresetsLoaded()
+        {
+            // Force disable display preset on presets
+            _presets.ForEach(p => p.IsDisplayPreset = false);
+        }
+
         public static async Task<bool> ExecutePresetAsync(string idOrName)
         {
             try

@@ -342,6 +342,7 @@ namespace ColorControl.Services.AMD
             var preset = GetSelectedAmdPreset();
 
             var newPreset = preset.Clone();
+            newPreset.IsDisplayPreset = false;
             AddOrUpdateItemAmd(newPreset);
         }
 

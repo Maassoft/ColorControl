@@ -32,7 +32,6 @@ using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using static ColorControl.Shared.Contracts.NVIDIA.NvHdrSettings;
-using static ColorControl.Shared.Native.CCD;
 
 namespace ColorControl.Services.NVIDIA
 {
@@ -156,6 +155,12 @@ namespace ColorControl.Services.NVIDIA
             AddJsonConverter(new ColorDataConverter());
             LoadConfig();
             LoadPresets();
+        }
+
+        protected override void AfterPresetsLoaded()
+        {
+            // Force disable display preset on presets
+            _presets.ForEach(p => p.IsDisplayPreset = false);
         }
 
         public override void InstallEventHandlers()
@@ -419,7 +424,7 @@ namespace ColorControl.Services.NVIDIA
             {
                 if (preset.ColorProfileSettings.ProfileName != null)
                 {
-                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml);
+                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml, newHdrEnabled);
                 }
 
                 if (preset.scaling.HasValue)
@@ -461,6 +466,9 @@ namespace ColorControl.Services.NVIDIA
             {
                 result = ApplyOverclocking(preset.ocSettings);
             }
+
+            //SetMonitorScaling();
+            //CCD.SetScaling(100);
 
             _lastAppliedPreset = preset;
 
@@ -627,13 +635,27 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetHDRState(Display display, bool enabled)
         {
-            if (!enabled && Hdr10OutputModeForced.HasValue)
-            {
-                SetOutputMode(NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_SDR, display);
-                Hdr10OutputModeForced = null;
-            }
-
             CCD.SetHDRState(enabled, display.Name);
+
+            if (!enabled)
+            {
+                if (Hdr10OutputModeForced.HasValue)
+                {
+                    SetOutputMode(NV_DISPLAY_OUTPUT_MODE.NV_DISPLAY_OUTPUT_MODE_SDR, display);
+                    Hdr10OutputModeForced = null;
+                }
+
+                // Sometimes HDR doesn't turn off properly via CCD. Force it using NvApi.
+                Logger.Swallow(() =>
+                {
+                    var hdrColorData = display.DisplayDevice.HDRColorData;
+                    if (hdrColorData != null && hdrColorData.HDRMode != ColorDataHDRMode.Off)
+                    {
+                        hdrColorData.HDRMode = ColorDataHDRMode.Off;
+                        display.DisplayDevice.SetHDRColorData(hdrColorData);
+                    }
+                });
+            }
         }
 
         public void SetDigitalVibranceLevel(Display display, int level)
@@ -1206,7 +1228,7 @@ namespace ColorControl.Services.NVIDIA
 
         public void SetColorProfile(Display display, string name)
         {
-            CCD.SetDisplayDefaultColorProfile(display.Name, name, _globalContext.Config.SetMinTmlAndMaxTml);
+            CCD.SetDisplayDefaultColorProfile(display.Name, name, _globalContext.Config.SetMinTmlAndMaxTml, IsHDREnabled(display));
         }
 
         public void TestResolution()
@@ -1348,6 +1370,15 @@ namespace ColorControl.Services.NVIDIA
             return gpus;
         }
 
+        public List<NvGpuInfoDto> GetGpuInfos()
+        {
+            var gpus = GetGPUs();
+            var infos = gpus.Select(g => new NvGpuInfo(g));
+            var dtos = infos.Select(i => i.ToDto()).ToList();
+
+            return dtos;
+        }
+
         public List<NvDisplayInfo> GetSimpleDisplayInfos()
         {
             var displays = GetDisplays();
@@ -1457,7 +1488,7 @@ namespace ColorControl.Services.NVIDIA
             preset.HdmiInfoFrameSettings = GetHdmiSettings(display);
             preset.SDRBrightness = GetSDRBrightness(display.Name);
             preset.scaling = GetScaling(display);
-            preset.ColorProfileSettings.ProfileName = CCD.GetDisplayDefaultColorProfile(display.Name, preset.HDREnabled ? COLORPROFILESUBTYPE.CPST_EXTENDED_DISPLAY_COLOR_MODE : COLORPROFILESUBTYPE.CPST_STANDARD_DISPLAY_COLOR_MODE);
+            preset.ColorProfileSettings.ProfileName = CCD.GetDisplayDefaultColorProfile(display.Name, preset.HDREnabled);
 
             preset.DisplayConfig = CCD.GetDisplayConfig(display.Name);
 
@@ -1482,7 +1513,7 @@ namespace ColorControl.Services.NVIDIA
 
                 foreach (var gpu in gpus)
                 {
-                    var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+                    var gpuInfo = new NvGpuInfo(gpu);
 
                     var settings = gpuInfo.GetOverclockSettings();
 
@@ -1620,30 +1651,13 @@ namespace ColorControl.Services.NVIDIA
 
         private List<string> GetProfileNamesOfMru()
         {
-            var key = Registry.ClassesRoot.OpenSubKey(@"Local Settings\Software\Microsoft\Windows\Shell\MuiCache");
-
-            if (key == null)
+            if (_serviceManager.GameService == null)
             {
                 return new List<string>();
             }
 
-            var names = key.GetValueNames();
-            var appNames = new List<string>();
-            var winFolder = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-
-            foreach (var name in names)
-            {
-                var parts = name.Split('.');
-
-                var path = name.Replace("." + parts.Last(), "");
-
-                if (!path.StartsWith(winFolder) && Path.Exists(path))
-                {
-                    appNames.Add(Path.GetFileName(path));
-                }
-            }
-
-            appNames = appNames.Distinct().ToList();
+            var apps = _serviceManager.GameService.GetMruApps();
+            var appNames = apps.Select(a => a.Filename).ToList();
 
             var profiles = DrsServiceLocator.SettingService.GetProfileNamesByApps(appNames);
 

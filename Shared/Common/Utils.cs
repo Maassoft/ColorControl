@@ -755,5 +755,11 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
 		public static string ToUnitString(this uint value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
 		public static string ToUnitString(this int value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
+		public static string ToUnitString(string units = "°", params double?[] values)
+		{
+			var notNullValues = values.Where(v => v.HasValue).Select(v => $"{v}{units}");
+
+			return string.Join("/", notNullValues);
+		}
 	}
 }

@@ -210,7 +210,7 @@ else
 			return;
 		}
 
-		var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "SetDisplayDefaultColorProfile", SelectedDisplay.DeviceName, colorProfile);
+		var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "SetDisplayDefaultColorProfile", SelectedDisplay.DeviceName, colorProfile, Type.Missing, SelectedDisplay.IsHdrSupportedAndEnabled);
 		if (result)
 		{
 			SelectedDisplay.DefaultColorProfile = colorProfile;
@@ -250,7 +250,7 @@ else
 			return;
 		}
 
-		await _rpcClientService.CallAsync<bool>("ColorProfileService", "RemoveDisplayColorProfile", SelectedDisplay.DeviceName, SelectedColorProfileName);
+		await _rpcClientService.CallAsync<bool>("ColorProfileService", "RemoveDisplayColorProfile", SelectedDisplay.DeviceName, SelectedColorProfileName, SelectedDisplay.IsHdrSupportedAndEnabled);
 
 		SelectedColorProfileName = null;
 
@@ -265,7 +265,7 @@ else
 			return;
 		}
 
-		await _rpcClientService.CallAsync<bool>("ColorProfileService", "AddDisplayColorProfile", SelectedDisplay.DeviceName, SelectedColorProfileName, false);
+		await _rpcClientService.CallAsync<bool>("ColorProfileService", "AddDisplayColorProfile", SelectedDisplay.DeviceName, SelectedColorProfileName, false, SelectedDisplay.IsHdrSupportedAndEnabled);
 
 		SelectedColorProfileName = null;
 

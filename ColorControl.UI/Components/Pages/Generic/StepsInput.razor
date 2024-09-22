@@ -122,6 +122,8 @@
                         <button type="button" class="btn btn-outline-primary dropdown-toggle text-break text-wrap" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">@step.Raw</button>
                         <form class="dropdown-menu p-4 dropdown-menu-end" style="width: 200px">
                             <div class="mb-2">
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="dropdown" title="Move left" disabled="@(stepIndex == 0)" @onclick="() => MoveLeftOnClick(stepIndex)">&lt;</button>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="dropdown" title="Move right" disabled="@(stepIndex == PresetSteps.Count - 1)" @onclick="() => MoveRightOnClick(stepIndex)">&gt;</button>
                                 <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="dropdown" @onclick="() => RemoveOnClick(stepIndex)">Remove</button>
                             </div>
                             <div class="mb-2">
@@ -255,6 +257,32 @@
         if (PresetSteps.Count > index)
         {
             PresetSteps.RemoveAt(index);
+        }
+
+        await EmitSteps();
+    }
+
+    private async Task MoveLeftOnClick(int index)
+    {
+        if (PresetSteps.Count > index && index > 0)
+        {
+            var step = PresetSteps[index];
+
+            PresetSteps.RemoveAt(index);
+            PresetSteps.Insert(index - 1, step);
+        }
+
+        await EmitSteps();
+    }
+
+    private async Task MoveRightOnClick(int index)
+    {
+        if (PresetSteps.Count > index + 1)
+        {
+            var step = PresetSteps[index];
+
+            PresetSteps.RemoveAt(index);
+            PresetSteps.Insert(index + 1, step);
         }
 
         await EmitSteps();

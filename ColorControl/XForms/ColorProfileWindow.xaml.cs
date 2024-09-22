@@ -158,7 +158,7 @@ namespace ColorControl.XForms
 
 			var profileName = Path.GetFileName(tempFilename);
 
-			if (CCD.SetDisplayDefaultColorProfile(displayName, profileName, _viewModel.SetMinMaxTml))
+			if (CCD.SetDisplayDefaultColorProfile(displayName, profileName, _viewModel.SetMinMaxTml, _viewModel.IsHDR))
 			{
 				if (!_viewModel.ExistingProfiles.Contains(profileName))
 				{

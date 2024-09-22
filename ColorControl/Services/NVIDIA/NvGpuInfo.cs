@@ -15,13 +15,6 @@ using static NvAPIWrapper.Native.GPU.Structures.PrivateClockBoostLockV2;
 
 namespace ColorControl.Services.NVIDIA
 {
-    public enum NvThermalSensorType
-    {
-        Gpu = 0,
-        HotSpot = 1,
-        Memory = 3
-    }
-
     public class NvGpuInfo
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
@@ -42,6 +35,14 @@ namespace ColorControl.Services.NVIDIA
 
         public string PCIIdentifier { get; private set; }
 
+        public uint GpuFrequencyInKhz { get; private set; }
+        public uint MemoryFrequencyInKhz { get; private set; }
+        public uint VoltageInMv { get; private set; }
+        public double PowerInWatts { get; private set; }
+        public double? GpuTemperature { get; private set; }
+        public double? HotSpotTemperature { get; private set; }
+        public double? MemoryTemperature { get; private set; }
+
 
         public static readonly PublicClockDomain[] Domains = new[] { PublicClockDomain.Graphics, PublicClockDomain.Memory };
 
@@ -56,17 +57,10 @@ namespace ColorControl.Services.NVIDIA
 
             var gpu = gpus.FirstOrDefault(g => g.BusInformation.PCIIdentifiers.ToString() == pciId);
 
-            return GetGpuInfo(gpu);
+            return new NvGpuInfo(gpu);
         }
 
-        public static NvGpuInfo GetGpuInfo(PhysicalGPU gpu)
-        {
-            var gpuInfo = new NvGpuInfo(gpu);
-
-            return gpuInfo;
-        }
-
-        private NvGpuInfo(PhysicalGPU gpu)
+        public NvGpuInfo(PhysicalGPU gpu)
         {
             GPU = gpu;
             PCIIdentifier = GPU.BusInformation.PCIIdentifiers.ToString();
@@ -99,6 +93,32 @@ namespace ColorControl.Services.NVIDIA
             //var bla4 = GPUApi.GetAllClockFrequencies(handle);
 
             SetSupportedOcTypes();
+        }
+
+        public NvGpuInfoDto ToDto()
+        {
+            Refresh();
+
+            return new NvGpuInfoDto
+            {
+                PCIIdentifier = PCIIdentifier,
+                Name = GPU.FullName,
+                ClockBoostLocks = ClockBoostLocks,
+                CurveV1 = CurveV1,
+                CurveV3 = CurveV3,
+                DefaultPowerInMilliWatts = DefaultPowerInMilliWatts,
+                VoltageInMv = VoltageInMv,
+                PowerInWatts = Math.Round(PowerInWatts, 1),
+                GpuFrequencyInKhz = GpuFrequencyInKhz,
+                MemoryFrequencyInKhz = MemoryFrequencyInKhz,
+                GpuTemperature = GpuTemperature,
+                HotSpotTemperature = HotSpotTemperature,
+                MemoryTemperature = MemoryTemperature,
+                MaxPowerInMilliWatts = MaxPowerInMilliWatts,
+                MinPowerInMilliWatts = MinPowerInMilliWatts,
+                StockGraphicsClock = StockGraphicsClock,
+                StockMemoryClock = StockMemoryClock
+            };
         }
 
         private void ReadMinMaxPower()
@@ -288,30 +308,42 @@ namespace ColorControl.Services.NVIDIA
             GPUApi.ClientPowerPoliciesSetStatus(GPU.Handle, status);
         }
 
-        public override string ToString()
+        public void Refresh()
         {
-            var gpuVoltage = GPUApi.GetCurrentVoltage(GPU.Handle).ValueInMicroVolt;
+            GpuFrequencyInKhz = GPU.CurrentClockFrequencies.GraphicsClock.Frequency;
+            MemoryFrequencyInKhz = GPU.CurrentClockFrequencies.MemoryClock.Frequency;
+
+            VoltageInMv = GPUApi.GetCurrentVoltage(GPU.Handle).ValueInMicroVolt / 1000;
+            PowerInWatts = GetPowerUsageInMilliWatts() / 1000.0;
 
             var temps = GetTemperatures();
-            var power = GetPowerUsageInMilliWatts();
+
+            GpuTemperature = temps.TryGetValue(NvThermalSensorType.Gpu, out var gpuTemp) ? gpuTemp : null;
+            HotSpotTemperature = temps.TryGetValue(NvThermalSensorType.HotSpot, out var hotSpotTemp) ? hotSpotTemp : null;
+            MemoryTemperature = temps.TryGetValue(NvThermalSensorType.Memory, out var memoryTemp) ? memoryTemp : null;
+        }
+
+        public override string ToString()
+        {
+            Refresh();
 
             var sb = new StringBuilder();
 
-            sb.Append($"GPU: {GPU.CurrentClockFrequencies.GraphicsClock.Frequency.ToUnitString()} @ {gpuVoltage / 1000} mV, {temps[NvThermalSensorType.Gpu]}°");
+            sb.Append($"GPU: {GpuFrequencyInKhz.ToUnitString()} @ {VoltageInMv} mV, {GpuTemperature}°");
 
-            if (temps.TryGetValue(NvThermalSensorType.HotSpot, out var hotSpotTemp))
+            if (HotSpotTemperature.HasValue)
             {
-                sb.Append($"/{hotSpotTemp}°");
+                sb.Append($"/{HotSpotTemperature}°");
             }
 
-            sb.Append($", Mem: {GPU.CurrentClockFrequencies.MemoryClock.Frequency.ToUnitString()}");
+            sb.Append($", Mem: {MemoryFrequencyInKhz.ToUnitString()}");
 
-            if (temps.TryGetValue(NvThermalSensorType.Memory, out var memoryTemp))
+            if (MemoryTemperature.HasValue)
             {
-                sb.Append($", {memoryTemp}°");
+                sb.Append($", {MemoryTemperature}°");
             }
 
-            sb.Append($", Pwr: {Math.Round(power / 1000.0, 1)}W");
+            sb.Append($", Pwr: {Math.Round(PowerInWatts, 1)}W");
 
             return sb.ToString();
         }
@@ -335,7 +367,10 @@ namespace ColorControl.Services.NVIDIA
             catch (Exception)
             {
                 var gpuThermal = GPU.ThermalInformation.ThermalSensors.FirstOrDefault(s => s.Target == ThermalSettingsTarget.GPU);
-                temperatures.Add(NvThermalSensorType.Gpu, gpuThermal.CurrentTemperature);
+                if (gpuThermal != null)
+                {
+                    temperatures.Add(NvThermalSensorType.Gpu, gpuThermal.CurrentTemperature);
+                }
             }
 
             return temperatures;

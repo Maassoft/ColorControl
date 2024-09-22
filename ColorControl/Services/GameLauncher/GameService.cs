@@ -3,6 +3,7 @@ using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts.Game;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Services;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -329,6 +330,55 @@ namespace ColorControl.Services.GameLauncher
             }
 
             return fileInfo.FullName;
+        }
+
+        public List<GameApp> GetMruApps(bool skipExistingPresets = false)
+        {
+            var key = Registry.ClassesRoot.OpenSubKey(@"Local Settings\Software\Microsoft\Windows\Shell\MuiCache");
+
+            if (key == null)
+            {
+                return new List<GameApp>();
+            }
+
+            var names = key.GetValueNames();
+            var apps = new List<GameApp>();
+            var winFolder = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+            foreach (var name in names)
+            {
+                var parts = name.Split('.');
+
+                if (parts.Last() != "FriendlyAppName")
+                {
+                    continue;
+                }
+
+                var path = name.Replace("." + parts.Last(), "");
+
+                if (skipExistingPresets && _presets.Any(p => p.Path.Equals(path, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                if (!path.StartsWith(winFolder) && Path.Exists(path))
+                {
+                    var friendlyName = key.GetValue(name)?.ToString();
+
+                    var app = new GameApp
+                    {
+                        Path = path,
+                        Filename = Path.GetFileName(path),
+                        FriendlyName = friendlyName
+                    };
+
+                    apps.Add(app);
+                }
+            }
+
+            apps = apps.DistinctBy(a => a.Path).OrderBy(a => a.FriendlyName).ToList();
+
+            return apps;
         }
     }
 }

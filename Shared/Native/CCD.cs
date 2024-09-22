@@ -325,12 +325,12 @@ namespace ColorControl.Shared.Native
 
         private static bool MinRequiredVersion = true;
 
-        public static bool AddDisplayColorProfile(string displayName, string profileName, bool setAsDefault = true)
+        public static bool AddDisplayColorProfile(string displayName, string profileName, bool setAsDefault = true, bool isHdrColorProfile = false)
         {
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
 
-            var err = NativeMethods.ColorProfileAddDisplayAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, adapterId, sourceId, setAsDefault, true);
+            var err = NativeMethods.ColorProfileAddDisplayAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, adapterId, sourceId, setAsDefault, isHdrColorProfile);
 
             if (err != NativeConstants.ERROR_SUCCESS)
             {
@@ -340,12 +340,12 @@ namespace ColorControl.Shared.Native
             return err == NativeConstants.ERROR_SUCCESS;
         }
 
-        public static bool RemoveDisplayColorProfile(string displayName, string profileName)
+        public static bool RemoveDisplayColorProfile(string displayName, string profileName, bool isHdrColorProfile = false)
         {
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
 
-            var err = NativeMethods.ColorProfileRemoveDisplayAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, adapterId, sourceId, true);
+            var err = NativeMethods.ColorProfileRemoveDisplayAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, adapterId, sourceId, isHdrColorProfile);
 
             if (err != NativeConstants.ERROR_SUCCESS)
             {
@@ -355,26 +355,26 @@ namespace ColorControl.Shared.Native
             return err == NativeConstants.ERROR_SUCCESS;
         }
 
-        public static bool SetDisplayDefaultColorProfile(string displayName, string profileName, bool fixMaxTML = true)
+        public static bool SetDisplayDefaultColorProfile(string displayName, string profileName, bool fixMaxTML = true, bool isHdrColorProfile = false)
         {
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
-
-            var subType = COLORPROFILESUBTYPE.CPST_PERCEPTUAL;
 
             if (profileName == null)
             {
-                profileName = GetDisplayDefaultColorProfile(displayName, COLORPROFILESUBTYPE.CPST_EXTENDED_DISPLAY_COLOR_MODE);
+                profileName = GetDisplayDefaultColorProfile(displayName, isHdrColorProfile);
 
                 if (profileName == null)
                 {
                     return true;
                 }
 
-                return RemoveDisplayColorProfile(displayName, profileName) && AddDisplayColorProfile(displayName, profileName, false);
+                return RemoveDisplayColorProfile(displayName, profileName, isHdrColorProfile) && AddDisplayColorProfile(displayName, profileName, false, isHdrColorProfile);
             }
 
-            var err = NativeMethods.ColorProfileSetDisplayDefaultAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, COLORPROFILETYPE.CPT_ICC, subType, adapterId, sourceId);
+            var profileSubType = GetColorProfileSubTypeByDynamicRange(isHdrColorProfile);
+
+            var err = NativeMethods.ColorProfileSetDisplayDefaultAssociation(WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER, profileName, COLORPROFILETYPE.CPT_ICC, profileSubType, adapterId, sourceId);
 
             if (err != NativeConstants.ERROR_SUCCESS)
             {
@@ -394,7 +394,7 @@ namespace ColorControl.Shared.Native
             return err == NativeConstants.ERROR_SUCCESS;
         }
 
-        public static string GetDisplayDefaultColorProfile(string displayName, COLORPROFILESUBTYPE profileSubType = COLORPROFILESUBTYPE.CPST_STANDARD_DISPLAY_COLOR_MODE)
+        public static string GetDisplayDefaultColorProfile(string displayName, bool isHdrColorProfile)
         {
             if (!MinRequiredVersion)
             {
@@ -403,6 +403,8 @@ namespace ColorControl.Shared.Native
 
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
+
+            var profileSubType = GetColorProfileSubTypeByDynamicRange(isHdrColorProfile);
 
             var scope = GetUsePerUserDisplayProfiles(displayName) ? WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER : WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_SYSTEM_WIDE;
             try
@@ -429,6 +431,11 @@ namespace ColorControl.Shared.Native
                 MinRequiredVersion = false;
             }
             return null;
+        }
+
+        public static COLORPROFILESUBTYPE GetColorProfileSubTypeByDynamicRange(bool isHdr)
+        {
+            return isHdr ? COLORPROFILESUBTYPE.CPST_EXTENDED_DISPLAY_COLOR_MODE : COLORPROFILESUBTYPE.CPST_STANDARD_DISPLAY_COLOR_MODE;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -645,6 +652,78 @@ namespace ColorControl.Shared.Native
                     //throw new Win32Exception(error);
 
                     return (false, false);
+                }
+
+                return (false, true);
+            }, displayName
+            );
+        }
+
+        public static DISPLAYCONFIG_SOURCE_DPI_SCALE_GET GetScaling(string displayName = null)
+        {
+            return ExecuteForModeConfig((modeInfo) =>
+            {
+                if (modeInfo.infoType == DisplayConfigModeInfoType.Source)
+                {
+                    var requestPacket = new DISPLAYCONFIG_SOURCE_DPI_SCALE_GET();
+                    requestPacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                    requestPacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE;
+                    requestPacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DPI_SCALE_GET>();
+
+                    requestPacket.header.adapterId = modeInfo.adapterId;
+                    requestPacket.header.id = modeInfo.id;
+
+                    var err = NativeMethods.DisplayConfigGetDeviceInfo(ref requestPacket);
+
+                    if (err == NativeConstants.ERROR_SUCCESS)
+                    {
+                        return (requestPacket, false);
+                    }
+                }
+
+                return (default, true);
+            }, displayName
+            );
+        }
+
+        public static bool SetScaling(int percentage, string displayName = null)
+        {
+            var dpiInfo = GetScaling(displayName);
+
+            if (percentage == dpiInfo.curScaleRel)
+            {
+                return true;
+            }
+
+            if (percentage < dpiInfo.minScaleRel)
+            {
+                percentage = dpiInfo.minScaleRel;
+            }
+            else if (percentage > dpiInfo.maxScaleRel)
+            {
+                percentage = dpiInfo.maxScaleRel;
+            }
+
+            return ExecuteForModeConfig((modeInfo) =>
+            {
+                if (modeInfo.infoType == DisplayConfigModeInfoType.Source)
+                {
+                    var setPacket = new DISPLAYCONFIG_SOURCE_DPI_SCALE_SET();
+                    setPacket.header = new DISPLAYCONFIG_DEVICE_INFO_HEADER();
+                    setPacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE;
+                    setPacket.header.size = Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DPI_SCALE_SET>();
+
+                    setPacket.header.adapterId = modeInfo.adapterId;
+                    setPacket.header.id = modeInfo.id;
+
+                    setPacket.scaleRel = -7;
+
+                    var err = NativeMethods.DisplayConfigSetDeviceInfo(ref setPacket);
+
+                    if (err == NativeConstants.ERROR_SUCCESS)
+                    {
+                        return (true, false);
+                    }
                 }
 
                 return (false, true);
@@ -921,14 +1000,14 @@ namespace ColorControl.Shared.Native
             return displayName1.Equals(displayName2, StringComparison.OrdinalIgnoreCase);
         }
 
-        private enum DISPLAYCONFIG_MODE_INFO_TYPE
+        public enum DISPLAYCONFIG_MODE_INFO_TYPE
         {
             DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE = 1,
             DISPLAYCONFIG_MODE_INFO_TYPE_TARGET = 2,
             DISPLAYCONFIG_MODE_INFO_TYPE_DESKTOP_IMAGE = 3,
         }
 
-        private enum DISPLAYCONFIG_DEVICE_INFO_TYPE
+        public enum DISPLAYCONFIG_DEVICE_INFO_TYPE
         {
             DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE = -3,
             DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE = -4,
@@ -950,7 +1029,7 @@ namespace ColorControl.Shared.Native
         private const uint DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_PARAM = 0xFFFFFFF0;
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_DEVICE_INFO_HEADER
+        public struct DISPLAYCONFIG_DEVICE_INFO_HEADER
         {
             public DISPLAYCONFIG_DEVICE_INFO_TYPE type;
             public int size;
@@ -1402,7 +1481,7 @@ namespace ColorControl.Shared.Native
         };
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
+        public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_GET
         {
             public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
             /*
@@ -1423,7 +1502,7 @@ namespace ColorControl.Shared.Native
             public int maxScaleRel;
         };
 
-        private struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
+        public struct DISPLAYCONFIG_SOURCE_DPI_SCALE_SET
         {
             public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
             /*
@@ -1519,6 +1598,12 @@ namespace ColorControl.Shared.Native
             public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_DISPLAY_INFO requestPacket);
             [DllImport("user32")]
             public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_PARAM setPacket);
+
+            [DllImport("user32")]
+            public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DPI_SCALE_GET requestPacket);
+
+            [DllImport("user32")]
+            public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DPI_SCALE_SET setPacket);
 
             [DllImport("user32")]
             public static extern uint GetDpiForSystem();

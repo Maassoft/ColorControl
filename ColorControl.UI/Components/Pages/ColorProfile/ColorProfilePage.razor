@@ -261,7 +261,7 @@
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-primary" @onclick="InstallOnClick" disabled="@(ColorProfile == null)">Install and set as default</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseOnClick">Close</button>
                 <button type="submit" class="btn btn-primary" @onclick="ApplyClick" disabled="@(ColorProfile == null)">Save</button>
             </div>
         </div>
@@ -305,7 +305,7 @@
         }
         else
         {
-            ColorProfile = await _rpcClientService.CallAsync<ColorProfileDto>("ColorProfileService", "GetColorProfile", ColorProfileName);
+            ColorProfile = await _rpcClientService.CallAsync<ColorProfileDto>("ColorProfileService", "GetColorProfile", ColorProfileName, DisplayInfo?.IsHdrSupportedAndEnabled ?? false);
         }
 
         if (ColorProfile != null)
@@ -388,6 +388,16 @@
         var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "InstallAndActivateColorProfile", ColorProfile, DisplayInfo.DeviceName);
 
         IsInstalled = true;
+    }
+
+    private async Task CloseOnClick()
+    {
+        IsVisible = false;
+
+        if (ColorProfile != null && AfterApply != null)
+        {
+            await AfterApply.Invoke(ColorProfile);
+        }
     }
 
     private void ModalOnFocus(FocusEventArgs e)

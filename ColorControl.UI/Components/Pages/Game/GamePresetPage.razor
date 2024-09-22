@@ -21,113 +21,125 @@
             </div>
             <div class="modal-body">
                 <form class="row g-1 needs-validation @WasValidated" novalidate>
-                @if (Preset == null)
-                {
-                    <div>Loading...</div>
-                }
-                else
-                {
-                    <div class="mb-2">
-                        <label class="form-label" for="name">Name</label>
-                        <input class="form-control" id="name" type="text" @bind="Preset.name" required />
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" @bind="Preset.ShowInQuickAccess" id="showInQuickAccess">
-                        <label class="form-check-label" for="showInQuickAccess">
-                            Show in Quick Access
-                        </label>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label" for="path">File/URI</label>
-                        <div class="input-group mb-2">
-                            <input class="form-control" id="path" type="text" @bind="Preset.Path" required />
-                            <button type="button" class="btn btn-primary" @onclick="SelectFileOnClick" disabled="@SelectingFile">
-                                <span class="@(SelectingFile ? "spinner-border spinner-border-sm" : "")" aria-hidden="true"></span>
-                                <span role="status">Select...</span>
-                            </button>
+                    @if (Preset == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        if (RecentApps != null)
+                        {
+                            <div class="mb-2">
+                                <label class="form-label" for="recentApp">Recent app</label>
+                                <select class="form-select" id="recentApp" @bind="RecentAppFilename" @bind:after="RecentAppSelected">
+                                    @foreach (var app in RecentApps)
+                                    {
+                                        <option value="@app.Filename" title="@app.Path">@app.FriendlyName</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="mb-2">
+                            <label class="form-label" for="name">Name</label>
+                            <input class="form-control" id="name" type="text" @bind="Preset.name" required />
                         </div>
-                        <div id="selectFileHelp" class="form-text">
-                            Selecting a file opens a file dialog outside of the browser on the system where the ColorControl application is running.
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" @bind="Preset.ShowInQuickAccess" id="showInQuickAccess">
+                            <label class="form-check-label" for="showInQuickAccess">
+                                Show in Quick Access
+                            </label>
                         </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label" for="parameters">Parameters</label>
-                        <input class="form-control" id="parameters" type="text" @bind="Preset.Parameters" />
-                    </div>
-
-                    <div class="accordion accordion-flush" id="presetAccordion">
-
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettings">
-                                    Advanced settings
+                        <div class="mb-2">
+                            <label class="form-label" for="path">File/URI</label>
+                            <div class="input-group mb-2">
+                                <input class="form-control" id="path" type="text" @bind="Preset.Path" required />
+                                <button type="button" class="btn btn-primary" @onclick="SelectFileOnClick" disabled="@SelectingFile">
+                                    <span class="@(SelectingFile ? "spinner-border spinner-border-sm" : "")" aria-hidden="true"></span>
+                                    <span role="status">Select...</span>
                                 </button>
-                            </h2>
-                            <div id="advancedSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
-                                <div class="accordion-body">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" @bind="Preset.RunAsAdministrator" id="runAsAdministrator">
-                                        <label class="form-check-label" for="runAsAdministrator">
-                                            Run as administrator
-                                        </label>
-                                    </div>
-                                    <FlagsInput Label="Process affinity" Labels="CpuAffinityLabels" @bind-Value="Preset.ProcessAffinityMask"></FlagsInput>
-                                    <div class="mb-2">
-                                        <label class="form-label" for="priority">Process priority</label>
-                                        <select class="form-select" id="priority" @bind="Preset.GameProcessPriorityClass">
-                                            @foreach (var priority in Enum.GetValues<GamePriorityClass>())
-                                            {
-                                                <option value="@priority.ToString()">@priority.GetDescription()</option>
-                                            }
-                                        </select>
+                            </div>
+                            <div id="selectFileHelp" class="form-text">
+                                Selecting a file opens a file dialog outside of the browser on the system where the ColorControl application is running.
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="parameters">Parameters</label>
+                            <input class="form-control" id="parameters" type="text" @bind="Preset.Parameters" />
+                        </div>
+
+                        <div class="accordion accordion-flush" id="presetAccordion">
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSettings">
+                                        Advanced settings
+                                    </button>
+                                </h2>
+                                <div id="advancedSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.RunAsAdministrator" id="runAsAdministrator">
+                                            <label class="form-check-label" for="runAsAdministrator">
+                                                Run as administrator
+                                            </label>
+                                        </div>
+                                        <FlagsInput Label="Process affinity" Labels="CpuAffinityLabels" @bind-Value="Preset.ProcessAffinityMask"></FlagsInput>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="priority">Process priority</label>
+                                            <select class="form-select" id="priority" @bind="Preset.GameProcessPriorityClass">
+                                                @foreach (var priority in Enum.GetValues<GamePriorityClass>())
+                                                {
+                                                    <option value="@priority.ToString()">@priority.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#autoApplySettings">
-                                    Auto-apply settings
-                                </button>
-                            </h2>
-                            <div id="autoApplySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
-                                <div class="accordion-body">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" @bind="Preset.AutoSettings.AllowAutoApply" id="autoApply">
-                                        <label class="form-check-label" for="autoApply">
-                                            Automatically execute preset when process starts
-                                        </label>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label" for="autoApplyAction">Auto-apply action</label>
-                                        <select class="form-select" id="priority" @bind="Preset.AutoSettings.ProcessAutoAction">
-                                            @foreach (var action in Enum.GetValues<ProcessAutoAction>())
-                                            {
-                                                <option value="@action.ToString()">@action.GetDescription()</option>
-                                            }
-                                        </select>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#autoApplySettings">
+                                        Auto-apply settings
+                                    </button>
+                                </h2>
+                                <div id="autoApplySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.AutoSettings.AllowAutoApply" id="autoApply">
+                                            <label class="form-check-label" for="autoApply">
+                                                Automatically execute preset when process starts
+                                            </label>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label" for="autoApplyAction">Auto-apply action</label>
+                                            <select class="form-select" id="priority" @bind="Preset.AutoSettings.ProcessAutoAction">
+                                                @foreach (var action in Enum.GetValues<ProcessAutoAction>())
+                                                {
+                                                    <option value="@action.ToString()">@action.GetDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#steps">
-                                    Steps
-                                </button>
-                            </h2>
-                            <div id="steps" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
-                                <div class="accordion-body">
-                                    <StepsInput Label="Pre-launch" @bind-Steps="Preset.PreLaunchSteps" TPreset="GamePreset"></StepsInput>
-                                    <StepsInput Label="Post-launch" @bind-Steps="Preset.PostLaunchSteps" TPreset="GamePreset"></StepsInput>
-                                    <StepsInput Label="Finalize" @bind-Steps="Preset.FinalizeSteps" TPreset="GamePreset"></StepsInput>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#steps">
+                                        Steps
+                                    </button>
+                                </h2>
+                                <div id="steps" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        <StepsInput Label="Pre-launch" @bind-Steps="Preset.PreLaunchSteps" TPreset="GamePreset"></StepsInput>
+                                        <StepsInput Label="Post-launch" @bind-Steps="Preset.PostLaunchSteps" TPreset="GamePreset"></StepsInput>
+                                        <StepsInput Label="Finalize" @bind-Steps="Preset.FinalizeSteps" TPreset="GamePreset"></StepsInput>
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
 
-                    </div>
-
-                }
+                    }
                 </form>
             </div>
             <div class="modal-footer">
@@ -148,6 +160,8 @@
     public Func<GamePreset, Task>? AfterApply { get; set; }
 
     public List<string> CpuAffinityLabels = Enumerable.Range(0, Environment.ProcessorCount).Select(i => $"CPU #{i}").ToList();
+    private List<GameApp>? RecentApps;
+    private string RecentAppFilename = "";
 
     public bool SelectingFile { get; set; }
 
@@ -162,6 +176,21 @@
         }
 
         Preset = PresetParam.CloneWithId();
+
+        if (Preset.id == 0)
+        {
+            RecentApps = await _rpcClientService.CallAsync<List<GameApp>>("GameService", "GetMruApps", true);
+            RecentAppFilename = "";
+
+            if (RecentApps != null)
+            {
+                RecentApps.Insert(0, new GameApp { Filename = "", FriendlyName = "Choose a recent app to fill values" });
+            }
+        }
+        else
+        {
+            RecentApps = null;
+        }
     }
 
     private async Task ApplyClick(MouseEventArgs e)
@@ -183,7 +212,7 @@
         {
             await AfterApply.Invoke(Preset);
         }
-    
+
         IsVisible = false;
     }
 
@@ -221,6 +250,22 @@
         finally
         {
             SelectingFile = false;
+        }
+    }
+
+    private void RecentAppSelected()
+    {
+        if (RecentApps == null || Preset == null)
+        {
+            return;
+        }
+
+        var app = RecentApps.FirstOrDefault(a => a.Filename == RecentAppFilename);
+
+        if (app != null)
+        {
+            Preset.name = app.FriendlyName;
+            Preset.Path = app.Path;
         }
     }
 

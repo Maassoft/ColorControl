@@ -96,6 +96,39 @@ else
 	</div>
 }
 
+<h2>Display Adapters</h2>
+
+@if (GpuInfos == null)
+{
+	<div>Loading...</div>
+}
+else
+{
+	<div class="row mb-3">
+		@if (!GpuInfos.Any())
+		{
+			<span>No display adapters found</span>
+		}
+		@foreach (var gpuInfo in GpuInfos)
+		{
+			<div class="col-lg-6 mb-3">
+				<div class="card h-100">
+					<div class="card-header d-flex align-items-baseline">
+						<span>
+							@gpuInfo.Name
+						</span>
+					</div>
+					<div class="card-body">
+						<small class="text-body">GPU: @gpuInfo.GpuFrequencyInKhz.ToUnitString() @@ @gpuInfo.VoltageInMv mV, @Utils.ToUnitString(values: [gpuInfo.GpuTemperature, gpuInfo.HotSpotTemperature])</small>
+						<small class="text-body">Memory: @gpuInfo.GpuFrequencyInKhz.ToUnitString(), @Utils.ToUnitString(values: [gpuInfo.MemoryTemperature])</small>
+						<small class="text-muted">Power: @(gpuInfo.PowerInWatts)W</small>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
 @if (Presets == null)
 {
 	<div>Loading...</div>
@@ -142,7 +175,7 @@ else
 								<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => PresetOnEditClick(preset)" @onclick:preventDefault @onclick:stopPropagation>Edit</button>
 							</span>
 							<div class="d-lg-none" @onclick:preventDefault @onclick:stopPropagation>
-								<button type="button" class="btn btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+								<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false">
 									<i class="bi bi-three-dots-vertical"></i>
 								</button>
 								<ul class="dropdown-menu">
@@ -207,6 +240,7 @@ else
 @code {
 	private List<NvPreset>? Presets;
 	private List<NvPreset>? DisplayPresets;
+	private List<NvGpuInfoDto>? GpuInfos;
 
 	private NvPreset? CurrentPreset;
 	private NvPreset? CurrentDriverSettingsPreset;
@@ -218,6 +252,7 @@ else
 	{
 		await RefreshPresets();
 		DisplayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
+		GpuInfos = await _rpcClientService.CallAsync<List<NvGpuInfoDto>>("NvService", "GetGpuInfos");
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstTime)

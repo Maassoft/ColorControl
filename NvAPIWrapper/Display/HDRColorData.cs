@@ -1,7 +1,7 @@
-﻿using System;
-using NvAPIWrapper.Native.Display;
+﻿using NvAPIWrapper.Native.Display;
 using NvAPIWrapper.Native.Display.Structures;
 using NvAPIWrapper.Native.Interfaces.Display;
+using System;
 
 namespace NvAPIWrapper.Display
 {
@@ -70,7 +70,7 @@ namespace NvAPIWrapper.Display
         public ColorDataDynamicRange? DynamicRange { get; }
 
         /// <inheritdoc />
-        public ColorDataHDRMode HDRMode { get; }
+        public ColorDataHDRMode HDRMode { get; set; }
 
         /// <inheritdoc />
         public MasteringDisplayColorData MasteringDisplayData { get; }
@@ -115,7 +115,7 @@ namespace NvAPIWrapper.Display
                 return false;
             }
 
-            return Equals((HDRColorData) obj);
+            return Equals((HDRColorData)obj);
         }
 
         /// <inheritdoc />
@@ -126,7 +126,7 @@ namespace NvAPIWrapper.Display
                 var hashCode = ColorDepth.GetHashCode();
                 hashCode = (hashCode * 397) ^ ColorFormat.GetHashCode();
                 hashCode = (hashCode * 397) ^ DynamicRange.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int) HDRMode;
+                hashCode = (hashCode * 397) ^ (int)HDRMode;
                 hashCode = (hashCode * 397) ^ MasteringDisplayData.GetHashCode();
 
                 return hashCode;

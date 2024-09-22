@@ -257,6 +257,7 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var newPreset = preset.Clone();
+            newPreset.IsDisplayPreset = false;
             AddOrUpdateItem(newPreset);
         }
 
@@ -1594,7 +1595,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+            var gpuInfo = new NvGpuInfo(gpu);
             var currentSettings = gpuInfo.GetOverclockSettings();
 
             var newSettings = AskNvOcSettings(gpuInfo, currentSettings);
@@ -1798,7 +1799,7 @@ namespace ColorControl.Services.NVIDIA
                 return;
             }
 
-            var gpuInfo = NvGpuInfo.GetGpuInfo(gpu);
+            var gpuInfo = new NvGpuInfo(gpu);
             var ocSettings = gpuInfo.GetOverclockSettings();
 
             edtNvGpuInfo.Text = gpuInfo.ToString();
