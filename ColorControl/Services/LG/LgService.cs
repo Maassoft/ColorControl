@@ -53,6 +53,7 @@ namespace ColorControl.Services.LG
 		private readonly PowerEventDispatcher _powerEventDispatcher;
 		private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
 		private readonly ProcessEventDispatcher _processEventDispatcher;
+		private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
 		private readonly ServiceManager _serviceManager;
 		private LgDevice _selectedDevice;
 		private string _rcButtonsFilename;
@@ -72,12 +73,22 @@ namespace ColorControl.Services.LG
 		public static readonly int SHORTCUTID_LGQA = -202;
 		public static readonly int SHORTCUTID_GAMEBAR = -101;
 
-		public LgService(GlobalContext globalContext, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, ProcessEventDispatcher processEventDispatcher, ServiceManager serviceManager, RestartDetector restartDetector, WinApiService winApiService, WinApiAdminService winApiAdminService) : base(globalContext)
+		public LgService(
+			GlobalContext globalContext,
+			PowerEventDispatcher powerEventDispatcher,
+			SessionSwitchDispatcher sessionSwitchDispatcher,
+			ProcessEventDispatcher processEventDispatcher,
+			DisplayChangeEventDispatcher displayChangeEventDispatcher,
+			ServiceManager serviceManager,
+			RestartDetector restartDetector,
+			WinApiService winApiService,
+			WinApiAdminService winApiAdminService) : base(globalContext)
 		{
 			_allowPowerOn = globalContext.StartUpParams.RunningFromScheduledTask;
 			_powerEventDispatcher = powerEventDispatcher;
 			_sessionSwitchDispatcher = sessionSwitchDispatcher;
 			_processEventDispatcher = processEventDispatcher;
+			_displayChangeEventDispatcher = displayChangeEventDispatcher;
 			_serviceManager = serviceManager;
 			LgPreset.GetDeviceName += LgPreset_GetDeviceName;
 			LgPreset.GetAppName += LgPreset_GetAppName;
@@ -466,10 +477,7 @@ namespace ColorControl.Services.LG
 			SetShortcuts(SHORTCUTID_LGQA, Config.QuickAccessShortcut);
 
 			var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
-			if (keyboardShortcutDispatcher != null)
-			{
-				keyboardShortcutDispatcher.RegisterShortcut(SHORTCUTID_GAMEBAR, Config.GameBarShortcut);
-			}
+			keyboardShortcutDispatcher?.RegisterShortcut(SHORTCUTID_GAMEBAR, Config.GameBarShortcut);
 
 			_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Startup, PowerStateChanged);
 			_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
@@ -481,6 +489,13 @@ namespace ColorControl.Services.LG
 			_sessionSwitchDispatcher.RegisterEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitched);
 
 			_processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+
+			_displayChangeEventDispatcher.RegisterAsyncEventHandler(DisplayChangeEventDispatcher.Event_DisplayChanged, DisplayChanged);
+		}
+
+		private async Task DisplayChanged(object sender, DisplayChangedEventArgs e, CancellationToken ct)
+		{
+			await ExecutePresetsForEvent(PresetTriggerType.DisplayChange);
 		}
 
 		private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
@@ -633,8 +648,14 @@ namespace ColorControl.Services.LG
 					return;
 				}
 
-				var applicableDevices = Devices.Where(d => d.PowerOffOnScreenSaver || d.PowerOnAfterScreenSaver || d.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-					((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))).ToList();
+				var applicableDevices = Devices.Where(d => 
+							   d.PowerOffOnScreenSaver 
+							|| d.PowerOnAfterScreenSaver 
+							|| (d.TriggersEnabled 
+										// only these trigger types are ever triggered by a process changed event
+									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop) 
+									&& ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))))
+					.ToList();
 
 				if (!applicableDevices.Any())
 				{

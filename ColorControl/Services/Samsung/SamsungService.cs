@@ -32,6 +32,7 @@ namespace ColorControl.Services.Samsung
 		private bool _allowPowerOn;
 		private ServiceManager _serviceManager;
 		private readonly PowerEventDispatcher _powerEventDispatcher;
+		private readonly DisplayChangeEventDispatcher _displayChangeEventDispatcher;
 		private readonly SessionSwitchDispatcher _sessionSwitchDispatcher;
 		private readonly RestartDetector _restartDetector;
 		private readonly ProcessEventDispatcher _processEventDispatcher;
@@ -46,12 +47,21 @@ namespace ColorControl.Services.Samsung
 
 		public static readonly int SHORTCUTID_SAMSUNGQA = -204;
 
-		public SamsungService(GlobalContext globalContext, ServiceManager serviceManager, PowerEventDispatcher powerEventDispatcher, SessionSwitchDispatcher sessionSwitchDispatcher, RestartDetector restartDetector, ProcessEventDispatcher processEventDispatcher, WinApiAdminService winApiAdminService) : base(globalContext)
+		public SamsungService(
+			GlobalContext globalContext,
+			ServiceManager serviceManager,
+			PowerEventDispatcher powerEventDispatcher,
+			DisplayChangeEventDispatcher displayChangeEventDispatcher,
+			SessionSwitchDispatcher sessionSwitchDispatcher,
+			RestartDetector restartDetector,
+			ProcessEventDispatcher processEventDispatcher,
+			WinApiAdminService winApiAdminService) : base(globalContext)
 		{
 			_appContext = globalContext;
 			_allowPowerOn = _appContext.StartUpParams.RunningFromScheduledTask;
 			_serviceManager = serviceManager;
 			_powerEventDispatcher = powerEventDispatcher;
+			_displayChangeEventDispatcher = displayChangeEventDispatcher;
 			_sessionSwitchDispatcher = sessionSwitchDispatcher;
 			_restartDetector = restartDetector;
 			_processEventDispatcher = processEventDispatcher;
@@ -111,11 +121,17 @@ namespace ColorControl.Services.Samsung
 			_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
 			_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
 			_processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
+			_displayChangeEventDispatcher.RegisterAsyncEventHandler(DisplayChangeEventDispatcher.Event_DisplayChanged, DisplayChanged);
 		}
 
 		public override List<string> GetInfo()
 		{
 			return [$"{_presets.Count} presets", $"{Devices?.Count ?? 0} devices"];
+		}
+
+		private async Task DisplayChanged(object sender, DisplayChangedEventArgs e, CancellationToken ct)
+		{
+			await ExecutePresetsForEvent(PresetTriggerType.DisplayChange);
 		}
 
 		private async Task PowerStateChanged(object sender, PowerStateChangedEventArgs e, CancellationToken token)
@@ -532,8 +548,14 @@ namespace ColorControl.Services.Samsung
 					return;
 				}
 
-				var applicableDevices = Devices.Where(d => d.Options.PowerOffOnScreenSaver || d.Options.PowerOnAfterScreenSaver || d.Options.TriggersEnabled && _presets.Any(p => p.Triggers.Any(t => t.Trigger != PresetTriggerType.None) &&
-					((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))).ToList();
+				var applicableDevices = Devices.Where(d => 
+							   d.Options.PowerOffOnScreenSaver 
+							|| d.Options.PowerOnAfterScreenSaver 
+							|| (d.Options.TriggersEnabled 
+									// only these trigger types are ever triggered by a process changed event
+									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop) 
+									&& ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))))
+					.ToList();
 
 				if (!applicableDevices.Any())
 				{

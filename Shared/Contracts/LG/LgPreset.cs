@@ -74,7 +74,7 @@ public class LgPreset : PresetBase
 		var trigger = preset.Triggers.FirstOrDefault();
 		if (trigger != null)
 		{
-			UpdateTrigger(trigger.Trigger, trigger.Conditions, trigger.IncludedProcessesAsString, trigger.ExcludedProcessesAsString);
+			UpdateTrigger(trigger.Trigger, trigger.Conditions, trigger.IncludedProcessesAsString, trigger.ExcludedProcessesAsString, trigger.ConnectedDisplaysRegex);
 		}
 	}
 

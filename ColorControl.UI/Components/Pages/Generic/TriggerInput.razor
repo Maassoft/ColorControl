@@ -27,6 +27,11 @@
             <label class="form-label" for="excludedProcesses">Excluded processes</label>
             <input class="form-control" type="text" @bind="trigger.ExcludedProcessesAsString" />
         </div>
+        <div class="mb-2">
+            <label class="form-label" for="connectedDisplays">Connected displays Regex</label>
+            <input class="form-control" type="text" @bind="trigger.ConnectedDisplaysRegex"
+                   title="The preset will be executed only if the supplied Regular Expression matches the device name of at least one of the displays that are connected at the moment the trigger is fired." />
+        </div>
     }
 }
 
