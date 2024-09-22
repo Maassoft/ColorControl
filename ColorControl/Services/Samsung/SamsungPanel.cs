@@ -179,6 +179,7 @@ namespace ColorControl.Services.Samsung
 			btnSamsungPresetEditTriggerConditions.Enabled = enabled;
 			edtSamsungPresetIncludedProcesses.Enabled = enabled;
 			edtSamsungPresetExcludedProcesses.Enabled = enabled;
+			edtSamsungPresetConnectedDisplaysRegex.Enabled = enabled;
 
 			var preset = GetSelectedPreset();
 
@@ -215,6 +216,7 @@ namespace ColorControl.Services.Samsung
 
 				edtSamsungPresetIncludedProcesses.Text = trigger?.IncludedProcesses?.Join(", ") ?? string.Empty;
 				edtSamsungPresetExcludedProcesses.Text = trigger?.ExcludedProcesses?.Join(", ") ?? string.Empty;
+				edtSamsungPresetConnectedDisplaysRegex.Text = trigger?.ConnectedDisplaysRegex ?? string.Empty;
 			}
 			else
 			{
@@ -230,6 +232,7 @@ namespace ColorControl.Services.Samsung
 				edtSamsungPresetTriggerConditions.Tag = 0;
 				edtSamsungPresetIncludedProcesses.Text = string.Empty;
 				edtSamsungPresetExcludedProcesses.Text = string.Empty;
+				edtSamsungPresetConnectedDisplaysRegex.Text = string.Empty;
 			}
 		}
 
@@ -288,7 +291,8 @@ namespace ColorControl.Services.Samsung
 			preset.UpdateTrigger(triggerType,
 								 (PresetConditionType)edtSamsungPresetTriggerConditions.Tag,
 								 edtSamsungPresetIncludedProcesses.Text,
-								 edtSamsungPresetExcludedProcesses.Text);
+								 edtSamsungPresetExcludedProcesses.Text,
+								 edtSamsungPresetConnectedDisplaysRegex.Text);
 
 			preset.shortcut = shortcut;
 

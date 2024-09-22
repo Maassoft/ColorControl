@@ -172,6 +172,7 @@ namespace ColorControl.Services.LG
 			btnLgPresetEditTriggerConditions.Enabled = enabled;
 			edtLgPresetIncludedProcesses.Enabled = enabled;
 			edtLgPresetExcludedProcesses.Enabled = enabled;
+			edtLgPresetConnectedDisplaysRegex.Enabled = enabled;
 
 			var preset = GetSelectedLgPreset();
 
@@ -208,6 +209,7 @@ namespace ColorControl.Services.LG
 
 				edtLgPresetIncludedProcesses.Text = trigger?.IncludedProcesses?.Join(", ") ?? string.Empty;
 				edtLgPresetExcludedProcesses.Text = trigger?.ExcludedProcesses?.Join(", ") ?? string.Empty;
+				edtLgPresetConnectedDisplaysRegex.Text = trigger?.ConnectedDisplaysRegex ?? string.Empty;
 			}
 			else
 			{
@@ -223,6 +225,7 @@ namespace ColorControl.Services.LG
 				edtLgPresetTriggerConditions.Tag = 0;
 				edtLgPresetIncludedProcesses.Text = string.Empty;
 				edtLgPresetExcludedProcesses.Text = string.Empty;
+				edtLgPresetConnectedDisplaysRegex.Text = string.Empty;
 			}
 		}
 
@@ -281,7 +284,8 @@ namespace ColorControl.Services.LG
 			preset.UpdateTrigger(triggerType,
 								 (PresetConditionType)edtLgPresetTriggerConditions.Tag,
 								 edtLgPresetIncludedProcesses.Text,
-								 edtLgPresetExcludedProcesses.Text);
+								 edtLgPresetExcludedProcesses.Text,
+								 edtLgPresetConnectedDisplaysRegex.Text);
 
 			preset.shortcut = shortcut;
 

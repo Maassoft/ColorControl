@@ -30,8 +30,11 @@
         {
             components = new System.ComponentModel.Container();
             scSamsungController = new System.Windows.Forms.SplitContainer();
+            lblSamsungPresetConnectedDisplaysRegex = new System.Windows.Forms.Label();
+            edtSamsungPresetConnectedDisplaysRegex = new System.Windows.Forms.TextBox();
             btnExpert = new System.Windows.Forms.Button();
             mnuExpert = new System.Windows.Forms.ContextMenuStrip(components);
+            miExpertDummy = new System.Windows.Forms.ToolStripMenuItem();
             btnSamsungDeviceOptionsSettings = new System.Windows.Forms.Button();
             btnSamsungSettings = new System.Windows.Forms.Button();
             chkSamsungQuickAccess = new System.Windows.Forms.CheckBox();
@@ -87,7 +90,7 @@
             mnuLgSettings = new System.Windows.Forms.ContextMenuStrip(components);
             miTestPowerOffOn = new System.Windows.Forms.ToolStripMenuItem();
             miNvSettings = new System.Windows.Forms.ToolStripMenuItem();
-            miExpertDummy = new System.Windows.Forms.ToolStripMenuItem();
+            toolTipSamsungPreset = new System.Windows.Forms.ToolTip(components);
             ((System.ComponentModel.ISupportInitialize)scSamsungController).BeginInit();
             scSamsungController.Panel1.SuspendLayout();
             scSamsungController.SuspendLayout();
@@ -105,6 +108,8 @@
             // 
             // scSamsungController.Panel1
             // 
+            scSamsungController.Panel1.Controls.Add(lblSamsungPresetConnectedDisplaysRegex);
+            scSamsungController.Panel1.Controls.Add(edtSamsungPresetConnectedDisplaysRegex);
             scSamsungController.Panel1.Controls.Add(btnExpert);
             scSamsungController.Panel1.Controls.Add(btnSamsungDeviceOptionsSettings);
             scSamsungController.Panel1.Controls.Add(btnSamsungSettings);
@@ -159,6 +164,28 @@
             scSamsungController.SplitterWidth = 5;
             scSamsungController.TabIndex = 43;
             // 
+            // lblSamsungPresetConnectedDisplaysRegex
+            // 
+            lblSamsungPresetConnectedDisplaysRegex.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            lblSamsungPresetConnectedDisplaysRegex.AutoSize = true;
+            lblSamsungPresetConnectedDisplaysRegex.Location = new System.Drawing.Point(475, 406);
+            lblSamsungPresetConnectedDisplaysRegex.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            lblSamsungPresetConnectedDisplaysRegex.Name = "lblSamsungPresetConnectedDisplaysRegex";
+            lblSamsungPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(149, 15);
+            lblSamsungPresetConnectedDisplaysRegex.TabIndex = 68;
+            lblSamsungPresetConnectedDisplaysRegex.Text = "Connected Displays Regex:";
+            // 
+            // edtSamsungPresetConnectedDisplaysRegex
+            // 
+            edtSamsungPresetConnectedDisplaysRegex.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
+            edtSamsungPresetConnectedDisplaysRegex.Enabled = false;
+            edtSamsungPresetConnectedDisplaysRegex.Location = new System.Drawing.Point(636, 401);
+            edtSamsungPresetConnectedDisplaysRegex.Margin = new System.Windows.Forms.Padding(6, 5, 6, 5);
+            edtSamsungPresetConnectedDisplaysRegex.Name = "edtSamsungPresetConnectedDisplaysRegex";
+            edtSamsungPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(254, 23);
+            edtSamsungPresetConnectedDisplaysRegex.TabIndex = 67;
+            toolTipSamsungPreset.SetToolTip(edtSamsungPresetConnectedDisplaysRegex, "The preset will be executed only if the supplied Regular Expression matches the device name of at least one of the displays that are connected at the moment the trigger is fired.");
+            // 
             // btnExpert
             // 
             btnExpert.ContextMenuStrip = mnuExpert;
@@ -176,8 +203,14 @@
             mnuExpert.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuExpert.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miExpertDummy });
             mnuExpert.Name = "mnuLgButtons";
-            mnuExpert.Size = new System.Drawing.Size(181, 48);
+            mnuExpert.Size = new System.Drawing.Size(118, 26);
             mnuExpert.Opening += mnuExpert_Opening;
+            // 
+            // miExpertDummy
+            // 
+            miExpertDummy.Name = "miExpertDummy";
+            miExpertDummy.Size = new System.Drawing.Size(117, 22);
+            miExpertDummy.Text = "Dummy";
             // 
             // btnSamsungDeviceOptionsSettings
             // 
@@ -195,7 +228,7 @@
             // btnSamsungSettings
             // 
             btnSamsungSettings.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            btnSamsungSettings.Location = new System.Drawing.Point(807, 284);
+            btnSamsungSettings.Location = new System.Drawing.Point(807, 243);
             btnSamsungSettings.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnSamsungSettings.Name = "btnSamsungSettings";
             btnSamsungSettings.Size = new System.Drawing.Size(88, 27);
@@ -209,7 +242,7 @@
             chkSamsungQuickAccess.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             chkSamsungQuickAccess.AutoSize = true;
             chkSamsungQuickAccess.Enabled = false;
-            chkSamsungQuickAccess.Location = new System.Drawing.Point(341, 320);
+            chkSamsungQuickAccess.Location = new System.Drawing.Point(341, 279);
             chkSamsungQuickAccess.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             chkSamsungQuickAccess.Name = "chkSamsungQuickAccess";
             chkSamsungQuickAccess.Size = new System.Drawing.Size(96, 19);
@@ -245,7 +278,7 @@
             // 
             edtSamsungPresetDescription.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             edtSamsungPresetDescription.Enabled = false;
-            edtSamsungPresetDescription.Location = new System.Drawing.Point(100, 489);
+            edtSamsungPresetDescription.Location = new System.Drawing.Point(100, 484);
             edtSamsungPresetDescription.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtSamsungPresetDescription.Multiline = true;
             edtSamsungPresetDescription.Name = "edtSamsungPresetDescription";
@@ -256,7 +289,7 @@
             // 
             lblSamsungPresetDescription.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetDescription.AutoSize = true;
-            lblSamsungPresetDescription.Location = new System.Drawing.Point(6, 494);
+            lblSamsungPresetDescription.Location = new System.Drawing.Point(6, 489);
             lblSamsungPresetDescription.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetDescription.Name = "lblSamsungPresetDescription";
             lblSamsungPresetDescription.Size = new System.Drawing.Size(70, 15);
@@ -279,7 +312,7 @@
             // 
             btnSamsungPresetEditTriggerConditions.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnSamsungPresetEditTriggerConditions.Enabled = false;
-            btnSamsungPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 347);
+            btnSamsungPresetEditTriggerConditions.Location = new System.Drawing.Point(804, 306);
             btnSamsungPresetEditTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnSamsungPresetEditTriggerConditions.Name = "btnSamsungPresetEditTriggerConditions";
             btnSamsungPresetEditTriggerConditions.Size = new System.Drawing.Size(88, 27);
@@ -292,7 +325,7 @@
             // 
             edtSamsungPresetTriggerConditions.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             edtSamsungPresetTriggerConditions.Enabled = false;
-            edtSamsungPresetTriggerConditions.Location = new System.Drawing.Point(601, 349);
+            edtSamsungPresetTriggerConditions.Location = new System.Drawing.Point(601, 308);
             edtSamsungPresetTriggerConditions.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtSamsungPresetTriggerConditions.Name = "edtSamsungPresetTriggerConditions";
             edtSamsungPresetTriggerConditions.ReadOnly = true;
@@ -303,7 +336,7 @@
             // 
             lblSamsungPresetExcludedProcesses.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetExcludedProcesses.AutoSize = true;
-            lblSamsungPresetExcludedProcesses.Location = new System.Drawing.Point(475, 414);
+            lblSamsungPresetExcludedProcesses.Location = new System.Drawing.Point(475, 373);
             lblSamsungPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetExcludedProcesses.Name = "lblSamsungPresetExcludedProcesses";
             lblSamsungPresetExcludedProcesses.Size = new System.Drawing.Size(112, 15);
@@ -314,7 +347,7 @@
             // 
             edtSamsungPresetExcludedProcesses.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             edtSamsungPresetExcludedProcesses.Enabled = false;
-            edtSamsungPresetExcludedProcesses.Location = new System.Drawing.Point(601, 411);
+            edtSamsungPresetExcludedProcesses.Location = new System.Drawing.Point(601, 370);
             edtSamsungPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtSamsungPresetExcludedProcesses.Name = "edtSamsungPresetExcludedProcesses";
             edtSamsungPresetExcludedProcesses.Size = new System.Drawing.Size(289, 23);
@@ -324,7 +357,7 @@
             // 
             lblSamsungPresetIncludedProcesses.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetIncludedProcesses.AutoSize = true;
-            lblSamsungPresetIncludedProcesses.Location = new System.Drawing.Point(475, 384);
+            lblSamsungPresetIncludedProcesses.Location = new System.Drawing.Point(475, 343);
             lblSamsungPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetIncludedProcesses.Name = "lblSamsungPresetIncludedProcesses";
             lblSamsungPresetIncludedProcesses.Size = new System.Drawing.Size(110, 15);
@@ -335,7 +368,7 @@
             // 
             edtSamsungPresetIncludedProcesses.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             edtSamsungPresetIncludedProcesses.Enabled = false;
-            edtSamsungPresetIncludedProcesses.Location = new System.Drawing.Point(601, 381);
+            edtSamsungPresetIncludedProcesses.Location = new System.Drawing.Point(601, 340);
             edtSamsungPresetIncludedProcesses.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtSamsungPresetIncludedProcesses.Name = "edtSamsungPresetIncludedProcesses";
             edtSamsungPresetIncludedProcesses.Size = new System.Drawing.Size(289, 23);
@@ -345,7 +378,7 @@
             // 
             lblSamsungPresetTriggerCondition.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetTriggerCondition.AutoSize = true;
-            lblSamsungPresetTriggerCondition.Location = new System.Drawing.Point(475, 353);
+            lblSamsungPresetTriggerCondition.Location = new System.Drawing.Point(475, 312);
             lblSamsungPresetTriggerCondition.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetTriggerCondition.Name = "lblSamsungPresetTriggerCondition";
             lblSamsungPresetTriggerCondition.Size = new System.Drawing.Size(63, 15);
@@ -358,7 +391,7 @@
             cbxSamsungPresetTrigger.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             cbxSamsungPresetTrigger.Enabled = false;
             cbxSamsungPresetTrigger.FormattingEnabled = true;
-            cbxSamsungPresetTrigger.Location = new System.Drawing.Point(601, 318);
+            cbxSamsungPresetTrigger.Location = new System.Drawing.Point(601, 277);
             cbxSamsungPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cbxSamsungPresetTrigger.Name = "cbxSamsungPresetTrigger";
             cbxSamsungPresetTrigger.Size = new System.Drawing.Size(289, 23);
@@ -368,7 +401,7 @@
             // 
             lblSamsungPresetTrigger.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetTrigger.AutoSize = true;
-            lblSamsungPresetTrigger.Location = new System.Drawing.Point(475, 321);
+            lblSamsungPresetTrigger.Location = new System.Drawing.Point(475, 280);
             lblSamsungPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetTrigger.Name = "lblSamsungPresetTrigger";
             lblSamsungPresetTrigger.Size = new System.Drawing.Size(46, 15);
@@ -429,7 +462,7 @@
             cbxSamsungApps.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             cbxSamsungApps.Enabled = false;
             cbxSamsungApps.FormattingEnabled = true;
-            cbxSamsungApps.Location = new System.Drawing.Point(100, 380);
+            cbxSamsungApps.Location = new System.Drawing.Point(100, 339);
             cbxSamsungApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cbxSamsungApps.Name = "cbxSamsungApps";
             cbxSamsungApps.Size = new System.Drawing.Size(233, 23);
@@ -446,7 +479,7 @@
             lvSamsungPresets.MultiSelect = false;
             lvSamsungPresets.Name = "lvSamsungPresets";
             lvSamsungPresets.ShowItemToolTips = true;
-            lvSamsungPresets.Size = new System.Drawing.Size(888, 126);
+            lvSamsungPresets.Size = new System.Drawing.Size(888, 85);
             lvSamsungPresets.TabIndex = 8;
             lvSamsungPresets.UseCompatibleStateImageBehavior = false;
             lvSamsungPresets.View = System.Windows.Forms.View.Details;
@@ -459,7 +492,7 @@
             // 
             label5.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             label5.AutoSize = true;
-            label5.Location = new System.Drawing.Point(6, 384);
+            label5.Location = new System.Drawing.Point(6, 343);
             label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label5.Name = "label5";
             label5.Size = new System.Drawing.Size(32, 15);
@@ -472,7 +505,7 @@
             cbxSamsungPresetDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             cbxSamsungPresetDevice.Enabled = false;
             cbxSamsungPresetDevice.FormattingEnabled = true;
-            cbxSamsungPresetDevice.Location = new System.Drawing.Point(100, 348);
+            cbxSamsungPresetDevice.Location = new System.Drawing.Point(100, 307);
             cbxSamsungPresetDevice.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cbxSamsungPresetDevice.Name = "cbxSamsungPresetDevice";
             cbxSamsungPresetDevice.Size = new System.Drawing.Size(370, 23);
@@ -482,7 +515,7 @@
             // 
             btnDeleteLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnDeleteLg.Enabled = false;
-            btnDeleteLg.Location = new System.Drawing.Point(289, 284);
+            btnDeleteLg.Location = new System.Drawing.Point(289, 243);
             btnDeleteLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnDeleteLg.Name = "btnDeleteLg";
             btnDeleteLg.Size = new System.Drawing.Size(88, 27);
@@ -495,7 +528,7 @@
             // 
             btnApplyLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnApplyLg.Enabled = false;
-            btnApplyLg.Location = new System.Drawing.Point(6, 284);
+            btnApplyLg.Location = new System.Drawing.Point(6, 243);
             btnApplyLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnApplyLg.Name = "btnApplyLg";
             btnApplyLg.Size = new System.Drawing.Size(88, 27);
@@ -518,7 +551,7 @@
             // 
             lblSamsungPresetDevice.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblSamsungPresetDevice.AutoSize = true;
-            lblSamsungPresetDevice.Location = new System.Drawing.Point(6, 351);
+            lblSamsungPresetDevice.Location = new System.Drawing.Point(6, 310);
             lblSamsungPresetDevice.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblSamsungPresetDevice.Name = "lblSamsungPresetDevice";
             lblSamsungPresetDevice.Size = new System.Drawing.Size(45, 15);
@@ -528,7 +561,7 @@
             // btnAddLg
             // 
             btnAddLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
-            btnAddLg.Location = new System.Drawing.Point(195, 284);
+            btnAddLg.Location = new System.Drawing.Point(195, 243);
             btnAddLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnAddLg.Name = "btnAddLg";
             btnAddLg.Size = new System.Drawing.Size(88, 27);
@@ -541,7 +574,7 @@
             // 
             edtShortcutLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             edtShortcutLg.Enabled = false;
-            edtShortcutLg.Location = new System.Drawing.Point(100, 411);
+            edtShortcutLg.Location = new System.Drawing.Point(100, 370);
             edtShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtShortcutLg.Name = "edtShortcutLg";
             edtShortcutLg.ReadOnly = true;
@@ -575,7 +608,7 @@
             // 
             btnSamsungRefreshApps.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnSamsungRefreshApps.Enabled = false;
-            btnSamsungRefreshApps.Location = new System.Drawing.Point(341, 378);
+            btnSamsungRefreshApps.Location = new System.Drawing.Point(341, 337);
             btnSamsungRefreshApps.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnSamsungRefreshApps.Name = "btnSamsungRefreshApps";
             btnSamsungRefreshApps.Size = new System.Drawing.Size(88, 27);
@@ -589,7 +622,7 @@
             // 
             label2.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             label2.AutoSize = true;
-            label2.Location = new System.Drawing.Point(6, 415);
+            label2.Location = new System.Drawing.Point(6, 374);
             label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label2.Name = "label2";
             label2.Size = new System.Drawing.Size(55, 15);
@@ -600,7 +633,7 @@
             // 
             label1.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new System.Drawing.Point(6, 321);
+            label1.Location = new System.Drawing.Point(6, 280);
             label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label1.Name = "label1";
             label1.Size = new System.Drawing.Size(42, 15);
@@ -622,7 +655,7 @@
             // 
             edtNameLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             edtNameLg.Enabled = false;
-            edtNameLg.Location = new System.Drawing.Point(100, 318);
+            edtNameLg.Location = new System.Drawing.Point(100, 277);
             edtNameLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtNameLg.Name = "edtNameLg";
             edtNameLg.Size = new System.Drawing.Size(233, 23);
@@ -632,7 +665,7 @@
             // 
             btnSetShortcutLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnSetShortcutLg.Enabled = false;
-            btnSetShortcutLg.Location = new System.Drawing.Point(384, 284);
+            btnSetShortcutLg.Location = new System.Drawing.Point(384, 243);
             btnSetShortcutLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnSetShortcutLg.Name = "btnSetShortcutLg";
             btnSetShortcutLg.Size = new System.Drawing.Size(88, 27);
@@ -645,7 +678,7 @@
             // 
             edtStepsLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             edtStepsLg.Enabled = false;
-            edtStepsLg.Location = new System.Drawing.Point(100, 440);
+            edtStepsLg.Location = new System.Drawing.Point(100, 435);
             edtStepsLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             edtStepsLg.Multiline = true;
             edtStepsLg.Name = "edtStepsLg";
@@ -657,7 +690,7 @@
             btnSamsungAddButton.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
             btnSamsungAddButton.ContextMenuStrip = mnuLgButtons;
             btnSamsungAddButton.Enabled = false;
-            btnSamsungAddButton.Location = new System.Drawing.Point(807, 439);
+            btnSamsungAddButton.Location = new System.Drawing.Point(807, 434);
             btnSamsungAddButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnSamsungAddButton.Name = "btnSamsungAddButton";
             btnSamsungAddButton.Size = new System.Drawing.Size(88, 27);
@@ -709,7 +742,7 @@
             // 
             btnCloneLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             btnCloneLg.Enabled = false;
-            btnCloneLg.Location = new System.Drawing.Point(100, 284);
+            btnCloneLg.Location = new System.Drawing.Point(100, 243);
             btnCloneLg.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnCloneLg.Name = "btnCloneLg";
             btnCloneLg.Size = new System.Drawing.Size(88, 27);
@@ -722,7 +755,7 @@
             // 
             lblStepsLg.Anchor = System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left;
             lblStepsLg.AutoSize = true;
-            lblStepsLg.Location = new System.Drawing.Point(6, 445);
+            lblStepsLg.Location = new System.Drawing.Point(6, 440);
             lblStepsLg.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblStepsLg.Name = "lblStepsLg";
             lblStepsLg.Size = new System.Drawing.Size(38, 15);
@@ -786,12 +819,6 @@
             miNvSettings.Size = new System.Drawing.Size(167, 22);
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
-            // 
-            // miExpertDummy
-            // 
-            miExpertDummy.Name = "miExpertDummy";
-            miExpertDummy.Size = new System.Drawing.Size(180, 22);
-            miExpertDummy.Text = "Dummy";
             // 
             // SamsungPanel
             // 
@@ -872,5 +899,8 @@
         private System.Windows.Forms.Button btnExpert;
         private System.Windows.Forms.ContextMenuStrip mnuExpert;
         private System.Windows.Forms.ToolStripMenuItem miExpertDummy;
+        private System.Windows.Forms.Label lblSamsungPresetConnectedDisplaysRegex;
+        private System.Windows.Forms.TextBox edtSamsungPresetConnectedDisplaysRegex;
+        private System.Windows.Forms.ToolTip toolTipSamsungPreset;
     }
 }

@@ -342,6 +342,7 @@ namespace ColorControl
                     services.AddSingleton<ProcessEventDispatcher>();
                     services.AddSingleton<WindowMessageDispatcher>();
                     services.AddSingleton<KeyboardShortcutDispatcher>();
+                    services.AddSingleton<DisplayChangeEventDispatcher>();
                     services.AddSingleton<MainForm>();
                     services.AddSingleton<LogWindow>();
                     services.AddSingleton<BrowserWindow>();

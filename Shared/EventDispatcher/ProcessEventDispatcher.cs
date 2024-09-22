@@ -60,7 +60,7 @@ public class ProcessEventDispatcher : EventDispatcher<ProcessChangedEventArgs>
 
         MonitorContext ??= new ProcessChangedEventArgs();
 
-        while (IsRunning)
+        while (true)
         {
             await Task.Delay(_globalContext.Config.ProcessMonitorPollingInterval);
 

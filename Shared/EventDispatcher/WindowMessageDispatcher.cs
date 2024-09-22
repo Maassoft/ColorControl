@@ -24,6 +24,7 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
     public const string Event_WindowMessagePowerBroadcast = "WindowMessagePowerBroadcast";
     public const string Event_WindowMessageShowWindow = "WindowMessageShowWindow";
     public const string Event_WindowMessageUserBringToFront = "WindowMessageUserBringToFront";
+    public const string Event_WindowMessageDisplayChange = "WindowMessageDisplayChange";
 
     private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
     private readonly GlobalContext _globalContext;
@@ -39,6 +40,7 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
         { NativeConstants.WM_CLOSE, Event_WindowMessageClose },
         { NativeConstants.WM_POWERBROADCAST, Event_WindowMessagePowerBroadcast },
         { NativeConstants.WM_SHOWWINDOW, Event_WindowMessageShowWindow },
+        { NativeConstants.WM_DISPLAYCHANGE, Event_WindowMessageDisplayChange },
         { Utils.WM_BRINGTOFRONT, Event_WindowMessageUserBringToFront }
     };
 
@@ -87,6 +89,8 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
             {
                 Logger.Debug("WM_QUERYENDSESSION");
             }
+
+            Logger.Debug(m);
 
             OnMessage?.Invoke(this, m);
 
