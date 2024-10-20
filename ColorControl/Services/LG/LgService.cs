@@ -487,6 +487,7 @@ namespace ColorControl.Services.LG
 			_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_MonitorOn, PowerModeChanged);
 
 			_sessionSwitchDispatcher.RegisterEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitched);
+			_sessionSwitchDispatcher.RegisterAsyncEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitchedAsync);
 
 			_processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
 
@@ -534,6 +535,20 @@ namespace ColorControl.Services.LG
 			}
 		}
 
+		private async Task SessionSwitchedAsync(object sender, SessionSwitchEventArgs e, CancellationToken token)
+		{
+			if (e.Reason == SessionSwitchReason.SessionLock)
+			{
+				var devices = Devices.Where(d => d.PowerOffAfterSessionLock);
+				PowerOffDevices(devices, PowerOnOffState.StandBy);
+			}
+			else if (e.Reason == SessionSwitchReason.SessionUnlock)
+			{
+				var devices = Devices.Where(d => d.PowerOnAfterSessionUnlock).ToList();
+				await PowerOnDevicesTask(devices);
+			}
+		}
+
 		private async Task PowerModeResume(object sender, PowerStateChangedEventArgs e, CancellationToken _)
 		{
 			Logger.Debug($"PowerModeChanged: {e.State}");
@@ -557,7 +572,7 @@ namespace ColorControl.Services.LG
 			{
 				case PowerOnOffState.StandBy:
 					{
-						ExecutePresetsForEvent(PresetTriggerType.Standby);
+						_ = ExecutePresetsForEvent(PresetTriggerType.Standby);
 
 						var devices = Devices.Where(d => d.PowerOffOnStandby);
 						PowerOffDevices(devices, PowerOnOffState.StandBy);
@@ -565,7 +580,7 @@ namespace ColorControl.Services.LG
 					}
 				case PowerOnOffState.ShutDown:
 					{
-						ExecutePresetsForEvent(PresetTriggerType.Shutdown);
+						_ = ExecutePresetsForEvent(PresetTriggerType.Shutdown);
 
 						var devices = Devices.Where(d => d.PowerOffOnShutdown);
 
@@ -648,12 +663,12 @@ namespace ColorControl.Services.LG
 					return;
 				}
 
-				var applicableDevices = Devices.Where(d => 
-							   d.PowerOffOnScreenSaver 
-							|| d.PowerOnAfterScreenSaver 
-							|| (d.TriggersEnabled 
-										// only these trigger types are ever triggered by a process changed event
-									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop) 
+				var applicableDevices = Devices.Where(d =>
+							   d.PowerOffOnScreenSaver
+							|| d.PowerOnAfterScreenSaver
+							|| (d.TriggersEnabled
+									// only these trigger types are ever triggered by a process changed event
+									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop)
 									&& ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))))
 					.ToList();
 
@@ -1084,6 +1099,8 @@ namespace ColorControl.Services.LG
 					PowerOnAfterScreenSaver = d.PowerOnAfterScreenSaver,
 					PowerOnAfterStartup = d.PowerOnAfterStartup,
 					PowerOnByWindows = d.PowerOnByWindows,
+					PowerOffAfterSessionLock = d.PowerOffAfterSessionLock,
+					PowerOnAfterSessionUnlock = d.PowerOnAfterSessionUnlock,
 					ScreenSaverMinimalDuration = d.ScreenSaverMinimalDuration,
 					TriggersEnabled = d.TriggersEnabled,
 					TurnScreenOffOnScreenSaver = d.TurnScreenOffOnScreenSaver,
@@ -1120,7 +1137,7 @@ namespace ColorControl.Services.LG
 				}
 			}
 
-			SavePresets();
+			SaveConfig();
 
 			return true;
 		}

@@ -8,7 +8,7 @@
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject ProtectedLocalStorage _localStorage
@@ -59,7 +59,7 @@ else
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
-					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)">
+					<span class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)">
 						<div class="d-flex align-items-start justify-content-between">
 							<div>
 								<h5 class="mb-1">
@@ -86,7 +86,7 @@ else
 								</ul>
 							</div>
 						</div>
-					</a>
+					</span>
 				}
 			</div>
 		</div>
@@ -120,18 +120,18 @@ else
 		await _rpcClientService.CallAsync<bool>("GameService", "ApplyPresetWithId", preset.id);
 	}
 
-	private async Task PresetOnEditClick(GamePreset preset)
+	private void PresetOnEditClick(GamePreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task PresetOnCloneClick(GamePreset preset)
+	private void PresetOnCloneClick(GamePreset preset)
 	{
 		CurrentPreset = new GamePreset(preset);
 		CurrentPreset.SetCloneValues();
 	}
 
-	private async Task PresetOnDeleteClick(GamePreset preset)
+	private void PresetOnDeleteClick(GamePreset preset)
 	{
 		CurrentPreset = preset;
 	}
@@ -148,7 +148,7 @@ else
 		StateHasChanged();
 	}
 
-	private async Task AddPresetOnClick()
+	private void AddPresetOnClick()
 	{
 		CurrentPreset = new GamePreset();
 	}

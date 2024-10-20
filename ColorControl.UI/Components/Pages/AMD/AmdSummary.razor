@@ -8,7 +8,7 @@
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject ProtectedLocalStorage _localStorage
@@ -99,7 +99,7 @@ else
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
-					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+					<span class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
 						<div class="d-flex align-items-start justify-content-between">
 							<div>
 								<h5 class="mb-1">
@@ -128,7 +128,7 @@ else
 						</div>
 						<p class="mb-1">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz @(preset.applyColorData ? preset.colorDepth : "")</p>
 						<small class="text-muted">@preset.shortcut</small>
-					</a>
+					</span>
 				}
 			</div>
 		</div>
@@ -165,19 +165,19 @@ else
 		await _rpcClientService.CallAsync<bool>("AmdService", "ApplyPresetWithId", preset.id);
 	}
 
-	private async Task PresetOnEditClick(AmdPreset preset)
+	private void PresetOnEditClick(AmdPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task PresetOnCloneClick(AmdPreset preset)
+	private void PresetOnCloneClick(AmdPreset preset)
 	{
 		CurrentPreset = new AmdPreset(preset);
 		CurrentPreset.name = preset.name;
 		CurrentPreset.SetCloneValues();
 	}
 
-	private async Task PresetOnDeleteClick(AmdPreset preset)
+	private void PresetOnDeleteClick(AmdPreset preset)
 	{
 		CurrentPreset = preset;
 	}
@@ -194,12 +194,12 @@ else
 		StateHasChanged();
 	}
 
-	private async Task DisplayPresetOnClick(AmdPreset preset)
+	private void DisplayPresetOnClick(AmdPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task AddPresetOnClick()
+	private void AddPresetOnClick()
 	{
 		CurrentPreset = new AmdPreset();
 	}

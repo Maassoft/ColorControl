@@ -8,7 +8,7 @@ public class RpcClientService
 {
     private readonly WinElevatedProcessManager _elevatedProcessManager;
     private readonly WinApiService _winApiService;
-    private readonly RpcServerService _rpcServerService;
+    //private readonly RpcServerService _rpcServerService;
 
     public string Name { get; set; }
 

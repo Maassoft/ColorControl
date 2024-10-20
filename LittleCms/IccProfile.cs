@@ -8,7 +8,7 @@ namespace LittleCms
     public class IccProfile : CmsObject
     {
         public override CmsContext Context { get; }
-        public byte[] RawBytes { get; }
+        public byte[]? RawBytes { get; }
 
         public IccProfile(IntPtr handle, bool moveOwnership) : base(handle, moveOwnership)
         {

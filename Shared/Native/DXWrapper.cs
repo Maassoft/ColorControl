@@ -1309,7 +1309,7 @@ public struct QUERY_VIDEO_MEMORY_INFO
 
 public class DXNativeMethods : SafeNativeMethods
 {
-    internal new const string DLL_NAME = "dxgi.dll";
+    internal const string DLL_NAME = "dxgi.dll";
 
     [DllImport(DLL_NAME)]
     internal static extern int CreateDXGIFactory(
@@ -2643,7 +2643,7 @@ public interface IDXGIOutput1
                         out MODE_DESC pClosestMatch,
         [MarshalAs( UnmanagedType.Interface )]
             [Optional]          object                                  pConcernedDevice);
-    new void WaitForVBlank();
+    void WaitForVBlank();
     new void TakeOwnership(
         [MarshalAs( UnmanagedType.Interface )]
                                 object                                  pDevice,

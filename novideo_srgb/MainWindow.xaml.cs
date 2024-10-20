@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.XForms;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.XForms;
 using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows;
@@ -9,7 +10,7 @@ namespace novideo_srgb
     {
         private readonly MainViewModel _viewModel;
 
-        private static MainWindow _novideoWindow;
+        private static MainWindow? _novideoWindow;
 
         public MainWindow()
         {
@@ -21,10 +22,7 @@ namespace novideo_srgb
 
         public static void CreateAndShow(bool show = true)
         {
-            if (System.Windows.Application.Current == null)
-            {
-                new System.Windows.Application();
-            }
+            Utils.EnsureApplication();
 
             _novideoWindow ??= new MainWindow();
 
@@ -37,19 +35,19 @@ namespace novideo_srgb
             }
         }
 
-        public static bool IsInitialized()
+        public static bool IsCreated()
         {
             return _novideoWindow != null;
         }
 
         public static void BeforeDisplaySettingsChange()
         {
-            if (!IsInitialized())
+            if (!IsCreated())
             {
                 return;
             }
 
-            _novideoWindow.UpdateMonitors();
+            _novideoWindow?.UpdateMonitors();
         }
 
         private void UpdateMonitors()
@@ -118,12 +116,18 @@ namespace novideo_srgb
         {
             if (System.Windows.Application.Current.Windows.Cast<System.Windows.Window>().Any(x => x is AdvancedWindow)) return;
             var monitor = ((FrameworkElement)sender).DataContext as MonitorData;
+
+            if (monitor == null)
+            {
+                return;
+            }
+
             var window = new AdvancedWindow(monitor)
             {
                 Owner = this
             };
 
-            void CloseWindow(object o, EventArgs e2) => window.Close();
+            void CloseWindow(object? o, EventArgs e2) => window.Close();
 
             SystemEvents.DisplaySettingsChanged += CloseWindow;
             if (window.ShowDialog() == false) return;
@@ -153,7 +157,7 @@ namespace novideo_srgb
         {
             CreateAndShow(false);
 
-            _novideoWindow.ApplyClamp(monitorId, clamp, targetColorSpace);
+            _novideoWindow?.ApplyClamp(monitorId, clamp, targetColorSpace);
         }
 
         private void ApplyClamp(string monitorId, bool clamp, int targetColorSpace)

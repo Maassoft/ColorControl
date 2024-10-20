@@ -4,7 +4,7 @@
 @using ColorControl.Shared.Common;
 @using ColorControl.UI.Components.Pages.Generic
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 
@@ -28,7 +28,7 @@
     private FieldDefinition? Field;
     private FieldDefinition? DeviceField;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (Action == null)
         {

@@ -47,10 +47,7 @@ namespace ColorControl.XForms
 
         public static void CreateAndShow(bool show = true)
         {
-            if (Application.Current == null)
-            {
-                new Application();
-            }
+            Utils.EnsureApplication();
 
             _window ??= Program.ServiceProvider.GetRequiredService<LogWindow>();
 

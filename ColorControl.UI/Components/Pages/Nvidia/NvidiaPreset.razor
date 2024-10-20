@@ -1,11 +1,12 @@
 ﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.DisplayInfo
 @using ColorControl.Shared.Contracts.NVIDIA
 @using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
@@ -281,7 +282,7 @@
                                 <div id="driverSettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
                                     <div class="accordion-body">
                                         <div class="mb-3">
-                                            <button class="btn btn-secondary btn-sm" type="button" data-bs-target="#driverSettingsModal" data-bs-toggle="modal" @onclick="DriverSettingsOnClick">Open driver settings</button>
+                                            <button class="btn btn-secondary btn-sm me-1" type="button" data-bs-target="#driverSettingsModal" data-bs-toggle="modal" @onclick="DriverSettingsOnClick">Open driver settings</button>
                                             <span>@Preset.driverSettings.Count settings configured</span>
                                         </div>
                                     </div>
@@ -460,7 +461,7 @@
                                 </div>
                             }
 
-                            @if (ColorProfileNames?.Any() == true)
+                            @if (ColorProfiles?.Any() == true)
                             {
                                 <div class="accordion-item">
                                     <h2 class="accordion-header">
@@ -480,9 +481,9 @@
                                                 <label class="form-label" for="colorProfile">Color profile</label>
                                                 <select class="form-select" id="colorProfile" @bind="Preset.ColorProfileSettings.ProfileName">
                                                     <option value="">Not selected</option>
-                                                    @foreach (var colorProfile in ColorProfileNames)
+                                                    @foreach (var colorProfile in ColorProfiles)
                                                     {
-                                                        <option value="@colorProfile">@colorProfile</option>
+                                                        <option value="@colorProfile.Name">@colorProfile</option>
                                                     }
                                                 </select>
                                             </div>
@@ -495,6 +496,42 @@
                                                         <option value="@scaling">@scaling.GetDescription()</option>
                                                     }
                                                 </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (ShowOverclocking)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <span class="d-flex align-items-baseline">
+                                            @if (!Preset.IsDisplayPreset)
+                                            {
+                                                <input class="form-check-input me-1" style="font-size: 1rem" title="Apply these settings" type="checkbox" @bind="Preset.applyOverclocking" id="applyOverclocking">
+                                            }
+                                            <button class="accordion-button collapsed py-2 @(Preset.applyOverclocking ? "text-warning fw-bold" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#overclocking">
+                                                Overclocking
+                                            </button>
+                                        </span>
+                                    </h2>
+                                    <div id="overclocking" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <button class="btn btn-secondary btn-sm me-1" type="button" data-bs-target="#gpuSettingsModal" data-bs-toggle="modal" @onclick="GpuSettingsOnClick">Open GPU settings</button>
+                                                @if (Preset.ocSettings.Any())
+                                                {
+                                                    <span>Overclocking settings configured:</span>
+                                                    @foreach (var ocSetting in Preset.ocSettings)
+                                                    {
+                                                        <div>@ocSetting.ToString()</div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span>No overclocking settings configured</span>
+                                                }
                                             </div>
                                         </div>
                                     </div>
@@ -525,6 +562,9 @@
     [Parameter]
     public Func<NvPreset, Task>? SetDriverSettingsPreset { get; set; }
 
+    [Parameter]
+    public Func<NvPreset, Task>? SetGpuSettingsPreset { get; set; }
+
     private string? selectedActiveResolution;
     private string? selectedVirtualResolution;
     private string? selectedRefreshRate;
@@ -532,15 +572,17 @@
     private List<VirtualResolution>? resolutions;
     private List<Rational>? refreshRates;
     private List<NvPreset>? displayPresets;
-    private List<string>? ColorProfileNames;
+    private List<ColorProfileDto>? ColorProfiles;
 
     private string WasValidated = "";
     private bool IsVisible;
     private bool IsDriverSettingsOpened;
+    private bool IsGpuSettingsOpened;
+    private bool ShowOverclocking;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (IsDriverSettingsOpened && Preset != null)
+        if ((IsDriverSettingsOpened || IsGpuSettingsOpened) && Preset != null)
         {
             return;
         }
@@ -564,8 +606,10 @@
 
         if (Preset != null)
         {
-            ColorProfileNames = await _rpcClientService.CallAsync<List<string>>("ColorProfileService", "GetDisplayColorProfiles", deviceName);
+            ColorProfiles = await _rpcClientService.CallAsync<List<ColorProfileDto>>("ColorProfileService", "GetAllDisplayColorProfiles", deviceName);
         }
+
+        ShowOverclocking = true;
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -641,10 +685,20 @@
         Preset!.applyHdmiSettings = true;
     }
 
-    private async Task DriverSettingsOnClick(MouseEventArgs e)
+    private Task DriverSettingsOnClick(MouseEventArgs e)
     {
         IsDriverSettingsOpened = true;
         SetDriverSettingsPreset?.Invoke(Preset!);
+
+        return Task.CompletedTask;
+    }
+
+    private Task GpuSettingsOnClick(MouseEventArgs e)
+    {
+        IsGpuSettingsOpened = true;
+        SetGpuSettingsPreset?.Invoke(Preset!);
+
+        return Task.CompletedTask;
     }
 
     private void ModalOnFocus(FocusEventArgs e)
@@ -652,6 +706,11 @@
         if (IsVisible && IsDriverSettingsOpened)
         {
             IsDriverSettingsOpened = false;
+            StateHasChanged();
+        }
+        if (IsVisible && IsGpuSettingsOpened)
+        {
+            IsGpuSettingsOpened = false;
             StateHasChanged();
         }
 

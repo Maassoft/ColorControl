@@ -11,7 +11,7 @@ namespace novideo_srgb
                 return X.Equals(other.X) && Y.Equals(other.Y);
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return obj is Point other && Equals(other);
             }
@@ -36,7 +36,7 @@ namespace novideo_srgb
                        White.Equals(other.White);
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return obj is ColorSpace other && Equals(other);
             }

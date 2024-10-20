@@ -12,7 +12,7 @@ namespace novideo_srgb
 {
     public class MonitorData : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -225,7 +225,7 @@ namespace novideo_srgb
 
         private Colorimetry.ColorSpace TargetColorSpace => Colorimetry.ColorSpaces[Target];
 
-        private void OnPropertyChanged([CallerMemberName] string name = null)
+        private void OnPropertyChanged([CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

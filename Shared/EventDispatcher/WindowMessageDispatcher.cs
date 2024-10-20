@@ -90,7 +90,7 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
                 Logger.Debug("WM_QUERYENDSESSION");
             }
 
-            Logger.Debug(m);
+            //Logger.Debug(m);
 
             OnMessage?.Invoke(this, m);
 

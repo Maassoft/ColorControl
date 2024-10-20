@@ -3,7 +3,7 @@
 @using ColorControl.Shared.Contracts
 @using ColorControl.UI.Services;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
@@ -147,6 +147,7 @@ else
             "WARN" => "warning",
             "ERROR" => "danger",
             "FATAL" => "secondary",
+            _ => "info"
         };
 
         public bool Show(NLog.LogLevel level) => LogLevel >= level;
@@ -200,7 +201,7 @@ else
         await _rpcClientService.CallAsync<bool>("LoggingService", "SetLogLevel", value);
     }
 
-    private async Task LogLevelFilterInput(ChangeEventArgs e)
+    private void LogLevelFilterInput(ChangeEventArgs e)
     {
         var value = e.Value as string ?? NLog.LogLevel.Debug.Name;
         logLevelFilter = NLog.LogLevel.FromString(value);

@@ -2,7 +2,7 @@
 @using ColorControl.UI.Services;
 @using ColorControl.Shared.Common;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 <FieldsModal ModalId="@ModalId" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick"></FieldsModal>
 
@@ -19,13 +19,21 @@
     [Parameter]
     public string ModalId { get; set; } = "confirmModal";
 
+    [Parameter]
+    public List<FieldDefinition>? ExtraFields { get; set; }
+
     public List<FieldDefinition>? Fields { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (Message != null)
         {
             Fields = [new FieldDefinition { FieldType = FieldType.Label, Label = Message }];
+
+            if (ExtraFields != null)
+            {
+                Fields.AddRange(ExtraFields);
+            }
         }
     }
 

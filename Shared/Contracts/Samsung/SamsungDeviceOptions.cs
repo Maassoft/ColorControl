@@ -15,6 +15,8 @@ public class SamsungDeviceOptions
     public bool PowerOnAfterManualPowerOff { get; set; }
     public bool PowerOnByWindows { get; set; }
     public bool PowerOffByWindows { get; set; }
+    public bool PowerOnAfterSessionUnlock { get; set; }
+    public bool PowerOffAfterSessionLock { get; set; }
     public bool TriggersEnabled { get; set; }
     public int HDMIPortNumber { get; set; }
 

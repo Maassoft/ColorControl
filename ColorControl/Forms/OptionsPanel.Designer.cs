@@ -499,7 +499,6 @@ namespace ColorControl.Forms
         private System.Windows.Forms.GroupBox grpGeneralOptions;
         private System.Windows.Forms.CheckBox chkStartMinimized;
         private System.Windows.Forms.CheckBox chkStartAfterLogin;
-        private System.Windows.Forms.TabPage tabInfo;
         private System.Windows.Forms.GroupBox grpMiscellaneousOptions;
         private System.Windows.Forms.CheckBox chkFixChromeFonts;
         private System.Windows.Forms.Label lblFixChromeFontsDescription;
@@ -518,7 +517,6 @@ namespace ColorControl.Forms
         private System.Windows.Forms.Button btnElevationInfo;
         private System.Windows.Forms.Button btnStartStopService;
         private System.Windows.Forms.CheckBox chkAutoInstallUpdates;
-        private System.Windows.Forms.Button btnUpdate;
         private System.Windows.Forms.GroupBox grpOptionsModules;
         private System.Windows.Forms.CheckedListBox chkModules;
         private System.Windows.Forms.Label label1;

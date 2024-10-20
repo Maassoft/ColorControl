@@ -4,11 +4,10 @@
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
-@inject AppState AppState
-@inject NavigationManager _navigationManager;
+@inject JSHelper jsHelper;
 
 <div class="modal modal-lg" id="driverSettingsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" @onfocus="OnFocus">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
@@ -104,7 +103,7 @@
                 else
                 {
                     <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="() => IsVisible = false">Close</button>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#presetModal" @onclick="ApplyClick">Save</button>
+                    <button type="button" class="btn btn-primary" @onclick="ApplyClick">Save</button>
                 }
             </div>
         </div>
@@ -214,6 +213,9 @@
         if (Preset != null)
         {
             Preset.UpdateDriverSettings(changedSettings);
+
+            await jsHelper.CloseModal("driverSettingsModal");
+            await jsHelper.OpenModal("presetModal");
 
             return;
         }

@@ -7,7 +7,6 @@ namespace ColorControl.Shared.Services;
 public class WinElevatedProcessManager
 {
     private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-    private bool UseDedicatedElevatedProcess = true;
 
     public WinElevatedProcessManager()
     {

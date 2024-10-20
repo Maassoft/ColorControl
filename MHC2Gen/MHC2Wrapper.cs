@@ -39,7 +39,7 @@ public class MHC2Wrapper
         return (deviceContext.min_nits, deviceContext.max_nits);
     }
 
-    public static GenerateProfileCommand LoadProfile(string fileName, bool isHDRProfile)
+    public static GenerateProfileCommand LoadProfile(string fileName, bool isAssociatedAsHdr)
     {
         if (fileName.IndexOf("\\") == -1 || !File.Exists(fileName))
         {
@@ -56,7 +56,7 @@ public class MHC2Wrapper
         {
             Description = deviceContext.GetDescription(),
             HasExtraInfo = deviceContext.ExtraInfoTag != null,
-            IsHDRProfile = isHDRProfile,
+            IsHDRProfile = isAssociatedAsHdr,
             BlackLuminance = deviceContext.min_nits,
             WhiteLuminance = deviceContext.max_nits,
             ColorGamut = deviceContext.ExtraInfoTag?.TargetGamut ?? ColorGamut.Native,

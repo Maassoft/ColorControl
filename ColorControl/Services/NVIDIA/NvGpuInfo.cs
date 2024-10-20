@@ -99,6 +99,28 @@ namespace ColorControl.Services.NVIDIA
         {
             Refresh();
 
+            var coreDelta = GetDeltaClockMinMax(PublicClockDomain.Graphics);
+            var memoryDelta = GetDeltaClockMinMax(PublicClockDomain.Memory);
+
+            var curveEntries = CurveV3.GPUCurveEntries ?? [];
+
+            var graphicsDelta = GetDeltaClockMinMax(PublicClockDomain.Graphics);
+
+            var minCurveFreq = curveEntries.Max(e => e.DefaultFrequencyInkHz) + graphicsDelta.Item1;
+            var freqValues = curveEntries
+                .Where(e => e.DefaultFrequencyInkHz == 0 || e.DefaultFrequencyInkHz >= minCurveFreq)
+                .Select(e => e.DefaultFrequencyInkHz / 1000).Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            var voltValues = curveEntries
+                .Where(e => (e.DefaultVoltageInMicroV == 0 || e.DefaultFrequencyInkHz >= minCurveFreq) && e.DefaultVoltageInMicroV <= 1100000)
+                .OrderBy(e => e.DefaultVoltageInMicroV)
+                .Select(e => e.DefaultVoltageInMicroV / 1000)
+                .Distinct()
+                .ToList();
+
+            var powerLimits = GetPowerLimits();
+
             return new NvGpuInfoDto
             {
                 PCIIdentifier = PCIIdentifier,
@@ -117,7 +139,16 @@ namespace ColorControl.Services.NVIDIA
                 MaxPowerInMilliWatts = MaxPowerInMilliWatts,
                 MinPowerInMilliWatts = MinPowerInMilliWatts,
                 StockGraphicsClock = StockGraphicsClock,
-                StockMemoryClock = StockMemoryClock
+                StockMemoryClock = StockMemoryClock,
+                MinCoreDeltaInMHz = coreDelta.Item1 / 1000,
+                MaxCoreDeltaInMHz = coreDelta.Item2 / 1000,
+                MinMemoryDeltaInMHz = memoryDelta.Item1 / 1000,
+                MaxMemoryDeltaInMHz = memoryDelta.Item2 / 1000,
+                OverclockSettings = GetOverclockSettings(),
+                CurveFrequenciesInMHz = freqValues,
+                CurveVoltagesInMv = voltValues,
+                MinimumPowerInPCM = powerLimits.Item1,
+                MaximumPowerInPCM = powerLimits.Item2,
             };
         }
 
@@ -329,14 +360,14 @@ namespace ColorControl.Services.NVIDIA
 
             var sb = new StringBuilder();
 
-            sb.Append($"GPU: {GpuFrequencyInKhz.ToUnitString()} @ {VoltageInMv} mV, {GpuTemperature}°");
+            sb.Append($"GPU: {GpuFrequencyInKhz.ToKiloUnitString()} @ {VoltageInMv} mV, {GpuTemperature}°");
 
             if (HotSpotTemperature.HasValue)
             {
                 sb.Append($"/{HotSpotTemperature}°");
             }
 
-            sb.Append($", Mem: {MemoryFrequencyInKhz.ToUnitString()}");
+            sb.Append($", Mem: {MemoryFrequencyInKhz.ToKiloUnitString()}");
 
             if (MemoryTemperature.HasValue)
             {
@@ -752,7 +783,7 @@ namespace ColorControl.Services.NVIDIA
 
             //var field = new FieldDefinition
             //{
-            //    Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+            //    Label = $"Core offset in MHz ({graphicsDelta.Item1.ToKiloUnitString()} to {graphicsDelta.Item2.ToKiloUnitString()})",
             //    FieldType = FieldType.Numeric,
             //    MinValue = graphicsDelta.Item1 / 1000,
             //    MaxValue = graphicsDelta.Item2 / 1000,
@@ -761,7 +792,7 @@ namespace ColorControl.Services.NVIDIA
 
             var field = new FieldDefinition
             {
-                Label = $"Core offset in MHz ({graphicsDelta.Item1.ToUnitString()} to {graphicsDelta.Item2.ToUnitString()})",
+                Label = $"Core offset in MHz ({graphicsDelta.Item1.ToKiloUnitString()} to {graphicsDelta.Item2.ToKiloUnitString()})",
                 FieldType = FieldType.TrackBar,
                 MinValue = graphicsDelta.Item1 / 1000,
                 MaxValue = graphicsDelta.Item2 / 1000,
@@ -778,7 +809,7 @@ namespace ColorControl.Services.NVIDIA
 
             //var field = new FieldDefinition
             //{
-            //    Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+            //    Label = $"Memory offset in MHz ({memoryDelta.Item1.ToKiloUnitString()} to {memoryDelta.Item2.ToKiloUnitString()})",
             //    FieldType = FieldType.Numeric,
             //    MinValue = memoryDelta.Item1 / 1000,
             //    MaxValue = memoryDelta.Item2 / 1000,
@@ -787,7 +818,7 @@ namespace ColorControl.Services.NVIDIA
 
             var field = new FieldDefinition
             {
-                Label = $"Memory offset in MHz ({memoryDelta.Item1.ToUnitString()} to {memoryDelta.Item2.ToUnitString()})",
+                Label = $"Memory offset in MHz ({memoryDelta.Item1.ToKiloUnitString()} to {memoryDelta.Item2.ToKiloUnitString()})",
                 FieldType = FieldType.TrackBar,
                 MinValue = memoryDelta.Item1 / 1000,
                 MaxValue = memoryDelta.Item2 / 1000,

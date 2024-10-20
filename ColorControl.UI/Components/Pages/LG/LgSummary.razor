@@ -9,7 +9,7 @@
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject ProtectedLocalStorage _localStorage
@@ -162,7 +162,7 @@ else
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
-					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+					<span class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
 						<div class="d-flex align-items-start justify-content-between">
 							<div>
 								<h5 class="mb-1">@preset.name <small class="text-muted">@GetDeviceName(preset)</small></h5>
@@ -188,7 +188,7 @@ else
 								</ul>
 							</div>
 						</div>
-					</a>
+					</span>
 				}
 			</div>
 		</div>
@@ -248,18 +248,18 @@ else
 		await _rpcClientService.CallAsync<bool>("LgService", "ApplyPresetWithId", preset.id);
 	}
 
-	private async Task PresetOnEditClick(LgPreset preset)
+	private void PresetOnEditClick(LgPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task PresetOnCloneClick(LgPreset preset)
+	private void PresetOnCloneClick(LgPreset preset)
 	{
 		CurrentPreset = new LgPreset(preset);
 		CurrentPreset.SetCloneValues();
 	}
 
-	private async Task PresetOnDeleteClick(LgPreset preset)
+	private void PresetOnDeleteClick(LgPreset preset)
 	{
 		CurrentPreset = preset;
 	}
@@ -276,17 +276,17 @@ else
 		StateHasChanged();
 	}
 
-	private async Task DeviceOnClick(LgDeviceDto device)
+	private void DeviceOnClick(LgDeviceDto device)
 	{
 		CurrentDevice = device;
 	}
 
-	private async Task AddDeviceOnClick()
+	private void AddDeviceOnClick()
 	{
 		CurrentDevice = new LgDeviceDto { IsCustom = true };
 	}
 
-	private async Task AddPresetOnClick()
+	private void AddPresetOnClick()
 	{
 		CurrentPreset = new LgPreset();
 	}
@@ -320,7 +320,7 @@ else
 		StateHasChanged();
 	}
 
-	private async Task ActionOnclick(InvokableActionDto<LgPreset> action)
+	private void ActionOnclick(InvokableActionDto<LgPreset> action)
 	{
 		CurrentInvokableAction = action;
 	}

@@ -1,13 +1,12 @@
-﻿using System;
-
-namespace novideo_srgb
+﻿namespace novideo_srgb
 {
     public class Matrix
     {
         private double[,] _values;
 
-        private Matrix()
+        private Matrix(double[,] values)
         {
+            _values = values;
         }
 
         public double this[int x, int y]
@@ -48,10 +47,7 @@ namespace novideo_srgb
                 throw new ArgumentException("Array must be 3x3 or 3x1");
             }
 
-            var result = new Matrix
-            {
-                _values = array
-            };
+            var result = new Matrix(array);
             return result;
         }
 
@@ -77,10 +73,7 @@ namespace novideo_srgb
                 throw new ArgumentException("Array must have length 3");
             }
 
-            var result = new Matrix
-            {
-                _values = new double[3, 3]
-            };
+            var result = new Matrix(new double[3, 3]);
             for (var i = 0; i < 3; i++)
             {
                 result._values[i, i] = array[i];

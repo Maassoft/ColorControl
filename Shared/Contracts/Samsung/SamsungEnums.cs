@@ -11,3 +11,10 @@ public enum ExitServiceMenuType
     Exit,
     Reboot
 }
+
+public enum AdvancedUnlockType
+{
+    TV,
+    Monitor
+}
+

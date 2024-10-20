@@ -6,7 +6,7 @@
 @using ColorControl.Shared.Common
 @using static ColorControl.UI.Components.Pages.Generic.StepsInput<ColorControl.Shared.Contracts.Samsung.SamsungPreset>
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
@@ -114,7 +114,7 @@
     private string WasValidated = "";
     private bool IsVisible;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (PresetParam == null)
         {

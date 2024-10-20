@@ -753,13 +753,21 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 			return SHA256CheckSum(filePath1) == SHA256CheckSum(filePath2);
 		}
 
-		public static string ToUnitString(this uint value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
-		public static string ToUnitString(this int value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
+		public static string ToKiloUnitString(this uint value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
+		public static string ToKiloUnitString(this int value, int div = 1000, string units = "MHz") => $"{value / div}{units}";
+		public static string ToUnitString(this uint value, string units = "MHz") => $"{value}{units}";
+		public static string ToSignedUnitString(this int value, string units = "MHz") => $"{(value >= 0 ? "+" + value : value)}{units}";
+		public static string ToSignedUnitString(this uint value, string units = "MHz") => $"{(value >= 0 ? "+" + value : value)}{units}";
 		public static string ToUnitString(string units = "°", params double?[] values)
 		{
 			var notNullValues = values.Where(v => v.HasValue).Select(v => $"{v}{units}");
 
 			return string.Join("/", notNullValues);
+		}
+
+		public static System.Windows.Application EnsureApplication()
+		{
+			return System.Windows.Application.Current ?? new System.Windows.Application { ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown };
 		}
 	}
 }

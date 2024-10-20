@@ -9,7 +9,7 @@
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject ProtectedLocalStorage _localStorage
@@ -160,7 +160,7 @@ else
 			<div class="list-group">
 				@foreach (var preset in Presets)
 				{
-					<a class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+					<span class="list-group-item list-group-item-action" @onclick="() => PresetOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
 						<div class="d-flex align-items-start justify-content-between">
 							<div>
 								<h5 class="mb-1">@preset.name <small class="text-muted">@GetDeviceName(preset)</small></h5>
@@ -186,7 +186,7 @@ else
 								</ul>
 							</div>
 						</div>
-					</a>
+					</span>
 				}
 			</div>
 		</div>
@@ -229,18 +229,18 @@ else
 		await _rpcClientService.CallAsync<bool>("SamsungService", "ApplyPresetWithId", preset.id);
 	}
 
-	private async Task PresetOnEditClick(SamsungPreset preset)
+	private void PresetOnEditClick(SamsungPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task PresetOnCloneClick(SamsungPreset preset)
+	private void PresetOnCloneClick(SamsungPreset preset)
 	{
 		CurrentPreset = new SamsungPreset(preset);
 		CurrentPreset.SetCloneValues();
 	}
 
-	private async Task PresetOnDeleteClick(SamsungPreset preset)
+	private void PresetOnDeleteClick(SamsungPreset preset)
 	{
 		CurrentPreset = preset;
 	}
@@ -257,17 +257,17 @@ else
 		StateHasChanged();
 	}
 
-	private async Task DeviceOnClick(SamsungDeviceDto device)
+	private void DeviceOnClick(SamsungDeviceDto device)
 	{
 		CurrentDevice = device;
 	}
 
-	private async Task AddDeviceOnClick()
+	private void AddDeviceOnClick()
 	{
 		CurrentDevice = new SamsungDeviceDto { IsCustom = true };
 	}
 
-	private async Task AddPresetOnClick()
+	private void AddPresetOnClick()
 	{
 		CurrentPreset = new SamsungPreset();
 	}

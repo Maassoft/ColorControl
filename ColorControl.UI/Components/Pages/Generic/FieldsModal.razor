@@ -2,7 +2,7 @@
 @using ColorControl.UI.Services;
 @using ColorControl.Shared.Common;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject NavigationManager _navigationManager;
 
@@ -120,7 +120,7 @@
         }
     }
 
-    private async Task OnClose(MouseEventArgs e)
+    private void OnClose(MouseEventArgs e)
     {
         IsVisible = false;
     }

@@ -4,7 +4,7 @@
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
@@ -144,6 +144,14 @@
                                             <label class="form-check-label" for="checkWindowsPowerOff">Use Windows power settings to power off</label>
                                         </div>
                                         <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOnAfterSessionUnlock" @bind="Device.Options.PowerOnAfterSessionUnlock">
+                                            <label class="form-check-label" for="checkPowerOnAfterSessionUnlock">Power on when unlocking the pc</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="checkPowerOffAfterSessionLock" @bind="Device.Options.PowerOffAfterSessionLock">
+                                            <label class="form-check-label" for="checkPowerOffAfterSessionLock">Power off when locking the pc</label>
+                                        </div>
+                                        <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" role="switch" id="checkUseSecureConnection" @bind="Device.Options.UseSecureConnection">
                                             <label class="form-check-label" for="checkUseSecureConnection">Use secure connection</label>
                                         </div>
@@ -179,7 +187,7 @@
     private string WasValidated = "";
     private bool IsVisible;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (_device != Device)
         {

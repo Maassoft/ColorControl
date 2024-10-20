@@ -8,7 +8,7 @@ namespace novideo_srgb
 {
     public class AdvancedViewModel : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         private MonitorData _monitor;
 
@@ -180,7 +180,7 @@ namespace novideo_srgb
 
         public bool ChangedCalibration { get; set; }
 
-        private void OnPropertyChanged([CallerMemberName] string name = null)
+        private void OnPropertyChanged([CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

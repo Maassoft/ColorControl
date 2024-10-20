@@ -778,7 +778,7 @@
             clbLgPower.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             clbLgPower.ColumnWidth = 240;
             clbLgPower.FormattingEnabled = true;
-            clbLgPower.Items.AddRange(new object[] { "Power on after startup", "Power on after resume from standby", "Power off on shutdown", "Power off on standby", "Power off when screensaver activates", "Power on when screensaver deactivates", "Power on even after manual power off", "Allow triggers to be fired for this device", "Use Windows power settings to power on", "Use Windows power settings to power off", "Use secure connection" });
+            clbLgPower.Items.AddRange(new object[] { "Power on after startup", "Power on after resume from standby", "Power off on shutdown", "Power off on standby", "Power off when screensaver activates", "Power on when screensaver deactivates", "Power on even after manual power off", "Allow triggers to be fired for this device", "Use Windows power settings to power on", "Use Windows power settings to power off", "Power off when locking the pc", "Power on when unlocking the pc", "Use secure connection" });
             clbLgPower.Location = new System.Drawing.Point(6, 70);
             clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             clbLgPower.MultiColumn = true;

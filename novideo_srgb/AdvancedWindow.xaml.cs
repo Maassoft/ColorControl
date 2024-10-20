@@ -14,7 +14,7 @@ namespace novideo_srgb
             InitializeComponent();
         }
 
-        private static string BrowseProfiles()
+        private static string? BrowseProfiles()
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
             {

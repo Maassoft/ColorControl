@@ -18,16 +18,16 @@ public class SessionSwitchDispatcher : EventDispatcher<SessionSwitchEventArgs>
 
     public void SessionSwitchHandler(object sender, SessionSwitchEventArgs evt)
     {
+        Logger.Debug($"Session switch: {evt.Reason}");
+
         if (evt.Reason == SessionSwitchReason.ConsoleDisconnect)
         {
-            Logger.Debug("Detected a disconnect from the console");
             UserLocalSession = false;
 
             DispatchEvent(Event_SessionSwitch, evt);
         }
         else if (evt.Reason == SessionSwitchReason.ConsoleConnect)
         {
-            Logger.Debug("Detected a connect to the console");
             if (!UserLocalSession)
             {
                 Logger.Debug("Session state switched to local");
@@ -35,6 +35,11 @@ public class SessionSwitchDispatcher : EventDispatcher<SessionSwitchEventArgs>
                 DispatchEvent(Event_SessionSwitch, evt);
             }
         }
+        else if (evt.Reason is SessionSwitchReason.SessionUnlock or SessionSwitchReason.SessionLock)
+        {
+            Task.Run(async () => await DispatchEventAsync(Event_SessionSwitch, evt));
+        }
+
         LastSessionSwitchReason = evt.Reason;
     }
 }

@@ -6,6 +6,7 @@ using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using NWin32;
 using System;
@@ -122,6 +123,7 @@ namespace ColorControl.Services.Samsung
 			_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
 			_processEventDispatcher.RegisterAsyncEventHandler(ProcessEventDispatcher.Event_ProcessChanged, ProcessChanged);
 			_displayChangeEventDispatcher.RegisterAsyncEventHandler(DisplayChangeEventDispatcher.Event_DisplayChanged, DisplayChanged);
+			_sessionSwitchDispatcher.RegisterAsyncEventHandler(SessionSwitchDispatcher.Event_SessionSwitch, SessionSwitched);
 		}
 
 		public override List<string> GetInfo()
@@ -146,6 +148,20 @@ namespace ColorControl.Services.Samsung
 			if (_appContext.StartUpParams.ExecuteSamsungPreset)
 			{
 				await ExecutePresetAsync(_appContext.StartUpParams.SamsungPresetName);
+			}
+		}
+
+		private async Task SessionSwitched(object sender, SessionSwitchEventArgs e, CancellationToken token)
+		{
+			if (e.Reason == SessionSwitchReason.SessionLock)
+			{
+				var devices = Devices.Where(d => d.Options.PowerOffAfterSessionLock);
+				PowerOffDevices(devices, PowerOnOffState.StandBy);
+			}
+			else if (e.Reason == SessionSwitchReason.SessionUnlock)
+			{
+				var devices = Devices.Where(d => d.Options.PowerOnAfterSessionUnlock).ToList();
+				await PowerOnDevicesTask(devices);
 			}
 		}
 
@@ -300,7 +316,7 @@ namespace ColorControl.Services.Samsung
 			return true;
 		}
 
-		private async void SelectedDevice_Connected(object sender)
+		private void SelectedDevice_Connected(object sender)
 		{
 			if (_samsungApps.Any())
 			{
@@ -548,12 +564,12 @@ namespace ColorControl.Services.Samsung
 					return;
 				}
 
-				var applicableDevices = Devices.Where(d => 
-							   d.Options.PowerOffOnScreenSaver 
-							|| d.Options.PowerOnAfterScreenSaver 
-							|| (d.Options.TriggersEnabled 
+				var applicableDevices = Devices.Where(d =>
+							   d.Options.PowerOffOnScreenSaver
+							|| d.Options.PowerOnAfterScreenSaver
+							|| (d.Options.TriggersEnabled
 									// only these trigger types are ever triggered by a process changed event
-									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop) 
+									&& _presets.Any(p => p.Triggers.Any(t => t.Trigger == PresetTriggerType.ProcessSwitch || t.Trigger == PresetTriggerType.ScreensaverStart || t.Trigger == PresetTriggerType.ScreensaverStop)
 									&& ((string.IsNullOrEmpty(p.DeviceMacAddress) && d == SelectedDevice) || p.DeviceMacAddress.Equals(d.MacAddress, StringComparison.OrdinalIgnoreCase)))))
 					.ToList();
 
@@ -834,7 +850,7 @@ namespace ColorControl.Services.Samsung
 				}
 			}
 
-			SavePresets();
+			SaveConfig();
 
 			return true;
 		}

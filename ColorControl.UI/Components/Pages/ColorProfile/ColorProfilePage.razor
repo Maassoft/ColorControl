@@ -7,7 +7,7 @@
 @using MHC2Gen
 @using Microsoft.JSInterop;
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject JSHelper jsHelper;
@@ -260,6 +260,13 @@
                 </form>
             </div>
             <div class="modal-footer">
+                @if (DisplayInfo?.IsAdvancedColorSupported == true && ColorProfile != null)
+                {
+                    <input class="form-check-input" type="checkbox" @bind="ColorProfile.IsHDRProfile" id="associateAsHdrProfile">
+                    <label class="form-check-label" for="associateAsHdrProfile">
+                        Associate as HDR profile
+                    </label>
+                }
                 <button type="submit" class="btn btn-primary" @onclick="InstallOnClick" disabled="@(ColorProfile == null)">Install and set as default</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseOnClick">Close</button>
                 <button type="submit" class="btn btn-primary" @onclick="ApplyClick" disabled="@(ColorProfile == null)">Save</button>
@@ -290,11 +297,10 @@
     private string WasValidated = "";
     private bool IsVisible;
     private DisplayPrimariesSource DisplayPrimariesSource;
-    private bool IsInstalled;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (ColorProfileName == null)
+        if (ColorProfileName == null || !IsVisible)
         {
             return;
         }
@@ -305,7 +311,7 @@
         }
         else
         {
-            ColorProfile = await _rpcClientService.CallAsync<ColorProfileDto>("ColorProfileService", "GetColorProfile", ColorProfileName, DisplayInfo?.IsHdrSupportedAndEnabled ?? false);
+            ColorProfile = await _rpcClientService.CallAsync<ColorProfileDto>("ColorProfileService", "GetColorProfile", ColorProfileName, DisplayInfo?.DeviceName);
         }
 
         if (ColorProfile != null)
@@ -386,8 +392,6 @@
         ColorProfile.UpdatePrimariesAndLuminance(CurrentColorInfo);
 
         var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "InstallAndActivateColorProfile", ColorProfile, DisplayInfo.DeviceName);
-
-        IsInstalled = true;
     }
 
     private async Task CloseOnClick()

@@ -737,7 +737,8 @@ namespace ColorControl.Services.Samsung
 			return serviceMenuTypeField.ValueAsEnum<ServiceMenuType>() switch
 			{
 				ServiceMenuType.FactoryMenu => await OpenFactoryMenu(),
-				ServiceMenuType.HospitalityMenu => await OpenHospitalityMenu()
+				ServiceMenuType.HospitalityMenu => await OpenHospitalityMenu(),
+				_ => throw new NotImplementedException()
 			};
 		}
 
@@ -823,7 +824,8 @@ namespace ColorControl.Services.Samsung
 			var task = exitServiceMenuTypeField.ValueAsEnum<ExitServiceMenuType>() switch
 			{
 				ExitServiceMenuType.Exit => ExecutePresetWithProgressAsync(SamsungFactoryMenuPresets.Exit, "Final Step: exiting service menu..."),
-				ExitServiceMenuType.Reboot => ExecutePresetWithProgressAsync(SamsungGenericPresets.Reboot, "Final Step: rebooting TV...")
+				ExitServiceMenuType.Reboot => ExecutePresetWithProgressAsync(SamsungGenericPresets.Reboot, "Final Step: rebooting TV..."),
+				_ => throw new NotImplementedException()
 			};
 
 			await task;

@@ -123,7 +123,7 @@ public class NotifyIconManager
 
 	private void OpenWinFormsUi(object sender, EventArgs e)
 	{
-		Program.OpenMainForm();
+		_ = Program.OpenMainForm();
 	}
 
 	private async void OpenNewUi(object sender, EventArgs e)
@@ -151,7 +151,7 @@ public class NotifyIconManager
 			UpdateTrayMenu(_nvTrayMenu, presets, TrayMenuItemNv_Click);
 		}
 
-		_novideoTrayMenu.Visible = _serviceManager.NvService != null && MainWindow.IsInitialized();
+		_novideoTrayMenu.Visible = _serviceManager.NvService != null && MainWindow.IsCreated();
 		if (_novideoTrayMenu.Visible)
 		{
 			MainWindow.UpdateContextMenu(_novideoTrayMenu);

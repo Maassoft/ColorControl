@@ -8,7 +8,7 @@
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
 @inject ProtectedLocalStorage _localStorage
@@ -18,6 +18,7 @@
 <NvidiaSettings />
 <NvidiaDithering Visible="DitheringVisible" />
 <NvidiaDriverSettings Preset="CurrentDriverSettingsPreset" />
+<NvidiaGpuSettings Preset="CurrentGpuSettingsPreset" GpuInfo="CurrentGpuInfo" />
 
 <div class="d-flex align-items-center">
 	<h1>NVIDIA controller</h1>
@@ -39,7 +40,7 @@
 
 <h2>Displays</h2>
 
-<NvidiaPreset PresetParam="CurrentPreset" AfterApply="AfterPresetApplied" SetDriverSettingsPreset="SetDriverSettingsPreset" />
+<NvidiaPreset PresetParam="CurrentPreset" AfterApply="AfterPresetApplied" SetDriverSettingsPreset="SetDriverSettingsPreset" SetGpuSettingsPreset="SetGpuSettingsPreset" />
 <ConfirmModal Title="Delete preset" Message="Are you sure you want to delete the preset?" OnConfirm="PresetOnDeleteConfirmed" />
 
 @if (DisplayPresets == null)
@@ -117,11 +118,20 @@ else
 						<span>
 							@gpuInfo.Name
 						</span>
+						@if (NvConfig?.ShowOverclocking == true)
+						{
+							<div class="d-flex ms-auto">
+								<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#gpuSettingsModal" @onclick="() => GpuSettingsOnClick(gpuInfo)">
+									Settings
+								</button>
+							</div>
+						}
 					</div>
 					<div class="card-body">
-						<small class="text-body">GPU: @gpuInfo.GpuFrequencyInKhz.ToUnitString() @@ @gpuInfo.VoltageInMv mV, @Utils.ToUnitString(values: [gpuInfo.GpuTemperature, gpuInfo.HotSpotTemperature])</small>
-						<small class="text-body">Memory: @gpuInfo.GpuFrequencyInKhz.ToUnitString(), @Utils.ToUnitString(values: [gpuInfo.MemoryTemperature])</small>
-						<small class="text-muted">Power: @(gpuInfo.PowerInWatts)W</small>
+						<small class="text-body">GPU: @gpuInfo.GpuFrequencyInKhz.ToKiloUnitString() @@ @gpuInfo.VoltageInMv mV, @Utils.ToUnitString(values: [gpuInfo.GpuTemperature, gpuInfo.HotSpotTemperature])</small>
+						<small class="text-body">Memory: @gpuInfo.GpuFrequencyInKhz.ToKiloUnitString(), @Utils.ToUnitString(values: [gpuInfo.MemoryTemperature])</small>
+						<small class="text-body">Power: @(gpuInfo.PowerInWatts)W</small>
+						<small class="text-body"><br/>Overclock info: @gpuInfo.OverclockSettings</small>
 					</div>
 				</div>
 			</div>
@@ -241,15 +251,19 @@ else
 	private List<NvPreset>? Presets;
 	private List<NvPreset>? DisplayPresets;
 	private List<NvGpuInfoDto>? GpuInfos;
+	private NvServiceConfig? NvConfig;
 
 	private NvPreset? CurrentPreset;
 	private NvPreset? CurrentDriverSettingsPreset;
+	private NvPreset? CurrentGpuSettingsPreset;
+	private NvGpuInfoDto? CurrentGpuInfo;
 	private bool DitheringVisible;
 
 	private PresetOrder PresetOrder;
 
 	protected override async Task OnInitializedAsync()
 	{
+		NvConfig = await _rpcClientService.CallAsync<NvServiceConfig>("NvService", "GetConfig");
 		await RefreshPresets();
 		DisplayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
 		GpuInfos = await _rpcClientService.CallAsync<List<NvGpuInfoDto>>("NvService", "GetGpuInfos");
@@ -271,19 +285,19 @@ else
 		await _rpcClientService.CallAsync<bool>("NvService", "ApplyPresetWithId", preset.id);
 	}
 
-	private async Task PresetOnEditClick(NvPreset preset)
+	private void PresetOnEditClick(NvPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task PresetOnCloneClick(NvPreset preset)
+	private void PresetOnCloneClick(NvPreset preset)
 	{
 		CurrentPreset = new NvPreset(preset);
 		CurrentPreset.name = preset.name;
 		CurrentPreset.SetCloneValues();
 	}
 
-	private async Task PresetOnDeleteClick(NvPreset preset)
+	private void PresetOnDeleteClick(NvPreset preset)
 	{
 		CurrentPreset = preset;
 	}
@@ -300,12 +314,12 @@ else
 		StateHasChanged();
 	}
 
-	private async Task DisplayPresetOnClick(NvPreset preset)
+	private void DisplayPresetOnClick(NvPreset preset)
 	{
 		CurrentPreset = preset;
 	}
 
-	private async Task AddPresetOnClick()
+	private void AddPresetOnClick()
 	{
 		CurrentPreset = new NvPreset();
 	}
@@ -323,10 +337,26 @@ else
 		StateHasChanged();
 	}
 
-	private async Task SetDriverSettingsPreset(NvPreset preset)
+	private Task SetDriverSettingsPreset(NvPreset preset)
 	{
 		CurrentDriverSettingsPreset = preset;
 		StateHasChanged();
+
+		return Task.CompletedTask;
+	}
+
+	private Task SetGpuSettingsPreset(NvPreset preset)
+	{
+		CurrentGpuSettingsPreset = preset;
+		StateHasChanged();
+
+		return Task.CompletedTask;
+	}
+
+	private void GpuSettingsOnClick(NvGpuInfoDto gpuInfo)
+	{
+		CurrentGpuInfo = gpuInfo;
+		CurrentGpuSettingsPreset = null;
 	}
 
 	private async Task PresetOrderChanged()

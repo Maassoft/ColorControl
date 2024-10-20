@@ -20,7 +20,6 @@ namespace ColorControl.Shared.Services
         private readonly WinApiService _winApiService;
         private RpcClientService _rpcService;
         private readonly WinElevatedProcessManager _elevatedProcessManager;
-        private bool? _IsAdministrator;
 
         public WinApiAdminService(WinApiService winApiService, RpcClientService rpcService, WinElevatedProcessManager elevatedProcessManager)
         {

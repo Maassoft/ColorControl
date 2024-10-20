@@ -41,6 +41,9 @@
     <Content Update="Components\Pages\LG\LgExecuteActionModal.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <Content Update="Components\Pages\Nvidia\NvidiaGpuSettings.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Update="Components\Pages\Samsung\SamsungSummary.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

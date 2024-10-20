@@ -8,7 +8,9 @@ namespace novideo_srgb
 {
     public class MainViewModel
     {
-        public static string ConfigPath { get; set; }
+        public static string ConfigPath { get; set; } = "";
+
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public ObservableCollection<MonitorData> Monitors { get; }
 
@@ -25,13 +27,13 @@ namespace novideo_srgb
         public void UpdateMonitors(bool? forceClamp = null)
         {
             Monitors.Clear();
-            List<XElement> config = null;
+            List<XElement>? config = null;
             if (File.Exists(_configPath))
             {
                 config = XElement.Load(_configPath).Descendants("monitor").ToList();
             }
 
-            var hdrPaths = DisplayConfigManager.GetHdrDisplayPaths();
+            var hdrPaths = Logger.Swallow(DisplayConfigManager.GetHdrDisplayPaths, []);
             var displays = WindowsDisplayAPI.Display.GetDisplays();
 
             var number = 1;
@@ -43,29 +45,36 @@ namespace novideo_srgb
                     continue;
                 }
 
-                var hdrActive = hdrPaths.Contains(path);
-
-                var settings = config?.FirstOrDefault(x => (string?)x.Attribute("path") == path);
-                MonitorData monitor;
-                if (settings != null)
+                try
                 {
-                    monitor = new MonitorData(this, number++, display, path, hdrActive,
-                        (bool)settings.Attribute("clamp_sdr"),
-                        (bool)settings.Attribute("use_icc"),
-                        (string)settings.Attribute("icc_path"),
-                        (bool)settings.Attribute("calibrate_gamma"),
-                        (int)settings.Attribute("selected_gamma"),
-                        (double)settings.Attribute("custom_gamma"),
-                        (double)settings.Attribute("custom_percentage"),
-                        (int)settings.Attribute("target"),
-                        (bool)settings.Attribute("disable_optimization"));
-                }
-                else
-                {
-                    monitor = new MonitorData(this, number++, display, path, hdrActive, false);
-                }
+                    var hdrActive = hdrPaths.Contains(path);
 
-                Monitors.Add(monitor);
+                    var settings = config?.FirstOrDefault(x => (string?)x.Attribute("path") == path);
+                    MonitorData monitor;
+                    if (settings != null)
+                    {
+                        monitor = new MonitorData(this, number++, display, path, hdrActive,
+                            (bool?)settings.Attribute("clamp_sdr") ?? false,
+                            (bool?)settings.Attribute("use_icc") ?? false,
+                            (string?)settings.Attribute("icc_path") ?? "",
+                            (bool?)settings.Attribute("calibrate_gamma") ?? false,
+                            (int?)settings.Attribute("selected_gamma") ?? 0,
+                            (double?)settings.Attribute("custom_gamma") ?? 2.2,
+                            (double?)settings.Attribute("custom_percentage") ?? 100,
+                            (int?)settings.Attribute("target") ?? 0,
+                            (bool?)settings.Attribute("disable_optimization") ?? false);
+                    }
+                    else
+                    {
+                        monitor = new MonitorData(this, number++, display, path, hdrActive, false);
+                    }
+
+                    Monitors.Add(monitor);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Error while getting monitor data for {display.Name}: {ex.Message}");
+                }
             }
 
             foreach (var monitor in Monitors)
@@ -86,7 +95,7 @@ namespace novideo_srgb
             }
         }
 
-        public async void OnDisplaySettingsChanged(object sender, EventArgs e)
+        public async void OnDisplaySettingsChanged(object? sender, EventArgs? e)
         {
             await Task.Delay(1000);
             UpdateMonitors();

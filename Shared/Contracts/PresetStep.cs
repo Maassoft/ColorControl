@@ -6,7 +6,7 @@ public class CustomStepItem
 {
     public string Name { get; private set; }
     public List<string> Items { get; private set; }
-    public string? SelectedItem { get; set; }
+    public string SelectedItem { get; set; }
 
     public CustomStepItem(string name, List<string> items)
     {

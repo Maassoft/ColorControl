@@ -319,7 +319,7 @@ namespace ColorControl
 			ResumeLayout(true);
 		}
 
-		private async void MainForm_Click(object sender, EventArgs e)
+		private void MainForm_Click(object sender, EventArgs e)
 		{
 			_serviceManager.NvService?.TestResolution();
 		}

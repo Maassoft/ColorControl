@@ -139,7 +139,6 @@ namespace ColorControl.Services.NVIDIA
         private readonly RpcClientService _rpcClientService;
         private readonly PowerEventDispatcher _powerEventDispatcher;
         private readonly ServiceManager _serviceManager;
-        private static NvService ServiceInstance;
 
         public static readonly int SHORTCUTID_NVQA = -200;
 
@@ -422,9 +421,9 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.applyOther)
             {
-                if (preset.ColorProfileSettings.ProfileName != null)
+                if (!string.IsNullOrWhiteSpace(preset.ColorProfileSettings.ProfileName))
                 {
-                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml, newHdrEnabled);
+                    CCD.SetDisplayDefaultColorProfile(display.Name, preset.ColorProfileSettings.ProfileName, _globalContext.Config.SetMinTmlAndMaxTml, newHdrEnabled || !applyHdr && hdrEnabled);
                 }
 
                 if (preset.scaling.HasValue)
@@ -462,7 +461,7 @@ namespace ColorControl.Services.NVIDIA
                 SetNovideoSettings(preset.DisplayId, preset.NovideoSettings);
             }
 
-            if (preset.applyOverclocking)
+            if (Config.ShowOverclocking && preset.applyOverclocking)
             {
                 result = ApplyOverclocking(preset.ocSettings);
             }
@@ -1203,7 +1202,7 @@ namespace ColorControl.Services.NVIDIA
             DisplayApi.SetDisplayConfig(newPathInfos, DisplayConfigFlags.SaveToPersistence);
         }
 
-        private IPathTargetInfo? GetTargetInfoForDisplay(Display display)
+        private IPathTargetInfo GetTargetInfoForDisplay(Display display)
         {
             var pathInfos = DisplayApi.GetDisplayConfig();
 
@@ -1219,7 +1218,7 @@ namespace ColorControl.Services.NVIDIA
             return pathTargetInfo;
         }
 
-        private IPathInfo? GetPathInfoForDisplay(Display display)
+        private IPathInfo GetPathInfoForDisplay(Display display)
         {
             var pathInfos = DisplayApi.GetDisplayConfig();
 

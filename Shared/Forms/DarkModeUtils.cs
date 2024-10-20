@@ -1,4 +1,5 @@
-﻿using ColorControl.Shared.Native;
+﻿using ColorControl.Shared.Common;
+using ColorControl.Shared.Native;
 using NWin32;
 
 namespace ColorControl.Shared.Forms
@@ -56,10 +57,7 @@ namespace ColorControl.Shared.Forms
 
         public static void InitWpfTheme()
         {
-            if (System.Windows.Application.Current == null)
-            {
-                new System.Windows.Application();
-            }
+            Utils.EnsureApplication();
 
             var resources = System.Windows.Application.Current.Resources;
 

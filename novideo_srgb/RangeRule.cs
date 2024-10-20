@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows.Controls;
 using static System.Double;
 
@@ -10,7 +9,7 @@ namespace novideo_srgb
         public int Min { get; set; }
         public int Max { get; set; }
 
-        public override ValidationResult Validate(object valueObj, CultureInfo cultureInfo)
+        public override ValidationResult? Validate(object valueObj, CultureInfo cultureInfo)
         {
             if (valueObj == null) return null;
 

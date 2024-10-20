@@ -222,7 +222,7 @@
 
     private List<FieldDefinition>? ActionFields;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (Steps != null)
         {
@@ -369,7 +369,7 @@
         await EmitSteps();
     }
 
-    private async Task RawTextOnChange(ChangeEventArgs e)
+    private void RawTextOnChange(ChangeEventArgs e)
     {
         RawText = e.Value?.ToString();
     }

@@ -19,8 +19,6 @@ public class UpdateManager
 	private readonly WinApiAdminService _winApiAdminService;
 	private readonly Config _config;
 
-	private string _downloadUrl;
-
 	public UpdateManager(GlobalContext globalContext, ServiceManager serviceManager, NotifyIconManager notifyIconManager, WinApiService winApiService, WinApiAdminService winApiAdminService)
 	{
 		_globalContext = globalContext;
@@ -216,10 +214,10 @@ public class UpdateManager
 		return true;
 	}
 
-	public async Task<bool> RestartAfterUpdate()
+	public Task<bool> RestartAfterUpdate()
 	{
 		Program.Restart();
 
-		return true;
+		return Task.FromResult(true);
 	}
 }

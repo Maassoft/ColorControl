@@ -63,21 +63,51 @@ public class ColorProfileService
 		return CCD.GetDisplayDefaultColorProfile(displayName, isHdrColorProfile);
 	}
 
-	public List<string> GetDisplayColorProfiles(string displayName)
+	public List<string> GetDisplayColorProfiles(string displayName, bool isHdrColorProfile = false)
 	{
 		if (displayName != null && !displayName.StartsWith("\\\\"))
 		{
 			displayName = GetDisplayNameByDisplayId(displayName);
 		}
 
-		return CCD.GetDisplayColorProfiles(displayName);
+		return CCD.GetDisplayColorProfiles(displayName, isHdrColorProfile);
+	}
+
+	public List<ColorProfileDto> GetAllDisplayColorProfiles(string displayName)
+	{
+		if (displayName != null && !displayName.StartsWith("\\\\"))
+		{
+			displayName = GetDisplayNameByDisplayId(displayName);
+		}
+
+		var display = GetDisplayByGdiName(displayName);
+
+		if (display == null)
+		{
+			return [];
+		}
+
+		var advancedColor = CCD.GetAdvancedColorSupportedAndEnabled(display.DisplayName);
+
+		return GetAllDisplayColorProfiles(display, advancedColor.isSupported);
+	}
+
+	public List<ColorProfileDto> GetAllDisplayColorProfiles(Display display, bool isHdrSupported = false)
+	{
+		var colorProfiles = GetDisplayColorProfiles(display.DisplayName, false).Select(p => new ColorProfileDto { Name = p, IsHDRProfile = false }).ToList();
+		if (isHdrSupported)
+		{
+			colorProfiles = colorProfiles.Union(GetDisplayColorProfiles(display.DisplayName, true).Select(p => new ColorProfileDto { Name = p, IsHDRProfile = true })).ToList();
+		}
+
+		return colorProfiles;
 	}
 
 	public List<string> GetAllColorProfileNames()
 	{
 		if (!_winApiService.IsAdministrator())
 		{
-			return _rpcClientService.Call<List<string>>("GetAllColorProfileNames");
+			return _rpcClientService.Call<List<string>>(nameof(GetAllColorProfileNames));
 		}
 
 		return CCD.GetAllColorProfileNames();
@@ -103,6 +133,11 @@ public class ColorProfileService
 		return deviceName;
 	}
 
+	public Display GetDisplayByGdiName(string displayName)
+	{
+		return Display.GetDisplays().FirstOrDefault(d => d.DisplayName == displayName);
+	}
+
 	public bool GetUsePerUserDisplayProfiles(string displayName)
 	{
 		return CCD.GetUsePerUserDisplayProfiles(displayName);
@@ -118,9 +153,11 @@ public class ColorProfileService
 		return CCD.UninstallColorProfile(name);
 	}
 
-	public ColorProfileDto GetColorProfile(string name, bool isHdrProfile = true)
+	public ColorProfileDto GetColorProfile(string name, string displayName = null)
 	{
-		var data = MHC2Wrapper.LoadProfile(name, isHdrProfile);
+		var isAssociatedAsHdr = CCD.IsColorProfileAssociatedAsHdr(displayName, name);
+
+		var data = MHC2Wrapper.LoadProfile(name, isAssociatedAsHdr);
 
 		return new ColorProfileDto
 		{
@@ -249,6 +286,8 @@ public class ColorProfileService
 				});
 			}
 
+			var colorProfiles = GetAllDisplayColorProfiles(d, advancedColor.isSupported);
+
 			return new DisplayInfoDto
 			{
 				DisplayName = ccdDisplayInfo.ExtendedName,
@@ -260,8 +299,9 @@ public class ColorProfileService
 				IsAdvancedColorEnabled = advancedColor.isEnabled,
 				IsAdvancedColorSupported = advancedColor.isSupported,
 				DisplayColors = displayColors,
-				ColorProfiles = GetDisplayColorProfiles(d.DisplayName),
-				DefaultColorProfile = GetDisplayDefaultColorProfile(d.DisplayName, advancedColor.isEnabled)
+				ColorProfiles = colorProfiles,
+				DefaultSdrColorProfile = GetDisplayDefaultColorProfile(d.DisplayName, false),
+				DefaultHdrColorProfile = GetDisplayDefaultColorProfile(d.DisplayName, true),
 			};
 		})
 			.Where(d => !onlyHdrEnabled.HasValue || onlyHdrEnabled == d.IsHdrSupportedAndEnabled)

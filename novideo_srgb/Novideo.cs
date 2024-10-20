@@ -159,7 +159,7 @@ namespace novideo_srgb
 
         public static unsafe void SetColorSpaceConversion(GPUOutput output, ICCMatrixProfile profile,
             Colorimetry.ColorSpace target,
-            ToneCurve curve = null,
+            ToneCurve? curve = null,
             bool disableOptimization = false)
         {
             var matrix = profile.matrix.Inverse() * Colorimetry.RGBToPCSXYZ(target);
@@ -267,15 +267,16 @@ namespace novideo_srgb
             {
                 var registryPath = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\DISPLAY\\";
                 registryPath += string.Join("\\", path.Split('#').Skip(1).Take(2));
-                return new EDID((byte[])Registry.GetValue(registryPath + "\\Device Parameters", "EDID", null));
+
+                var data = (byte[]?)Registry.GetValue(registryPath + "\\Device Parameters", "EDID", null);
+
+                return data == null ? throw new InvalidOperationException("No registry EDID data") : new EDID(data);
             }
             catch
             {
-                if (display == null)
-                {
-                    throw new InvalidOperationException("No display");
-                }
-                return new EDID(display.Output.PhysicalGPU.ReadEDIDData(display.Output));
+                return display == null
+                    ? throw new InvalidOperationException("No display")
+                    : new EDID(display.Output.PhysicalGPU.ReadEDIDData(display.Output));
             }
         }
 

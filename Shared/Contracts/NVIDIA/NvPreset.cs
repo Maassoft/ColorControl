@@ -150,6 +150,7 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             applyDriverSettings = keepChanges && applyDriverSettings || driverSettings.Any(s => !currentSettings.driverSettings.Any(o => o.Key == s.Key && o.Value == s.Value));
             applyHdmiSettings = keepChanges && applyHdmiSettings || HdmiInfoFrameSettings.IsDifferent(currentSettings.HdmiInfoFrameSettings);
             ApplyNovideoSettings = keepChanges && ApplyNovideoSettings || (NovideoSettings.ApplyClamp && !HDREnabled || applyHDR && !HDREnabled && !NovideoSettings.ApplyClamp);
+            applyOverclocking = keepChanges && applyOverclocking || ocSettings.Any();
             ApplyColorEnhancements = keepChanges && ApplyColorEnhancements ||
                     ColorEnhancementSettings.DigitalVibranceLevel != currentSettings.ColorEnhancementSettings.DigitalVibranceLevel ||
                     ColorEnhancementSettings.HueAngle != currentSettings.ColorEnhancementSettings.HueAngle;
@@ -195,6 +196,9 @@ namespace ColorControl.Shared.Contracts.NVIDIA
 
             NovideoSettings = new NovideoSettings(preset.NovideoSettings);
             ApplyNovideoSettings = preset.ApplyNovideoSettings;
+
+            applyOverclocking = preset.applyOverclocking;
+            ocSettings = preset.ocSettings.Select(s => new NvGpuOcSettings(s)).ToList();
 
             MonitorConnectionType = preset.MonitorConnectionType;
         }

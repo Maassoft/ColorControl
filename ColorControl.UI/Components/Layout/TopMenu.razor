@@ -4,7 +4,7 @@
 
 @inject AppState AppState
 @inject NavigationManager _navigationManager;
-@rendermode InteractiveServer
+@rendermode Constants.RenderMode
 
 <div class="top-row px-4 pt-3 text-end">
     @* <button type="button" class="btn btn-primary me-2" @onclick="ChangeTheme">@ThemeTransitionName</button> *@
@@ -15,7 +15,7 @@
 
     private string ThemeTransitionName = "Dark";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         ThemeTransitionName = AppState.SelectedTheme == "light" ? "Dark theme" : "Light theme";
     }

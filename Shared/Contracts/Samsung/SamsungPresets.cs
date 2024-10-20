@@ -5,7 +5,7 @@ public static class SamsungFactoryMenuPresets
 {
     public static SamsungPreset Preset1 = new("ServiceMenuStep1", null, ["KEY_INFO", "KEY_FACTORY:2000"]);
     public static SamsungPreset PresetAdvanced = new("ServiceMenuAdvanced", null, ["KEY_UP", "KEY_0", "KEY_0", "KEY_9", "KEY_8"]);
-    public static SamsungPreset PresetAdvancedAlt = new("ServiceMenuAdvancedAlt", null, ["KEY_UP", "KEY_0", "KEY_0", "KEY_3", "KEY_8"]);
+    public static SamsungPreset PresetAdvancedMonitor = new("ServiceMenuAdvancedMonitor", null, ["KEY_UP", "KEY_0", "KEY_0", "KEY_3", "KEY_8"]);
     public static SamsungPreset Exit = new("ServiceMenuStep3", null, ["KEY_FACTORY:1500", "KEY_FACTORY"]);
     public static SamsungPreset KeyFactory = new("ServiceMenuKeyFactory", null, ["KEY_FACTORY"]);
 }

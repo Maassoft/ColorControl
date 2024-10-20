@@ -283,7 +283,7 @@ namespace ColorControl.Shared.Native
                     return (modeInfo.adapterId, false);
                 }
 
-                return (default(LUID), true);
+                return (default, true);
             }, displayName
             );
         }
@@ -409,7 +409,7 @@ namespace ColorControl.Shared.Native
             var scope = GetUsePerUserDisplayProfiles(displayName) ? WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_CURRENT_USER : WCS_PROFILE_MANAGEMENT_SCOPE.WCS_PROFILE_MANAGEMENT_SCOPE_SYSTEM_WIDE;
             try
             {
-                var pointer = new IntPtr();
+                var pointer = IntPtr.Zero;
                 var err = NativeMethods.ColorProfileGetDisplayDefault(scope, adapterId, sourceId, COLORPROFILETYPE.CPT_ICC, profileSubType, pointer);
 
                 if (err != NativeConstants.ERROR_SUCCESS)
@@ -445,8 +445,78 @@ namespace ColorControl.Shared.Native
             public IntPtr[] listOfStrings;
         }
 
-        public static List<string> GetDisplayColorProfiles(string displayName)
+        public static bool IsColorProfileAssociatedAsHdr(string displayName, string profileName)
         {
+            var hdrProfiles = EnumColorProfiles(displayName, true);
+
+            return hdrProfiles.Contains(profileName);
+        }
+
+        public static IEnumerable<string> ExtractMultiString(IntPtr ptr)
+        {
+            while (true)
+            {
+                var str = Marshal.PtrToStringUni(ptr);
+                if (str == null || str.Length == 0)
+                {
+                    break;
+                }
+                yield return str;
+                ptr = new IntPtr(ptr.ToInt64() + (str.Length + 1 /* char \0 */) * sizeof(char));
+            }
+        }
+
+        public static List<string> EnumColorProfiles(string displayName, bool forHdr = false)
+        {
+            var dd = new DISPLAYDEVICE();
+            dd.cb = (uint)Marshal.SizeOf(dd);
+            if (!NativeMethods.EnumDisplayDevices(displayName, 0, ref dd, 0))
+            {
+                return [];
+            }
+
+            var enumType = new ENUMTYPEW();
+            enumType.dwSize = (uint)Marshal.SizeOf(enumType);
+            enumType.dwVersion = 0x300;
+            enumType.dwFields = ET_DEVICENAME | (uint)(forHdr ? ET_EXTENDEDDISPLAYCOLOR : ET_STANDARDDISPLAYCOLOR);
+            //enumType.dwClass = 1835955314;
+            enumType.dwDeviceClass = (uint)DeviceClassFlags.CLASS_MONITOR;
+            enumType.pDeviceName = dd.DeviceKey;
+
+            var bufSize = 4096u;
+            var buffer = Marshal.AllocHGlobal((int)bufSize);
+            try
+            {
+                var count = 0u;
+
+                var result = NativeMethods.EnumColorProfilesW(null, enumType, buffer, ref bufSize, out count);
+
+                if (!result)
+                {
+                    var error = NWin32.NativeMethods.GetLastError();
+
+                    return [];
+                }
+
+                var list = ExtractMultiString(buffer).ToList();
+
+                return list;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        private static readonly bool UseEnumColorProfiles = true;
+
+        public static List<string> GetDisplayColorProfiles(string displayName, bool isHdrColorProfile = false)
+        {
+            if (UseEnumColorProfiles)
+            {
+                return EnumColorProfiles(displayName, isHdrColorProfile);
+            }
+
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
 
@@ -464,11 +534,21 @@ namespace ColorControl.Shared.Native
             // No items
             if (pointer == IntPtr.Zero)
             {
-                return new List<string>();
+                var emptyList = new List<string>();
+
+                var defaultProfile = GetDisplayDefaultColorProfile(displayName, true);
+
+                if (defaultProfile != null)
+                {
+                    emptyList.Add(defaultProfile);
+                }
+
+                return emptyList;
             }
 
             var data = Marshal.PtrToStructure<UnmanagedStruct>(pointer);
             var list = data.listOfStrings.Take((int)profileCount).Select(p => Marshal.PtrToStringUni(p)).ToList();
+            Marshal.FreeHGlobal(pointer);
 
             return list;
         }
@@ -518,7 +598,7 @@ namespace ColorControl.Shared.Native
                 return [];
             }
 
-            return Directory.EnumerateFiles(folder).Select(n => n.Split("\\").Last()).Where(n => n.EndsWith(".icm", StringComparison.OrdinalIgnoreCase)).ToList();
+            return Directory.EnumerateFiles(folder).Select(n => n.Split("\\").Last()).Where(n => n.EndsWith(".icm", StringComparison.OrdinalIgnoreCase) || n.EndsWith(".icc", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         private static string GetDisplayDeviceRegistryKey(string displayName)
@@ -1601,6 +1681,40 @@ namespace ColorControl.Shared.Native
             public string DeviceKey;
         }
 
+        public const int ET_DEVICENAME = 0x00000001;
+        public const int ET_CLASS = 0x00000020;
+        public const int ET_DEVICECLASS = 0x00010000;
+        public const int ET_STANDARDDISPLAYCOLOR = 0x00020000;
+        public const int ET_EXTENDEDDISPLAYCOLOR = 0x00040000;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct ENUMTYPEW
+        {
+            public uint dwSize;
+            public uint dwVersion;
+            public uint dwFields;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pDeviceName;
+            public uint dwMediaType;
+            public uint dwDitheringMode;
+            public uint dwResolutionX;
+            public uint dwResolutionY;
+            public uint dwCMMType;
+            public uint dwClass;
+            public uint dwDataColorSpace;
+            public uint dwConnectionSpace;
+            public uint dwSignature;
+            public uint dwPlatform;
+            public uint dwProfileFlags;
+            public uint dwManufacturer;
+            public uint dwModel;
+            public uint dwAttributes1;
+            public uint dwAttributes2;
+            public uint dwRenderingIntent;
+            public uint dwCreator;
+            public uint dwDeviceClass;
+        }
+
         #endregion
 
         static class NativeMethods
@@ -1665,6 +1779,10 @@ namespace ColorControl.Shared.Native
             public static extern bool WcsGetUsePerUserProfiles(string deviceName, DeviceClassFlags deviceClass, out bool usePerUserProfiles);
             [DllImport("mscms", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern bool WcsSetUsePerUserProfiles(string deviceName, DeviceClassFlags deviceClass, bool usePerUserProfiles);
+
+            [DllImport("mscms", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern bool EnumColorProfilesW(string machineName, in ENUMTYPEW enumType, IntPtr pointer, ref uint size, out uint profileCount);
+
             [DllImport("user32.dll")]
             public extern static bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
             [DllImport("user32.dll", CharSet = CharSet.Auto)]

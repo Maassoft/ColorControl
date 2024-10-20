@@ -14,7 +14,7 @@ public class RpcUiClientService(NotificationService notificationService)
 {
 	public string? LastErrorMessage { get; private set; }
 
-	public async Task<T> CallAsync<T>(string serviceName, string method, params object[] arguments)
+	public async Task<T> CallAsync<T>(string serviceName, string method, params object?[] arguments)
 	{
 		var rpcMessage = new SvcRpcMessage
 		{
@@ -28,7 +28,7 @@ public class RpcUiClientService(NotificationService notificationService)
 		return await SendRpcMessageAsync<T>(rpcMessage, timeout, pipeName: PipeUtils.MainPipe);
 	}
 
-	public async Task<T> CallWithOptionsAsync<T>(string serviceName, string method, RpcUiClientOptions options, params object[] arguments)
+	public async Task<T> CallWithOptionsAsync<T>(string serviceName, string method, RpcUiClientOptions options, params object?[] arguments)
 	{
 		var rpcMessage = new SvcRpcMessage
 		{
@@ -73,7 +73,7 @@ public class RpcUiClientService(NotificationService notificationService)
 		{
 			LastErrorMessage = resultMessage?.ErrorMessage ?? "Unknown communication error";
 
-			notificationService.SendNotification(new NotificationDto(LastErrorMessage, Constants.Danger));
+			await notificationService.SendNotificationDirect(new NotificationDto(LastErrorMessage, Constants.Danger));
 
 			return default;
 		}

@@ -6,7 +6,7 @@ namespace novideo_srgb
     {
         public Matrix matrix = Matrix.Zero3x3();
         public ToneCurve[] trcs = new ToneCurve[3];
-        public ToneCurve[] vcgt;
+        public ToneCurve[]? vcgt;
 
         private ICCMatrixProfile()
         {
