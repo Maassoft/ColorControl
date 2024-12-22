@@ -247,7 +247,7 @@ public enum InputOptimization
 	boost
 }
 
-public enum BlueLight
+public enum OffToLevel2
 {
 	off,
 	level1,
