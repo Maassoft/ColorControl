@@ -228,7 +228,8 @@ namespace ColorControl.Services.LG
 			AddGenericPictureAction("lowLevelAdjustment", minValue: -30, maxValue: 30, category: "other", title: "Fine Tune Dark Areas", fromModelYear: ModelYear.Series2019);
 			AddGenericPictureAction("blackStabilizer", minValue: -30, maxValue: 30, category: "other", title: "Black Stabilizer", fromModelYear: ModelYear.Series2021);
 			AddGenericPictureAction("whiteStabilizer", minValue: -30, maxValue: 30, category: "other", title: "White Stabilizer", fromModelYear: ModelYear.Series2021);
-			AddGenericPictureAction("blueLight", typeof(BlueLight), category: "other", title: "Reduce Blue Light", fromModelYear: ModelYear.Series2021);
+			AddGenericPictureAction("blueLight", typeof(OffToLevel2), category: "other", title: "Reduce Blue Light", fromModelYear: ModelYear.Series2021);
+			AddGenericPictureAction("darkMode", typeof(OffToLevel2), category: "other", title: "Dark room Mode", fromModelYear: ModelYear.Series2022);
 			AddGenericPictureAction("noiseReduction", typeof(OffToHigh), title: "Noise Reduction");
 			AddGenericPictureAction("mpegNoiseReduction", typeof(OffToHigh), title: "MPEG Noise Reduction");
 
