@@ -111,17 +111,19 @@ internal class ColorProfileViewModel : BaseViewModel
 	public bool PrimariesEnabled { get; set; } = true;
 
 	[Range(400, 10000)]
-	public double ToneMappingFromLuminance { get; set;  } = 400;
+	public double ToneMappingFromLuminance { get; set; } = 400;
 	[Range(400, 10000)]
 	public double ToneMappingToLuminance { get; set; } = 400;
 
-	public bool isToneMapCurveOnly { get; set; }
 
 	public bool ToneMappingSettingsEnabled { get; set; }
 
 	public bool BrightnessBoostSettingsEnabled { get; set; }
 
-    public override string this[string columnName]
+	[Range(400, 10000)]
+	public double CurveLikeLuminance { get; set; } = 400;
+
+	public override string this[string columnName]
 	{
 		get
 		{
@@ -135,34 +137,34 @@ internal class ColorProfileViewModel : BaseViewModel
 			{
 				if (SDRTransferFunction == SDRTransferFunction.PurePower)
 				{
-                    SDRSettingsEnabled = true;
-                    ToneMappingSettingsEnabled = false;
-                    BrightnessBoostSettingsEnabled = true;
-                    OnPropertyChanged(nameof(SDRSettingsEnabled));
-                    OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
-                    OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
-                }
+					SDRSettingsEnabled = true;
+					ToneMappingSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = true;
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
 				else if (SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)
 				{
 
-                    ToneMappingSettingsEnabled = true;
-                    SDRSettingsEnabled = false;
-                    BrightnessBoostSettingsEnabled = false;
-                    OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
-                    OnPropertyChanged(nameof(SDRSettingsEnabled));
-                    OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
-                }
+					ToneMappingSettingsEnabled = true;
+					SDRSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = false;
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
 				else
 				{
-                    ToneMappingSettingsEnabled = false;
-                    SDRSettingsEnabled = false;
-                    BrightnessBoostSettingsEnabled = true;
-                    OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
-                    OnPropertyChanged(nameof(SDRSettingsEnabled));
-                    OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
-                }
-             
-				
+					ToneMappingSettingsEnabled = false;
+					SDRSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = true;
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
+
+
 
 			}
 			else if (columnName == nameof(SelectedExistingProfile))

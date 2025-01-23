@@ -74,8 +74,8 @@
                 <Label Content="Max luminance out (nits):" HorizontalAlignment="Left" Margin="197,94,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,98,0,0" TextWrapping="Wrap" Text="{Binding ToneMappingToLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsTo" Height="18" InputScope="Number"/>
 
-                <Label Content="ToneMap curve only:" HorizontalAlignment="Left" Margin="-5,120,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <CheckBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,128,0,0" IsChecked="{Binding isToneMapCurveOnly}" VerticalAlignment="Top" Width="120"  x:Name="tbToneMapCurveOnly" Height="18"/>
+                <Label Content="Curve like(nits):" HorizontalAlignment="Left" Margin="-5,120,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+                <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,128,0,0" TextWrapping="Wrap" Text="{Binding CurveLikeLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsToCurve" Height="18" InputScope="Number"/>
 
             </Grid>
         </GroupBox>

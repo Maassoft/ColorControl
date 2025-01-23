@@ -131,7 +131,8 @@ namespace MHC2Gen
         public void ApplyToneMapping(double maxInputNits = 400, double maxOutputNits = 400)
         {
             int lutSize = 1024;
-            RegammaLUT = new double[3, lutSize];
+            if (RegammaLUT is null)
+                RegammaLUT = new double[3, lutSize];
 
             for (int i = 0; i < lutSize; i++)
             {
@@ -139,16 +140,18 @@ namespace MHC2Gen
                 double N = (double)i / (lutSize - 1);
 
                 // Convert normalized code value to luminance using inverse PQ EOTF
-                double L = InversePQ(N);
+                double L = InversePQ(N) * 10000.0;
 
                 // Normalize luminance to [0, 1] range
-                double L_norm = L / maxOutputNits;
+                double L_norm = L / 500;
 
                 // Scale adjusted luminance to target nits
-                double L_adj = L_norm * maxInputNits;
-
+                double L_adj = L;
+                // Here 1 represents the target
+                L_adj = (L / (1.0 + (L / maxInputNits))) * (1.0 + (maxInputNits / maxOutputNits));
                 // Convert adjusted luminance back to normalized code value using PQ EOTF
-                double N_prime = PQ(L_adj);
+                double N_prime = PQ((L_adj) / 10000.0);
+
 
                 // Ensure the value stays within the [0, 1] range
                 N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
@@ -162,28 +165,18 @@ namespace MHC2Gen
 
         // PQ same nits
 
-        public void ApplyToneMappingCurve(double maxInputNits = 400, double maxOutputNits = 400)
+        public void ApplyToneMappingCurve(double maxInputNits = 400, double maxOutputNits = 400, double curve_like = 400)
         {
             int lutSize = 1024;
             RegammaLUT = new double[3, lutSize];
 
-            var varianze = (maxInputNits / maxOutputNits) - 1;
-
             for (int i = 0; i < lutSize; i++)
             {
                 double N = (double)i / (lutSize - 1);
-
-                double L = InversePQ(N);
-
-                double L_adj = L + varianze * L * Math.Pow(1 - (L / (maxInputNits / 10000)), 2);
-
-                // TODO Pending to test
-                if (L > (maxInputNits / 10000))
-                {
-                    L_adj = L;
-                }
-
-                double N_prime = PQ(L_adj);
+                double L = InversePQ(N) * 10000 * (maxInputNits / curve_like);
+                double numerator = L * (maxInputNits + (L / Math.Pow(maxOutputNits / curve_like, 2)));
+                double L_d = numerator / (maxInputNits + L);
+                double N_prime = PQ(L_d / 10000);
 
                 N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
 
@@ -1071,7 +1064,7 @@ namespace MHC2Gen
                { user_matrix[0,0], user_matrix[0,1], user_matrix[0,2], 0 },
                { user_matrix[1,0], user_matrix[1,1], user_matrix[1,2], 0 },
                { user_matrix[2,0], user_matrix[2,1], user_matrix[2,2], 0 },
-            };
+                };
 
             MHC2 = new MHC2Tag
             {
@@ -1098,10 +1091,7 @@ namespace MHC2Gen
 
             if (command.SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)
             {
-                if (command.isToneMapCurveOnly)
-                    MHC2.ApplyToneMappingCurve(command.ToneMappingFromLuminance, command.ToneMappingToLuminance);
-                else
-                    MHC2.ApplyToneMapping(command.ToneMappingFromLuminance, command.ToneMappingToLuminance);
+                MHC2.ApplyToneMappingCurve(command.ToneMappingFromLuminance, command.ToneMappingToLuminance, command.CurveLikeLuminance);
             }
 
             MHC2.Matrix3x4 = mhc2_matrix;

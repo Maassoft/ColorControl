@@ -118,7 +118,7 @@ namespace ColorControl.XForms
                 DevicePrimaries = _viewModel.GetDevicePrimaries(),
                 ToneMappingFromLuminance = _viewModel.ToneMappingFromLuminance,
                 ToneMappingToLuminance = _viewModel.ToneMappingToLuminance,
-                isToneMapCurveOnly = _viewModel.isToneMapCurveOnly,
+                CurveLikeLuminance = _viewModel.CurveLikeLuminance
             };
 
             var bytes = MHC2Wrapper.GenerateSdrAcmProfile(command);

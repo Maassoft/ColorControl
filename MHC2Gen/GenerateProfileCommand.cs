@@ -23,5 +23,5 @@ public class GenerateProfileCommand
     public double ToneMappingFromLuminance { get; set; }
     public double ToneMappingToLuminance { get; set; }
 
-    public bool isToneMapCurveOnly { get; set; }
+    public double CurveLikeLuminance { get; set; }
 }
