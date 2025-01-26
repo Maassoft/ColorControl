@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static NStandard.Measures.Length;
-
-namespace ColorControl.Shared.EventDispatcher;
+﻿namespace ColorControl.Shared.EventDispatcher;
 
 public class DisplayChangedEventArgs : EventArgs
 {
     public uint Width { get; set; }
     public uint Height { get; set; }
-    public uint BitsPerPixel{ get; set; }
+    public uint BitsPerPixel { get; set; }
 }
 
 public class DisplayChangeEventDispatcher : EventDispatcher<DisplayChangedEventArgs>

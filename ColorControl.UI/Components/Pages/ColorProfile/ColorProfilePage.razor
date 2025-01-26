@@ -251,6 +251,17 @@
                                                 </div>
                                             </div>
                                         }
+                                        else
+                                        {
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="shadowDetailBoost">Shadow detail boost (%)</label>
+                                                        <input class="form-control" id="shadowDetailBoost" type="number" min="0" max="100" @bind="ColorProfile.ShadowDetailBoost" disabled="@(ColorProfile.SDRTransferFunction == SDRTransferFunction.Piecewise)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>

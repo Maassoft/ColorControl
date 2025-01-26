@@ -7913,6 +7913,27 @@
         </CustomSettingValue>
       </SettingValues>
     </CustomSetting>
+	<CustomSetting>
+      <UserfriendlyName>DLSS 3.1.11+ - Forced DLSS3.1 preset letter (base profile only)</UserfriendlyName>
+      <HexSettingID>0x10E41DF3</HexSettingID>
+      <GroupName>8 - Extra</GroupName>
+      <MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+      <SettingValues>
+        <CustomSettingValue>
+          <UserfriendlyName>Preset E</UserfriendlyName>
+          <HexValue>0x00000005</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Preset F</UserfriendlyName>
+          <HexValue>0x00000006</HexValue>
+        </CustomSettingValue>
+        <CustomSettingValue>
+          <UserfriendlyName>Preset J</UserfriendlyName>
+          <HexValue>0x0000000A</HexValue>
+        </CustomSettingValue>
+      </SettingValues>
+      <SettingMasks />
+    </CustomSetting>
 	
 	</Settings>
 </CustomSettingNames>

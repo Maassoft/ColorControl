@@ -1,20 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	  <Platforms>x64</Platforms>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
   </ItemGroup>
-
-	<PropertyGroup Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0'))">
-		<TargetFramework>net8.0</TargetFramework>
-		<UseNativeAot Condition="$(PublishDir) != ''">true</UseNativeAot>
-	</PropertyGroup>
 
 	<!-- Optimize for size -->
 	<PropertyGroup Condition="'$(UseNativeAot)' == 'true'">

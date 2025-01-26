@@ -2,6 +2,7 @@
 using ColorControl.Shared.Forms;
 using Linearstar.Windows.RawInput;
 using Linearstar.Windows.RawInput.Native;
+using NStandard;
 
 namespace ColorControl.Shared.EventDispatcher;
 
@@ -423,11 +424,11 @@ public class KeyboardShortcutDispatcher : EventDispatcher<KeyboardShortcutEventA
         return shortcutString;
     }
 
-    public static bool ValidateShortcut(string shortcut)
+    public static bool ValidateShortcut(string shortcut, bool showMessage = true)
     {
-        var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Contains("+") || ShortcutIsAllowedWithoutModifier(shortcut);
+        var valid = string.IsNullOrWhiteSpace(shortcut) || shortcut.Split("+").Where(s => !s.IsNullOrWhiteSpace()).Count() > 1 || ShortcutIsAllowedWithoutModifier(shortcut);
 
-        if (!valid)
+        if (!valid && showMessage)
         {
             MessageForms.WarningOk("Invalid shortcut. The shortcut should have modifiers and a normal key or be F13-F24.");
         }

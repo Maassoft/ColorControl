@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0-windows10.0.20348.0</TargetFramework>
+		<TargetFramework>net9.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<IsWebBootstrapper>false</IsWebBootstrapper>
 		<PublishUrl>publish\</PublishUrl>
@@ -18,8 +18,8 @@
 		<PublisherName>Maassoft</PublisherName>
 		<Company>Maassoft</Company> 
 		<ApplicationRevision>0</ApplicationRevision>
-		<ApplicationVersion>10.1.0.0</ApplicationVersion>
-		<Version>10.1.0.0</Version>
+		<ApplicationVersion>10.2.0.0</ApplicationVersion>
+		<Version>10.2.0.0</Version>
 		<UseApplicationTrust>false</UseApplicationTrust>
 		<PublishWizardCompleted>true</PublishWizardCompleted>
 		<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -28,8 +28,7 @@
 		<UseWPF>false</UseWPF>
 		<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 		<ApplicationIcon>Resources\pngbarn.ico</ApplicationIcon>
-		<SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
-		<Copyright>2020-2024 Maassoft</Copyright>
+		<Copyright>2020-2025 Maassoft</Copyright>
 		<Authors>Maassoft</Authors>
 		<ManifestCertificateThumbprint>CF0BC153EA664CD97AC6F234B91F45D34630958F</ManifestCertificateThumbprint>
 		<ManifestKeyFile>ColorControl_1_TemporaryKey.pfx</ManifestKeyFile>
@@ -39,6 +38,7 @@
 		<SignManifests>true</SignManifests>
 		<AssemblyOriginatorKeyFile>ColorControl_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+		<ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
 		<OutputPath>bin\x64\Debug\</OutputPath>
@@ -106,17 +106,15 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2277.86" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="NLog" Version="5.2.8" />
-		<PackageReference Include="NStandard" Version="0.59.0" />
-		<PackageReference Include="NWin32" Version="1.2.6" />
-		<PackageReference Include="System.Management" Version="8.0.0" />
-		<PackageReference Include="TaskScheduler" Version="2.10.1" />
-		<PackageReference Include="Vanara.PInvoke.IpHlpApi" Version="3.4.17" />
-		<PackageReference Include="RawInput.Sharp" Version="0.1.3" />
+		<PackageReference Include="NLog" Version="5.3.4" />
+		<PackageReference Include="NStandard" Version="0.83.1" />
+		<PackageReference Include="NWin32" Version="1.2.8" />
+		<PackageReference Include="System.Management" Version="9.0.0" />
+		<PackageReference Include="TaskScheduler" Version="2.11.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<Page Include="XForms\ColorProfileWindow.xaml">

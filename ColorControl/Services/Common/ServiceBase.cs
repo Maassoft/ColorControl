@@ -38,6 +38,7 @@ namespace ColorControl.Services.Common
         protected int _quickAccessShortcutId;
 
         protected GlobalContext _globalContext;
+        private KeyboardShortcutDispatcher _keyboardShortcutDispatcher;
 
         private List<JsonConverter> _jsonConverters;
 
@@ -147,28 +148,33 @@ namespace ColorControl.Services.Common
             return await ApplyPresetUi(preset);
         }
 
+        private void LoadServices()
+        {
+            _keyboardShortcutDispatcher ??= _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+        }
+
         protected void SetShortcuts(int quickAccessShortcutId = 0, string shortcut = null)
         {
             _quickAccessShortcutId = quickAccessShortcutId;
 
-            var keyboardShortcutDispatcher = _globalContext.ServiceProvider.GetService<KeyboardShortcutDispatcher>();
+            LoadServices();
 
-            if (keyboardShortcutDispatcher == null)
+            if (_keyboardShortcutDispatcher == null)
             {
                 return;
             }
 
             if (quickAccessShortcutId != 0)
             {
-                keyboardShortcutDispatcher.RegisterShortcut(quickAccessShortcutId, shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(quickAccessShortcutId, shortcut);
             }
 
             foreach (var preset in _presets)
             {
-                keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
+                _keyboardShortcutDispatcher.RegisterShortcut(preset.id, preset.shortcut);
             }
 
-            keyboardShortcutDispatcher.RegisterAsyncEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HotKeyPressed);
+            _keyboardShortcutDispatcher.RegisterAsyncEventHandler(KeyboardShortcutDispatcher.Event_HotKey, HotKeyPressed);
         }
 
         public virtual void InstallEventHandlers()
@@ -288,8 +294,23 @@ namespace ColorControl.Services.Common
 
         }
 
-        protected void SavePresets()
+        protected void ValidatePreset(PresetBase preset)
         {
+            if (!KeyboardShortcutDispatcher.ValidateShortcut(preset.shortcut, false))
+            {
+                throw new InvalidOperationException("Invalid shortcut");
+            }
+        }
+
+        protected void SavePresets(PresetBase updatedPreset = null)
+        {
+            if (updatedPreset != null)
+            {
+                LoadServices();
+
+                _keyboardShortcutDispatcher?.RegisterShortcut(updatedPreset.id, updatedPreset.shortcut);
+            }
+
             Utils.WriteObject(_presetsFilename, _presets);
         }
 

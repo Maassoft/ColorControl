@@ -124,12 +124,6 @@ namespace ColorControl.Shared.Forms
 
             try
             {
-                //var settings = new UISettings();
-
-                //var foregroundColorValue = settings.GetColorValue(UIColorType.Foreground);
-                //var backroundColorValue = settings.GetColorValue(UIColorType.Background);
-                //var isDarkMode = FormUtils.IsColorLight(foregroundColorValue);
-
                 SetControlTheme(form, FormUtils.CurrentBackColor, FormUtils.CurrentForeColor);
 
                 var value = toDark ? 1 : 0;
@@ -239,11 +233,6 @@ namespace ColorControl.Shared.Forms
             {
                 SetMenuForeColor(item, color);
             }
-        }
-
-        public static bool IsColorLight(Windows.UI.Color color)
-        {
-            return ((5 * color.G) + (2 * color.R) + color.B) > (8 * 128);
         }
     }
 }
