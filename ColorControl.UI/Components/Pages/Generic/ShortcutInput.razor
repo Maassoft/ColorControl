@@ -7,57 +7,133 @@
 
 @if (Label != null)
 {
-    <div class="mb-2">
-        <label class="form-label" for="name">@Label</label>
-        <input class="form-control" type="text" readonly value="@Shortcut"
-            @onchange="(ChangeEventArgs e) => ShortcutOnChange(e)"
-            @onkeydown="ShortcutOnKeyDown"
-            @onkeyup="(KeyboardEventArgs e) => ShortcutOnKeyUp(e)"
-            @onfocus="ShortcutOnFocus"
-            @onblur="ShortcutOnBlur"/>
-    </div>
+	<div class="mb-2">
+		<label class="form-label" for="name">@Label</label>
+		<div class="input-group">
+			<input class="form-control" type="text" readonly value="@Shortcut"
+			@onchange="(ChangeEventArgs e) => ShortcutOnChange(e)"
+			@onkeydown="ShortcutOnKeyDown"
+			@onkeyup="(KeyboardEventArgs e) => ShortcutOnKeyUp(e)"
+			@onfocus="ShortcutOnFocus"
+			@onblur="ShortcutOnBlur"/>
+			<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+			</button>
+			<ul class="dropdown-menu">
+				@foreach (var modifier in Modifiers) {
+					<li>
+						<a class="dropdown-item" @onclick="() => ModifierOnClick(modifier.Key)">
+							<input class="form-check-input me-2" type="checkbox" id="flexCheckChecked" checked="@modifier.Value" @onchange="(e) => ModifierKeyChanged(e, modifier.Key)">@modifier.Key
+						</a>
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
 }
 
 @code {
-    [Parameter]
-    public string? Label { get; set; }
+	[Parameter]
+	public string? Label { get; set; }
 
-    [Parameter]
-    public string? Shortcut { get; set; }
+	[Parameter]
+	public string? Shortcut { get; set; }
 
-    [Parameter]
-    public EventCallback<string?> ShortcutChanged { get; set; }
+	[Parameter]
+	public EventCallback<string?> ShortcutChanged { get; set; }
 
-    private async Task ShortcutOnChange(ChangeEventArgs e)
-    {
-        Shortcut = e.Value?.ToString();
-        await ShortcutChanged.InvokeAsync(Shortcut);
-    }
+	private Dictionary<string, bool> Modifiers = new() {
+		{ "Shift", false },
+		{ "Control", false },
+        { "Alt", false },
+        { "Win", false }
+    };
 
-    private void ShortcutOnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Tab")
-        {
-            return;
-        }
+	protected override void OnParametersSet()
+	{
+		LoadModifiers();
+	}
 
-        var text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e.ShiftKey, e.CtrlKey, e.AltKey, e.Key, e.Code);
-        Shortcut = text;
-    }
+	private async Task ShortcutOnChange(ChangeEventArgs e)
+	{
+		Shortcut = e.Value?.ToString();
+		LoadModifiers();
+		await ShortcutChanged.InvokeAsync(Shortcut);
+	}
 
-    private async Task ShortcutOnKeyUp(KeyboardEventArgs e)
-    {
-        //KeyboardShortcutDispatcher.HandleKeyboardShortcutUp()
-        await ShortcutChanged.InvokeAsync(Shortcut);
-    }
+	private void ShortcutOnKeyDown(KeyboardEventArgs e)
+	{
+		if (e.Key == "Tab")
+		{
+			return;
+		}
 
-    private void ShortcutOnFocus(FocusEventArgs e)
-    {
-        KeyboardShortcutDispatcher.IsActive = false;
-    }
+		var text = KeyboardShortcutDispatcher.FormatKeyboardShortcut(e.ShiftKey, e.CtrlKey, e.AltKey, e.Key, e.Code);
+		Shortcut = text;
+	}
 
-    private void ShortcutOnBlur(FocusEventArgs e)
-    {
-        KeyboardShortcutDispatcher.IsActive = true;
-    }
+	private async Task ShortcutOnKeyUp(KeyboardEventArgs e)
+	{
+		//KeyboardShortcutDispatcher.HandleKeyboardShortcutUp()
+		await ShortcutChanged.InvokeAsync(Shortcut);
+	}
+
+	private void ShortcutOnFocus(FocusEventArgs e)
+	{
+		KeyboardShortcutDispatcher.IsActive = false;
+	}
+
+	private void ShortcutOnBlur(FocusEventArgs e)
+	{
+		KeyboardShortcutDispatcher.IsActive = true;
+	}
+
+	private void LoadModifiers()
+	{
+		foreach (var modifier in Modifiers.Keys) 
+		{
+			Modifiers[modifier] = Shortcut?.Contains(modifier) == true;
+		}
+	}
+	private async Task ModifierKeyChanged(ChangeEventArgs e, string modifier)
+	{
+		var value = e.Value is bool boolValue && boolValue;
+
+		Modifiers[modifier] = value;
+
+		await SetModifiers();
+	}
+
+	private async Task SetModifiers() 
+	{
+		var shortcut = Shortcut ?? "";
+		foreach (var modifier in Modifiers.Keys) 
+		{
+			shortcut = shortcut.Replace(modifier, "").Trim().TrimStart(',');
+		}
+
+		shortcut = shortcut.Trim();
+
+		foreach (var modifier in Modifiers.Where(kv => kv.Value).Select(kv => kv.Key).Reverse())
+		{
+			if (shortcut.StartsWith("+")) 
+			{
+				shortcut = $"{modifier} {shortcut}";
+			}
+			else 
+			{
+				shortcut = $"{modifier}, {shortcut}";
+			}
+		}
+
+		Shortcut = shortcut;
+
+		await ShortcutChanged.InvokeAsync(Shortcut);
+	}
+
+	private async Task ModifierOnClick(string modifier)
+	{
+		Modifiers[modifier] = !Modifiers[modifier];
+
+		await SetModifiers();
+	}
 }

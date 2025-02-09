@@ -127,107 +127,7 @@ namespace MHC2Gen
             }
         }
 
-
-        public void ApplyToneMapping(double maxInputNits = 400, double maxOutputNits = 400)
-        {
-            int lutSize = 1024;
-            if (RegammaLUT is null)
-                RegammaLUT = new double[3, lutSize];
-
-            for (int i = 0; i < lutSize; i++)
-            {
-                // Normalize the code value
-                double N = (double)i / (lutSize - 1);
-
-                // Convert normalized code value to luminance using inverse PQ EOTF
-                double L = InversePQ(N) * 10000.0;
-
-                // Normalize luminance to [0, 1] range
-                double L_norm = L / 500;
-
-                // Scale adjusted luminance to target nits
-                double L_adj = L;
-                // Here 1 represents the target
-                L_adj = (L / (1.0 + (L / maxInputNits))) * (1.0 + (maxInputNits / maxOutputNits));
-                // Convert adjusted luminance back to normalized code value using PQ EOTF
-                double N_prime = PQ((L_adj) / 10000.0);
-
-
-                // Ensure the value stays within the [0, 1] range
-                N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
-
-                for (int c = 0; c < 3; c++)
-                {
-                    RegammaLUT[c, i] = N_prime;
-                }
-            }
-        }
-
-        // PQ same nits
-
-        public void ApplyToneMappingCurve(double maxInputNits = 400, double maxOutputNits = 400, double curve_like = 400)
-        {
-            int lutSize = 1024;
-            RegammaLUT = new double[3, lutSize];
-
-            for (int i = 0; i < lutSize; i++)
-            {
-                double N = (double)i / (lutSize - 1);
-                double L = InversePQ(N) * 10000 * (maxInputNits / curve_like);
-                double numerator = L * (maxInputNits + (L / Math.Pow(maxOutputNits / curve_like, 2)));
-                double L_d = numerator / (maxInputNits + L);
-                double N_prime = PQ(L_d / 10000);
-
-                N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
-
-                for (int c = 0; c < 3; c++)
-                {
-                    RegammaLUT[c, i] = N_prime;
-                }
-            }
-        }
-
-        // PQ EOTF function: converts luminance (cd/m^2) to normalized signal value
-        private double PQ(double L)
-        {
-            double m1 = 0.1593017578125;
-            double m2 = 78.84375;
-            double c1 = 0.8359375;
-            double c2 = 18.8515625;
-            double c3 = 18.6875;
-
-            double Lm1 = Math.Pow(L, m1);
-            double numerator = c1 + c2 * Lm1;
-            double denominator = 1 + c3 * Lm1;
-            double N = Math.Pow(numerator / denominator, m2);
-
-            return N;
-        }
-
-        // Inverse PQ EOTF function: converts normalized signal value to luminance (cd/m^2)
-        private double InversePQ(double N)
-        {
-            double m1 = 0.1593017578125;
-            double m2 = 78.84375;
-            double c1 = 0.8359375;
-            double c2 = 18.8515625;
-            double c3 = 18.6875;
-
-            double N1_m2 = Math.Pow(N, 1.0 / m2);
-            double numerator = N1_m2 - c1;
-            double denominator = c2 - c3 * N1_m2;
-
-            double Lm1 = numerator / denominator;
-
-            // Ensure Lm1 is non-negative to avoid invalid values
-            Lm1 = Math.Max(Lm1, 0.0);
-
-            double L = Math.Pow(Lm1, 1.0 / m1);
-
-            return L;
-        }
-
-        public void ApplyGamma()
+        public void ApplyGamma(double gamma = 2.2, double shadowDetailBoost = 0)
         {
             var lutSize = 1024;
 
@@ -235,7 +135,17 @@ namespace MHC2Gen
 
             for (var i = 0; i < lutSize; i++)
             {
-                var value = CmsFunctions.RgbToLinear((double)i / (lutSize - 1), 1.0);
+                var value = CmsFunctions.RgbToLinear((double)i / (lutSize - 1), gamma);
+
+                // Average between sSRGB and Piecewise gamma
+                if (shadowDetailBoost > 0)
+                {
+                    var piecewiseValue = (double)i / lutSize;
+
+                    var correctedBoost = (shadowDetailBoost * (lutSize - i)) / lutSize;
+
+                    value = ((value * (100 - correctedBoost)) + (piecewiseValue * correctedBoost)) / 100;
+                }
 
                 for (var c = 0; c < 3; c++)
                 {
@@ -1064,7 +974,7 @@ namespace MHC2Gen
                { user_matrix[0,0], user_matrix[0,1], user_matrix[0,2], 0 },
                { user_matrix[1,0], user_matrix[1,1], user_matrix[1,2], 0 },
                { user_matrix[2,0], user_matrix[2,1], user_matrix[2,2], 0 },
-                };
+            };
 
             MHC2 = new MHC2Tag
             {
@@ -1072,26 +982,31 @@ namespace MHC2Gen
                 MaxCLL = command.MaxCLL
             };
 
-            //if (!command.IsHDRProfile)
-            //{
-            //    MHC2.ApplyGamma();
-            //}
-            if (!command.IsHDRProfile || command.SDRTransferFunction == SDRTransferFunction.Piecewise)
+            if (command.IsHDRProfile)
             {
-                MHC2.ApplyPiecewise(command.SDRBrightnessBoost);
+                if (command.SDRTransferFunction == SDRTransferFunction.Piecewise)
+                {
+                    MHC2.ApplyPiecewise(command.SDRBrightnessBoost);
+                }
+                else if (command.SDRTransferFunction == SDRTransferFunction.PurePower)
+                {
+                    MHC2.ApplySdrAcm(command.SDRMaxBrightness, command.SDRMinBrightness, command.Gamma, command.SDRBrightnessBoost, command.ShadowDetailBoost);
+                }
+                else if (command.SDRTransferFunction == SDRTransferFunction.BT_1886)
+                {
+                    MHC2.ApplySdrAcm(120, 0.03, 2.4, command.SDRBrightnessBoost, command.ShadowDetailBoost);
+                }
             }
-            else if (command.SDRTransferFunction == SDRTransferFunction.PurePower)
+            else
             {
-                MHC2.ApplySdrAcm(command.SDRMaxBrightness, command.SDRMinBrightness, command.Gamma, command.SDRBrightnessBoost, command.ShadowDetailBoost);
-            }
-            else if (command.SDRTransferFunction == SDRTransferFunction.BT_1886)
-            {
-                MHC2.ApplySdrAcm(120, 0.03, 2.4, command.SDRBrightnessBoost, command.ShadowDetailBoost);
-            }
-
-            if (command.SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)
-            {
-                MHC2.ApplyToneMappingCurve(command.ToneMappingFromLuminance, command.ToneMappingToLuminance, command.CurveLikeLuminance);
+                if (command.SDRTransferFunction == SDRTransferFunction.PurePower)
+                {
+                    MHC2.ApplyGamma(command.Gamma, command.ShadowDetailBoost);
+                }
+                else
+                {
+                    MHC2.ApplyPiecewise(command.SDRBrightnessBoost);
+                }
             }
 
             MHC2.Matrix3x4 = mhc2_matrix;

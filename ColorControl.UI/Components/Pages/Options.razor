@@ -301,7 +301,7 @@ else
 
     private async Task ElevationMethodInput(ChangeEventArgs e)
     {
-        var value = e.Value != null ? (ElevationMethod)int.Parse((string)e.Value) : ElevationMethod.None;
+        var value = e.Value != null ? Enum.Parse<ElevationMethod>((string)e.Value) : ElevationMethod.None;
         await _rpcClientService.CallAsync<bool>("OptionsService", "SetElevationMethod", value);
     }
 

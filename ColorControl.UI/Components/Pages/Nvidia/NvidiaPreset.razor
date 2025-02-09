@@ -11,6 +11,7 @@
 @inject RpcUiClientService _rpcClientService
 @inject AppState AppState
 @inject NavigationManager _navigationManager;
+@inject JSHelper jsHelper;
 
 <div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
@@ -70,10 +71,10 @@
                                                 <div class="mb-2">
                                                     <label class="form-label" for="mode">Display</label>
                                                     <select class="form-select" id="mode" @bind="Preset.DisplayId" disabled="@(Preset.primaryDisplay)">
-                                                    @foreach (var display in displayPresets)
-                                                    {
-                                                        <option value="@display.DisplayId">@display.displayName</option>
-                                                    }
+                                                        @foreach (var display in displayPresets)
+                                                        {
+                                                            <option value="@display.DisplayId">@display.displayName</option>
+                                                        }
                                                     </select>
                                                 </div>
                                                 <div class="mb-2">
@@ -356,7 +357,7 @@
                                         </div>
                                         <div class="mb-2">
                                             <label class="form-label" for="bits">Bit depth</label>
-                                                <select class="form-select" id="bits" @bind="Preset.NvDitherBits">
+                                            <select class="form-select" id="bits" @bind="Preset.NvDitherBits">
                                                 @foreach (var bits in Enum.GetValues<NvDitherBits>())
                                                 {
                                                     <option value="@bits.ToString()">@bits.GetDescription()</option>
@@ -544,7 +545,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => IsVisible = false">Close</button>
-                <button type="submit" class="btn btn-primary" data-bs-dismiss="@(IsValid() ? "modal" : "")" @onclick="ApplyClick">@(Preset?.IsDisplayPreset == true ? "Apply" : "Save")</button>
+                <button type="submit" class="btn btn-primary" disabled="@(!IsValid())" @onclick="ApplyClick">@(Preset?.IsDisplayPreset == true ? "Apply" : "Save")</button>
             </div>
         </div>
     </div>
@@ -667,12 +668,20 @@
         else
         {
             var result = await _rpcClientService.CallAsync<bool>("NvService", "UpdatePreset", Preset);
+
+            if (!result) 
+            {
+                return;
+            }
         }
 
         if (AfterApply != null)
         {
             await AfterApply.Invoke(Preset);
         }
+
+        await jsHelper.CloseModal("presetModal");
+        IsVisible = false;
     }
 
     private async Task ApplyDisplayPreset()

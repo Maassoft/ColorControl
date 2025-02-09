@@ -33,12 +33,12 @@ else
 		{
 			<span>No displays found</span>
 		}
-		@foreach (var display in Displays)
+		else
 		{
 			<div class="mb-2">
 				<label class="form-label" for="device">Selected display</label>
 				<select class="form-select" id="device" @bind="SelectedDisplayId" @bind:after="SelectedDisplayChanged">
-					@foreach (var device in Displays)
+					@foreach (var display in Displays)
 					{
 						<option value="@display.DisplayId">@display.DisplayName @@ @display.AdapterName</option>
 					}

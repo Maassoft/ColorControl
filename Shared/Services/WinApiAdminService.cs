@@ -317,7 +317,7 @@ namespace ColorControl.Shared.Services
 
             try
             {
-                using (TaskService ts = new TaskService())
+                using (var ts = new TaskService())
                 {
                     if (enabled)
                     {
@@ -329,6 +329,9 @@ namespace ColorControl.Shared.Services
                         td.Triggers.Add(new LogonTrigger { UserId = WindowsIdentity.GetCurrent().Name });
 
                         td.Actions.Add(new ExecAction(file, StartUpParams.RunningFromScheduledTaskParam, directory));
+                        td.Settings.DisallowStartIfOnBatteries = false;
+                        td.Settings.StopIfGoingOnBatteries = false;
+                        td.Settings.ExecutionTimeLimit = TimeSpan.Zero;
 
                         ts.RootFolder.RegisterTaskDefinition(taskName, td);
                     }

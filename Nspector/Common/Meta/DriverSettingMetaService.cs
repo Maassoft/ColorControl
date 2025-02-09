@@ -27,8 +27,11 @@ namespace nspector.Common.Meta
             return settingIds;
         }
 
-        private SettingMeta GetDriverSettingMetaInternal(uint settingId)
+        private SettingMeta? GetDriverSettingMetaInternal(uint settingId)
         {
+            if ((settingId & 0xFFFFF000) == 0x10c7d000)
+                return null;
+
             var values = new NVDRS_SETTING_VALUES();
             values.version = nvw.NVDRS_SETTING_VALUES_VER;
             uint valueCount = 255;

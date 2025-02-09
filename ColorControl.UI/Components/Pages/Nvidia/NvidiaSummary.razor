@@ -90,6 +90,26 @@ else
 							<br />
 							<small class="text-body">Color profile: @preset.ColorProfileSettings.ProfileName</small>
 						}
+						@if (preset.driverSettings?.Any() == true)
+						{
+							<br />
+							<div class="dropdown">
+								<span role="button" class="text-decoration-underline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" @onclick="() => DriverSettingsOnClick(preset)">
+									<small>@preset.driverSettings.Count() driver settings changed</small>
+								</span>
+								<form class="dropdown-menu">
+ 									@if (DriverSettings != null)
+									{
+										<ul class="list-group p-0">
+											@foreach (var setting in DriverSettings)
+											{
+												<li class="list-group-item py-0 px-1"><small>@setting.FriendlyName</small></li>
+											}
+										</ul>
+									}
+								</form>
+							</div>
+						}
 					</div>
 				</div>
 			</div>
@@ -258,6 +278,7 @@ else
 	private NvPreset? CurrentGpuSettingsPreset;
 	private NvGpuInfoDto? CurrentGpuInfo;
 	private bool DitheringVisible;
+	private List<NvSettingItemDto>? DriverSettings;
 
 	private PresetOrder PresetOrder;
 
@@ -370,5 +391,15 @@ else
 		Presets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetPresets");
 
 		Presets = Presets?.OrderPresetsBy(PresetOrder);
+	}
+
+	private async Task DriverSettingsOnClick(NvPreset preset)
+	{
+		var driverSettings = await _rpcClientService.CallAsync<List<NvSettingItemDto>>("NvService", "GetDriverSettings", Type.Missing, true);
+
+		if (driverSettings != null)
+		{
+			DriverSettings = driverSettings.Where(s => s.Value != s.DefaultValue && s.State == 2).ToList();
+		}
 	}
 }

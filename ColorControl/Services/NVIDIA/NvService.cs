@@ -300,6 +300,8 @@ namespace ColorControl.Services.NVIDIA
 
         public bool UpdatePreset(NvPreset specPreset)
         {
+            ValidatePreset(specPreset);
+
             var currentPreset = _presets.FirstOrDefault(p => p.id == specPreset.id);
 
             if (currentPreset != null)
@@ -308,7 +310,7 @@ namespace ColorControl.Services.NVIDIA
                 currentPreset.shortcut = specPreset.shortcut;
                 currentPreset.Update(specPreset);
 
-                SavePresets();
+                SavePresets(currentPreset);
 
                 return true;
             }
@@ -319,7 +321,7 @@ namespace ColorControl.Services.NVIDIA
 
             _presets.Add(newPreset);
 
-            SavePresets();
+            SavePresets(newPreset);
 
             return true;
         }
@@ -858,19 +860,20 @@ namespace ColorControl.Services.NVIDIA
             var gpuHandle = displayDevice.PhysicalGPU.Handle;
             var displayId = displayDevice.DisplayId;
 
-            if (state == NvDitherState.Auto)
-            {
-                // These seem to be ignored in Auto-state
-                bits = 0;
-                mode = 0;
-            }
-            else if (preset != null)
+            if (preset != null)
             {
                 bits = preset.ditheringBits;
                 mode = preset.ditheringMode;
 
                 setRegistryKey |= preset.SetDitherRegistryKey;
                 restartDriver |= preset.RestartDriver;
+            }
+
+            if (state == NvDitherState.Auto)
+            {
+                // These seem to be ignored in Auto-state
+                bits = 0;
+                mode = 0;
             }
 
             if (setRegistryKey)
@@ -1566,7 +1569,7 @@ namespace ColorControl.Services.NVIDIA
             return _meta.GetSettingMeta(settingId);
         }
 
-        public List<NvSettingItemDto> GetDriverSettings(string profileName = null)
+        public List<NvSettingItemDto> GetDriverSettings(string profileName = null, bool addFriendlyName = false)
         {
             if (profileName == null)
             {
@@ -1599,7 +1602,8 @@ namespace ColorControl.Services.NVIDIA
                     Value = intValue.intValue,
                     DefaultValue = intValue.defaultValue,
                     SettingType = type,
-                    Values = values?.ToList()
+                    Values = values?.ToList(),
+                    FriendlyName = addFriendlyName ? $"{settingMeta.SettingName}: {settingMeta.ToFriendlyName(intValue: intValue.intValue, displayDefault: true)}" : null
                 };
             }).ToList();
         }
