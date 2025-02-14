@@ -35,8 +35,9 @@
 		<GenerateManifests>true</GenerateManifests>
 		<TargetZone>LocalIntranet</TargetZone>
 		<ApplicationManifest>Properties\app.manifest</ApplicationManifest>
-		<SignManifests>true</SignManifests>
-		<AssemblyOriginatorKeyFile>ColorControl_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
+		<SignManifests>false</SignManifests>
+		<!-- <AssemblyOriginatorKeyFile>ColorControl_TemporaryKey.pfx</AssemblyOriginatorKeyFile> -->
+		<SignAssembly>false</SignAssembly>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
 	</PropertyGroup>
