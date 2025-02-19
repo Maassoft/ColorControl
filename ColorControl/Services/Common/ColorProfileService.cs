@@ -198,6 +198,11 @@ public class ColorProfileService
 			ColorGamut = colorProfile.ColorGamut,
 			Gamma = colorProfile.Gamma,
 			DevicePrimaries = colorProfile.DevicePrimaries.ToInternal(),
+			
+			ToneMappingFromLuminance = colorProfile.ToneMappingFromLuminance,
+			ToneMappingToLuminance = colorProfile.ToneMappingToLuminance,
+			HdrBrightnessMultiplier = colorProfile.HdrBrightnessMultiplier,
+			HdrGammaMultiplier = colorProfile.HdrGammaMultiplier,
 		};
 
 		var bytes = MHC2Wrapper.GenerateSdrAcmProfile(command);

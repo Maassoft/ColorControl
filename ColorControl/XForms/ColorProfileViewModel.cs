@@ -120,8 +120,11 @@ internal class ColorProfileViewModel : BaseViewModel
 
 	public bool BrightnessBoostSettingsEnabled { get; set; }
 
-	[Range(400, 10000)]
-	public double CurveLikeLuminance { get; set; } = 400;
+	[Range(.04, 25)]
+	public double HdrBrightnessMultiplier { get; set; } = 1;
+
+	[Range(.04, 25)]
+	public double HdrGammaMultiplier { get; set; } = 1;
 
 	public override string this[string columnName]
 	{

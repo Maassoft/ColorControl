@@ -67,15 +67,18 @@
                 <TextBox IsEnabled="{Binding SDRSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,41,0,0" TextWrapping="Wrap" Text="{Binding SDRMaxBrightness, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMaxBrightness" Height="18" InputScope="Number"/>
                 <Label Content="Brightness boost (%):" HorizontalAlignment="Left" Margin="-5,64,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
                 <TextBox IsEnabled="{Binding BrightnessBoostSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,68,0,0" TextWrapping="Wrap" Text="{Binding SDRBrightnessBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbSDRMinBrightness_Copy6" Height="18" InputScope="Number"/>
-                
-                <Label Content="Max luminance inp (nits):" HorizontalAlignment="Left" Margin="-5,94,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
+
+                <Label Content="Current HDR Luminance (nits):" Margin="-5,94,507,0" VerticalAlignment="Top" Height="26" Grid.ColumnSpan="2"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,98,0,0" TextWrapping="Wrap" Text="{Binding ToneMappingFromLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsFrom" Height="18" InputScope="Number"/>
 
-                <Label Content="Max luminance out (nits):" HorizontalAlignment="Left" Margin="197,94,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.Column="1"/>
+                <Label Content="HDR Luminance to convert (nits):" HorizontalAlignment="Left" Margin="194,94,0,0" VerticalAlignment="Top" Width="211" Height="26" Grid.Column="1"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,98,0,0" TextWrapping="Wrap" Text="{Binding ToneMappingToLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsTo" Height="18" InputScope="Number"/>
 
-                <Label Content="Curve like(nits):" HorizontalAlignment="Left" Margin="-5,120,0,0" VerticalAlignment="Top" Width="208" Height="26" Grid.ColumnSpan="2"/>
-                <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,128,0,0" TextWrapping="Wrap" Text="{Binding CurveLikeLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsToCurve" Height="18" InputScope="Number"/>
+                <Label Content="Brightness multiplier:" HorizontalAlignment="Left" Margin="-5,120,0,4" Width="208" Grid.ColumnSpan="2"/>
+                <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,128,0,0" TextWrapping="Wrap" Text="{Binding HdrBrightnessMultiplier, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbhdrbrightness" Height="18" InputScope="Number"/>
+
+                <Label Content="Gamma multiplier:" HorizontalAlignment="Left" Margin="194,124,0,0" Width="211" Grid.Column="1"/>
+                <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,128,0,0" TextWrapping="Wrap" Text="{Binding HdrGammaMultiplier, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbhdrgamma" Height="18" InputScope="Number"/>
 
             </Grid>
         </GroupBox>

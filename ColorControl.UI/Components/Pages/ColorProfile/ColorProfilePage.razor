@@ -240,13 +240,42 @@
                                                 <div class="col">
                                                     <div class="mb-2">
                                                         <label class="form-label" for="brightnessBoost">Brightness boost (%)</label>
-                                                        <input class="form-control" id="brightnessBoost" type="number" min="-100" max="100" @bind="ColorProfile.SDRBrightnessBoost" />
+                                                        <input class="form-control" id="brightnessBoost" type="number" min="-100" max="100" @bind="ColorProfile.SDRBrightnessBoost" disabled="@(ColorProfile.SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)"  />
                                                     </div>
                                                 </div>
                                                 <div class="col">
                                                     <div class="mb-2">
                                                         <label class="form-label" for="shadowDetailBoost">Shadow detail boost (%)</label>
-                                                        <input class="form-control" id="shadowDetailBoost" type="number" min="0" max="100" @bind="ColorProfile.ShadowDetailBoost" disabled="@(ColorProfile.SDRTransferFunction == SDRTransferFunction.Piecewise)" />
+                                                        <input class="form-control" id="shadowDetailBoost" type="number" min="0" max="100" @bind="ColorProfile.ShadowDetailBoost" disabled="@(ColorProfile.SDRTransferFunction == SDRTransferFunction.Piecewise || ColorProfile.SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="hdrluminance">Current HDR Luminance (nits):</label>
+                                                        <input class="form-control" id="hdrluminance" type="number" min="400" max="10000" @bind="ColorProfile.ToneMappingFromLuminance" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.ToneMappedPiecewise)"  />
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="hdrluminanceoutput">HDR Luminance to convert (nits):</label>
+                                                        <input class="form-control" id="hdrluminanceoutput" type="number" min="400" max="10000" @bind="ColorProfile.ToneMappingToLuminance" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.ToneMappedPiecewise)" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="brightnessmultiplier">Brightness Multiplier</label>
+                                                        <input class="form-control" id="brightnessmultiplier" type="number" min="0.04" max="25" step=".001" @bind="ColorProfile.HdrBrightnessMultiplier" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.ToneMappedPiecewise)" />
+                                                    </div>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="mb-2">
+                                                        <label class="form-label" for="gammamultiplier">Gamma Multiplier</label>
+                                                        <input class="form-control" id="gammamultiplier" type="number" min="0.04" max="25" step=".001" @bind="ColorProfile.HdrGammaMultiplier" disabled="@(ColorProfile.SDRTransferFunction != SDRTransferFunction.ToneMappedPiecewise)" />
                                                     </div>
                                                 </div>
                                             </div>

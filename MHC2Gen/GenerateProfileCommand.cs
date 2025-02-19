@@ -23,5 +23,6 @@ public class GenerateProfileCommand
     public double ToneMappingFromLuminance { get; set; }
     public double ToneMappingToLuminance { get; set; }
 
-    public double CurveLikeLuminance { get; set; }
+    public double HdrGammaMultiplier { get; set; }
+    public double HdrBrightnessMultiplier { get; set; }
 }
