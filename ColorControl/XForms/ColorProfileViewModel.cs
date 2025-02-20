@@ -110,6 +110,22 @@ internal class ColorProfileViewModel : BaseViewModel
 	public bool SetMinMaxTml { get; set; } = true;
 	public bool PrimariesEnabled { get; set; } = true;
 
+	[Range(400, 10000)]
+	public double ToneMappingFromLuminance { get; set; } = 400;
+	[Range(400, 10000)]
+	public double ToneMappingToLuminance { get; set; } = 400;
+
+
+	public bool ToneMappingSettingsEnabled { get; set; }
+
+	public bool BrightnessBoostSettingsEnabled { get; set; }
+
+	[Range(.04, 25)]
+	public double HdrBrightnessMultiplier { get; set; } = 1;
+
+	[Range(.04, 25)]
+	public double HdrGammaMultiplier { get; set; } = 1;
+
 	public override string this[string columnName]
 	{
 		get
@@ -122,8 +138,37 @@ internal class ColorProfileViewModel : BaseViewModel
 			}
 			else if (columnName == nameof(SDRTransferFunction))
 			{
-				SDRSettingsEnabled = SDRTransferFunction == SDRTransferFunction.PurePower;
-				OnPropertyChanged(nameof(SDRSettingsEnabled));
+				if (SDRTransferFunction == SDRTransferFunction.PurePower)
+				{
+					SDRSettingsEnabled = true;
+					ToneMappingSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = true;
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
+				else if (SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)
+				{
+
+					ToneMappingSettingsEnabled = true;
+					SDRSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = false;
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
+				else
+				{
+					ToneMappingSettingsEnabled = false;
+					SDRSettingsEnabled = false;
+					BrightnessBoostSettingsEnabled = true;
+					OnPropertyChanged(nameof(ToneMappingSettingsEnabled));
+					OnPropertyChanged(nameof(SDRSettingsEnabled));
+					OnPropertyChanged(nameof(BrightnessBoostSettingsEnabled));
+				}
+
+
+
 			}
 			else if (columnName == nameof(SelectedExistingProfile))
 			{

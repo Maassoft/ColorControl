@@ -28,7 +28,9 @@ public enum SDRTransferFunction
     [Description("Pure Power")]
     PurePower = 1,
     [Description("Piecewise")]
-    Piecewise = 2
+    Piecewise = 2,
+    [Description("Tone Mapped Piecewise")]
+    ToneMappedPiecewise = 3
 }
 
 public enum ColorGamut

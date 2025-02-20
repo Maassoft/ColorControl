@@ -20,8 +20,13 @@ public class ColorProfileDto
 	public double SDRBrightnessBoost { get; set; }
 	public double ShadowDetailBoost { get; set; }
 	public double Gamma { get; set; } = 2.2;
+    public double ToneMappingFromLuminance { get; set; } = 400;
+    public double ToneMappingToLuminance { get; set; } = 400;
 
-	public void UpdatePrimariesAndLuminance(DisplayColorInfo displayColorInfo)
+    public double HdrGammaMultiplier { get; set; } = 1;
+    public double HdrBrightnessMultiplier { get; set; } = 1;
+
+    public void UpdatePrimariesAndLuminance(DisplayColorInfo displayColorInfo)
 	{
 		BlackLuminance = displayColorInfo.BlackLuminance;
 		WhiteLuminance = displayColorInfo.WhiteLuminance;
