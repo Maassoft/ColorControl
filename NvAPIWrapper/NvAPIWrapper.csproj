@@ -27,7 +27,7 @@
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<OutputPath>..\Release</OutputPath>
 		<DocumentationFile>..\Release\NvAPIWrapper.xml</DocumentationFile>
-		<SignAssembly>false</SignAssembly>
+		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<PropertyGroup>
 		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
