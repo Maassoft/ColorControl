@@ -127,6 +127,104 @@ namespace MHC2Gen
 			}
 		}
 
+        public void ApplyToneMappingCurve(double maxInputNits = 400, double maxOutputNits = 400, double curve_like = 400)
+        {
+            int lutSize = 1024;
+            bool lutExist = true;
+            if (RegammaLUT == null)
+            {
+                lutExist = false;
+                RegammaLUT = new double[3, lutSize];
+            }
+
+            for (int i = 0; i < lutSize; i++)
+            {
+                double N = lutExist ? RegammaLUT[0, i] : (double)i / (lutSize - 1);
+                double L = InversePQ(N) * 10000 * (maxInputNits / curve_like);
+                double numerator = L * (maxInputNits + (L / Math.Pow(maxOutputNits / curve_like, 2)));
+                double L_d = numerator / (maxInputNits + L);
+                double N_prime = PQ(L_d / 10000);
+
+                N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
+
+                for (int c = 0; c < 3; c++)
+                {
+                    RegammaLUT[c, i] = N_prime;
+                }
+            }
+        }
+        
+
+        public void ApplyToneMappingCurveGamma(double maxInputNits = 400, double maxOutputNits = 400, double curve_like = 400)
+        {
+            int lutSize = 1024;
+            bool lutExist = true;
+            if (RegammaLUT == null)
+            {
+                lutExist = false;
+                RegammaLUT = new double[3, lutSize];
+            }
+
+            double L_target = (1 * (PQ((curve_like) / 10000.0) / PQ((maxInputNits) / 10000.0)));
+            double L_target_prime = 1 * (PQ((curve_like) / 10000) / PQ((maxOutputNits) / 10000.0));
+            double difference = L_target_prime;
+            for (int i = 0; i < lutSize; i++)
+            {
+                double N = lutExist ? RegammaLUT[0, i] : (double)i / (lutSize - 1);
+                double N_converted = N * difference;
+                double L = InversePQ(N_converted) * 10000 * (maxInputNits / curve_like);
+
+                double N_prime = PQ(L / 10000);
+                N_prime = Math.Max(0.0, Math.Min(1.0, N_prime));
+                for (int c = 0; c < 3; c++)
+                {
+                    RegammaLUT[c, i] = N_prime;
+                }
+            }
+        }
+
+                // PQ EOTF function: converts luminance (cd/m^2) to normalized signal value
+        private double PQ(double L)
+        {
+            double m1 = 0.1593017578125;
+            double m2 = 78.84375;
+            double c1 = 0.8359375;
+            double c2 = 18.8515625;
+            double c3 = 18.6875;
+
+            double Lm1 = Math.Pow(L, m1);
+            double numerator = c1 + c2 * Lm1;
+            double denominator = 1 + c3 * Lm1;
+            double N = Math.Pow(numerator / denominator, m2);
+
+            return N;
+        }
+
+        // Inverse PQ EOTF function: converts normalized signal value to luminance (cd/m^2)
+        private double InversePQ(double N)
+        {
+            double m1 = 0.1593017578125;
+            double m2 = 78.84375;
+            double c1 = 0.8359375;
+            double c2 = 18.8515625;
+            double c3 = 18.6875;
+
+            double N1_m2 = Math.Pow(N, 1.0 / m2);
+            double numerator = N1_m2 - c1;
+            double denominator = c2 - c3 * N1_m2;
+
+            double Lm1 = numerator / denominator;
+
+            // Ensure Lm1 is non-negative to avoid invalid values
+            Lm1 = Math.Max(Lm1, 0.0);
+
+            double L = Math.Pow(Lm1, 1.0 / m1);
+
+            return L;
+        }
+
+
+
 		public void ApplyGamma(double gamma = 2.2, double shadowDetailBoost = 0)
 		{
 			var lutSize = 1024;
@@ -995,7 +1093,23 @@ namespace MHC2Gen
 				else if (command.SDRTransferFunction == SDRTransferFunction.BT_1886)
 				{
 					MHC2.ApplySdrAcm(120, 0.03, 2.4, command.SDRBrightnessBoost, command.ShadowDetailBoost);
-				}
+				}else if (command.SDRTransferFunction == SDRTransferFunction.ToneMappedPiecewise)
+                {
+
+                    double from_nits = command.ToneMappingFromLuminance;
+
+                    double to_nits = command.ToneMappingToLuminance;
+                    double numerator = to_nits / from_nits;
+
+                    double gamma_like = (command.ToneMappingToLuminance / command.HdrGammaMultiplier) / numerator;
+                    double curve_like = (command.ToneMappingToLuminance / command.HdrBrightnessMultiplier) / numerator;
+
+                    MHC2.ApplyToneMappingCurve(from_nits, to_nits, to_nits);
+
+                    MHC2.ApplyToneMappingCurve(from_nits, from_nits, curve_like);
+                    MHC2.ApplyToneMappingCurveGamma(from_nits, from_nits, gamma_like);
+
+                }
 			}
 			else
 			{

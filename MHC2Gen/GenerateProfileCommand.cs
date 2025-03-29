@@ -1,4 +1,6 @@
-﻿namespace MHC2Gen;
+﻿using System;
+
+namespace MHC2Gen;
 
 public class GenerateProfileCommand
 {
@@ -17,4 +19,10 @@ public class GenerateProfileCommand
     public double SDRBrightnessBoost { get; set; }
     public double ShadowDetailBoost { get; set; }
     public double Gamma { get; set; } = 2.2;
+
+    public double ToneMappingFromLuminance { get; set; }
+    public double ToneMappingToLuminance { get; set; }
+
+    public double HdrGammaMultiplier { get; set; }
+    public double HdrBrightnessMultiplier { get; set; }
 }

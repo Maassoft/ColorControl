@@ -116,6 +116,10 @@ namespace ColorControl.XForms
                 ColorGamut = _viewModel.ColorGamut,
                 Gamma = _viewModel.CustomGamma,
                 DevicePrimaries = _viewModel.GetDevicePrimaries(),
+                ToneMappingFromLuminance = _viewModel.ToneMappingFromLuminance,
+                ToneMappingToLuminance = _viewModel.ToneMappingToLuminance,
+                HdrBrightnessMultiplier = _viewModel.HdrBrightnessMultiplier,
+                HdrGammaMultiplier = _viewModel.HdrGammaMultiplier
             };
 
             var bytes = MHC2Wrapper.GenerateSdrAcmProfile(command);
