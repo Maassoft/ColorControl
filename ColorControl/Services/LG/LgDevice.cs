@@ -69,7 +69,9 @@ namespace ColorControl.Services.LG
             Series2020,
             Series2021,
             Series2022,
-            Series2023
+            Series2023,
+            Series2024,
+            Series2025
         }
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
@@ -239,10 +241,14 @@ namespace ColorControl.Services.LG
             AddHdmiPictureAction("gameOptimizationHDMI", typeof(OffToOn), category: "other");
             AddGenericPictureAction("freesync", typeof(OffToOn), category: "other", title: "AMD FreeSync Premium", fromModelYear: ModelYear.Series2020);
             AddHdmiPictureAction("freesyncOLEDHDMI", typeof(OffToOn), category: "other", fromModelYear: ModelYear.Series2020);
+            AddGenericPictureAction("enableQFT", typeof(OffToOn), category: "other", title: "Quick Frame Transport", fromModelYear: ModelYear.Series2025);
+            AddGenericPictureAction("enable144HzBooster", typeof(OffToOn), category: "other", title: "144Hz/165Hz Mode", fromModelYear: ModelYear.Series2024);
+            AddGenericPictureAction("enableALLM", typeof(OffToOn), category: "other", title: "ALLM", fromModelYear: ModelYear.Series2022);
 
             AddHdmiPictureAction("444BypassHDMI", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through HDMIX", fromModelYear: ModelYear.Series2023);
             AddGenericPictureAction("444BypassHDMINone", typeof(OffToOn), category: "other", title: "4:4:4 Pass Through Non-HDMI", fromModelYear: ModelYear.Series2023);
             AddGenericPictureAction("qmsVrr", typeof(OffToOn), category: "other", title: "QMS-VRR", fromModelYear: ModelYear.Series2023);
+            AddGenericPictureAction("enableDolbyVisionPC", typeof(OffToOn), category: "other", title: "Dolby Vision PC", fromModelYear: ModelYear.Series2024);
 
             AddGenericPictureAction("masterLuminanceLevel", typeof(MasterLuminanceLevel), category: "other");
             AddHdmiPictureAction("colorimetryHDMI", typeof(MasteringColor), category: "other", fromModelYear: ModelYear.Series2020);
@@ -571,6 +577,8 @@ namespace ColorControl.Services.LG
                 '1' => ModelYear.Series2021,
                 '2' => ModelYear.Series2022,
                 '3' => ModelYear.Series2023,
+                '4' => ModelYear.Series2024,
+                '5' => ModelYear.Series2025,
                 _ => ModelYear.None
             };
 
