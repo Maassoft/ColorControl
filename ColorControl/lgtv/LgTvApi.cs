@@ -435,7 +435,9 @@ namespace LgTv
 
             var lunauri = "luna://com.webos.settingsservice/setSystemSettings";
 
-            var json = @"{ ""category"": """ + category + @""", ""settings"": { """ + key + @""": " + jsonValue + @" } }";
+            var extra = key == "truMotionMode" ? @", ""current_app"": true " : "";
+
+            var json = @"{ ""category"": """ + category + @""", ""settings"": { """ + key + @""": " + jsonValue + @" }" + extra + " }";
 
             var @params = JObject.Parse(json);
 

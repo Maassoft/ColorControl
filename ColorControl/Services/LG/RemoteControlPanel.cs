@@ -69,7 +69,7 @@ namespace ColorControl.Services.LG
 
 				if (preset != null)
 				{
-					if (preset.steps.Contains("POWER") && _lgService.SelectedDevice?.CurrentState != LgDevice.PowerState.Active)
+					if (preset.Steps.Contains("POWER") && _lgService.SelectedDevice?.CurrentState != LgDevice.PowerState.Active)
 					{
 						Logger.Debug("Executing WOL instead of POWER");
 

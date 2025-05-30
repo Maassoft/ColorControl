@@ -5,12 +5,10 @@ public class SamsungPreset : PresetBase
     public static event GetValueByKey GetDeviceName;
 
     public string AppId { get; set; }
-    public List<string> Steps { get; set; }
     public string DeviceMacAddress { get; set; }
 
     public SamsungPreset() : base()
     {
-        Steps = new List<string>();
     }
 
     public SamsungPreset(SamsungPreset preset) : this()

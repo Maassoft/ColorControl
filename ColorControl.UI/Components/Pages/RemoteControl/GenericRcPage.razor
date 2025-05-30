@@ -1,0 +1,319 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.Base
+@using ColorControl.Shared.Contracts.RemoteControl
+@using ColorControl.UI.Services
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common
+@using System.Globalization
+
+@* @rendermode Constants.RenderMode *@
+
+@typeparam TDevice where TDevice : BaseDeviceDto
+@typeparam TPreset where TPreset : PresetBase, new()
+@typeparam TButtonEnum where TButtonEnum : struct, Enum
+
+@inject RpcUiClientService _rpcClientService
+@inject JSHelper jsHelper
+
+<style>
+	.myhover {
+	border-radius: 25px;
+	width: @(ButtonSize)%;
+	aspect-ratio: 1;
+	opacity: 0.2;
+	border-width: 0;
+	}
+
+	.myhover:hover {
+	opacity: 0.4;
+	background-color: white;
+	}
+</style>
+
+<GenericRcButtonPage ButtonParam="CurrentButton" AfterApply="AfterApplyButton" TPreset="TPreset" TButtonEnum="TButtonEnum" Presets="Presets"></GenericRcButtonPage>
+
+<div>
+	<div>
+		<h5>@(Device?.Name == null ? $"No device selected" : Device.Name)</h5>
+	</div>
+	<div>
+		<form class="row g-1 needs-validation @WasValidated" novalidate>
+			@if (Remotes == null)
+			{
+				<div>Loading...</div>
+			}
+			else
+			{
+				<select class="form-select" id="remoteControl" @bind="SelectedRemoteName" @bind:after="RemoteChanged">
+					@foreach (var remote in Remotes)
+					{
+						<option id="@remote.Name">@remote.Name</option>
+					}
+				</select>
+				if (RemoteController == null)
+				{
+					<div>Select a remote</div>
+				}
+				else
+				{
+					@if (AllowEditing)
+					{
+						<button type="button" class="btn btn-primary" data-bs-dismiss="@(IsValid() ? "modal" : "")" @onclick="ApplyClick">Save</button>
+					}
+					@* <p>Left: @CurrentX, Top: @CurrentY</p> *@
+					<div style="position: relative" @onclick="Button_Clicked" @oncontextmenu:preventDefault="true" @oncontextmenu="e => NewRcButtonRightClick(e)">
+						<img src="remotes/@RemoteController.ImageFileName" id="rcImage" class="w-100" />
+						@foreach (var button in RemoteController.Buttons) 
+						{
+							<button class="myhover" type="button"
+							style="position: absolute; top: @(button.Top.ToString(CultureInfo.InvariantCulture))%; left: @(button.Left.ToString(CultureInfo.InvariantCulture))%"
+							@onclick="() => RcButtonOnClick(button)" @oncontextmenu="e => RcButtonRightClick(e, button)" @oncontextmenu:preventDefault="true" @oncontextmenu:stopPropagation>
+							</button>
+						}
+					</div>
+				}
+			}
+		</form>
+	</div>
+</div>
+
+@code {
+	private TDevice? _device;
+
+	[Parameter]
+	public TDevice? Device { get; set; }
+
+	[Parameter]
+	public Func<TDevice, Task>? AfterApply { get; set; }
+
+	[Parameter]
+	public string? ServiceName { get; set; }
+
+	[Parameter]
+	public List<TPreset>? Presets { get; set; }
+
+	private string WasValidated = "";
+	private bool IsVisible;
+
+	private string? SelectedRemoteName;
+	private BaseRcDto<TPreset, TButtonEnum>? RemoteController;
+	private List<BaseRcDto<TPreset, TButtonEnum>>? Remotes;
+
+	private double CurrentX, CurrentY;
+
+	private RectDimension? ImageDimension;
+
+	private BaseRcButtonDto<TPreset, TButtonEnum>? CurrentButton;
+
+	private double ButtonSize = 13;
+	private bool AllowEditing = false;
+
+	protected override async void OnParametersSet()
+	{
+		if (ServiceName != null && (_device != Device || Device == null))
+		{
+			_device = Device;
+
+			Remotes = await _rpcClientService.CallAsync<List<BaseRcDto<TPreset, TButtonEnum>>>(ServiceName, "GetRemotes");
+
+			if (Remotes?.Any() == true) 
+			{
+				RemoteController = Remotes.First();
+				SelectedRemoteName = RemoteController.Name;
+				StateHasChanged();
+			}
+		}
+	}
+
+	private async Task ApplyClick(MouseEventArgs e)
+	{
+		if (RemoteController == null || ServiceName == null)
+		{
+			return;
+		}
+
+		if (!IsValid())
+		{
+			WasValidated = "was-validated";
+			return;
+		}
+
+		var result = await _rpcClientService.CallAsync<bool>(ServiceName, "UpdateRemote", RemoteController);
+
+		// if (AfterApply != null)
+		// {
+		// 	await AfterApply.Invoke(Device);
+		// }
+	}
+
+	private void ModalOnFocus(FocusEventArgs e)
+	{
+		if (!IsVisible)
+		{
+			WasValidated = "";
+			IsVisible = true;
+		}
+	}
+
+	private bool IsValid()
+	{
+		return true; // !string.IsNullOrEmpty(Device?.Name) && (Device?.IsCustom != true || !string.IsNullOrEmpty(Device?.IpAddress));
+	}
+
+	private async Task RcButtonOnClick(BaseRcButtonDto<TPreset, TButtonEnum> button)
+	{
+		if (ServiceName == null)
+		{
+			return;
+		}
+
+		var rcButton = button.Button;
+
+		var preset = button.Preset;
+		if (preset == null)
+		{
+			preset = new TPreset();
+			preset.name = rcButton.ToString();
+			preset.SetSteps([rcButton.ToString()]);
+
+		}
+
+		await _rpcClientService.CallAsync<bool>(ServiceName, "ApplyPreset", preset);
+	}
+
+	public async Task Button_Clicked(MouseEventArgs e)
+	{
+		if (ImageDimension == null) 
+		{
+			ImageDimension = await jsHelper.GetElementDimensions("rcImage");
+		}
+
+		if (ImageDimension != null) 
+		{
+			CurrentX = Math.Round(((double)e.OffsetX / ImageDimension.Width) * 100, 4);
+			CurrentY = Math.Round(((double)e.OffsetY / ImageDimension.Height) * 100, 4);
+			return;
+		}
+
+		CurrentX = e.OffsetX;
+		CurrentY = e.OffsetY;
+	}
+
+	private async Task RcButtonRightClick(MouseEventArgs e, BaseRcButtonDto<TPreset, TButtonEnum> button)
+	{
+		if (!AllowEditing)
+		{
+			return;
+		}
+
+		CurrentButton = button;
+
+		if (e.ShiftKey)
+		{
+			AlignItemsHorizontally(button);
+			return;
+		}
+		if (e.CtrlKey)
+		{
+			AlignItemsVertically(button);
+			return;
+		}
+
+		await jsHelper.OpenModal("rcButtonModal");
+	}
+
+	private void AlignItemsHorizontally(BaseRcButtonDto<TPreset, TButtonEnum> button)
+	{
+		if (RemoteController?.Buttons == null)
+		{
+			return;
+		}
+
+		var alignedButtons = RemoteController.Buttons.Where(b => b.Top - 2 <= button.Top && b.Top + 2 >= button.Top);
+
+		foreach (var b in alignedButtons)
+		{
+			b.Top = button.Top;
+		}
+	}
+
+	private void AlignItemsVertically(BaseRcButtonDto<TPreset, TButtonEnum> button)
+	{
+		if (RemoteController?.Buttons == null)
+		{
+			return;
+		}
+
+		var alignedButtons = RemoteController.Buttons.Where(b => b.Top - 15 <= button.Top && b.Top + 15 >= button.Top && b.Left - 8 <= button.Left && b.Left + 8 >= button.Left);
+
+		foreach (var b in alignedButtons)
+		{
+			b.Left = button.Left;
+		}
+	}
+
+	private async Task NewRcButtonRightClick(MouseEventArgs e) 
+	{
+		if (!AllowEditing)
+		{
+			return;
+		}
+
+		if (ImageDimension == null)
+		{
+			ImageDimension = await jsHelper.GetElementDimensions("rcImage");
+		}
+
+		if (ImageDimension != null)
+		{
+			var posX = Math.Round(((double)e.OffsetX / ImageDimension.Width) * 100, 4);
+			var posY = Math.Round(((double)e.OffsetY / ImageDimension.Height) * 100, 4);
+
+			posX -= (ButtonSize / 2);
+			posY -= ((double)ImageDimension.Width / ImageDimension.Height) * ((ButtonSize / 2) - 0.5);
+
+			CurrentButton = new BaseRcButtonDto<TPreset, TButtonEnum>
+			{
+				Top = posY,
+				Left = posX
+			};
+			await jsHelper.OpenModal("rcButtonModal");
+		}
+	}
+
+	private Task AfterApplyButton(BaseRcButtonDto<TPreset, TButtonEnum>? button)
+	{
+		if (RemoteController == null) 
+		{
+			return Task.CompletedTask;
+		}
+
+		if (button == null)
+		{
+			RemoteController.Buttons.Remove(CurrentButton);
+		}
+		else if (!RemoteController.Buttons.Contains(button)) 
+		{
+			RemoteController.Buttons.Add(button);
+		}
+
+		StateHasChanged();
+
+		return Task.CompletedTask;
+	}
+
+	private void KeyDown(KeyboardEventArgs e)
+	{
+
+	}
+
+	private void KeyUp(KeyboardEventArgs e)
+	{
+
+	}
+	private void RemoteChanged()
+	{
+		RemoteController = Remotes?.FirstOrDefault(r => r.Name == SelectedRemoteName);
+		ImageDimension = null;
+	}
+}

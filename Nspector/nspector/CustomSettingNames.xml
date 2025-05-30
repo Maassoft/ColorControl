@@ -7931,7 +7931,11 @@
           <UserfriendlyName>Preset J</UserfriendlyName>
           <HexValue>0x0000000A</HexValue>
         </CustomSettingValue>
-      </SettingValues>
+		<CustomSettingValue>
+		  <UserfriendlyName>Preset K</UserfriendlyName>
+		  <HexValue>0x0000000B</HexValue>
+		</CustomSettingValue>
+	  </SettingValues>
       <SettingMasks />
     </CustomSetting>
 	

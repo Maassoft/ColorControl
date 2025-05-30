@@ -1,8 +1,8 @@
-﻿using ColorControl.Shared.Common;
+﻿using System.ComponentModel;
+using System.Windows;
+using ColorControl.Shared.Common;
 using ColorControl.Shared.XForms;
 using Microsoft.Win32;
-using System.ComponentModel;
-using System.Windows;
 
 namespace novideo_srgb
 {
@@ -160,6 +160,16 @@ namespace novideo_srgb
             _novideoWindow?.ApplyClamp(monitorId, clamp, targetColorSpace);
         }
 
+        public static (bool clamped, int targetColorSpace) GetSettings(string monitorId)
+        {
+            if (_novideoWindow == null)
+            {
+                return (false, 0);
+            }
+
+            return _novideoWindow.GetSettingsForMonitor(monitorId);
+        }
+
         private void ApplyClamp(string monitorId, bool clamp, int targetColorSpace)
         {
             var monitor = _viewModel.Monitors.FirstOrDefault(m => monitorId == null || m.Path.Contains(monitorId));
@@ -171,6 +181,18 @@ namespace novideo_srgb
 
             monitor.Target = targetColorSpace;
             monitor.Clamped = clamp;
+        }
+
+        private (bool clamped, int targetColorSpace) GetSettingsForMonitor(string monitorId)
+        {
+            var monitor = _viewModel.Monitors.FirstOrDefault(m => monitorId == null || m.Path.Contains(monitorId));
+
+            if (monitor == null)
+            {
+                return (false, 0);
+            }
+
+            return (monitor.Clamped, monitor.Target);
         }
     }
 }

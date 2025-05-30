@@ -66,6 +66,19 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             PowerPCM = settings.PowerPCM;
         }
 
+        public bool Equals(NvGpuOcSettings other)
+        {
+            return PCIIdentifier == other.PCIIdentifier &&
+                MemoryOffsetKHz == other.MemoryOffsetKHz &&
+                Type == other.Type &&
+                GraphicsOffsetKHz == other.GraphicsOffsetKHz &&
+                MaximumFrequencyKHz == other.MaximumFrequencyKHz &&
+                MaximumVoltageUv == other.MaximumVoltageUv &&
+                FrequencyPreferred == other.FrequencyPreferred &&
+                VoltageBoostPercent == other.VoltageBoostPercent &&
+                PowerPCM == other.PowerPCM;
+        }
+
         public override string ToString()
         {
             var value = "";

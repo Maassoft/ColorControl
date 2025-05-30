@@ -28,7 +28,7 @@
 }
 else
 {
-	<div class="row mb-3">
+	<div class="row mb-2">
 		@if (!Displays.Any())
 		{
 			<span>No displays found</span>
@@ -54,6 +54,13 @@ else
 }
 else
 {
+	<div class="row mb-3">
+		<div class="form-check form-switch ms-3">
+			<input class="form-check-input" type="checkbox" role="switch" id="usePerUserSettings" @bind="SelectedDisplay.UsePerUserSettings" @bind:after="AfterUsePerUseSettings">
+			<label class="form-check-label" for="usePerUserSettings">Use my settings for this device</label>
+		</div>
+	</div>
+
 	<div class="mb-2 d-flex align-items-center">
 		<h2>Display Associated Color profiles</h2>
 		<div class="d-flex ms-auto">
@@ -319,5 +326,20 @@ else
 		}
 
 		await SelectedDisplayChanged();
+	}
+
+	private async Task AfterUsePerUseSettings()
+	{
+		if (SelectedDisplay == null)
+		{
+			return;
+		}
+
+		var result = await _rpcClientService.CallAsync<bool>("ColorProfileService", "SetUsePerUserDisplayProfiles", SelectedDisplay.DeviceName, SelectedDisplay.UsePerUserSettings);
+
+		if (result)
+		{
+			await RefreshDisplays();
+		}
 	}
 }

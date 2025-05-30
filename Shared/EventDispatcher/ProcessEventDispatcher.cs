@@ -1,8 +1,7 @@
-﻿using ColorControl.Shared.Common;
-using ColorControl.Shared.Forms;
-using ColorControl.Shared.Services;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Management;
+using ColorControl.Shared.Common;
+using ColorControl.Shared.Forms;
 
 namespace ColorControl.Shared.EventDispatcher;
 

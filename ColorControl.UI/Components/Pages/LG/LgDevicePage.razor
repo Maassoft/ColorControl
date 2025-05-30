@@ -3,14 +3,13 @@
 @using ColorControl.UI.Services
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common
+@using ColorControl.UI.Components.Pages.Generic
 
 @rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
-@inject AppState AppState
-@inject NavigationManager _navigationManager;
 
-<div class="modal" id="deviceModal" tabindex="-1">
+<div class="modal" id="lgDeviceModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -73,7 +72,7 @@
 
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#deviceOptions">
+                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#deviceOptions">
                                     Device options
                                 </button>
                             </h2>
@@ -165,12 +164,18 @@
                 </form>
             </div>
             <div class="modal-footer">
+                @if (Device?.IsCustom == true)
+                {
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#removeDeviceModal">Remove</button>
+                }
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="ApplyClick">Save</button>
             </div>
         </div>
     </div>
 </div>
+
+<ConfirmModal ModalId="removeDeviceModal" Title="Remove device" Message="Are you sure you want to remove this device?" OnConfirm="DeviceOnRemoveConfirmed" NextModalId="lgDeviceModal" />
 
 @code {
     private LgDeviceDto? _device;
@@ -201,6 +206,21 @@
         }
 
         var result = await _rpcClientService.CallAsync<bool>("LgService", "UpdateDevice", Device);
+
+        if (AfterApply != null)
+        {
+            await AfterApply.Invoke(Device);
+        }
+    }
+
+    private async Task DeviceOnRemoveConfirmed()
+    {
+        if (Device == null)
+        {
+            return;
+        }
+
+        var result = await _rpcClientService.CallAsync<bool>("LgService", "RemoveDevice", Device);
 
         if (AfterApply != null)
         {

@@ -4,8 +4,6 @@
 
 @rendermode Constants.RenderMode
 
-@inject NavigationManager _navigationManager;
-
 @if (Fields == null)
 {
     return;
@@ -106,16 +104,7 @@
     {
         var fieldId = $"fld_{Random.Shared.Next()}";
 
-        <div class="mb-2">
-            <label class="form-range" for="@fieldId">@field.Label (Current value: @field.IntValue)</label>
-            <input class="form-range" type="range" min="@((int)field.MinValue)" max="@((int)field.MaxValue)" @bind="field.IntValue" id="@fieldId">
-            @if (field.SubLabel != null)
-            {
-                <div id="@(fieldId)_help" class="form-text">
-                    @field.SubLabel
-                </div>
-            }
-        </div>
+        <RangeInput TValue="int" @bind-Value="field.IntValue" Id="@fieldId" Label="@field.Label" Min="@((int)field.MinValue)" Max="@((int)field.MaxValue)" SubLabel="@field.SubLabel" />
     }
 }
 

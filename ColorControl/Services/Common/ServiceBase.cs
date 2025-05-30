@@ -245,6 +245,7 @@ namespace ColorControl.Services.Common
 
                         // Hack to convert incorrect triggers
                         json = json.Replace(@"""Triggers"":0", @"""Triggers"":[]");
+                        json = json.Replace(@"""steps"":[", @"""Steps"":[");
 
                         _presets = JsonConvert.DeserializeObject<List<T>>(json, _jsonConverters.ToArray());
 
@@ -281,10 +282,7 @@ namespace ColorControl.Services.Common
                 Logger.Error($"General error while loading presets, reverting to empty list: {ex.Message}");
                 _loadPresetsError = ex.Message;
             }
-            if (_presets == null)
-            {
-                _presets = new List<T>();
-            }
+            _presets ??= [];
 
             AfterPresetsLoaded();
         }

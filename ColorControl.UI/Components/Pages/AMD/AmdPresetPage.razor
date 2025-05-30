@@ -48,7 +48,7 @@
                                             {
                                                 <input class="form-check-input me-1" style="font-size: 1rem; visibility: hidden" type="checkbox">
                                             }
-                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
+                                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
                                                 Display
                                             </button>
                                         </span>
@@ -264,10 +264,7 @@
                                                 </label>
                                             </div>
                                         }
-                                        <div class="mb-2">
-                                            <label class="form-range" for="sdrBrightness">SDR brightness (@Preset.SDRBrightness%)</label>
-                                            <input class="form-range" type="range" min="0" max="100" @bind="Preset.SDRBrightness" id="sdrBrightness">
-                                        </div>
+                                        <NullableRangeInput TValue="int" @bind-Value="Preset.SDRBrightness" Id="sdrBrightness" Label="SDR brightness" Unit="%" />
                                     </div>
                                 </div>
                             </div>

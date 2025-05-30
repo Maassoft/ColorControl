@@ -26,7 +26,8 @@ namespace ColorControl.Services.LG
     {
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static string LgListAppsJson = "listApps.json";
+        public const string LgListAppsJson = "listApps.json";
+        public const string RemotesFilename = "LgRemotes.json";
 
         public override string ServiceName => "LG";
 
@@ -67,6 +68,9 @@ namespace ColorControl.Services.LG
         private readonly WinApiAdminService _winApiAdminService;
         private LgGameBar _gameBarForm;
 
+        private List<LgRcDto> _remotes;
+        private string _remotesFilename;
+
         public ProcessChangedEventArgs CurrentProcessEvent => _processEventDispatcher?.MonitorContext;
 
         public static readonly int SHORTCUTID_LGQA = -202;
@@ -99,6 +103,75 @@ namespace ColorControl.Services.LG
             LoadConfig();
             LoadPresets();
             LoadRemoteControlButtons();
+            LoadRemotes();
+        }
+
+        private void LoadRemotes()
+        {
+            _remotesFilename = Path.Combine(_dataPath, RemotesFilename);
+
+            try
+            {
+                var remotesExists = File.Exists(_remotesFilename);
+                if (remotesExists)
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(_remotesFilename);
+
+                        _remotes = JsonConvert.DeserializeObject<List<LgRcDto>>(json);
+                    }
+                    catch (Exception ex1)
+                    {
+                        Logger.Error($"Error while loading remotes, reverting to default remotes: {ex1.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"General error while loading remotes, reverting to empty list: {ex.Message}");
+            }
+
+            _remotes ??= [];
+
+            var defaultRemotes = GetDefaultRemotes();
+
+            _remotes.AddRange(defaultRemotes.Where(r => !_remotes.Any(sr => sr.Name == r.Name)));
+        }
+
+        protected static List<LgRcDto> GetDefaultRemotes()
+        {
+            var json = Utils.GetResourceFile("LgRemotes.json");
+
+            return JsonConvert.DeserializeObject<List<LgRcDto>>(json);
+        }
+
+        public List<LgRcDto> GetRemotes()
+        {
+            return _remotes;
+        }
+
+        public bool UpdateRemote(LgRcDto remoteSpec)
+        {
+            var remote = _remotes.FirstOrDefault(r => r.Name == remoteSpec.Name);
+
+            if (remote != null)
+            {
+                remote.Update(remoteSpec);
+            }
+            else
+            {
+                _remotes.Add(remoteSpec);
+            }
+
+            GlobalSave();
+
+            return true;
+        }
+
+        public void DeleteRemote(string remoteName)
+        {
+            _remotes.RemoveAll(r => r.Name == remoteName);
         }
 
         private string LgPreset_GetAppName(string appId)
@@ -175,6 +248,7 @@ namespace ColorControl.Services.LG
             SaveConfig();
             SavePresets();
             SaveRemoteControlButtons();
+            Utils.WriteObject(_remotesFilename, _remotes);
 
             SendConfigToService();
         }
@@ -297,7 +371,7 @@ namespace ColorControl.Services.LG
             preset.shortcut = shortcut;
             if (appId == null)
             {
-                preset.steps.Add(step == null ? name : step);
+                preset.Steps.Add(step == null ? name : step);
             }
 
             return preset;
@@ -323,7 +397,7 @@ namespace ColorControl.Services.LG
             {
                 var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey);
+                var pnpDevices = Utils.GetPnpDevices(Config.DeviceSearchKey);
 
                 var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new LgDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
                 var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
@@ -370,13 +444,11 @@ namespace ColorControl.Services.LG
                 }
                 else
                 {
-                    if (afterStartUp)
+                    var connectTask = SelectedDevice.Connect(afterStartUp ? 3 : 1);
+
+                    if (!afterStartUp)
                     {
-                        var _ = SelectedDevice.Connect();
-                    }
-                    else
-                    {
-                        return await SelectedDevice.Connect(1);
+                        return await connectTask;
                     }
                 }
             }
@@ -1267,9 +1339,28 @@ namespace ColorControl.Services.LG
             return true;
         }
 
+        public bool RemoveDevice(LgDeviceDto deviceDto)
+        {
+            if (deviceDto == null)
+            {
+                return false;
+            }
+
+            var device = MatchDevice(deviceDto);
+            if (device?.IsCustom != true)
+            {
+                return false;
+            }
+
+            RemoveCustomDevice(device);
+
+            return true;
+        }
+
         private LgDevice MatchDevice(LgDeviceDto deviceDto)
         {
-            return Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress);
+            return Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress && d.IpAddress == deviceDto.IpAddress) ??
+                   Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress);
         }
     }
 }

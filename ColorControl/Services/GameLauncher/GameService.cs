@@ -89,7 +89,9 @@ namespace ColorControl.Services.GameLauncher
 
         private Task<bool> HandleStartedProcess(Process process)
         {
-            GamePreset preset;
+            GamePreset preset = null;
+
+            var presets = _presets.Where(p => p.AutoSettings.AllowAutoApply);
 
             if (_winApiService.IsAdministrator())
             {
@@ -102,15 +104,16 @@ namespace ColorControl.Services.GameLauncher
 
                 var fileName = mainModule.FileName;
 
-                preset = _presets.FirstOrDefault(p => fileName.Contains(Path.GetDirectoryName(p.Path), System.StringComparison.OrdinalIgnoreCase));
-            }
-            else
-            {
-                var name = process.ProcessName.Replace("-Win64-Shipping", "");
-                preset = _presets.FirstOrDefault(p => Path.GetFileName(p.Path).Contains(name, System.StringComparison.OrdinalIgnoreCase));
+                preset = presets.FirstOrDefault(p => !Path.GetDirectoryName(p.Path).Equals("") && fileName.Contains(Path.GetDirectoryName(p.Path), System.StringComparison.OrdinalIgnoreCase));
             }
 
-            if (preset == null || !preset.AutoSettings.AllowAutoApply)
+            if (preset == null)
+            {
+                var name = process.ProcessName.Replace("-Win64-Shipping", "");
+                preset = presets.FirstOrDefault(p => Path.GetFileName(p.Path).Contains(name, System.StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (preset == null)
             {
                 return Task.FromResult(false);
             }

@@ -1,4 +1,5 @@
-﻿using nspector.Common.Helper;
+﻿using ColorControl.Shared.Contracts.NVIDIA;
+using nspector.Common.Helper;
 using nspector.Common.Meta;
 using nspector.Native.NVAPI2;
 using System.Diagnostics;
@@ -227,9 +228,9 @@ namespace nspector.Common
             return name;
         }
 
-        public List<string> GetProfileNamesByApps(List<string> appNames)
+        public List<NvProfile> GetProfileNamesByApps(List<string> appNames)
         {
-            var profileNames = new List<string>();
+            var profiles = new List<NvProfile>();
 
             DrsSession((hSession) =>
             {
@@ -238,15 +239,22 @@ namespace nspector.Common
                 {
                     var apps = GetProfileApplications(hSession, hProfile, true);
 
-                    if (apps?.Any(a => appNames.Any(pn => a.appName.Equals(pn, StringComparison.OrdinalIgnoreCase))) == true)
+                    if (apps?.Any(a => appNames.Any(pn => a.appName.Contains(pn, StringComparison.OrdinalIgnoreCase))) == true)
                     {
                         var profile = GetProfileInfo(hSession, hProfile);
-                        profileNames.Add(profile.profileName);
+
+                        var nvProfile = new NvProfile
+                        {
+                            Name = profile.profileName,
+                            Apps = apps.Select(a => a.appName).ToList()
+                        };
+
+                        profiles.Add(nvProfile);
                     }
                 }
             });
 
-            return profileNames;
+            return profiles;
         }
 
         public void CreateProfile(string profileName, string? applicationName = null)

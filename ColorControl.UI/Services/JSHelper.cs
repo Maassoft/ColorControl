@@ -2,6 +2,14 @@
 
 namespace ColorControl.UI.Services;
 
+public class RectDimension
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
+}
+
 public class JSHelper(IJSRuntime jsRuntime)
 {
     private IJSObjectReference? jsModule;
@@ -24,6 +32,20 @@ public class JSHelper(IJSRuntime jsRuntime)
     public async Task ShowToast(string id)
     {
         await InvokeVoidAsync("ShowToast", id);
+    }
+
+    public async Task<RectDimension> GetElementDimensions(string id)
+    {
+        jsModule = await LoadModule();
+
+        return await jsModule.InvokeAsync<RectDimension>("GetElementDimensions", id);
+    }
+
+    public async Task<string> GetElementClassName(string id)
+    {
+        jsModule = await LoadModule();
+
+        return await jsModule.InvokeAsync<string>("GetElementClassName", id);
     }
 
     private async ValueTask<T> InvokeAsync<T>(string identifier, params object?[]? names) where T : struct

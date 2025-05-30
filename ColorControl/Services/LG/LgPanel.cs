@@ -184,7 +184,7 @@ namespace ColorControl.Services.LG
                 var lgApps = _lgService?.GetApps();
                 cbxLgApps.SelectedIndex = lgApps == null ? -1 : lgApps.FindIndex(x => x.appId.Equals(preset.appId));
                 edtShortcutLg.Text = preset.shortcut;
-                edtStepsLg.Text = preset.steps.Aggregate("", (a, b) => (string.IsNullOrEmpty(a) ? "" : a + ", ") + b);
+                edtStepsLg.Text = preset.Steps.Aggregate("", (a, b) => (string.IsNullOrEmpty(a) ? "" : a + ", ") + b);
 
                 var index = -1;
 
@@ -291,7 +291,7 @@ namespace ColorControl.Services.LG
 
             var text = edtStepsLg.Text;
 
-            Utils.ParseWords(preset.steps, text);
+            Utils.ParseWords(preset.Steps, text);
 
             AddOrUpdateItemLg();
 

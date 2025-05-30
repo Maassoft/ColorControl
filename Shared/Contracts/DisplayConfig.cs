@@ -29,6 +29,7 @@ public class DisplayConfig
         RefreshRate = new Rational(displayConfig.RefreshRate.Numerator, displayConfig.RefreshRate.Denominator);
         Scaling = displayConfig.Scaling;
         Rotation = displayConfig.Rotation;
+        IsPrimary = displayConfig.IsPrimary;
     }
 
     public string GetResolutionDesc()

@@ -9,8 +9,6 @@
 @rendermode Constants.RenderMode
 
 @inject RpcUiClientService _rpcClientService
-@inject AppState AppState
-@inject NavigationManager _navigationManager;
 
 <div class="modal" id="presetModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalOnFocus">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
@@ -74,7 +72,7 @@
                                 </h2>
                                 <div id="steps" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
                                     <div class="accordion-body">
-                                        <StepsInput Label="Steps" @bind-Steps="Preset.steps" CustomItems="CustomItems" ActionItems="CustomActions" LgPresetsEnabled="false" TPreset="LgPreset"></StepsInput>
+                                        <StepsInput Label="Steps" @bind-Steps="Preset.Steps" CustomItems="CustomItems" ActionItems="CustomActions" LgPresetsEnabled="false" TPreset="LgPreset"></StepsInput>
                                         <div class="mb-2">
                                             <label class="form-label" for="description">Description</label>
                                             <textarea class="form-control" id="description" type="text" @bind="Preset.Description" />

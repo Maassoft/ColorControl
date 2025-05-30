@@ -18,6 +18,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Shared\Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Update="frmBitEditor.cs">
 			<SubType>Form</SubType>
 		</Compile>

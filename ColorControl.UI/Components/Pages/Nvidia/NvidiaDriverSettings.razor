@@ -1,5 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Services;
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
@@ -26,14 +27,14 @@
             <div class="modal-body">
                 <form class="row g-1">
 
-                    @if (ProfileNames != null)
+                    @if (Profiles != null)
                     {
                         <div class="mb-2">
                             <label class="form-label" for="profileName">Profile</label>
                             <select class="form-select" id="profileName" @bind="CurrentProfileName" @bind:after="ProfileOnChange">
-                                @foreach (var profileName in ProfileNames)
+                                @foreach (var profile in Profiles)
                                 {
-                                    <option value="@profileName">@profileName</option>
+                                    <option value="@profile.Name" title="@string.Join(", ", profile.Apps)">@profile.Name</option>
                                 }
                             </select>
                         </div>
@@ -64,10 +65,8 @@
                                             {
                                                 if (NvSettingConstants.RangeDriverSettings.Contains(setting.SettingId) && setting.Values != null)
                                                 {
-                                                    <div class="mb-2">
-                                                        <label class="form-label @(setting.Value != setting.DefaultValue && setting.Value != NvSettingConstants.UnsetDwordValue ? "text-warning fw-bold" : "")" for="@setting.SettingId">@setting.SettingText (@setting.Value)</label>
-                                                        <input class="form-range" type="range" min="@setting.Values.Min(v => v.Value)" max="@setting.Values.Max(v => v.Value)" @bind="setting.Value" id="@setting.SettingId">
-                                                    </div>
+                                                    <RangeInput TValue="uint" @bind-Value="setting.Value" Id="@setting.SettingId.ToString()" Label="@setting.SettingText" Values="setting.Values.Select(v => v.Value).ToList()"
+                                                        LabelStylingFunc="value => RangeLabelStyleFunc(value, setting)" />
                                                 }
                                                 else if (setting.Values != null)
                                                 {
@@ -137,7 +136,7 @@
 
     private List<GroupedSettings>? Groups { get; set; }
     private List<NvSettingItemDto>? DriverSettings { get; set; }
-    private List<string>? ProfileNames { get; set; }
+    private List<NvProfile>? Profiles { get; set; }
     private string? CurrentProfileName { get; set; }
 
     private bool IsVisible { get; set; }
@@ -244,7 +243,7 @@
 
     private async Task OnlyFoundProgramsOnChange()
     {
-        ProfileNames = await _rpcClientService.CallAsync<List<string>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
+        Profiles = await _rpcClientService.CallAsync<List<NvProfile>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
     }
 
     private async Task OnFocus(FocusEventArgs e)
@@ -252,8 +251,18 @@
         if (!IsVisible)
         {
             IsVisible = true;
-            ProfileNames ??= await _rpcClientService.CallAsync<List<string>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
+            Profiles ??= await _rpcClientService.CallAsync<List<NvProfile>>("NvService", "GetDriverProfileNames", OnlyFoundPrograms);
             await LoadDriverSettings();
         }
+    }
+
+    private void RangeOnChange(ChangeEventArgs eventArgs, NvSettingItemDto s)
+    {
+        s.Value = uint.Parse(eventArgs.Value?.ToString() ?? "0");
+    }
+
+    private string RangeLabelStyleFunc(uint value, NvSettingItemDto setting) 
+    {
+       return value != setting.DefaultValue && value != NvSettingConstants.UnsetDwordValue ? "text-warning fw-bold" : "";
     }
 }

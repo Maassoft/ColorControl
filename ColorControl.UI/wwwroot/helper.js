@@ -15,3 +15,11 @@ export function ShowToast(toastId) {
     const toastBootstrap = bootstrap.Toast.getOrCreateInstance('#' + toastId);
     toastBootstrap?.show();
 }
+
+export function GetElementDimensions(elementId) {
+    return document.getElementById(elementId).getBoundingClientRect();
+}
+
+export function GetElementClassName(elementId) {
+    return document.getElementById(elementId).className;
+}

@@ -19,7 +19,8 @@
 			<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 			</button>
 			<ul class="dropdown-menu">
-				@foreach (var modifier in Modifiers) {
+				@foreach (var modifier in Modifiers)
+				{
 					<li>
 						<a class="dropdown-item" @onclick="() => ModifierOnClick(modifier.Key)">
 							<input class="form-check-input me-2" type="checkbox" id="flexCheckChecked" checked="@modifier.Value" @onchange="(e) => ModifierKeyChanged(e, modifier.Key)">@modifier.Key
@@ -44,9 +45,9 @@
 	private Dictionary<string, bool> Modifiers = new() {
 		{ "Shift", false },
 		{ "Control", false },
-        { "Alt", false },
-        { "Win", false }
-    };
+		{ "Alt", false },
+		{ "Win", false }
+	};
 
 	protected override void OnParametersSet()
 	{

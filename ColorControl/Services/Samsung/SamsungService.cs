@@ -44,7 +44,12 @@ namespace ColorControl.Services.Samsung
         private List<SamsungApp> _samsungApps = new List<SamsungApp>();
         private Shared.Common.GlobalContext _appContext;
 
+        public const string RemotesFilename = "SamsungRemotes.json";
+
         public List<SamsungDevice> Devices { get; private set; }
+
+        private List<SamsungRcDto> _samsungRemotes;
+        private string _remotesFilename;
 
         public static readonly int SHORTCUTID_SAMSUNGQA = -204;
 
@@ -71,6 +76,75 @@ namespace ColorControl.Services.Samsung
 
             LoadConfig();
             LoadPresets();
+            LoadRemotes();
+        }
+
+        private void LoadRemotes()
+        {
+            _remotesFilename = Path.Combine(_dataPath, RemotesFilename);
+
+            try
+            {
+                var remotesExists = File.Exists(_remotesFilename);
+                if (remotesExists)
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(_remotesFilename);
+
+                        _samsungRemotes = JsonConvert.DeserializeObject<List<SamsungRcDto>>(json);
+                    }
+                    catch (Exception ex1)
+                    {
+                        Logger.Error($"Error while loading remotes, reverting to default remotes: {ex1.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"General error while loading remotes, reverting to empty list: {ex.Message}");
+            }
+
+            _samsungRemotes ??= [];
+
+            var defaultRemotes = GetDefaultRemotes();
+
+            _samsungRemotes.AddRange(defaultRemotes.Where(r => !_samsungRemotes.Any(sr => sr.Name == r.Name)));
+        }
+
+        protected static List<SamsungRcDto> GetDefaultRemotes()
+        {
+            var json = Utils.GetResourceFile("SamsungRemotes.json");
+
+            return JsonConvert.DeserializeObject<List<SamsungRcDto>>(json);
+        }
+
+        public List<SamsungRcDto> GetRemotes()
+        {
+            return _samsungRemotes;
+        }
+
+        public bool UpdateRemote(SamsungRcDto remoteSpec)
+        {
+            var remote = _samsungRemotes.FirstOrDefault(r => r.Name == remoteSpec.Name);
+
+            if (remote != null)
+            {
+                remote.Update(remoteSpec);
+            }
+            else
+            {
+                _samsungRemotes.Add(remoteSpec);
+            }
+
+            GlobalSave();
+
+            return true;
+        }
+
+        public void DeleteRemote(string remoteName)
+        {
+            _samsungRemotes.RemoveAll(r => r.Name == remoteName);
         }
 
         private string SamsungPreset_GetDeviceName(string macAddress)
@@ -90,7 +164,7 @@ namespace ColorControl.Services.Samsung
             {
                 var samsungService = Program.ServiceProvider.GetRequiredService<SamsungService>();
 
-                await samsungService.RefreshDevices(afterStartUp: true);
+                await samsungService.RefreshDevices(connect: false, afterStartUp: true);
 
                 var result = await samsungService.ApplyPreset(presetName);
 
@@ -265,7 +339,7 @@ namespace ColorControl.Services.Samsung
             {
                 var customIpAddresses = Devices.Where(d => d.IsCustom).Select(d => d.IpAddress);
 
-                var pnpDevices = await Utils.GetPnpDevices(Config.DeviceSearchKey, Utils.DEV_CLASS_DISPLAY_TV_LCD);
+                var pnpDevices = Utils.GetPnpDevices(Config.DeviceSearchKey, Utils.DEV_CLASS_DISPLAY_TV_LCD);
 
                 var autoDevices = pnpDevices.Where(p => !customIpAddresses.Contains(p.IpAddress)).Select(d => new SamsungDevice(d.Name, d.IpAddress, d.MacAddress, false)).ToList();
                 var autoIpAddresses = pnpDevices.Select(d => d.IpAddress);
@@ -308,7 +382,12 @@ namespace ColorControl.Services.Samsung
                 }
                 else
                 {
-                    var _ = SelectedDevice.ConnectAsync();
+                    var connectTask = SelectedDevice.ConnectAsync();
+
+                    if (!afterStartUp)
+                    {
+                        return await connectTask;
+                    }
                 }
             }
 
@@ -341,6 +420,7 @@ namespace ColorControl.Services.Samsung
         {
             SavePresets();
             SaveConfig();
+            Utils.WriteObject(_remotesFilename, _samsungRemotes);
         }
 
         public SamsungDevice GetPresetDevice(SamsungPreset preset)
@@ -965,6 +1045,30 @@ namespace ColorControl.Services.Samsung
             SelectedDevice = device;
 
             return true;
+        }
+
+        public bool RemoveDevice(SamsungDeviceDto deviceDto)
+        {
+            if (deviceDto == null)
+            {
+                return false;
+            }
+
+            var device = MatchDevice(deviceDto);
+            if (device?.IsCustom != true)
+            {
+                return false;
+            }
+
+            RemoveCustomDevice(device);
+
+            return true;
+        }
+
+        private SamsungDevice MatchDevice(SamsungDeviceDto deviceDto)
+        {
+            return Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress && d.IpAddress == deviceDto.IpAddress) ??
+                   Devices?.FirstOrDefault(d => string.IsNullOrEmpty(deviceDto.MacAddress) ? d.IpAddress == deviceDto.IpAddress : d.MacAddress == deviceDto.MacAddress);
         }
     }
 }

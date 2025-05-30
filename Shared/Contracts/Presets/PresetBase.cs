@@ -185,6 +185,7 @@ public abstract class PresetBase
     public string name { get; set; }
     public string shortcut { get; set; }
     public List<PresetTrigger> Triggers { get; set; }
+    public List<string> Steps { get; set; }
     public string Description { get; set; }
     public bool ShowInQuickAccess { get; set; }
     public DateTime? LastUsed { get; set; }
@@ -194,7 +195,8 @@ public abstract class PresetBase
 
     protected PresetBase()
     {
-        Triggers = new List<PresetTrigger>();
+        Triggers = [];
+        Steps = [];
     }
 
     public int id
@@ -288,5 +290,10 @@ public abstract class PresetBase
         }
 
         return Triggers.First();
+    }
+
+    public void SetSteps(List<string> steps)
+    {
+        Steps = steps;
     }
 }

@@ -12,22 +12,21 @@
 @if (Label != null && Steps != null)
 {
     var index = 0;
-    
+
     <div class="mb-2">
         <div class="d-flex align-items-center">
             <label class="form-label" for="name">@Label</label>
             <div class="d-flex ms-auto">
-                @if (NvPresets != null || SamsungPresets != null || CustomItems != null)
+                @if (NvPresets != null || SamsungPresets != null || LgPresets != null || CustomItems != null)
                 {
                     <div class="dropdown dropend mb-1">
                         <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">Add</button>
-                        <form class="dropdown-menu p-4 dropdown-menu-end" style="width: 200px">
+                        <form class="dropdown-menu p-4 dropdown-menu-end" style="width: 360px">
                             @if (NvPresets != null && NvPresetsEnabled)
                             {
                                 <div class="mb-2">
                                     <label class="form-label" for="nvPreset">NVIDIA preset</label>
-                                    <select class="form-select" id="nvPreset" @bind="NvPresetToAddId">
-                                        <option value="">Select preset</option>
+                                    <select class="form-select" multiple id="nvPreset" @onchange="NvPresetChange">
                                         @foreach (var preset in NvPresets)
                                         {
                                             <option value="@preset.id">@preset.IdOrName</option>
@@ -77,6 +76,9 @@
                                     </div>
                                 }
                             }
+
+                            <StartProgramInput @bind-Path="StartProgramPath" @bind-Parameters="StartProgramParameters"></StartProgramInput>
+
                             @if (ActionItems != null)
                             {
                                 foreach (var customItem in ActionItems)
@@ -85,15 +87,15 @@
                                         <label class="form-label" for="advancedCustomItem">@customItem.Name</label>
                                         <select class="form-select" id="advancedCustomItem" @bind="customItem.SelectedActionName" @bind:after="() => AdvancedItemChanged(customItem)">
                                             <option value="">Select action</option>
-                                                @foreach (var keyValue in customItem.GroupedActions)
-                                                {
-                                                    <optgroup label="@keyValue.Key">
-                                                        @foreach (var item in keyValue.Value)
-                                                        {
-                                                            <option value="@item.Name">@item.Title</option>
-                                                        }
-                                                    </optgroup>
-                                                }
+                                            @foreach (var keyValue in customItem.GroupedActions)
+                                            {
+                                                <optgroup label="@keyValue.Key">
+                                                    @foreach (var item in keyValue.Value)
+                                                    {
+                                                        <option value="@item.Name">@item.Title</option>
+                                                    }
+                                                </optgroup>
+                                            }
                                         </select>
                                     </div>
                                     <FieldDefs Fields="ActionFields"></FieldDefs>
@@ -126,10 +128,7 @@
                                 <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="dropdown" title="Move right" disabled="@(stepIndex == PresetSteps.Count - 1)" @onclick="() => MoveRightOnClick(stepIndex)">&gt;</button>
                                 <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="dropdown" @onclick="() => RemoveOnClick(stepIndex)">Remove</button>
                             </div>
-                            <div class="mb-2">
-                                <label class="form-label" for="delay">Delay (@(step.Delay)ms)</label>
-                                <input class="form-range" id="delay" type="range" min="0" max="10000" step="50" @bind="step.Delay" @bind:after="() => AfterDelayChanged()">
-                            </div>
+                            <RangeInput TValue="int" @bind-Value="step.Delay" Id="delay" Label="Delay" Unit="ms" Max="10000" @bind-Value:after="() => AfterDelayChanged()" />
                         </form>
 
                         index++;
@@ -212,7 +211,6 @@
     private List<SamsungPreset>? SamsungPresets { get; set; }
     private List<LgPreset>? LgPresets { get; set; }
 
-    private int? NvPresetToAddId { get; set; }
     private int? SamsungPresetToAddId { get; set; }
     private int? LgPresetToAddId { get; set; }
 
@@ -221,6 +219,11 @@
     private string? RawText;
 
     private List<FieldDefinition>? ActionFields;
+
+    private string? StartProgramPath;
+    private string? StartProgramParameters;
+
+    private List<int> NvPresetsToAdd = [];
 
     protected override void OnParametersSet()
     {
@@ -295,7 +298,7 @@
 
     private async Task AddPresetOnClick()
     {
-        AddPreset(NvPresets, "NvPreset", NvPresetToAddId);
+        NvPresetsToAdd.ForEach(id => AddPreset(NvPresets, "NvPreset", id));
         AddPreset(SamsungPresets, "SamsungPreset", SamsungPresetToAddId);
         AddPreset(LgPresets, "LgPreset", LgPresetToAddId);
 
@@ -328,6 +331,8 @@
             }
         }
 
+        AddStartProgram();
+
         await EmitSteps();
     }
 
@@ -341,6 +346,22 @@
         }
 
         PresetSteps.Add(PresetStep.Parse($"{type}({preset.name})"));
+    }
+
+    private void AddStartProgram()
+    {
+        if (string.IsNullOrWhiteSpace(StartProgramPath))
+        {
+            return;
+        }
+
+        var path = StartProgramPath;
+        if (!string.IsNullOrWhiteSpace(StartProgramParameters))
+        {
+            path += $"; {string.Join("; ", StartProgramParameters.Split(' '))}";
+        }
+
+        PresetSteps.Add(PresetStep.Parse($"StartProgram({path})"));
     }
 
     private async Task EmitSteps()
@@ -426,5 +447,14 @@
         }
 
         return field;
+    }
+
+    private void NvPresetChange(ChangeEventArgs eventArgs)
+    {
+        if (eventArgs.Value is IEnumerable<string> items)
+        {
+            NvPresetsToAdd.Clear();
+            NvPresetsToAdd.AddRange(items.Select(i => int.Parse(i)));
+        }
     }
 }

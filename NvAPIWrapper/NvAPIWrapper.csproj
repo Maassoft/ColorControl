@@ -17,7 +17,6 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<Title>NvAPIWrapper (for NVAPI 410)</Title>
 		<PackageId>NvAPIWrapper.Net</PackageId>
-		<AssemblyOriginatorKeyFile>OpenSourceStrongNameSignKey.pfx</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<OutputPath>..\Debug</OutputPath>

@@ -4,6 +4,7 @@
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
 @using ColorControl.Shared.Contracts.Samsung
+@using ColorControl.UI.Components.Pages.RemoteControl
 @using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
@@ -22,6 +23,9 @@
 <div class="d-flex align-items-center">
 	<h1>Samsung controller</h1>
 	<div class="d-flex ms-auto">
+		<button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="offcanvas" data-bs-target="#rcCanvasRight" aria-controls="rcCanvasRight">
+			Remote control
+		</button>
 		<div class="btn-group">
 			<button type="button" class="btn btn-sm btn-primary dropdown-toggle me-2" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
 				Buttons
@@ -62,6 +66,16 @@
 	</div>
 </div>
 
+<div class="offcanvas offcanvas-end" style="width: 280px" data-bs-scroll="true" tabindex="-1" id="rcCanvasRight" aria-labelledby="rcCanvasRightRightLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="rcCanvasRightRightLabel">Remote control</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<GenericRcPage ServiceName="SamsungService" Device="CurrentDevice" TDevice="SamsungDeviceDto" TPreset="SamsungPreset" TButtonEnum="ButtonType"></GenericRcPage>
+	</div>
+</div>
+
 <SamsungDevicePage Device="CurrentDevice" AfterApply="AfterDeviceApplied" />
 <SamsungPresetPage PresetParam="CurrentPreset" Devices="Devices" AfterApply="AfterPresetApplied" />
 <ConfirmModal Title="Delete preset" Message="Are you sure you want to delete the preset?" OnConfirm="PresetOnDeleteConfirmed" />
@@ -82,7 +96,7 @@ else
 				}
 				<span role="status">Refresh</span>
 			</button>
-			<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#deviceModal" @onclick="() => AddDeviceOnClick()">
+			<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#samsungDeviceModal" @onclick="() => AddDeviceOnClick()">
 				Add
 			</button>
 		</div>
@@ -117,7 +131,7 @@ else
 							{
 								<button class="btn btn-sm btn-secondary ms-2" @onclick="() => SetAsPrimaryOnClick(device)">Set as primary</button>
 							}
-							<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#deviceModal" @onclick="() => DeviceOnClick(device)">
+							<button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#samsungDeviceModal" @onclick="() => DeviceOnClick(device)">
 								Settings
 							</button>
 						</div>
@@ -210,6 +224,7 @@ else
 		Config = await _rpcClientService.CallAsync<SamsungServiceConfigDto>("SamsungService", "GetConfig");
 		await RefreshPresets();
 		Devices = await _rpcClientService.CallAsync<List<SamsungDeviceDto>>("SamsungService", "GetDevices");
+		CurrentDevice = Devices?.FirstOrDefault(d => d.MacAddress == Config?.PreferredMacAddress) ?? Devices?.FirstOrDefault();
 		InvokableActions = await _rpcClientService.CallAsync<List<InvokableActionDto<SamsungPreset>>>("SamsungService", "GetInvokableActions");
 	}
 

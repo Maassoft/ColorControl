@@ -4,7 +4,7 @@
 
 @rendermode Constants.RenderMode
 
-<FieldsModal ModalId="@ModalId" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick"></FieldsModal>
+<FieldsModal ModalId="@ModalId" Fields="Fields" Title="@Title" OnConfirm="ConfirmClick" NextModalId="@NextModalId"></FieldsModal>
 
 @code {
     [Parameter]
@@ -18,6 +18,9 @@
 
     [Parameter]
     public string ModalId { get; set; } = "confirmModal";
+
+    [Parameter]
+    public string? NextModalId { get; set; }
 
     [Parameter]
     public List<FieldDefinition>? ExtraFields { get; set; }

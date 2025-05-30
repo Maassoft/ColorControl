@@ -134,13 +134,9 @@ else
                 <div class="card-body">
                     <h5 class="card-title">Advanced</h5>
                     <form>
-                        <div class="mb-3 form-check">
-                            <label class="form-range" for="processMonitorPollingInterval">
-                                Polling interval of process monitor (@config.ProcessMonitorPollingInterval milliseconds)
-                            </label>
-                            <input class="form-range" type="range" min="50" max="10000" step="50" @bind="config.ProcessMonitorPollingInterval" id="processMonitorPollingInterval" aria-describedby="processMonitorPollingIntervalHelp" @bind:after="PollingIntervalOnInput">
-                            <div id="processMonitorPollingIntervalHelp" class="form-text">Decreasing this delay may execute triggered presets sooner but can cause a higher CPU load</div>
-                        </div>
+                        <RangeInput TValue="int" Min="50" Max="10000" Step="50" @bind-Value="config.ProcessMonitorPollingInterval" Id="processMonitorPollingInterval" Label="Polling interval of process monitor" Unit=" milliseconds"
+                            SubLabel="Decreasing this delay may execute triggered presets sooner but can cause a higher CPU load"
+                        />
                         <div class="mb-3 form-check">
                             <input class="form-check-input" type="checkbox" @bind="config.UseRawInput" id="useRawInput" aria-describedby="useRawInputHelp" @oninput="UseRawInputInput">
                             <label class="form-check-label" for="useRawInput">

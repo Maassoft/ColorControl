@@ -1,12 +1,12 @@
-﻿using ColorControl.Shared.Contracts;
+﻿using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using ColorControl.Shared.Contracts;
 using ColorControl.Shared.Forms;
 using MHC2Gen;
 using NStandard;
 using NWin32;
-using System.ComponentModel;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace ColorControl.Shared.Native
 {
@@ -357,6 +357,12 @@ namespace ColorControl.Shared.Native
 
         public static bool SetDisplayDefaultColorProfile(string displayName, string profileName, bool fixMaxTML = true, bool isHdrColorProfile = false)
         {
+            var usePerUser = GetUsePerUserDisplayProfiles(displayName);
+            if (!usePerUser)
+            {
+                SetUsePerUserDisplayProfiles(displayName, true);
+            }
+
             var adapterId = GetAdapterId(displayName);
             var sourceId = GetSourceId(displayName);
 
@@ -754,7 +760,27 @@ namespace ColorControl.Shared.Native
             );
         }
 
-        public static DISPLAYCONFIG_SOURCE_DPI_SCALE_GET GetScaling(string displayName = null)
+        public static readonly uint[] DpiValues = [100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 450, 500];
+
+        public static uint GetDpiScalingInPercentage(string displayName = null)
+        {
+            var dpiInfo = GetDpiScaling(displayName);
+
+            var dpiIndex = Math.Abs(dpiInfo.minScaleRel) + dpiInfo.curScaleRel;
+
+            if (dpiIndex < 0)
+            {
+                dpiIndex = 0;
+            }
+            else if (dpiIndex >= DpiValues.Length)
+            {
+                dpiIndex = DpiValues.Length - 1;
+            }
+
+            return DpiValues[dpiIndex];
+        }
+
+        public static DISPLAYCONFIG_SOURCE_DPI_SCALE_GET GetDpiScaling(string displayName = null)
         {
             return ExecuteForModeConfig((modeInfo) =>
             {
@@ -781,23 +807,36 @@ namespace ColorControl.Shared.Native
             );
         }
 
-        public static bool SetScaling(int percentage, string displayName = null)
+        public static bool SetDpiScaling(uint percentage, string displayName = null)
         {
-            var dpiInfo = GetScaling(displayName);
+            var dpiInfo = GetDpiScaling(displayName);
 
-            if (percentage == dpiInfo.curScaleRel)
+            var minAbs = Math.Abs(dpiInfo.minScaleRel);
+            if (DpiValues.Length < (minAbs + dpiInfo.maxScaleRel + 1))
+            {
+                return false;
+            }
+
+            var dpiIndex = DpiValues.IndexOf(percentage);
+            if (dpiIndex < 0)
+            {
+                return false;
+            }
+            var scaleRel = dpiInfo.minScaleRel + dpiIndex;
+
+            if (scaleRel == dpiInfo.curScaleRel)
             {
                 return true;
             }
 
-            if (percentage < dpiInfo.minScaleRel)
-            {
-                percentage = dpiInfo.minScaleRel;
-            }
-            else if (percentage > dpiInfo.maxScaleRel)
-            {
-                percentage = dpiInfo.maxScaleRel;
-            }
+            //if (percentage < dpiInfo.minScaleRel)
+            //{
+            //    percentage = dpiInfo.minScaleRel;
+            //}
+            //else if (percentage > dpiInfo.maxScaleRel)
+            //{
+            //    percentage = dpiInfo.maxScaleRel;
+            //}
 
             return ExecuteForModeConfig((modeInfo) =>
             {
@@ -811,7 +850,7 @@ namespace ColorControl.Shared.Native
                     setPacket.header.adapterId = modeInfo.adapterId;
                     setPacket.header.id = modeInfo.id;
 
-                    setPacket.scaleRel = -7;
+                    setPacket.scaleRel = scaleRel;
 
                     var err = NativeMethods.DisplayConfigSetDeviceInfo(ref setPacket);
 

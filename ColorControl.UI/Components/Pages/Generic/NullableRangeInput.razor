@@ -1,0 +1,73 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.UI.Services;
+@using ColorControl.Shared.Common;
+
+@* @rendermode Constants.RenderMode *@
+
+@typeparam TValue where TValue : struct, IComparable, IFormattable, IConvertible, IComparable<TValue>, IEquatable<TValue>
+
+@if (Id != null)
+{
+    <div class="mb-2">
+        <label class="form-label @(ExtraLabelStyling ?? "")" for="@Id">@Label (@Value@Unit)</label>
+        <input class="form-range" type="range" min="@(Values?.Min() ?? Min)" max="@(Values?.Max() ?? Max)" @bind="Value" id="@Id" @oninput="e => RangeOnChange(e)">
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public TValue? Value { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public string? Unit { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter]
+    public TValue? Min { get; set; }
+
+    [Parameter]
+    public TValue? Max { get; set; }
+
+    [Parameter]
+    public List<TValue>? Values { get; set; }
+
+    [Parameter]
+    public EventCallback<TValue?> ValueChanged { get; set; }
+
+    [Parameter]
+    public Func<TValue?, string>? LabelStylingFunc { get; set; }
+
+    private string? ExtraLabelStyling;
+
+    protected override void OnParametersSet()
+    {
+        ExtraLabelStyling = LabelStylingFunc?.Invoke(Value);
+        Min ??= (TValue)Convert.ChangeType(0, typeof(TValue));
+        Max ??= (TValue)Convert.ChangeType(100, typeof(TValue));
+    }
+
+    private async Task RangeOnChange(ChangeEventArgs eventArgs)
+    {
+        if (typeof(TValue) == typeof(int))
+        {
+            Value = (TValue)Convert.ChangeType(int.Parse(eventArgs.Value?.ToString() ?? "0"), typeof(TValue));
+
+        }
+        else if (typeof(TValue) == typeof(uint))
+        {
+            Value = (TValue)Convert.ChangeType(uint.Parse(eventArgs.Value?.ToString() ?? "0"), typeof(TValue));
+        }
+
+        await ValueChanged.InvokeAsync(Value);
+
+        ExtraLabelStyling = LabelStylingFunc?.Invoke(Value);
+    }
+
+}

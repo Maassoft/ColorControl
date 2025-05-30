@@ -46,6 +46,13 @@ public class WindowMessageDispatcher : EventDispatcher<WindowMessageEventArgs>
 
     public WindowMessageDispatcher(GlobalContext globalContext)
     {
+        // If no GUI is active (using CLI), creating a form may block connections started by the ClientWebSocket.
+        // In that case, skip creating the form and return.
+        if (globalContext.StartUpParams.NoGui)
+        {
+            return;
+        }
+
         MessageForm = new DummyForm();
         MessageForm.OnMessage += MessageForm_OnMessage;
         _globalContext = globalContext;

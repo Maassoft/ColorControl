@@ -63,6 +63,7 @@ public class DisplayInfoDto
 	public string DeviceName { get; set; }
 	public string DevicePath { get; set; }
 	public string DisplayId { get; set; }
+	public bool UsePerUserSettings { get; set; }
 
 	public bool IsAdvancedColorSupported { get; set; }
 	public bool IsAdvancedColorEnabled { get; set; }

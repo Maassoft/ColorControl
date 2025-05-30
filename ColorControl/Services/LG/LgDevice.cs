@@ -275,10 +275,10 @@ namespace ColorControl.Services.LG
             AddInvokableAction("turnScreenOff", TurnScreenOffAction);
             AddInvokableAction("turnScreenOn", TurnScreenOnAction);
 
-            AddInternalPresetAction(new LgPreset("InStart", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "inStart" }));
-            AddInternalPresetAction(new LgPreset("EzAdjust", "com.webos.app.factorywin", new[] { "0", "4", "1", "3" }, new { id = "executeFactory", irKey = "ezAdjust" }));
+            AddInternalPresetAction(LgPresets.InStartPreset);
+            AddInternalPresetAction(LgPresets.EzAdjustPreset);
             //AddInternalPresetAction(new LgPreset("PictureCheck", "com.webos.app.factorywin", null, new { id = "executeFactory", irKey = "pCheck" }));
-            AddInternalPresetAction(new LgPreset("Software Update", "com.webos.app.softwareupdate", null, new { mode = "user", flagUpdate = true }));
+            AddInternalPresetAction(LgPresets.SoftwareUpdatePreset);
 
             AddSetDeviceConfigAction("HDMI_1_icon", typeof(HdmiIcon), "HDMI 1 icon");
             AddSetDeviceConfigAction("HDMI_2_icon", typeof(HdmiIcon), "HDMI 2 icon");
@@ -707,7 +707,7 @@ namespace ColorControl.Services.LG
         {
             var hasApp = !string.IsNullOrEmpty(preset.appId);
 
-            var hasWOL = preset.steps.Any(s => s.Equals("WOL", StringComparison.OrdinalIgnoreCase));
+            var hasWOL = preset.Steps.Any(s => s.Equals("WOL", StringComparison.OrdinalIgnoreCase));
 
             if (hasWOL)
             {
@@ -770,7 +770,7 @@ namespace ColorControl.Services.LG
                     }
                 }
 
-                if (preset.steps.Any())
+                if (preset.Steps.Any())
                 {
                     if (hasApp)
                     {
@@ -803,7 +803,7 @@ namespace ColorControl.Services.LG
         {
             LgWebOsMouseService mouse = null;
 
-            foreach (var step in preset.steps)
+            foreach (var step in preset.Steps)
             {
                 var keySpec = step.Split(':');
 

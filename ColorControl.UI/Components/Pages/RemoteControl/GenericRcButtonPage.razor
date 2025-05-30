@@ -1,0 +1,120 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.AMD
+@using ColorControl.Shared.Contracts.RemoteControl
+@using ColorControl.UI.Services
+@using ColorControl.Shared.Common
+
+@* @rendermode Constants.RenderMode *@
+
+@typeparam TPreset where TPreset : PresetBase
+@typeparam TButtonEnum where TButtonEnum : struct, Enum
+
+@inject RpcUiClientService _rpcClientService
+
+<div class="modal" id="rcButtonModal" data-bs-backdrop="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">RC button</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="() => Button = null"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1">
+                    @if (Button == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="mb-2">
+                            <label class="form-label" for="name">Name</label>
+                            <input class="form-control" id="name" type="text" @bind="Button.Name" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="button">Button</label>
+                            <select class="form-select" id="button" @bind="Button.Button">
+                                @foreach (var buttonType in Enum.GetValues<TButtonEnum>())
+                                {
+                                    <option value="@buttonType.ToString()">@buttonType.GetDescription()</option>
+                                }
+                            </select>
+                        </div>
+                        @if (Presets?.Any() == true) 
+                        {
+                            <div class="mb-2">
+                                <label class="form-label" for="preset">Preset</label>
+                                <select class="form-select" id="preset" @bind="PresetName">
+                                    <option value="">Select preset</option>
+                                    @foreach (var preset in Presets)
+                                    {
+                                        <option value="@preset.name">@preset.name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" @onclick="RemoveClick">Remove</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="() => Button = null">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="ApplyClick">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public BaseRcButtonDto<TPreset, TButtonEnum>? ButtonParam { get; set; }
+
+    [Parameter]
+    public Func<BaseRcButtonDto<TPreset, TButtonEnum>, Task>? AfterApply { get; set; }
+
+    [Parameter]
+    public List<TPreset>? Presets { get; set; }
+
+    private BaseRcButtonDto<TPreset, TButtonEnum>? Button { get; set; }
+    private string? PresetName;
+
+    protected override void OnParametersSet()
+    {
+        if (ButtonParam == null)
+        {
+            return;
+        }
+
+        Button = new BaseRcButtonDto<TPreset, TButtonEnum>(ButtonParam);
+        PresetName = Button.Preset?.name;
+    }
+
+    private async Task ApplyClick(MouseEventArgs e)
+    {
+        if (Button == null || ButtonParam == null)
+        {
+            return;
+        }
+
+        Button.Preset = (Presets?.FirstOrDefault(p => p.name == PresetName))!;
+
+        ButtonParam.Update(Button);
+
+        if (AfterApply != null) 
+        {
+            await AfterApply.Invoke(ButtonParam);
+        }
+    }
+
+    private async Task RemoveClick(MouseEventArgs e)
+    {
+        if (Button == null || ButtonParam == null)
+        {
+            return;
+        }
+
+        if (AfterApply != null)
+        {
+            await AfterApply.Invoke(null!);
+        }
+    }
+}

@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Net.Security;
+﻿using System;
 using System.Net.WebSockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace ColorControl.Services.Samsung
 {
@@ -47,7 +45,10 @@ namespace ColorControl.Services.Samsung
                 {
                     Logger.Debug($"Connecting to {uri}");
 
-                    await _clientWebSocket.ConnectAsync(uri, CancellationToken.None).WaitAsync(TimeSpan.FromMilliseconds(connectTimeout));
+                    var source = new CancellationTokenSource();
+                    source.CancelAfter(connectTimeout);
+
+                    await _clientWebSocket.ConnectAsync(uri, source.Token);
 
                     Logger.Debug($"Connected to {uri}");
                     ConnectionClosed = false;
@@ -74,10 +75,8 @@ namespace ColorControl.Services.Samsung
         private void CreateWebSocket()
         {
             _clientWebSocket = new ClientWebSocket();
-            _clientWebSocket.Options.RemoteCertificateValidationCallback += CertificationValidationCallback;
+            _clientWebSocket.Options.RemoteCertificateValidationCallback += (_, _, _, _) => true;
         }
-
-        private bool CertificationValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors policyErrors) => true;
 
         public async Task SendMessageAsync(string message, bool reconnect = true)
         {

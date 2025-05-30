@@ -11,6 +11,7 @@ public enum ButtonType
     KEY_CHDOWN,
     KEY_ENTER,
     KEY_RETURN,
+    KEY_EXIT,
     KEY_HOME,
     KEY_CH_LIST,
     KEY_MENU,

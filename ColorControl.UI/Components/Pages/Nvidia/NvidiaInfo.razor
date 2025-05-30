@@ -1,0 +1,109 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.UI.Services;
+@using NvAPIWrapper.Native.Display
+@using ColorControl.Shared.Common;
+@using static ColorControl.Shared.Common.NestedItemsBuilder
+
+@rendermode Constants.RenderMode
+
+@inject RpcUiClientService _rpcClientService
+@inject JSHelper jsHelper
+
+<div class="modal modal-lg" id="infoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Info</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row g-1">
+                    <div class="row">
+                        @if (InfoItems != null)
+                        {
+                            @RenderItems(InfoItems)
+                        }
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _visible;
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    private string? SelectedDisplayId { get; set; }
+    private List<NestedItem>? InfoItems;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_visible != Visible)
+        {
+            _visible = Visible;
+
+            if (Visible)
+            {
+                await GetSettingsAsync();
+            }
+        }
+    }
+
+    protected async Task GetSettingsAsync()
+    {
+        InfoItems = await _rpcClientService.CallAsync<List<NestedItem>>("NvService", "GetInfoItems");
+        if (InfoItems != null)
+        {
+            InfoItems.ForEach(i => i.Expanded = true);
+        }
+    }
+
+    RenderFragment<List<NestedItem>> RenderItems => items =>
+    @<div class="accordion accordion-flush" id="@items.GetHashCode()">
+        @foreach(var item in items)
+        {
+            @if (item.NestedItems.Count > 0) 
+            {
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button py-2 @(item.Expanded ? "show" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@item.GetHashCode()" aria-expanded="false" aria-controls="flush-collapseOne" @onclick="() => OnItemClick(item)">
+                            @item.Value
+                        </button>
+                    </h2>
+                    <div id="@item.GetHashCode()" class="accordion-collapse collapse @(item.Expanded ? "show" : "")" data-bs-parent="#@items.GetHashCode()">
+                        <div class="accordion-body">
+                            @if (item.Expanded)
+                            {
+                                @RenderItems(item.NestedItems)
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else 
+            {
+                <div class="mt-1" style="margin-left: 1.25rem">
+                    @item.Value
+                </div>
+            }
+        }
+    </div>
+    ;
+
+    private async Task OnItemClick(NestedItem item)
+    {
+        await Task.Delay(400);
+
+        var classes = await jsHelper.GetElementClassName(item.GetHashCode().ToString());
+
+        item.Expanded = classes?.Contains(" show") == true;
+    }
+}

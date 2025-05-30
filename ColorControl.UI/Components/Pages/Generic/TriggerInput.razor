@@ -7,6 +7,14 @@
 
 @if (Triggers != null)
 {
+    if (!Triggers.Any())
+    {
+        <div>
+            <label class="form-label">No triggers found. Click to add:</label>
+            <button class="btn btn-primary btn-sm" type="button" @onclick="() => Triggers.Add(new PresetTrigger())">Add</button>
+        </div>
+    }
+
     foreach (var trigger in Triggers)
     {
         <div class="mb-2">

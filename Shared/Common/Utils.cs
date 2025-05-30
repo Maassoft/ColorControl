@@ -138,12 +138,12 @@ The best and suggested method to provide this is via a Windows Service. Only whe
             return values;
         }
 
-        public static async Task<List<PnpDev>> GetPnpDevices(string deviceName, string category = null)
+        public static List<PnpDev> GetPnpDevices(string deviceName, string category = null)
         {
             var devices = new List<PnpDev>();
 
             var queryString = $"SELECT * FROM Win32_PnPEntity WHERE PNPClass='DigitalMediaDevices' AND NAME LIKE '%{deviceName}%'";
-            using ManagementObjectSearcher mos = new ManagementObjectSearcher(queryString);
+            using var mos = new ManagementObjectSearcher(queryString);
 
             foreach (var mo in mos.Get().OfType<ManagementObject>())
             {

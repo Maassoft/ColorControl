@@ -1,5 +1,6 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Services;
 @using NvAPIWrapper.Native.Display
 @using ColorControl.Shared.Common;
@@ -53,47 +54,33 @@
 
                         @if (OverclockSettings.Type is NvGpuOcType.Curve or NvGpuOcType.Offset)
                         {
-                            <div class="mb-2">
-                                <label class="form-label" for="coreOffset">Core offset in MHz: @OverclockSettings.GraphicsOffsetMHz.ToSignedUnitString() (Min: @GpuInfo.MinCoreDeltaInMHz.ToSignedUnitString(), Max: @GpuInfo.MaxCoreDeltaInMHz.ToSignedUnitString())</label>
-                                <input class="form-range" type="range" step="@GpuInfo.MinCoreStepInMHz" min="@GpuInfo.CorrectedMinCoreDeltaInMHz" max="@GpuInfo.MaxCoreDeltaInMHz" @bind="OverclockSettings.GraphicsOffsetMHz" id="coreOffset">
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label" for="memoryOffset">Memory offset in MHz: @OverclockSettings.MemoryOffsetMHz.ToSignedUnitString() (Min: @GpuInfo.MinMemoryDeltaInMHz.ToSignedUnitString(), Max: @GpuInfo.MaxMemoryDeltaInMHz.ToSignedUnitString())</label>
-                                <input class="form-range" type="range" step="1" min="@GpuInfo.MinMemoryDeltaInMHz" max="@GpuInfo.MaxMemoryDeltaInMHz" @bind="OverclockSettings.MemoryOffsetMHz" id="memoryOffset">
-                            </div>
+                            <RangeInput TValue="int" Min="@GpuInfo.CorrectedMinCoreDeltaInMHz" Max="@GpuInfo.MaxCoreDeltaInMHz" Step="@GpuInfo.MinCoreStepInMHz" @bind-Value="OverclockSettings.GraphicsOffsetMHz" Id="coreOffset" Label="Core offset" UnitString="MHz"
+                                        SubLabel="@($"Min: {GpuInfo.MinCoreDeltaInMHz.ToSignedUnitString()}, Max: {GpuInfo.MaxCoreDeltaInMHz.ToSignedUnitString()}")" />
+                            <RangeInput TValue="int" Min="@GpuInfo.MinMemoryDeltaInMHz" Max="@GpuInfo.MaxMemoryDeltaInMHz" @bind-Value="OverclockSettings.MemoryOffsetMHz" Id="memoryOffset" Label="Memory offset" UnitString="MHz"
+                                        SubLabel="@($"Min: {GpuInfo.MinMemoryDeltaInMHz.ToSignedUnitString()}, Max: {GpuInfo.MaxMemoryDeltaInMHz.ToSignedUnitString()}")" />
                         }
                         @if (OverclockSettings.Type is NvGpuOcType.Curve or NvGpuOcType.BoostLock)
                         {
-                            <div class="mb-2">
-                                <label class="form-label" for="maxCoreFrequency">Maximum core frequency MHz: @OverclockSettings.MaximumFrequencyMHz.ToUnitString() (Min: @GpuInfo.MinCurveFrequencyInMHz.ToUnitString(), Max: @GpuInfo.MaxCurveFrequencyInMHz.ToUnitString())</label>
-                                <input class="form-range" type="range" step="@GpuInfo.MinCoreStepInMHz" min="@GpuInfo.MinCurveFrequencyInMHz" max="@GpuInfo.MaxCurveFrequencyInMHz" @bind="OverclockSettings.MaximumFrequencyMHz" id="maxCoreFrequency">
-                                <div id="maxCoreFrequencyHelp" class="form-text">Setting this value to anything else than '0' will limit the maximum frequency of the curve.</div>
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label" for="maxCoreVoltage">Maximum core voltage in millivolt: @OverclockSettings.MaximumVoltageMv.ToUnitString("mv") (Min: @GpuInfo.MinCurveVoltageInMv.ToUnitString("mv"), Max: @GpuInfo.MaxCurveVoltageInMv.ToUnitString("mv"))</label>
-                                <input class="form-range" type="range" step="5" min="@GpuInfo.MinCurveVoltageInMv" max="@GpuInfo.MaxCurveVoltageInMv" @bind="OverclockSettings.MaximumVoltageMv" id="maxCoreVoltage">
-                                <div id="maxCoreFrequencyHelp" class="form-text">Setting this value to anything else than '0' will limit the maximum voltage (and also the frequency) of the curve.</div>
-                            </div>
+                            <RangeInput TValue="uint" Min="@GpuInfo.MinCurveFrequencyInMHz" Max="@GpuInfo.MaxCurveFrequencyInMHz" Step="@((uint)GpuInfo.MinCoreStepInMHz)" @bind-Value="OverclockSettings.MaximumFrequencyMHz" Id="maxCoreFrequency" Label="Maximum core frequency" UnitString="MHz"
+                                        SubLabel="@($"Setting this value to anything else than '0' will limit the maximum frequency of the curve. Min: {GpuInfo.MinCurveFrequencyInMHz.ToSignedUnitString()}, Max: {GpuInfo.MaxCurveFrequencyInMHz.ToSignedUnitString()}")" />
+                            <RangeInput TValue="uint" Min="@GpuInfo.MinCurveVoltageInMv" Max="@GpuInfo.MaxCurveVoltageInMv" Step="5" @bind-Value="OverclockSettings.MaximumVoltageMv" Id="maxCoreVoltage" Label="Maximum core voltage" UnitString="mv"
+                                        SubLabel="@($"Setting this value to anything else than '0' will limit the maximum voltage (and also the frequency) of the curve. Min: {GpuInfo.MinCurveVoltageInMv.ToUnitString("mv")}, Max: {GpuInfo.MaxCurveVoltageInMv.ToUnitString("mv")}")" />
                         }
                         @if (OverclockSettings.Type != NvGpuOcType.None)
                         {
-                            <div class="mb-2">
-                                <label class="form-label" for="voltageBoost">Voltage boost in %: @OverclockSettings.VoltageBoostPercent.ToUnitString("%")</label>
-                                <input class="form-range" type="range" step="1" min="0" max="100" @bind="OverclockSettings.VoltageBoostPercent" id="voltageBoost">
-                            </div>
+                            <RangeInput TValue="uint" @bind-Value="OverclockSettings.VoltageBoostPercent" Id="voltageBoost" Label="Voltage boost" UnitString="%" />
+
                             @if (GpuInfo.DefaultPowerInMilliWatts > 0 && GpuInfo.MaxPowerInMilliWatts > 0 && GpuInfo.MinPowerInMilliWatts > 0 && GpuInfo.MaxPowerInMilliWatts > GpuInfo.MinPowerInMilliWatts)
                             {
-                                <div class="mb-2">
-                                    <label class="form-label" for="powerLimitWatts">Power limit in watts: @(((uint)(OverclockSettings.PowerPCM / 100000f * GpuInfo.DefaultPowerInMilliWatts)).ToKiloUnitString(units: "W")) (@OverclockSettings.PowerPCM.ToKiloUnitString(units: "%")) (Min: @GpuInfo.MinPowerInMilliWatts.ToKiloUnitString(units: "W"), Max: @GpuInfo.MaxPowerInMilliWatts.ToKiloUnitString(units: "W"))</label>
-                                    <input class="form-range" type="range" step="1" min="@GpuInfo.MinimumPowerInPCM" max="@GpuInfo.MaximumPowerInPCM" @bind="OverclockSettings.PowerPCM" id="powerLimitWatts">
-                                </div>
+                                <RangeInput TValue="uint" Min="@GpuInfo.MinimumPowerInPCM" Max="@GpuInfo.MaximumPowerInPCM" @bind-Value="OverclockSettings.PowerPCM" Id="powerLimitWatts" Label="Power limit"
+                                            CustomLabelFunc='value => $"{((uint)(OverclockSettings.PowerPCM / 100000f * GpuInfo.DefaultPowerInMilliWatts)).ToKiloUnitString(units: "W")} ({OverclockSettings.PowerPCM.ToKiloUnitString(units: "%")})"'
+                                            SubLabel="@($"Min: {GpuInfo.MinPowerInMilliWatts.ToKiloUnitString(units: "W")}, Max: {GpuInfo.MaxPowerInMilliWatts.ToKiloUnitString(units: "W")}")" />
                             }
                             else
                             {
-                                <div class="mb-2">
-                                    <label class="form-label" for="powerLimitPercentage">Power limit in percentage: @OverclockSettings.PowerPCM.ToKiloUnitString(units: "%") (Min: @GpuInfo.MinimumPowerInPCM.ToKiloUnitString(units: "%"), Max: @GpuInfo.MaximumPowerInPCM.ToKiloUnitString(units: "%")</label>
-                                    <input class="form-range" type="range" step="1" min="@GpuInfo.MinimumPowerInPCM" max="@GpuInfo.MaximumPowerInPCM" @bind="OverclockSettings.PowerPCM" id="powerLimitPercentage">
-                                </div>
+                                <RangeInput TValue="uint" Min="@GpuInfo.MinimumPowerInPCM" Max="@GpuInfo.MaximumPowerInPCM" @bind-Value="OverclockSettings.PowerPCM" Id="powerLimitPercentage" Label="Power limit"
+                                            CustomLabelFunc='value => $"{OverclockSettings.PowerPCM.ToKiloUnitString(units: "%")}"'
+                                            SubLabel="@($"Min: {GpuInfo.MinimumPowerInPCM.ToKiloUnitString(units: "%")}, Max: {GpuInfo.MaximumPowerInPCM.ToKiloUnitString(units: "%")}")" />
                             }
                         }
                     }
@@ -138,6 +125,11 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            return;
+        }
+
         if (_preset != Preset)
         {
             _preset = Preset;

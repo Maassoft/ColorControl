@@ -19,6 +19,7 @@
 <NvidiaDithering Visible="DitheringVisible" />
 <NvidiaDriverSettings Preset="CurrentDriverSettingsPreset" />
 <NvidiaGpuSettings Preset="CurrentGpuSettingsPreset" GpuInfo="CurrentGpuInfo" />
+<NvidiaInfo Visible="InfoVisible" />
 
 <div class="d-flex align-items-center">
 	<h1>NVIDIA controller</h1>
@@ -30,6 +31,7 @@
 			<ul class="dropdown-menu">
 				<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#ditheringModal" @onclick="() => DitheringVisible = true">Test dithering</a></li>
 				<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#driverSettingsModal" @onclick="() => CurrentDriverSettingsPreset = null">Driver settings</a></li>
+				<li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#infoModal" @onclick="() => InfoVisible = true">Info</a></li>
 			</ul>
 		</div>
 		<button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#settingsModal">
@@ -75,6 +77,7 @@ else
 					<div class="card-body">
 						<small class="text-body">@preset.DisplayConfig.Resolution.ToString() @@ @preset.DisplayConfig.RefreshRate.ToString()Hz</small>
 						<small class="text-muted">@preset.colorData</small>
+						<small class="text-muted">Scale: @preset.DpiScaling.ToString()</small>
 						@if (preset.DitherState != NvDitherState.Auto)
 						{
 							<br />
@@ -93,22 +96,7 @@ else
 						@if (preset.driverSettings?.Any() == true)
 						{
 							<br />
-							<div class="dropdown">
-								<span role="button" class="text-decoration-underline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" @onclick="() => DriverSettingsOnClick(preset)">
-									<small>@preset.driverSettings.Count() driver settings changed</small>
-								</span>
-								<form class="dropdown-menu">
- 									@if (DriverSettings != null)
-									{
-										<ul class="list-group p-0">
-											@foreach (var setting in DriverSettings)
-											{
-												<li class="list-group-item py-0 px-1"><small>@setting.FriendlyName</small></li>
-											}
-										</ul>
-									}
-								</form>
-							</div>
+							@RenderPresetSettings(preset)
 						}
 					</div>
 				</div>
@@ -239,7 +227,7 @@ else
 								}
 								@if (preset.applyDriverSettings)
 								{
-									<li class="list-group-item p-1">@preset.driverSettings.Count changed driver settings</li>
+									<li class="list-group-item p-1">@RenderPresetSettings(preset)</li>
 								}
 								@if (preset.ApplyNovideoSettings)
 								{
@@ -278,6 +266,7 @@ else
 	private NvPreset? CurrentGpuSettingsPreset;
 	private NvGpuInfoDto? CurrentGpuInfo;
 	private bool DitheringVisible;
+	private bool InfoVisible;
 	private List<NvSettingItemDto>? DriverSettings;
 
 	private PresetOrder PresetOrder;
@@ -301,9 +290,42 @@ else
 		}
 	}
 
+	RenderFragment<NvPreset> RenderPresetSettings => preset =>
+		@<div class="dropdown">
+			<span role="button" class="text-decoration-underline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" @onclick="() => DriverSettingsOnClick(preset)" @onclick:preventDefault @onclick:stopPropagation>
+				<small>@preset.driverSettings.Count() driver settings changed</small>
+			</span>
+			<form class="dropdown-menu" style="width: max-content">
+				@if (DriverSettings != null)
+				{
+					<ul class="list-group p-0">
+						@foreach (var settingId in preset.driverSettings.Keys)
+						{
+							var setting = DriverSettings.FirstOrDefault(s => s.SettingId == settingId);
+							if (setting == null)
+							{
+								continue;
+							}
+							var settingValue = setting.Values.FirstOrDefault(v => v.Value == preset.driverSettings[settingId]);
+							if (settingValue == null) {
+								continue;
+							}
+
+							<li class="list-group-item py-0 px-1"><small>@setting.Name: @settingValue.ValueName</small></li>
+						}
+					</ul>
+				}
+			</form>
+		</div>
+	;
+
 	private async Task PresetOnClick(NvPreset preset)
 	{
-		await _rpcClientService.CallAsync<bool>("NvService", "ApplyPresetWithId", preset.id);
+		var result = await _rpcClientService.CallAsync<bool>("NvService", "ApplyPresetWithId", preset.id);
+		if (result)
+		{
+			DisplayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
+		}
 	}
 
 	private void PresetOnEditClick(NvPreset preset)
@@ -395,11 +417,6 @@ else
 
 	private async Task DriverSettingsOnClick(NvPreset preset)
 	{
-		var driverSettings = await _rpcClientService.CallAsync<List<NvSettingItemDto>>("NvService", "GetDriverSettings", Type.Missing, true);
-
-		if (driverSettings != null)
-		{
-			DriverSettings = driverSettings.Where(s => s.Value != s.DefaultValue && s.State == 2).ToList();
-		}
+		DriverSettings ??= await _rpcClientService.CallAsync<List<NvSettingItemDto>>("NvService", "GetDriverSettings", Type.Missing, true);
 	}
 }

@@ -31,6 +31,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
+using static ColorControl.Shared.Common.NestedItemsBuilder;
 using static ColorControl.Shared.Contracts.NVIDIA.NvHdrSettings;
 
 namespace ColorControl.Services.NVIDIA
@@ -174,10 +175,10 @@ namespace ColorControl.Services.NVIDIA
                 MainWindow.CreateAndShow(false);
             }
 
-            // TODO: implement later
-            //_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
-            //_powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
-            //_powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Suspend, PowerModeChanged);
+            _powerEventDispatcher.RegisterAsyncEventHandler(PowerEventDispatcher.Event_Resume, PowerModeResume);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Startup, PowerModeChanged);
+            _powerEventDispatcher.RegisterEventHandler(PowerEventDispatcher.Event_Shutdown, PowerModeChanged);
         }
 
         public override List<string> GetInfo()
@@ -421,6 +422,11 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
+            if (preset.DpiScaling.ApplyScaling)
+            {
+                CCD.SetDpiScaling(preset.DpiScaling.Percentage, display.Name);
+            }
+
             if (preset.applyOther)
             {
                 if (!string.IsNullOrWhiteSpace(preset.ColorProfileSettings.ProfileName))
@@ -467,6 +473,8 @@ namespace ColorControl.Services.NVIDIA
             {
                 result = ApplyOverclocking(preset.ocSettings);
             }
+
+            await ExecuteStepsAsync(preset, _globalContext);
 
             //SetMonitorScaling();
             //CCD.SetScaling(100);
@@ -1442,6 +1450,8 @@ namespace ColorControl.Services.NVIDIA
             {
                 var list = new List<NvPreset>();
 
+                RefreshProfileSettings();
+
                 var displayInfos = GetSimpleDisplayInfos();
 
                 foreach (var displayInfo in displayInfos)
@@ -1493,6 +1503,12 @@ namespace ColorControl.Services.NVIDIA
             preset.ColorProfileSettings.ProfileName = CCD.GetDisplayDefaultColorProfile(display.Name, preset.HDREnabled);
 
             preset.DisplayConfig = CCD.GetDisplayConfig(display.Name);
+            preset.DpiScaling.Percentage = CCD.GetDpiScalingInPercentage(display.Name);
+
+            var novideoSettings = MainWindow.GetSettings(preset.DisplayId);
+
+            preset.NovideoSettings.ApplyClamp = novideoSettings.clamped;
+            preset.NovideoSettings.ColorSpace = (NovideoColorSpace)novideoSettings.targetColorSpace;
 
             var ditherInfo = GetDithering(display);
 
@@ -1590,6 +1606,7 @@ namespace ColorControl.Services.NVIDIA
 
                 return new NvSettingItemDto
                 {
+                    Name = settingMeta.SettingName,
                     GroupName = s.GroupName,
                     IsApiExposed = s.IsApiExposed,
                     IsSettingHidden = s.IsSettingHidden,
@@ -1608,40 +1625,39 @@ namespace ColorControl.Services.NVIDIA
             }).ToList();
         }
 
-        public List<string> GetDriverProfileNames(bool onlyFoundPrograms = false)
+        public List<NvProfile> GetDriverProfileNames(bool onlyFoundPrograms = false)
         {
             if (onlyFoundPrograms)
             {
-                var profileNames = new List<string>();
+                var profiles = new List<NvProfile>();
 
                 // First check game service for programs
-                profileNames.AddRange(GetProfileNamesOfGamePresets());
+                profiles.AddRange(GetProfileNamesOfGamePresets());
 
                 // Other ways: check MRU in registry:
                 // - Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePidlMRU\exe
                 // - Computer\HKEY_CLASSES_ROOT\Local Settings\Software\Microsoft\Windows\Shell\MuiCache
-                profileNames.AddRange(GetProfileNamesOfMru());
+                profiles.AddRange(GetProfileNamesOfMru());
 
-                profileNames = profileNames.Distinct().ToList();
-                profileNames.Sort();
+                profiles = profiles.DistinctBy(p => p.Name).OrderBy(p => p.Name).ToList();
 
-                profileNames.Insert(0, _baseProfileName);
+                profiles.Insert(0, new NvProfile { IsBase = true, Name = _baseProfileName });
 
-                return profileNames;
+                return profiles;
             }
 
             var baseProfileName = "";
 
             var allProfiles = DrsServiceLocator.SettingService.GetProfileNames(ref baseProfileName).Where(s => !s.StartsWith("0x")).OrderBy(s => s).ToList();
 
-            return allProfiles;
+            return allProfiles.Select(p => new NvProfile { Name = p }).ToList();
         }
 
-        private List<string> GetProfileNamesOfGamePresets()
+        private List<NvProfile> GetProfileNamesOfGamePresets()
         {
             if (_serviceManager.GameService == null)
             {
-                return new List<string>();
+                return [];
             }
 
             var gamePresets = _serviceManager.GameService.GetPresets();
@@ -1652,11 +1668,11 @@ namespace ColorControl.Services.NVIDIA
             return profiles;
         }
 
-        private List<string> GetProfileNamesOfMru()
+        private List<NvProfile> GetProfileNamesOfMru()
         {
             if (_serviceManager.GameService == null)
             {
-                return new List<string>();
+                return [];
             }
 
             var apps = _serviceManager.GameService.GetMruApps();
@@ -1853,6 +1869,21 @@ namespace ColorControl.Services.NVIDIA
             return true;
         }
 
+        public List<NestedItem> GetInfoItems()
+        {
+            var items = new List<NestedItem>();
+
+            var displays = Display.GetDisplays();
+            for (var i = 0; i < displays.Length; i++)
+            {
+                var display = displays[i];
+                var item = NestedItemsBuilder.CreateTree(display, $"Display[{i}]");
+                items.Add(item);
+            }
+
+            return items;
+        }
+
         internal Display ResolveDisplay(NvPreset preset)
         {
             if (preset.Display == null)
@@ -1868,7 +1899,7 @@ namespace ColorControl.Services.NVIDIA
             Logger.Debug($"PowerModeChanged: {e.State}");
 
             // Wait
-            await Task.Delay(30000);
+            await Task.Delay(5000);
 
             await ExecutePresetsForEvent(PresetTriggerType.Resume);
         }
@@ -1882,6 +1913,11 @@ namespace ColorControl.Services.NVIDIA
                 case PowerOnOffState.StandBy:
                     {
                         _ = ExecutePresetsForEvent(PresetTriggerType.Standby);
+                        break;
+                    }
+                case PowerOnOffState.StartUp:
+                    {
+                        _ = ExecutePresetsForEvent(PresetTriggerType.Startup);
                         break;
                     }
                 case PowerOnOffState.ShutDown:
@@ -1937,5 +1973,42 @@ namespace ColorControl.Services.NVIDIA
             return string.Join(useNewLines ? "\r\n" : ", ", values);
         }
 
+        private async Task ExecuteStepsAsync(NvPreset preset, Shared.Common.GlobalContext appContext)
+        {
+            foreach (var step in preset.Steps)
+            {
+                var keySpec = step.Split(':');
+
+                var delay = 100;
+                var key = step;
+                if (keySpec.Length >= 2)
+                {
+                    delay = Utils.ParseInt(keySpec[1]);
+                    if (delay > 0)
+                    {
+                        key = keySpec[0];
+                    }
+                }
+
+                var index = key.IndexOf("(");
+                string[] parameters = null;
+                if (index > -1)
+                {
+                    var keyValue = key.Split('(');
+                    key = keyValue[0];
+                    parameters = keyValue[1].Substring(0, keyValue[1].Length - 1).Split(';');
+                }
+
+                if (parameters != null)
+                {
+                    await _serviceManager.HandleExternalServiceAsync(key, parameters);
+                }
+
+                if (delay > 0)
+                {
+                    await Task.Delay(delay);
+                }
+            }
+        }
     }
 }

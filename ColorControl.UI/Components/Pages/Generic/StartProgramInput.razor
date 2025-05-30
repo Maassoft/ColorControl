@@ -1,0 +1,64 @@
+﻿@using ColorControl.Shared.Contracts
+@using ColorControl.Shared.EventDispatcher
+@using ColorControl.UI.Services;
+@using ColorControl.Shared.Common;
+
+@inject RpcUiClientService _rpcClientService
+
+<div class="mb-2">
+    <label class="form-label" for="path">File/URI</label>
+    <div class="input-group mb-2">
+        <input class="form-control" id="path" type="text" @bind="Path" required @onblur="() => PathChanged.InvokeAsync(Path)" />
+        <button type="button" class="btn btn-primary" @onclick="SelectFileOnClick" disabled="@SelectingFile">
+            <span class="@(SelectingFile ? "spinner-border spinner-border-sm" : "")" aria-hidden="true"></span>
+            <span role="status">Select...</span>
+        </button>
+    </div>
+    <div id="selectFileHelp" class="form-text">
+        Selecting a file opens a file dialog outside of the browser on the system where the ColorControl application is running.
+    </div>
+</div>
+<div class="mb-2">
+    <label class="form-label" for="parameters">Parameters</label>
+    <input class="form-control" id="parameters" type="text" @bind="Parameters" @bind:after="() => ParametersChanged.InvokeAsync(Parameters)" />
+</div>
+
+@code {
+    [Parameter]
+    public string? Path { get; set; }
+
+    [Parameter]
+    public string? Parameters { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> PathChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ParametersChanged { get; set; }
+
+    private bool SelectingFile;
+
+    private async Task SelectFileOnClick(MouseEventArgs e)
+    {
+        SelectingFile = true;
+        try
+        {
+            var options = new RpcUiClientOptions
+                {
+                    Timeout = 60000
+                };
+
+            var result = await _rpcClientService.CallWithOptionsAsync<string>("GameService", "SelectPath", options);
+
+            if (result != null)
+            {
+                Path = result;
+                await PathChanged.InvokeAsync(Path);
+            }
+        }
+        finally
+        {
+            SelectingFile = false;
+        }
+    }
+}

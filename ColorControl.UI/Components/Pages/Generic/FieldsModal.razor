@@ -3,8 +3,7 @@
 @using ColorControl.Shared.Common;
 
 @rendermode Constants.RenderMode
-
-@inject NavigationManager _navigationManager;
+@inject JSHelper jsHelper;
 
 <div class="modal" id="@ModalId" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" @onfocus="ModalFocus">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
@@ -40,6 +39,9 @@
 @code {
     [Parameter]
     public string? ModalId { get; set; }
+
+    [Parameter]
+    public string? NextModalId { get; set; }
 
     [Parameter]
     public string? ConfirmCaption { get; set; } = "Yes";
@@ -120,8 +122,13 @@
         }
     }
 
-    private void OnClose(MouseEventArgs e)
+    private async Task OnClose(MouseEventArgs e)
     {
         IsVisible = false;
+
+        if (!string.IsNullOrEmpty(NextModalId))
+        {
+            await jsHelper.OpenModal(NextModalId);
+        }
     }
 }

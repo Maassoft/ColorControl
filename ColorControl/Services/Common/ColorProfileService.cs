@@ -307,6 +307,7 @@ public class ColorProfileService
 				ColorProfiles = colorProfiles,
 				DefaultSdrColorProfile = GetDisplayDefaultColorProfile(d.DisplayName, false),
 				DefaultHdrColorProfile = GetDisplayDefaultColorProfile(d.DisplayName, true),
+				UsePerUserSettings = CCD.GetUsePerUserDisplayProfiles(d.DisplayName)
 			};
 		})
 			.Where(d => !onlyHdrEnabled.HasValue || onlyHdrEnabled == d.IsHdrSupportedAndEnabled)

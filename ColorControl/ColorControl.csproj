@@ -6,20 +6,13 @@
 		<PublishUrl>publish\</PublishUrl>
 		<Install>true</Install>
 		<InstallFrom>Disk</InstallFrom>
-		<UpdateEnabled>false</UpdateEnabled>
-		<UpdateMode>Foreground</UpdateMode>
-		<UpdateInterval>7</UpdateInterval>
-		<UpdateIntervalUnits>Days</UpdateIntervalUnits>
-		<UpdatePeriodically>false</UpdatePeriodically>
-		<UpdateRequired>false</UpdateRequired>
 		<MapFileExtensions>false</MapFileExtensions>
-		<UpdateUrl>https://www.maassoft.com/downloads/ColorControl/</UpdateUrl>
 		<ProductName>ColorControl</ProductName>
 		<PublisherName>Maassoft</PublisherName>
 		<Company>Maassoft</Company> 
 		<ApplicationRevision>0</ApplicationRevision>
-		<ApplicationVersion>10.2.0.0</ApplicationVersion>
-		<Version>10.2.0.0</Version>
+		<ApplicationVersion>10.3.0.0</ApplicationVersion>
+		<Version>10.3.0.0</Version>
 		<UseApplicationTrust>false</UseApplicationTrust>
 		<PublishWizardCompleted>true</PublishWizardCompleted>
 		<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -30,13 +23,6 @@
 		<ApplicationIcon>Resources\pngbarn.ico</ApplicationIcon>
 		<Copyright>2020-2025 Maassoft</Copyright>
 		<Authors>Maassoft</Authors>
-		<ManifestCertificateThumbprint>CF0BC153EA664CD97AC6F234B91F45D34630958F</ManifestCertificateThumbprint>
-		<ManifestKeyFile>ColorControl_1_TemporaryKey.pfx</ManifestKeyFile>
-		<GenerateManifests>true</GenerateManifests>
-		<TargetZone>LocalIntranet</TargetZone>
-		<ApplicationManifest>Properties\app.manifest</ApplicationManifest>
-		<SignManifests>true</SignManifests>
-		<AssemblyOriginatorKeyFile>ColorControl_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
 	</PropertyGroup>
@@ -52,6 +38,8 @@
 		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
 	</PropertyGroup>
 	<ItemGroup>
+		<None Remove="Resources\LgRemotes.json" />
+		<None Remove="Resources\SamsungRemotes.json" />
 		<None Remove="XForms\BrowserWindow.xaml" />
 		<None Remove="XForms\ColorProfileWindow.xaml" />
 		<None Remove="XForms\LogWindow.xaml" />
@@ -82,10 +70,12 @@
 		<Compile Update="Services\Samsung\SamsungPanel.cs">
 			<SubType>UserControl</SubType>
 		</Compile>
+		<EmbeddedResource Include="Resources\LgRemotes.json" />
 		<EmbeddedResource Include="Resources\LG_register.json" />
 		<EmbeddedResource Include="Resources\RC_coords.txt" />
 		<EmbeddedResource Include="Resources\LG_remote.jpg" />
 		<EmbeddedResource Include="Resources\pngbarn.ico" />
+		<EmbeddedResource Include="Resources\SamsungRemotes.json" />
 		<Content Include="LgPresets.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

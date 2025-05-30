@@ -84,6 +84,7 @@ namespace ColorControl.Shared.Contracts.NVIDIA
         public NvHdrSettings HdrSettings { get; set; }
         public bool ApplyNovideoSettings { get; set; }
         public NovideoSettings NovideoSettings { get; set; }
+        public DpiScaling DpiScaling { get; set; }
 
         public bool SetDitherRegistryKey { get; set; }
         public bool RestartDriver { get; set; }
@@ -121,6 +122,7 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             ColorEnhancementSettings = new NvColorEnhancementSettings();
             HdrSettings = new NvHdrSettings();
             NovideoSettings = new NovideoSettings();
+            DpiScaling = new DpiScaling();
         }
 
         public NvPreset(ColorData colorData) : this()
@@ -150,10 +152,11 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             applyDriverSettings = keepChanges && applyDriverSettings || driverSettings.Any(s => !currentSettings.driverSettings.Any(o => o.Key == s.Key && o.Value == s.Value));
             applyHdmiSettings = keepChanges && applyHdmiSettings || HdmiInfoFrameSettings.IsDifferent(currentSettings.HdmiInfoFrameSettings);
             ApplyNovideoSettings = keepChanges && ApplyNovideoSettings || (NovideoSettings.ApplyClamp && !HDREnabled || applyHDR && !HDREnabled && !NovideoSettings.ApplyClamp);
-            applyOverclocking = keepChanges && applyOverclocking || ocSettings.Any();
+            applyOverclocking = keepChanges && applyOverclocking || !HasEqualOverclockingSettings(currentSettings);
             ApplyColorEnhancements = keepChanges && ApplyColorEnhancements ||
                     ColorEnhancementSettings.DigitalVibranceLevel != currentSettings.ColorEnhancementSettings.DigitalVibranceLevel ||
                     ColorEnhancementSettings.HueAngle != currentSettings.ColorEnhancementSettings.HueAngle;
+            DpiScaling.ApplyScaling = keepChanges && DpiScaling.ApplyScaling || DpiScaling.Percentage != currentSettings.DpiScaling.Percentage;
         }
 
         public void Update(NvPreset preset)
@@ -200,7 +203,17 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             applyOverclocking = preset.applyOverclocking;
             ocSettings = preset.ocSettings.Select(s => new NvGpuOcSettings(s)).ToList();
 
+            DpiScaling = new DpiScaling(preset.DpiScaling);
+
             MonitorConnectionType = preset.MonitorConnectionType;
+
+            var trigger = preset.Triggers.FirstOrDefault();
+            if (trigger != null)
+            {
+                UpdateTrigger(trigger.Trigger, trigger.Conditions, trigger.IncludedProcessesAsString, trigger.ExcludedProcessesAsString, trigger.ConnectedDisplaysRegex);
+            }
+            Steps.Clear();
+            Steps.AddRange(preset.Steps);
         }
 
         public NvPreset Clone()
@@ -218,6 +231,15 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             preset.shortcut = shortcut;
 
             return preset;
+        }
+
+        public bool HasApplicableSettings => applyColorData || applyDithering || applyDriverSettings || applyHdmiSettings || applyHDR || applyOther ||
+            applyOverclocking || ApplyColorEnhancements || ApplyNovideoSettings ||
+            DisplayConfig.ApplyRefreshRate || DisplayConfig.ApplyResolution || DpiScaling.ApplyScaling;
+
+        public bool HasEqualOverclockingSettings(NvPreset preset)
+        {
+            return preset.ocSettings.All(poc => ocSettings.Any(oc => oc.Equals(poc)));
         }
 
         public static string[] GetColumnNames()

@@ -1,4 +1,8 @@
-﻿using ColorControl.Services.AMD;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using ColorControl.Services.AMD;
 using ColorControl.Services.LG;
 using ColorControl.Services.NVIDIA;
 using ColorControl.Services.Samsung;
@@ -6,10 +10,6 @@ using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
 using ColorControl.Svc;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace ColorControl
 {
@@ -23,20 +23,18 @@ namespace ColorControl
                 return true;
             }
 
-            var useConsole = startUpParams.NoGui || existingProcess != null;
+            var useConsole = startUpParams.NoGui || existingProcess?.SessionId > 0;
 
             if (!useConsole)
             {
                 return false;
             }
 
-            startUpParams.NoGui = true;
-
             var result = false;
 
             if (startUpParams.ExecuteHelp)
             {
-                Utils.OpenConsole();
+                PrepareConsole(startUpParams);
 
                 Console.WriteLine();
                 Console.WriteLine($@"ColorControl CLI {Application.ProductVersion}
@@ -56,7 +54,7 @@ Options:
 
             if (startUpParams.ExecuteLgPreset)
             {
-                Utils.OpenConsole();
+                PrepareConsole(startUpParams);
 
                 Console.WriteLine($"Executing LG-preset '{startUpParams.LgPresetName}'...");
                 await LgService.ExecutePresetAsync(startUpParams.LgPresetName);
@@ -68,7 +66,7 @@ Options:
 
             if (startUpParams.ExecuteSamsungPreset)
             {
-                Utils.OpenConsole();
+                PrepareConsole(startUpParams);
 
                 Console.WriteLine($"Executing Samsung-preset '{startUpParams.SamsungPresetName}'...");
                 await SamsungService.ExecutePresetAsync(startUpParams.SamsungPresetName);
@@ -80,7 +78,7 @@ Options:
 
             if (startUpParams.ExecuteNvidiaPreset)
             {
-                Utils.OpenConsole();
+                PrepareConsole(startUpParams);
 
                 Console.WriteLine($"Executing NVIDIA-preset '{startUpParams.NvidiaPresetIdOrName}'...");
                 await NvService.ExecutePresetAsync(startUpParams.NvidiaPresetIdOrName);
@@ -92,7 +90,7 @@ Options:
 
             if (startUpParams.ExecuteAmdPreset)
             {
-                Utils.OpenConsole();
+                PrepareConsole(startUpParams);
 
                 Console.WriteLine($"Executing AMD-preset '{startUpParams.AmdPresetIdOrName}'...");
                 await AmdService.ExecutePresetAsync(startUpParams.AmdPresetIdOrName);
@@ -103,6 +101,12 @@ Options:
             }
 
             return result;
+        }
+
+        private static void PrepareConsole(StartUpParams startUpParams)
+        {
+            Utils.OpenConsole();
+            startUpParams.NoGui = true;
         }
 
         private static async Task StartElevated()

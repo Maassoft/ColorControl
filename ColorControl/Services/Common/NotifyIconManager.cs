@@ -168,7 +168,7 @@ public class NotifyIconManager
 		_lgTrayMenu.Visible = _serviceManager.LgService != null;
 		if (_lgTrayMenu.Visible)
 		{
-			var presets = _serviceManager.LgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.steps.Any());
+			var presets = _serviceManager.LgService.GetPresets().Where(x => !string.IsNullOrEmpty(x.appId) || x.Steps.Any());
 
 			_lgTrayMenu.DropDownItems.Clear();
 

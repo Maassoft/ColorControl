@@ -68,7 +68,11 @@ public class MHC2Wrapper
             SDRTransferFunction = deviceContext.ExtraInfoTag?.SDRTransferFunction ?? SDRTransferFunction.PurePower,
             SDRBrightnessBoost = deviceContext.ExtraInfoTag?.SDRBrightnessBoost ?? 0,
             ShadowDetailBoost = deviceContext.ExtraInfoTag?.ShadowDetailBoost ?? 0,
-            Gamma = deviceContext.ExtraInfoTag?.Gamma ?? 2.2
+            Gamma = deviceContext.ExtraInfoTag?.Gamma ?? 2.2,
+            ToneMappingFromLuminance = deviceContext.ExtraInfoTag?.ToneMappingFromLuminance ?? 400,
+            ToneMappingToLuminance = deviceContext.ExtraInfoTag?.ToneMappingToLuminance ?? 400,
+            HdrGammaMultiplier = deviceContext.ExtraInfoTag?.HdrGammaMultiplier ?? 1,
+            HdrBrightnessMultiplier = deviceContext.ExtraInfoTag?.HdrBrightnessMultiplier ?? 1
         };
     }
 }
