@@ -813,7 +813,7 @@ namespace ColorControl.Services.Samsung
                     new FieldDefinition
                     {
                         Label = "Service Menu - Advanced",
-                        SubLabel = "If the service menu opened and you want to access the Advanced settings, click 'Next >' or click 'X' to skip",
+                        SubLabel = "If the service menu opened and you want to access the Advanced settings, manually navigate to 'Advanced' first and then click 'Next >' or click 'X' to skip. You can also manually enter the unlock codes 0098 (for TV's) and 0038 (for monitors) while the 'Advanced' item is highlighted.",
                         FieldType = FieldType.Label
                     } }, okButtonText: "Next >");
 

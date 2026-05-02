@@ -1214,7 +1214,7 @@ namespace ColorControl.Services.NVIDIA
 
             if (preset.IsDisplayPreset)
             {
-                _nvService.SetHDRState(preset.Display, !_nvService.IsHDREnabled());
+                _nvService.SetHDRState(preset.Display, !NvService.IsHDREnabled(preset.Display));
 
                 UpdateDisplayInfoItems();
                 return;

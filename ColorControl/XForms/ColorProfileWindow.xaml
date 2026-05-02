@@ -52,8 +52,8 @@
                 <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="412,236,0,0" TextWrapping="Wrap" Text="{Binding WhiteLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  Name="tbMaxLuminance" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Advanced HDR Settings" Padding="6" Height="199" Width="734" HorizontalAlignment="Left" Visibility="{Binding VisibilityHDRSettings}">
-            <Grid Height="150">
+        <GroupBox Header="Advanced HDR Settings" Padding="6" Height="216" Width="734" HorizontalAlignment="Left" Visibility="{Binding VisibilityHDRSettings}">
+            <Grid Height="187" VerticalAlignment="Top">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="179*"/>
                     <ColumnDefinition Width="735*"/>
@@ -74,11 +74,15 @@
                 <Label Content="HDR Luminance to convert (nits):" HorizontalAlignment="Left" Margin="194,94,0,0" VerticalAlignment="Top" Width="211" Height="26" Grid.Column="1"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,98,0,0" TextWrapping="Wrap" Text="{Binding ToneMappingToLuminance, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbNitsTo" Height="18" InputScope="Number"/>
 
-                <Label Content="Brightness multiplier:" HorizontalAlignment="Left" Margin="-5,120,0,4" Width="208" Grid.ColumnSpan="2"/>
+                <Label Content="Brightness multiplier:" HorizontalAlignment="Left" Margin="-5,120,0,4" Width="208" Grid.ColumnSpan="2" VerticalAlignment="Top"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,128,0,0" TextWrapping="Wrap" Text="{Binding HdrBrightnessMultiplier, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbhdrbrightness" Height="18" InputScope="Number"/>
 
-                <Label Content="Gamma multiplier:" HorizontalAlignment="Left" Margin="194,124,0,0" Width="211" Grid.Column="1"/>
+                <Label Content="Gamma multiplier:" HorizontalAlignment="Left" Margin="194,124,0,0" Width="211" Grid.Column="1" VerticalAlignment="Top"/>
                 <TextBox IsEnabled="{Binding ToneMappingSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,128,0,0" TextWrapping="Wrap" Text="{Binding HdrGammaMultiplier, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbhdrgamma" Height="18" InputScope="Number"/>
+                <Label Content="Shadow detail boost (%):" HorizontalAlignment="Left" Margin="-5,148,0,0" Width="208" Grid.ColumnSpan="2" VerticalAlignment="Top"/>
+                <TextBox IsEnabled="{Binding BrightnessBoostSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="69,156,0,0" TextWrapping="Wrap" Text="{Binding ShadowDetailBoost, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbShadowDetailBoost" Height="18" InputScope="Number"/>
+                <Label Content="Shadow detail range (%):" HorizontalAlignment="Left" Margin="194,152,0,0" Width="211" Grid.Column="1" VerticalAlignment="Top"/>
+                <TextBox IsEnabled="{Binding BrightnessBoostSettingsEnabled}" Grid.Column="1" HorizontalAlignment="Left" Margin="405,156,0,0" TextWrapping="Wrap" Text="{Binding ShadowDetailRange, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbShadowDetailRange" Height="18" InputScope="Number"/>
 
             </Grid>
         </GroupBox>
@@ -94,7 +98,7 @@
                 <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="400,10,0,0" TextWrapping="Wrap" Text="{Binding MaxCLL, NotifyOnValidationError=True, ValidatesOnDataErrors=True}" VerticalAlignment="Top" Width="120"  x:Name="tbMinLuminance_Copy1" Height="18" InputScope="Number"/>
             </Grid>
         </GroupBox>
-        <GroupBox DockPanel.Dock="Right" Margin="0,0,0,0" Header="Generate Options" Padding="6" Height="225" Width="733" HorizontalAlignment="Left">
+        <GroupBox DockPanel.Dock="Right" Margin="0,0,0,0" Header="Generate Options" Padding="6" Height="227" Width="733" HorizontalAlignment="Left">
             <Grid Height="194" Margin="-2,0,2,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="8*"/>

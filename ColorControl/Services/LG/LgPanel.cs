@@ -321,11 +321,11 @@ namespace ColorControl.Services.LG
 
             FormUtils.BuildComboBox(cbxLgPresetTrigger, PresetTriggerType.Reserved5);
 
-            if (!string.IsNullOrEmpty(_lgTabMessage))
-            {
-                MessageForms.WarningOk(_lgTabMessage);
-                _lgTabMessage = null;
-            }
+            //if (!string.IsNullOrEmpty(_lgTabMessage))
+            //{
+            //    MessageForms.WarningOk(_lgTabMessage);
+            //    _lgTabMessage = null;
+            //}
         }
 
         private void FillLgDevices()
@@ -349,16 +349,7 @@ namespace ColorControl.Services.LG
 
             if (!devices.Any())
             {
-                var message = "It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.";
-
-                if (Visible /*tcMain.SelectedTab == tabLG*/)
-                {
-                    MessageForms.WarningOk(message);
-                }
-                else
-                {
-                    _lgTabMessage = message;
-                }
+                _lgTabMessage = "It seems there's no LG TV available! Please make sure it's connected to the same network as this PC.";
             }
 
             if (cbxLgApps.Items.Count == 0 && device != null)
@@ -396,6 +387,7 @@ namespace ColorControl.Services.LG
                 clbLgPower.SetItemChecked(10, device?.PowerOffAfterSessionLock ?? false);
                 clbLgPower.SetItemChecked(11, device?.PowerOnAfterSessionUnlock ?? false);
                 clbLgPower.SetItemChecked(12, device?.UseSecureConnection ?? false);
+                clbLgPower.SetItemChecked(13, device?.UseNewHandshake ?? false);
             }
             finally
             {
@@ -674,6 +666,7 @@ You can also activate this option by using the Expert-button and selecting Wake-
                 device.PowerOffAfterSessionLock = clbLgPower.GetItemChecked(10);
                 device.PowerOnAfterSessionUnlock = clbLgPower.GetItemChecked(11);
                 device.UseSecureConnection = clbLgPower.GetItemChecked(12);
+                device.UseNewHandshake = clbLgPower.GetItemChecked(13);
 
                 if (e.Index == 12)
                 {

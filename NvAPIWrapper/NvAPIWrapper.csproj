@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net9.0-windows</TargetFramework>
+		<TargetFramework>net10.0-windows</TargetFramework>
 		<Version>0.8.1.106</Version>
 		<Company>falahati.net</Company>
 		<Description>NvAPIWrapper is a .Net wrapper for NVIDIA public API</Description>

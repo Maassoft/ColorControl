@@ -88,9 +88,19 @@ namespace ColorControl.Svc
                     {
                         Logger.Error(ex, $"Error while handling message: {message}");
 
-                        var result = SvcResultMessage.FromResult(false, ex.Message);
-                        var resultJson = JsonConvert.SerializeObject(result);
-                        ss.WriteString(resultJson);
+                        if (!ex.Message.Contains("Pipe is broken"))
+                        {
+                            try
+                            {
+                                var result = SvcResultMessage.FromResult(false, ex.Message);
+                                var resultJson = JsonConvert.SerializeObject(result);
+                                ss.WriteString(resultJson);
+                            }
+                            catch (Exception ex2)
+                            {
+                                Logger.Error(ex2, $"Error while sending error message: {ex.Message}");
+                            }
+                        }
                     }
 
                     pipeServer.Close();

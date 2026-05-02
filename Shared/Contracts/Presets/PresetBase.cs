@@ -166,6 +166,19 @@ public class PresetTrigger
     {
         return processes.Contains("*") ? "all processes" : string.Join(", ", processes);
     }
+
+    internal void Update(PresetTrigger updatedTrigger)
+    {
+        Trigger = updatedTrigger.Trigger;
+        Conditions = updatedTrigger.Conditions;
+
+        IncludedProcesses ??= [];
+        ExcludedProcesses ??= [];
+        Utils.ParseWords(IncludedProcesses, updatedTrigger.IncludedProcessesAsString);
+        Utils.ParseWords(ExcludedProcesses, updatedTrigger.ExcludedProcessesAsString);
+
+        ConnectedDisplaysRegex = updatedTrigger.ConnectedDisplaysRegex;
+    }
 }
 
 public class PresetTriggerContext
@@ -282,15 +295,19 @@ public abstract class PresetBase
         trigger.ConnectedDisplaysRegex = connectedDisplaysRegex;
     }
 
-    public PresetTrigger AddTrigger()
+    public void UpdateTriggers(List<PresetTrigger> updatedTriggers)
     {
-        if (!Triggers.Any())
-        {
-            Triggers.Add(new PresetTrigger());
-        }
+        Triggers.Clear();
 
-        return Triggers.First();
+        foreach (var updatedTrigger in updatedTriggers)
+        {
+            var newTrigger = new PresetTrigger();
+            newTrigger.Update(updatedTrigger);
+
+            Triggers.Add(newTrigger);
+        }
     }
+
 
     public void SetSteps(List<string> steps)
     {

@@ -1174,7 +1174,8 @@ namespace ColorControl.Services.LG
                     TriggersEnabled = d.TriggersEnabled,
                     TurnScreenOffOnScreenSaver = d.TurnScreenOffOnScreenSaver,
                     TurnScreenOnAfterScreenSaver = d.TurnScreenOnAfterScreenSaver,
-                    UseSecureConnection = d.UseSecureConnection
+                    UseSecureConnection = d.UseSecureConnection,
+                    UseNewHandshake = d.UseNewHandshake,
                 },
                 IsConnected = d.IsConnected(),
                 IsSelected = d == SelectedDevice

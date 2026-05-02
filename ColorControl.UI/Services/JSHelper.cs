@@ -29,6 +29,11 @@ public class JSHelper(IJSRuntime jsRuntime)
         await InvokeVoidAsync("CloseModal", id);
     }
 
+    public async Task<bool> IsModalShown()
+    {
+        return await InvokeAsync<bool>("IsModalShown");
+    }
+
     public async Task ShowToast(string id)
     {
         await InvokeVoidAsync("ShowToast", id);

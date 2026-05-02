@@ -27,3 +27,7 @@ export function GetElementClassName(elementId) {
 export function NavigateTo(uri, timeout = 0) {
     setTimeout(() => window.location = uri, timeout);
 }
+
+export function IsModalShown() {
+    return document.getElementsByClassName("modal show").length > 0;
+}

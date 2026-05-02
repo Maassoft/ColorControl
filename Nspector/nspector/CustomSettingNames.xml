@@ -7776,23 +7776,23 @@
 					<HexValue>0x00000000</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
-					<UserfriendlyName>Enabled (Low Quality) (0x06)</UserfriendlyName>
+					<UserfriendlyName>Enabled via driver (No Debanding) (0x06)</UserfriendlyName>
 					<HexValue>0x00000006</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
-					<UserfriendlyName>Enabled (Medium Quality) (0x0A)</UserfriendlyName>
+					<UserfriendlyName>Enabled via driver (Medium Debanding) (0x0A)</UserfriendlyName>
 					<HexValue>0x0000000A</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
-					<UserfriendlyName>Enabled (VeryHigh Quality) (0x02)</UserfriendlyName>
+					<UserfriendlyName>Enabled via driver (VeryHigh Debanding) (0x02)</UserfriendlyName>
 					<HexValue>0x00000002</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
-					<UserfriendlyName>Enable + Indicator (0x03)</UserfriendlyName>
+					<UserfriendlyName>Enabled + Indicator (VeryHigh) (0x03)</UserfriendlyName>
 					<HexValue>0x00000003</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
-					<UserfriendlyName>Enable + Indicator + Debug (0x23)</UserfriendlyName>
+					<UserfriendlyName>Enabled + Indicator + Debug (VeryHigh) (0x23)</UserfriendlyName>
 					<HexValue>0x00000023</HexValue>
 				</CustomSettingValue>
 			</SettingValues>
@@ -7907,6 +7907,26 @@
 			<MinRequiredDriverVersion>0</MinRequiredDriverVersion>
 			<SettingValues>
 				<CustomSettingValue>
+					<UserfriendlyName>N/A</UserfriendlyName>
+					<HexValue>0x00000000</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset A</UserfriendlyName>
+					<HexValue>0x00000001</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset B</UserfriendlyName>
+					<HexValue>0x00000002</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset C</UserfriendlyName>
+					<HexValue>0x00000003</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset D</UserfriendlyName>
+					<HexValue>0x00000004</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
 					<UserfriendlyName>Preset E</UserfriendlyName>
 					<HexValue>0x00000005</HexValue>
 				</CustomSettingValue>
@@ -7915,12 +7935,121 @@
 					<HexValue>0x00000006</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
+					<UserfriendlyName>Preset G (unused)</UserfriendlyName>
+					<HexValue>0x00000007</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset H (unused)</UserfriendlyName>
+					<HexValue>0x00000008</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset I (unused)</UserfriendlyName>
+					<HexValue>0x00000009</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
 					<UserfriendlyName>Preset J</UserfriendlyName>
 					<HexValue>0x0000000A</HexValue>
 				</CustomSettingValue>
 				<CustomSettingValue>
 					<UserfriendlyName>Preset K</UserfriendlyName>
 					<HexValue>0x0000000B</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset L</UserfriendlyName>
+					<HexValue>0x0000000C</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset M</UserfriendlyName>
+					<HexValue>0x0000000D</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset N (unused)</UserfriendlyName>
+					<HexValue>0x0000000E</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset O (unused)</UserfriendlyName>
+					<HexValue>0x0000000F</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Always use latest</UserfriendlyName>
+					<HexValue>0x00FFFFFF</HexValue>
+				</CustomSettingValue>
+			</SettingValues>
+			<SettingMasks/>
+		</CustomSetting>
+		<CustomSetting>
+			<UserfriendlyName>DLSS-RR - Forced Preset Letter</UserfriendlyName>
+			<HexSettingID>0x10E41DF7</HexSettingID>
+			<GroupName>5 - Common</GroupName>
+			<MinRequiredDriverVersion>0</MinRequiredDriverVersion>
+			<SettingValues>
+				<CustomSettingValue>
+					<UserfriendlyName>N/A</UserfriendlyName>
+					<HexValue>0x00000000</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset A</UserfriendlyName>
+					<HexValue>0x00000001</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset B</UserfriendlyName>
+					<HexValue>0x00000002</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset C</UserfriendlyName>
+					<HexValue>0x00000003</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset D</UserfriendlyName>
+					<HexValue>0x00000004</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset E</UserfriendlyName>
+					<HexValue>0x00000005</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset F (unused)</UserfriendlyName>
+					<HexValue>0x00000006</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset G (unused)</UserfriendlyName>
+					<HexValue>0x00000007</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset H (unused)</UserfriendlyName>
+					<HexValue>0x00000008</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset I (unused)</UserfriendlyName>
+					<HexValue>0x00000009</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset J (unused)</UserfriendlyName>
+					<HexValue>0x0000000A</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset K (unused)</UserfriendlyName>
+					<HexValue>0x0000000B</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset L (unused)</UserfriendlyName>
+					<HexValue>0x0000000C</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset M (unused)</UserfriendlyName>
+					<HexValue>0x0000000D</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset N (unused)</UserfriendlyName>
+					<HexValue>0x0000000E</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Preset O (unused)</UserfriendlyName>
+					<HexValue>0x0000000F</HexValue>
+				</CustomSettingValue>
+				<CustomSettingValue>
+					<UserfriendlyName>Always use latest</UserfriendlyName>
+					<HexValue>0x00FFFFFF</HexValue>
 				</CustomSettingValue>
 			</SettingValues>
 			<SettingMasks/>

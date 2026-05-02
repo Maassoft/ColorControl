@@ -12,7 +12,5 @@ public static class Constants
 	public const string Light = "light";
 	public const string Dark = "dark";
 
-
 	public static IComponentRenderMode RenderMode = new InteractiveServerRenderMode(prerender: false);
-
 }

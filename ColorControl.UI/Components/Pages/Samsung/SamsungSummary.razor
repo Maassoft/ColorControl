@@ -5,10 +5,12 @@
 @using ColorControl.Shared.Contracts.NVIDIA
 @using ColorControl.Shared.Contracts.Samsung
 @using ColorControl.UI.Components.Pages.RemoteControl
+@using ColorControl.UI.Pages.Generic
 @using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inherits SummaryComponentBase
 
 @rendermode Constants.RenderMode
 
@@ -220,6 +222,13 @@ else
 	private PresetOrder PresetOrder;
 
 	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		await Refresh();
+	}
+
+	protected override async Task Refresh()
 	{
 		Config = await _rpcClientService.CallAsync<SamsungServiceConfigDto>("SamsungService", "GetConfig");
 		await RefreshPresets();

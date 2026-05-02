@@ -149,7 +149,8 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             applyDithering = keepChanges && applyDithering || (ditheringEnabled != currentSettings.ditheringEnabled || ditheringMode != currentSettings.ditheringMode || ditheringBits != currentSettings.ditheringBits);
             applyHDR = keepChanges && applyHDR || (HDREnabled != currentSettings.HDREnabled || toggleHDR || SDRBrightness != currentSettings.SDRBrightness || HdrSettings.OutputMode != currentSettings.HdrSettings.OutputMode);
             DisplayConfig.ApplyResolution = keepChanges && DisplayConfig.ApplyResolution || (DisplayConfig.Resolution.IsDifferent(currentSettings.DisplayConfig.Resolution) ||
-                    DisplayConfig.Scaling != currentSettings.DisplayConfig.Scaling || DisplayConfig.Rotation != currentSettings.DisplayConfig.Rotation || DisplayConfig.IsPrimary != null && DisplayConfig.IsPrimary != currentSettings.DisplayConfig.IsPrimary);
+                    DisplayConfig.Scaling != currentSettings.DisplayConfig.Scaling || DisplayConfig.Rotation != currentSettings.DisplayConfig.Rotation || DisplayConfig.IsPrimary != null && DisplayConfig.IsPrimary != currentSettings.DisplayConfig.IsPrimary ||
+                    DisplayConfig.Connectivity != DisplayConnectivity.Unchanged);
             DisplayConfig.ApplyRefreshRate = keepChanges && DisplayConfig.ApplyRefreshRate || !DisplayConfig.RefreshRate.Equals(currentSettings.DisplayConfig.RefreshRate);
             applyOther = keepChanges && applyOther || (scaling != currentSettings.scaling || ColorProfileSettings.ProfileName != currentSettings.ColorProfileSettings.ProfileName);
             applyDriverSettings = keepChanges && applyDriverSettings || driverSettings.Any(s => !currentSettings.driverSettings.Any(o => o.Key == s.Key && o.Value == s.Value));
@@ -216,11 +217,8 @@ namespace ColorControl.Shared.Contracts.NVIDIA
 
             MonitorConnectionType = preset.MonitorConnectionType;
 
-            var trigger = preset.Triggers.FirstOrDefault();
-            if (trigger != null)
-            {
-                UpdateTrigger(trigger.Trigger, trigger.Conditions, trigger.IncludedProcessesAsString, trigger.ExcludedProcessesAsString, trigger.ConnectedDisplaysRegex);
-            }
+            UpdateTriggers(preset.Triggers);
+
             Steps.Clear();
             Steps.AddRange(preset.Steps);
         }

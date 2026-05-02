@@ -5,8 +5,8 @@ Easily change NVIDIA and AMD display settings, control LG and Samsung tv's, Game
 
 Just extract the .zip file in a folder of your preference. Run ColorControl.exe to start the application.
 Requires .NET 9 with the following runtimes:
-* .NET Desktop Runtime 9
-* .NET ASP.NET Core Runtime 9
+* .NET Desktop Runtime 10
+* .NET ASP.NET Core Runtime 10
 
 ColorControl stores its settings in the following folder:
 * C:\Users\username\AppData\Roaming\Maassoft\ColorControl

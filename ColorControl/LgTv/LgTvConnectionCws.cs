@@ -199,6 +199,11 @@ namespace LgTv
         {
             try
             {
+                if (string.IsNullOrEmpty(message))
+                {
+                    throw new InvalidOperationException("Empty response received. Assuming connection closed.");
+                }
+
                 var obj = JsonConvert.DeserializeObject<dynamic>(message);
                 var id = (string)obj.id;
                 var type = (string)obj.type;
@@ -217,7 +222,7 @@ namespace LgTv
                 {
                     if (id == "register_0")
                     {
-                        //taskCompletion.TrySetResult(obj.payload);
+                        //taskCompletion.TrySetResult(null);
                         return;
                     }
                     if (obj.type == "error")

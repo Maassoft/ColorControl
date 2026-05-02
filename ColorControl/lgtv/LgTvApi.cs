@@ -24,19 +24,21 @@ namespace LgTv
         private string _ip;
         private string _currentPairKey;
         private string webSocketUri;
+        private string _registerJson;
 
         protected static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1, bool useSecureWs = true)
+        public static async Task<LgTvApi> CreateLgTvApi(string ip, int retries = 1, bool useSecureWs = true, bool useNewHandshake = false)
         {
-            var instance = new LgTvApi(ip, useSecureWs);
+            var instance = new LgTvApi(ip, useSecureWs, useNewHandshake);
 
             return await instance.Connect(retries);
         }
 
-        private LgTvApi(string ip, bool useSecureWs)
+        private LgTvApi(string ip, bool useSecureWs, bool useNewHandshake)
         {
             webSocketUri = useSecureWs ? $"wss://{ip}:3001" : $"ws://{ip}:3000";
+            _registerJson = Utils.GetResourceFile(useNewHandshake ? "LG_register.json" : "LG_register_legacy.json");
             _ip = ip;
             _connection = new LgTvApiCoreCws();
             _keyStore = new ClientKeyStore(ip);
@@ -68,25 +70,42 @@ namespace LgTv
             return _ip;
         }
 
-        public async Task MakeHandShake()
+        public async Task<bool> MakeHandShake()
         {
-            var registerJson = Utils.GetResourceFile("LG_register.json");
-
             _currentPairKey = _keyStore.GetClientKey();
-            if (!string.IsNullOrWhiteSpace(_currentPairKey) && !_currentPairKey.All(k => k == '\0') && _keyStore.HasValidHandShake(registerJson))
+            if (!string.IsNullOrWhiteSpace(_currentPairKey) && !_currentPairKey.All(k => k == '\0') && _keyStore.HasValidHandShake(_registerJson))
             {
-                var key = registerJson.Replace("CLIENTKEYGOESHERE", _currentPairKey);
-                var conn = await _connection.SendCommandAsync(key);
-                _keyStore.SaveClientKey((string)conn.clientKey);
-                return;
+                var key = _registerJson.Replace("CLIENTKEYGOESHERE", _currentPairKey);
+                try
+                {
+                    var conn = await _connection.SendCommandAsync(key);
+                    ArgumentNullException.ThrowIfNull(conn);
+                    _keyStore.SaveClientKey((string)conn.clientKey);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    // Re-register below
+                }
             }
 
-            var registerJsonRemovedKey = registerJson.Replace("CLIENTKEYGOESHERE", string.Empty);
-            dynamic result = await _connection.SendCommandAsync(registerJsonRemovedKey);
-            _keyStore.SaveClientKey(result.clientKey);
-            _keyStore.SaveHandShake(registerJson);
+            var registerJsonRemovedKey = _registerJson.Replace("CLIENTKEYGOESHERE", string.Empty);
+            try
+            {
+                var result = await _connection.SendCommandAsync(registerJsonRemovedKey);
+                if (result?.clientKey == null)
+                {
+                    throw new InvalidOperationException("No valid client key received");
+                }
+                _keyStore.SaveClientKey(result.clientKey);
+                _keyStore.SaveHandShake(_registerJson);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
-
 
         public async Task<bool> Connect()
         {

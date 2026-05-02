@@ -113,6 +113,8 @@ namespace ColorControl.XForms
                 SDRMaxBrightness = _viewModel.SDRMaxBrightness,
                 SDRTransferFunction = _viewModel.SDRTransferFunction,
                 SDRBrightnessBoost = _viewModel.SDRBrightnessBoost,
+                ShadowDetailBoost = _viewModel.ShadowDetailBoost,
+                ShadowDetailRange = _viewModel.ShadowDetailRange,
                 ColorGamut = _viewModel.ColorGamut,
                 Gamma = _viewModel.CustomGamma,
                 DevicePrimaries = _viewModel.GetDevicePrimaries(),
@@ -208,6 +210,8 @@ namespace ColorControl.XForms
             _viewModel.SDRMinBrightness = profileProperties.SDRMinBrightness;
             _viewModel.SDRMaxBrightness = profileProperties.SDRMaxBrightness;
             _viewModel.SDRBrightnessBoost = profileProperties.SDRBrightnessBoost;
+            _viewModel.ShadowDetailBoost = profileProperties.ShadowDetailBoost;
+            _viewModel.ShadowDetailRange = profileProperties.ShadowDetailRange;
             _viewModel.MinCLL = profileProperties.MinCLL;
             _viewModel.MaxCLL = profileProperties.MaxCLL;
 

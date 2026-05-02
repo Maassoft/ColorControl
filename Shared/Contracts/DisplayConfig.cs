@@ -12,6 +12,7 @@ public class DisplayConfig
     public DisplayConfigScaling Scaling { get; set; }
     public DisplayConfigRotation Rotation { get; set; }
     public bool? IsPrimary { get; set; }
+    public DisplayConnectivity Connectivity { get; set; }
 
     public DisplayConfig()
     {
@@ -30,6 +31,7 @@ public class DisplayConfig
         Scaling = displayConfig.Scaling;
         Rotation = displayConfig.Rotation;
         IsPrimary = displayConfig.IsPrimary;
+        Connectivity = displayConfig.Connectivity;
     }
 
     public string GetResolutionDesc()

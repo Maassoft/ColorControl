@@ -45,50 +45,62 @@
                         }
                         <div class="accordion accordion-flush" id="presetAccordion">
 
-                            @if (!Preset.IsDisplayPreset) 
-                            {
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header">
-                                        <span class="d-flex align-items-baseline">
-                                            @if (!Preset.IsDisplayPreset)
-                                            {
-                                                <input class="form-check-input me-1" style="font-size: 1rem; visibility: hidden" type="checkbox">
-                                            }
-                                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
-                                                Display
-                                            </button>
-                                        </span>
-                                    </h2>
-                                    <div id="displaySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
-                                        <div class="accordion-body">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <span class="d-flex align-items-baseline">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
+                                            <input class="form-check-input me-1" style="font-size: 1rem; visibility: hidden" type="checkbox">
+                                        }
+                                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#displaySettings">
+                                            Display
+                                        </button>
+                                    </span>
+                                </h2>
+                                <div id="displaySettings" class="accordion-collapse collapse" data-bs-parent="#presetAccordion">
+                                    <div class="accordion-body">
+                                        @if (!Preset.IsDisplayPreset)
+                                        {
                                             <div class="mb-2">
                                                 <input class="form-check-input" type="checkbox" @bind="Preset.primaryDisplay" id="primaryDisplay">
                                                 <label class="form-check-label" for="primaryDisplay">
                                                     Primary display
                                                 </label>
                                             </div>
-                                            @if (displayPresets != null) 
+                                        }
+                                        @if (displayPresets != null) 
+                                        {
+                                            if (!Preset.IsDisplayPreset)
                                             {
                                                 <div class="mb-2">
                                                     <label class="form-label" for="mode">Display</label>
-                                                    <select class="form-select" id="mode" @bind="Preset.DisplayId" disabled="@(Preset.primaryDisplay)">
+                                                    <select class="form-select" id="mode" @bind="Preset.DisplayId" disabled="@Preset.primaryDisplay">
                                                         @foreach (var display in displayPresets)
                                                         {
                                                             <option value="@display.DisplayId">@display.displayName</option>
                                                         }
                                                     </select>
                                                 </div>
-                                                <div class="mb-2">
-                                                    <input class="form-check-input" type="checkbox" @bind="Preset.DisplayConfig.IsPrimary" id="setAsPrimaryDisplay" disabled="@(Preset.primaryDisplay)">
-                                                    <label class="form-check-label" for="setAsPrimaryDisplay">
-                                                        Set display as primary display
-                                                    </label>
-                                                </div>
                                             }
+                                            <div class="mb-2">
+                                                <input class="form-check-input" type="checkbox" @bind="Preset.DisplayConfig.IsPrimary" id="setAsPrimaryDisplay" disabled="@(Preset.IsDisplayPreset && displayPresets.Count == 1)">
+                                                <label class="form-check-label" for="setAsPrimaryDisplay">
+                                                    Set display as primary display
+                                                </label>
+                                            </div>
+                                        }
+                                        <div class="mb-2">
+                                            <label class="form-label" for="connectivity">Connectivity</label>
+                                            <select class="form-select" id="scaling" @bind="Preset.DisplayConfig.Connectivity">
+                                                @foreach (var connectivity in Enum.GetValues<Shared.Contracts.DisplayConnectivity>())
+                                                {
+                                                    <option value="@connectivity.ToString()">@connectivity.ToString()</option>
+                                                }
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
-                            }
+                            </div>
 
                             @if (resolutions != null) 
                             {
@@ -745,7 +757,7 @@
 
         ApplyImmediately = false;
 
-        Preset = PresetParam == null ? null : PresetParam.CloneWithId();
+        Preset = PresetParam?.CloneWithId();
 
         displayPresets = await _rpcClientService.CallAsync<List<NvPreset>>("NvService", "GetDisplayPresets");
         if (Preset?.IsDisplayPreset == true)

@@ -7,16 +7,20 @@
 
 @if (Triggers != null)
 {
-    if (!Triggers.Any())
+    if (Triggers.Count < 2)
     {
         <div>
-            <label class="form-label">No triggers found. Click to add:</label>
+            <label class="form-label">Add trigger:</label>
             <button class="btn btn-primary btn-sm" type="button" @onclick="() => Triggers.Add(new PresetTrigger())">Add</button>
         </div>
     }
 
     foreach (var trigger in Triggers)
     {
+        <div class="clearfix">
+            <label class="form-label">Trigger @(Triggers.IndexOf(trigger) + 1)</label>
+            <button class="btn btn-danger btn-sm float-end" type="button" @onclick="() => Triggers.Remove(trigger)">Remove</button>
+        </div>
         <div class="mb-2">
             <label class="form-label" for="triggerType">Trigger type</label>
             <select class="form-select" id="triggerType" @bind="trigger.Trigger">
@@ -26,7 +30,7 @@
                 }
             </select>
         </div>
-        <FlagsInput Label="Conditions" Value="@((uint)trigger.Conditions)" Labels="ConditionLabels" Col="6" ValueChanged="ConditionsChanged"></FlagsInput>
+        <FlagsInput Label="Conditions" Value="@((uint)trigger.Conditions)" Labels="ConditionLabels" Col="6" ValueChanged="value => ConditionsChanged(value, trigger)"></FlagsInput>
         <div class="mb-2">
             <label class="form-label" for="includedProcesses">Included processes</label>
             <input class="form-control" type="text" @bind="trigger.IncludedProcessesAsString" />
@@ -40,6 +44,11 @@
             <input class="form-control" type="text" @bind="trigger.ConnectedDisplaysRegex"
                    title="The preset will be executed only if the supplied Regular Expression matches the device name of at least one of the displays that are connected at the moment the trigger is fired." />
         </div>
+
+        @if (Triggers.IndexOf(trigger) < Triggers.Count - 1)
+        {
+            <div class="border-bottom mb-2"></div>
+        }
     }
 }
 
@@ -49,14 +58,8 @@
 
     private List<string> ConditionLabels = Utils.GetDescriptions<PresetConditionType>(fromValue: 1).ToList();
 
-    public void ConditionsChanged(uint value)
+    public void ConditionsChanged(uint value, PresetTrigger trigger)
     {
-        if (Triggers == null || !Triggers.Any())
-        {
-            return;
-        }
-
-        var trigger = Triggers.First();
         trigger.Conditions = (PresetConditionType)value;
     }
 }

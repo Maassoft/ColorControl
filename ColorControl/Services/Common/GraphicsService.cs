@@ -91,6 +91,11 @@ abstract class GraphicsService<T> : ServiceBase<T> where T : PresetBase, new()
             currentDisplayConfig.Rotation = displayConfig.Rotation;
         }
 
+        if (displayConfig.Connectivity != DisplayConnectivity.Unchanged)
+        {
+            currentDisplayConfig.Connectivity = displayConfig.Connectivity;
+        }
+
         return CCD.SetDisplayConfig(displayName, currentDisplayConfig, updateRegistry);
     }
 

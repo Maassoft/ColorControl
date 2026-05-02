@@ -10,7 +10,7 @@ public class RpcUiClientOptions
     public int Timeout { get; set; } = PipeUtils.DefaultTimeout;
 }
 
-public class RpcUiClientService(NotificationService notificationService)
+public class RpcUiClientService(NotificationService? notificationService)
 {
     public string? LastErrorMessage { get; private set; }
 
@@ -46,7 +46,7 @@ public class RpcUiClientService(NotificationService notificationService)
             return true;
         }
 
-        if (result?.ErrorMessages.Count > 0)
+        if (result?.ErrorMessages.Count > 0 && notificationService != null)
         {
             await notificationService.SendNotificationDirect(new NotificationDto(result.ErrorMessages.First(), Constants.Danger));
         }
@@ -74,7 +74,7 @@ public class RpcUiClientService(NotificationService notificationService)
 
         if (resultJson == null)
         {
-            notificationService.SendNotification(new NotificationDto("Unknown communication error", Constants.Danger));
+            notificationService?.SendNotification(new NotificationDto("Unknown communication error", Constants.Danger));
 
             return default;
         }
@@ -85,7 +85,10 @@ public class RpcUiClientService(NotificationService notificationService)
         {
             LastErrorMessage = resultMessage?.ErrorMessage ?? "Unknown communication error";
 
-            await notificationService.SendNotificationDirect(new NotificationDto(LastErrorMessage, Constants.Danger));
+            if (notificationService != null)
+            {
+                await notificationService.SendNotificationDirect(new NotificationDto(LastErrorMessage, Constants.Danger));
+            }
 
             return default;
         }

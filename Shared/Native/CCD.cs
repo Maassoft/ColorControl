@@ -175,6 +175,49 @@ namespace ColorControl.Shared.Native
                 var sourceIndex = pathsArray[pathIndex].sourceInfo.modeInfoIdx;
                 var targetIndex = pathsArray[pathIndex].targetInfo.modeInfoIdx;
 
+                if (displayConfig.Connectivity == DisplayConnectivity.Disabled)
+                {
+                    var newPaths = pathsArray.Where((p, i) => i != pathIndex).ToArray();
+                    var newModes = modesArray.Where((m, i) => i != sourceIndex && i != targetIndex).ToArray();
+
+                    for (var i = 0; i < newPaths.Length; i++)
+                    {
+                        var sourceDiff = 0U;
+                        var targetDiff = 0U;
+
+                        if (newPaths[i].sourceInfo.modeInfoIdx > sourceIndex)
+                        {
+                            sourceDiff++;
+                        }
+                        if (newPaths[i].sourceInfo.modeInfoIdx > targetIndex)
+                        {
+                            sourceDiff++;
+                        }
+                        if (newPaths[i].targetInfo.modeInfoIdx > sourceIndex)
+                        {
+                            targetDiff++;
+                        }
+                        if (newPaths[i].targetInfo.modeInfoIdx > targetIndex)
+                        {
+                            targetDiff++;
+                        }
+
+                        newPaths[i].sourceInfo.modeInfoIdx -= sourceDiff;
+                        newPaths[i].targetInfo.modeInfoIdx -= targetDiff;
+                    }
+
+                    var flags = SdcFlags.Apply | SdcFlags.UseSuppliedDisplayConfig | SdcFlags.AllowChanges;
+
+                    if (updateRegistry)
+                    {
+                        flags |= SdcFlags.SaveToDatabase;
+                    }
+
+                    err = NativeMethods.SetDisplayConfig(pathCount - 1, newPaths, modeCount - 2, newModes, flags);
+
+                    return err == 0;
+                }
+
                 var resolution = displayConfig.Resolution;
                 var refreshRate = displayConfig.RefreshRate;
 
@@ -321,7 +364,6 @@ namespace ColorControl.Shared.Native
             var name = Path.GetFileName(profileName);
             return NativeMethods.UninstallColorProfileW(null, name, true);
         }
-
 
         private static bool MinRequiredVersion = true;
 
@@ -1061,6 +1103,31 @@ namespace ColorControl.Shared.Native
                 return true;
             }
 
+            if (displayName.StartsWith("\\\\"))
+            {
+                return MatchDisplayNameByDeviceName(path, displayName);
+            }
+
+            // get display name
+            var info = new DISPLAYCONFIG_TARGET_DEVICE_NAME();
+            info.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+            info.header.size = Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>();
+            info.header.adapterId = path.targetInfo.adapterId;
+            info.header.id = path.targetInfo.id;
+
+            var err = NativeMethods.DisplayConfigGetDeviceInfo(ref info);
+            if (err != NativeConstants.ERROR_SUCCESS)
+            {
+                return false;
+            }
+
+            var deviceName = CCD.GetDisplayIdByPath(info.monitorDevicePath);
+
+            return deviceName == displayName;
+        }
+
+        private static bool MatchDisplayNameByDeviceName(DisplayConfigPathInfo path, string deviceName)
+        {
             // get display name
             var info = new DISPLAYCONFIG_SOURCE_DEVICE_NAME();
             info.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
@@ -1074,13 +1141,7 @@ namespace ColorControl.Shared.Native
                 return false;
             }
 
-            var deviceName = info.viewGdiDeviceName;
-            if (!EqualDisplayNames(deviceName, displayName))
-            {
-                return false;
-            }
-
-            return true;
+            return EqualDisplayNames(deviceName, info.viewGdiDeviceName);
         }
 
         private static uint GetSDRWhiteLevelForDisplayConfig(DisplayConfigModeInfo displayConfigModeInfo)

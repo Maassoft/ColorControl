@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0-windows</TargetFramework>
+		<TargetFramework>net10.0-windows</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWindowsForms>true</UseWindowsForms>
 		<Nullable>enable</Nullable>
@@ -12,10 +12,6 @@
 	<PropertyGroup>
 		<PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=.\</PathMap>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="System.Resources.Extensions" Version="9.0.0" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Shared\Shared.csproj" />

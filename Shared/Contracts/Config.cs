@@ -61,9 +61,11 @@ namespace ColorControl.Shared.Contracts
         public bool DisableErrorPopupWhenApplyingPreset { get; set; }
         public UiType UiType { get; set; }
         public int UiPort { get; set; }
+        public bool UiAllowRemoteConnections { get; set; }
         [JsonIgnore]
         public int CurrentUiPort { get; set; }
-        public bool UiAllowRemoteConnections { get; set; }
+        [JsonIgnore]
+        public bool CurrentUiAllowRemoteConnections { get; set; }
 
         public Config()
         {
@@ -83,7 +85,7 @@ namespace ColorControl.Shared.Contracts
             ElevationMethod = ElevationMethod.None;
             ElevationMethodAsked = false;
             ProcessMonitorPollingInterval = 1000;
-            UiType = UiType.WebEmbedded;
+            UiType = UiType.WinForms;
             UiPort = 0; // Let .NET decide
             UiAllowRemoteConnections = false;
             LgPresetsSortState = new ListViewSortState();

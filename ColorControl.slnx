@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="ColorControl.UI/ColorControl.UI.csproj" />
+  <Project Path="ColorControl/ColorControl.csproj" />
+  <Project Path="LittleCms/LittleCms.csproj" />
+  <Project Path="MHC2Gen/MHC2Gen.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="NLogViewer/NLogViewer.csproj" />
+  <Project Path="novideo_srgb/novideo_srgb.csproj" />
+  <Project Path="Nspector/Nspector.csproj" />
+  <Project Path="NvAPIWrapper/NvAPIWrapper.csproj" />
+  <Project Path="Shared/Shared.csproj" />
+</Solution>

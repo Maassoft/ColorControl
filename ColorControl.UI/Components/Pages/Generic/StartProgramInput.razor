@@ -44,9 +44,9 @@
         try
         {
             var options = new RpcUiClientOptions
-                {
-                    Timeout = 60000
-                };
+            {
+                Timeout = 60000
+            };
 
             var result = await _rpcClientService.CallWithOptionsAsync<string>("GameService", "SelectPath", options);
 

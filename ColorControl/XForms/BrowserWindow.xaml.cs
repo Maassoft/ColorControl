@@ -1,6 +1,5 @@
 ﻿using ColorControl.Shared.Common;
 using ColorControl.Shared.XForms;
-using ColorControl.UI;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.ComponentModel;
@@ -46,16 +45,22 @@ public partial class BrowserWindow : BaseWindow
 
         var reload = _window != null && _window._currentUrl != url;
 
+        //if (reload && _window != null)
+        //{
+        //    _window.Close();
+        //    _window = null;
+        //}
+
         _window ??= Program.ServiceProvider.GetRequiredService<BrowserWindow>();
+        _window.Url = url;
+        _window._currentUrl = url;
+        if (reload)
+        {
+            _window.webView.Source = new Uri(url);
+        }
 
         if (show)
         {
-            _window.Url = url;
-            _window._currentUrl = url;
-            if (reload)
-            {
-                _window.webView.Source = new Uri(url);
-            }
             _window.WindowState = WindowState.Normal;
             _window.Show();
             _window.Topmost = true;
@@ -112,11 +117,23 @@ public partial class BrowserWindow : BaseWindow
         {
             e.Cancel = true;
 
-            var port = Blazor.GetCurrentPort();
+            var port = BlazorUiManager.GetCurrentPort(Program.Config);
 
             var newUrl = e.Uri.Replace(":0/", $":{port}/");
 
             CreateAndShow(newUrl);
+        }
+    }
+
+    private void webView_NavigationCompleted(object sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+    {
+        if (e.WebErrorStatus > 0)
+        {
+            var port = BlazorUiManager.GetCurrentPort(Program.Config);
+
+            var newUrl = $"http://localhost:{port}";
+
+            CreateAndShow(newUrl, false);
         }
     }
 }

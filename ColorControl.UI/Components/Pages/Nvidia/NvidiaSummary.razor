@@ -2,11 +2,13 @@
 
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.NVIDIA
+@using ColorControl.UI.Pages.Generic
 @using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.Shared.Common;
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inherits SummaryComponentBase
 
 @rendermode Constants.RenderMode
 
@@ -276,6 +278,13 @@ else
 	private PresetOrder PresetOrder;
 
 	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		await Refresh();
+	}
+
+	protected override async Task Refresh()
 	{
 		NvConfig = await _rpcClientService.CallAsync<NvServiceConfig>("NvService", "GetConfig");
 		await RefreshPresets();

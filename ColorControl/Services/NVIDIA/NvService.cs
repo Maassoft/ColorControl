@@ -235,7 +235,7 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public Display GetCurrentDisplay(bool checkDisplays = true)
+        public Display GetCurrentDisplay(bool checkDisplays = true, bool useFirstIfNoneSet = true)
         {
             if (checkDisplays && !HasDisplaysAttached())
             {
@@ -243,7 +243,7 @@ namespace ColorControl.Services.NVIDIA
                 return null;
             }
 
-            if (_currentDisplay == null)
+            if (_currentDisplay == null && useFirstIfNoneSet)
             {
                 _currentDisplay = Display.GetDisplays()[0];
             }
@@ -396,7 +396,7 @@ namespace ColorControl.Services.NVIDIA
 
             var display = await WaitForDisplayAsync(preset);
 
-            if (display == null)
+            if (display == null && preset.DisplayConfig.Connectivity != DisplayConnectivity.Enabled)
             {
                 var error = $"Cannot apply preset {preset.IdOrName} because the associated display is not active/found";
 
@@ -404,6 +404,9 @@ namespace ColorControl.Services.NVIDIA
 
                 return GenericBoolResult.FromError(error);
             }
+
+            //ReadDDC(display);
+            //WriteDDC(display, 0, 0);
 
             if (preset.DdcSettings.ApplyDdc)
             {
@@ -414,7 +417,7 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
-            var hdrEnabled = IsHDREnabled();
+            var hdrEnabled = IsHDREnabled(display);
 
             var newHdrEnabled = preset.applyHDR && (preset.HDREnabled || (preset.toggleHDR && !hdrEnabled));
             var applyHdr = preset.applyHDR && (preset.toggleHDR || preset.HDREnabled != hdrEnabled);
@@ -427,11 +430,14 @@ namespace ColorControl.Services.NVIDIA
                     if ((preset.DisplayConfig.ApplyRefreshRate && preset.DisplayConfig.RefreshRate.MilliValue < timing.Extra.FrequencyInMillihertz) ||
                         (preset.DisplayConfig.ApplyResolution && preset.DisplayConfig.Resolution.ActiveWidth < timing.HorizontalVisible))
                     {
-                        SetMode(preset.DisplayConfig, true);
+                        SetMode(preset.DisplayConfig, true, displayId: preset.DisplayId);
                     }
                 }
 
-                SetColorData(display, preset.colorData);
+                if (!SetColorData(display, preset.colorData))
+                {
+                    result.AddError("Could not apply color settings");
+                }
             }
 
             if (preset.applyHDR)
@@ -457,9 +463,9 @@ namespace ColorControl.Services.NVIDIA
                 }
             }
 
-            if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution)
+            if (preset.DisplayConfig.ApplyRefreshRate || preset.DisplayConfig.ApplyResolution || preset.DisplayConfig.IsPrimary != null || preset.DisplayConfig.Connectivity != DisplayConnectivity.Unchanged)
             {
-                if (!SetMode(preset.DisplayConfig, true))
+                if (!SetMode(preset.DisplayConfig, true, displayId: preset.DisplayId))
                 {
                     result.AddError(WinError.GetMessage());
                 }
@@ -530,6 +536,8 @@ namespace ColorControl.Services.NVIDIA
 
             PresetApplied();
             GetDisplayInfos(false);
+
+            _currentDisplay = null;
 
             return result;
         }
@@ -1068,15 +1076,15 @@ namespace ColorControl.Services.NVIDIA
             return SetMode(display.Name, resolution, refreshRate, updateRegistry);
         }
 
-        public bool SetMode(DisplayConfig displayConfig, bool updateRegistry = false, NvPreset preset = null)
+        public bool SetMode(DisplayConfig displayConfig, bool updateRegistry = false, NvPreset preset = null, string displayId = null)
         {
-            var display = preset == null ? GetCurrentDisplay() : GetPresetDisplay(preset);
-            if (display == null)
+            var display = preset == null ? GetCurrentDisplay(useFirstIfNoneSet: false) : GetPresetDisplay(preset);
+            if (display == null && displayId == null)
             {
                 return false;
             }
 
-            return SetMode(display.Name, displayConfig, updateRegistry);
+            return SetMode(display?.Name ?? displayId, displayConfig, updateRegistry);
         }
 
         public List<Rational> GetAvailableRefreshRatesV2(NvPreset preset = null)
@@ -1141,9 +1149,8 @@ namespace ColorControl.Services.NVIDIA
             }
         }
 
-        public bool IsHDREnabled(Display currentDisplay = null)
+        public static bool IsHDREnabled(Display display)
         {
-            var display = currentDisplay ?? GetCurrentDisplay();
             if (display == null)
             {
                 return false;
@@ -1325,29 +1332,54 @@ namespace ColorControl.Services.NVIDIA
             CCD.SetDisplayDefaultColorProfile(display.Name, name, _globalContext.Config.SetMinTmlAndMaxTml, IsHDREnabled(display));
         }
 
-        //public void WriteDDC(Display display, byte vcpCode, uint value)
-        //{
-        //    if (display == null)
-        //    {
-        //        return;
-        //    }
+        public void ReadDDC(Display display)
+        {
+            if (display == null)
+            {
+                return;
+            }
 
-        //    byte i2cDeviceAddr = 0x37;
+            byte i2cDeviceAddr = 0x37;
 
-        //    //short value = 8704;
+            //short value = 8704;
 
-        //    //var data = new byte[] { 0x84, 0x03, 0x10, 0x00, 0x64, 0xDD };
-        //    //var data = new byte[] { 0x84, 0x03, 0x15, 0x00, 0x2D, 0xDD };
-        //    var value1 = (byte)(value >> 8);
-        //    var value2 = (byte)(value & 0xFF);
-        //    var data = new byte[] { 0x84, 0x03, vcpCode, value1, value2, 0xDD };
+            //var data = new byte[] { 0x84, 0x03, 0x10, 0x00, 0x64, 0xDD };
+            //var data = new byte[] { 0x84, 0x03, 0x15, 0x00, 0x2D, 0xDD };
 
-        //    I2CInfoV3.FillDDCCIChecksum((byte)(i2cDeviceAddr << 1), [0x51], data);
+            var info = new I2CInfoV2(display.Output.OutputId, true, i2cDeviceAddr, [0x51], 256);
 
-        //    var info = new I2CInfoV2(display.Output.OutputId, true, i2cDeviceAddr, [0x51], data);
+            var data = display.DisplayDevice.PhysicalGPU.ReadI2C(info);
 
-        //    display.DisplayDevice.PhysicalGPU.WriteI2C(info);
-        //}
+            File.WriteAllBytes($"d:\\ddc\\lg_data.dat", data);
+        }
+
+        public void WriteDDC(Display display, byte vcpCode, uint value)
+        {
+            if (display == null)
+            {
+                return;
+            }
+
+            // Switch input
+            vcpCode = 0xF4;
+            value = 0x91;
+
+            byte i2cDeviceAddr = 0x37;
+
+            //short value = 8704;
+
+            //var data = new byte[] { 0x84, 0x03, 0x10, 0x00, 0x64, 0xDD };
+            //var data = new byte[] { 0x84, 0x03, 0x15, 0x00, 0x2D, 0xDD };
+            var value1 = (byte)(value >> 8);
+            var value2 = (byte)(value & 0xFF);
+            var data = new byte[] { 0x84, 0x03, vcpCode, value1, value2, 0xDD };
+
+            I2CInfoV3.FillDDCCIChecksum((byte)(i2cDeviceAddr << 1), [0x50], data);
+
+            var info = new I2CInfoV2(display.Output.OutputId, true, i2cDeviceAddr, [0x50], data);
+
+            display.DisplayDevice.PhysicalGPU.WriteI2C(info);
+        }
 
         public GenericResult<VcpInfo> GetVcpInfo(string displayId, byte vcpCode)
         {
@@ -1518,6 +1550,16 @@ namespace ColorControl.Services.NVIDIA
                 list.Add(displayInfo);
             }
 
+            //foreach (var display in WindowsDisplayAPI.UnAttachedDisplay.GetUnAttachedDisplays())
+            //{
+            //    var displayInfo = new NvDisplayInfo(null, null, null, display.DeviceName)
+            //    {
+            //        DisplayId = CCD.GetDisplayIdByPath(display.DevicePath)
+            //    };
+
+            //    list.Add(displayInfo);
+            //}
+
             return list;
         }
 
@@ -1537,6 +1579,12 @@ namespace ColorControl.Services.NVIDIA
                 foreach (var displayInfo in displayInfos)
                 {
                     var preset = GetPresetForDisplay(displayInfo, true, displayInfos.Count());
+
+                    if (preset == null)
+                    {
+                        continue;
+                    }
+
                     var values = preset.GetDisplayValues(_globalContext.Config);
 
                     displayInfo.Values = values;
@@ -1574,8 +1622,11 @@ namespace ColorControl.Services.NVIDIA
                 foreach (var displayInfo in displayInfos)
                 {
                     var preset = GetPresetForDisplay(displayInfo, true, displayInfos.Count());
-                    preset.MonitorConnectionType = preset?.Display?.DisplayDevice?.ConnectionType ?? NvAPIWrapper.Native.GPU.MonitorConnectionType.Unknown;
-                    list.Add(preset);
+                    if (preset != null)
+                    {
+                        preset.MonitorConnectionType = preset?.Display?.DisplayDevice?.ConnectionType ?? NvAPIWrapper.Native.GPU.MonitorConnectionType.Unknown;
+                        list.Add(preset);
+                    }
                 }
 
                 return list;
@@ -1603,6 +1654,11 @@ namespace ColorControl.Services.NVIDIA
             }
 
             var display = displayInfo.Display;
+
+            if (display == null)
+            {
+                return new NvPreset { displayName = displayInfo.Name, DisplayId = displayInfo.DisplayId };
+            }
 
             var isPrimaryDisplay = displayCount == 1 || display.DisplayDevice.DisplayId == DisplayDevice.GetGDIPrimaryDisplayDevice()?.DisplayId;
             var preset = new NvPreset { Display = display, IsDisplayPreset = true, applyColorData = false, primaryDisplay = isPrimaryDisplay };

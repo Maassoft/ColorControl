@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net9.0-windows</TargetFramework>
+		<TargetFramework>net10.0-windows</TargetFramework>
 		<OutputType>WinExe</OutputType>
 		<IsWebBootstrapper>false</IsWebBootstrapper>
 		<PublishUrl>publish\</PublishUrl>
@@ -11,8 +11,8 @@
 		<PublisherName>Maassoft</PublisherName>
 		<Company>Maassoft</Company> 
 		<ApplicationRevision>0</ApplicationRevision>
-		<ApplicationVersion>10.4.0.0</ApplicationVersion>
-		<Version>10.4.0.0</Version>
+		<ApplicationVersion>11.0.0.0</ApplicationVersion>
+		<Version>11.0.0.0</Version>
 		<UseApplicationTrust>false</UseApplicationTrust>
 		<PublishWizardCompleted>true</PublishWizardCompleted>
 		<BootstrapperEnabled>false</BootstrapperEnabled>
@@ -72,6 +72,7 @@
 			<SubType>UserControl</SubType>
 		</Compile>
 		<EmbeddedResource Include="Resources\LgRemotes.json" />
+		<EmbeddedResource Include="Resources\LG_register_legacy.json" />
 		<EmbeddedResource Include="Resources\LG_register.json" />
 		<EmbeddedResource Include="Resources\RC_coords.txt" />
 		<EmbeddedResource Include="Resources\LG_remote.jpg" />
@@ -96,16 +97,14 @@
 		</COMReference>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="NLog" Version="5.3.4" />
-		<PackageReference Include="NStandard" Version="0.83.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3912.50" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="NLog" Version="6.1.2" />
+		<PackageReference Include="NStandard" Version="0.110.7" />
 		<PackageReference Include="NWin32" Version="1.2.8" />
-		<PackageReference Include="System.Management" Version="9.0.0" />
-		<PackageReference Include="TaskScheduler" Version="2.11.0" />
+		<PackageReference Include="System.Management" Version="10.0.7" />
+		<PackageReference Include="TaskScheduler" Version="2.12.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<Page Include="XForms\ColorProfileWindow.xaml">

@@ -1,7 +1,7 @@
 ﻿@using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.LG
 @using ColorControl.UI.Services
-@using NvAPIWrapper.Native.Display
+@using Microsoft.AspNetCore.Components.Web
 @using ColorControl.Shared.Common
 @using ColorControl.UI.Components.Pages.Generic
 
@@ -153,6 +153,10 @@
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" role="switch" id="checkUseSecureConnection" @bind="Device.Options.UseSecureConnection">
                                         <label class="form-check-label" for="checkUseSecureConnection">Use secure connection</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="checkUseNewHandshake" @bind="Device.Options.UseNewHandshake">
+                                        <label class="form-check-label" for="checkUseNewHandshake">Enable webOS 26 compatibility</label>
                                     </div>
                                 </div>
                             </div>

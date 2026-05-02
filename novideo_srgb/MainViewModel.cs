@@ -47,7 +47,7 @@ namespace novideo_srgb
 
                 try
                 {
-                    var hdrActive = hdrPaths.Contains(path);
+                    var hdrActive = hdrPaths?.Contains(path) == true;
 
                     var settings = config?.FirstOrDefault(x => (string?)x.Attribute("path") == path);
                     MonitorData monitor;

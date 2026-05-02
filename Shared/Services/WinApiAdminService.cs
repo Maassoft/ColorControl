@@ -166,6 +166,29 @@ namespace ColorControl.Shared.Services
             return true;
         }
 
+        public bool StopProcessByName(string name)
+        {
+            if (!_winApiService.IsAdministrator())
+            {
+                return _rpcService.Call<bool>(nameof(StopProcessByName), name);
+            }
+
+            var processes = Process.GetProcessesByName(name);
+            var result = false;
+
+            foreach (var item in processes)
+            {
+                try
+                {
+                    item.Kill();
+                    result = true;
+                }
+                catch { }
+            }
+
+            return result;
+        }
+
         public bool SetProcessAffinity(int processId, uint affinityMask)
         {
             if (!_winApiService.IsAdministrator())

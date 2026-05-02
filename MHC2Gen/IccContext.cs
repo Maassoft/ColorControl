@@ -121,7 +121,7 @@ namespace MHC2Gen
                     var value = (double)i / lutSizeDiv;
 
                     value = ApplyGain(gain, value, i, lutSizeDiv);
-                    value = ApplyShadowDetailBoost(shadowDetailBoost, shadowDetailRange, value, i);
+                    value = ApplyShadowDetailBoost(shadowDetailBoost, shadowDetailRange, value, i, false);
 
                     RegammaLUT[c, i] = value * amplifier;
                 }
@@ -140,14 +140,14 @@ namespace MHC2Gen
             return value;
         }
 
-        public static double ApplyShadowDetailBoost(double boost, double range, double value, int lutIndex)
+        public static double ApplyShadowDetailBoost(double boost, double range, double value, int lutIndex, bool piecewiseAverage = true)
         {
             if (boost != 0 && lutIndex < range)
             {
                 var correctedBoost = (boost * (range - lutIndex)) / range;
 
-                // Average between sSRGB and Piecewise gamma
-                if (true)
+                // Average between sRGB and Piecewise gamma
+                if (piecewiseAverage)
                 {
                     var piecewiseValue = (double)lutIndex / 1023;
 

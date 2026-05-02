@@ -21,6 +21,7 @@ namespace ColorControl.Shared.Common
         public DateTime StartTime { get; private set; }
         public string MutexId { get; private set; }
         public nint MainHandle { get; set; }
+        public int MainThreadId { get; private set; }
         public IServiceProvider ServiceProvider { get; set; }
 
         public string ApplicationTitle { get; private set; }
@@ -37,6 +38,7 @@ namespace ColorControl.Shared.Common
             ServiceProvider = serviceProvider;
             StartTime = startTime;
             MutexId = mutexId;
+            MainThreadId = Environment.CurrentManagedThreadId;
 
             CurrentContext = this;
 

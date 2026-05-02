@@ -1,7 +1,10 @@
+using ColorControl.Shared.Common;
 using ColorControl.Shared.Contracts;
+using ColorControl.UI.Pages.Generic;
 using ColorControl.UI.Services;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using NStandard;
 using System.Net;
 
 namespace ColorControl.UI;
@@ -9,17 +12,15 @@ namespace ColorControl.UI;
 public static class Blazor
 {
     private static WebApplication? CurrentApplication;
-    private static int Port;
-    private static bool AllowRemoteConnections;
 
-    public static bool IsRunning(Config config) => CurrentApplication != null && Port == config.UiPort && AllowRemoteConnections == config.UiAllowRemoteConnections;
+    public static CustomComponentBase? CurrentComponent { get; private set; }
 
-    public static async Task Start(Config config)
+    public static async Task Start(string[] args)
     {
-        if (IsRunning(config))
-        {
-            return;
-        }
+        var mutexId = args.GetValueOrDefault(0);
+        var useDarkMode = args.GetValueOrDefault(1) == "True";
+        var uiPort = Utils.ParseInt(args.GetValueOrDefault(2));
+        var allowRemoteConnections = args.GetValueOrDefault(3) == "True";
 
         await Stop();
 
@@ -29,7 +30,7 @@ public static class Blazor
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        builder.Services.AddSingleton<AppState>(new AppState { SelectedTheme = config.UseDarkMode ? "dark" : "light" });
+        builder.Services.AddSingleton(new AppState { SelectedTheme = useDarkMode ? "dark" : "light" });
         builder.Services.AddTransient<RpcUiClientService>();
         builder.Services.AddTransient<JSHelper>();
         builder.Services.AddHttpContextAccessor();
@@ -37,11 +38,11 @@ public static class Blazor
 
         builder.Services.Configure<HostOptions>(opts => opts.ShutdownTimeout = TimeSpan.FromSeconds(3));
 
-        var listenPort = config.UiPort > 0 ? config.UiPort : 0;
+        var listenPort = uiPort > 0 ? uiPort : 0;
 
         builder.WebHost.ConfigureKestrel(options =>
         {
-            if (config.UiAllowRemoteConnections)
+            if (allowRemoteConnections)
             {
                 options.ListenAnyIP(listenPort);
             }
@@ -50,6 +51,8 @@ public static class Blazor
                 options.Listen(IPAddress.Parse("127.0.0.1"), listenPort);
             }
         });
+
+        builder.WebHost.UseStaticWebAssets();
 
         var app = builder.Build();
 
@@ -61,17 +64,56 @@ public static class Blazor
             app.UseHsts();
         }
 
-        app.UseHttpsRedirection();
+        app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+        //app.UseHttpsRedirection();
 
-        app.UseStaticFiles();
         app.UseAntiforgery();
+
+        app.MapStaticAssets();
+        //app.UsePathBase("/");
 
         app.MapRazorComponents<Components.App>()
             .AddInteractiveServerRenderMode();
 
         CurrentApplication = app;
-        Port = config.UiPort;
-        AllowRemoteConnections = config.UiAllowRemoteConnections;
+
+        var _ = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+
+            var port = GetCurrentPort();
+
+            if (port == -1)
+            {
+                return;
+            }
+
+            var rpcServer = app.Services.GetRequiredService<RpcUiClientService>();
+
+            await rpcServer.CallAsync<bool>("OptionsService", "SetCurrentUiSettings", port, allowRemoteConnections);
+
+            if (!mutexId.IsNullOrWhiteSpace())
+            {
+                Console.WriteLine("Waiting for mutex: " + mutexId);
+                var mutex = new Mutex(false, mutexId, out var createdNew);
+                if (createdNew)
+                {
+                    Console.WriteLine("Mutex was created, skipping.");
+                    return;
+                }
+                try
+                {
+                    mutex.WaitOne();
+                    Console.WriteLine("Waiting done.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Wait completed: " + ex.Message);
+                }
+
+                Environment.Exit(0);
+            }
+        });
 
         await app.RunAsync();
     }
@@ -85,14 +127,7 @@ public static class Blazor
         }
     }
 
-    public static string GetCurrentUrl()
-    {
-        var port = GetCurrentPort();
-
-        return $"http://localhost:{port}";
-    }
-
-    public static int GetCurrentPort()
+    public static int GetCurrentPort(Config? config = null)
     {
         if (CurrentApplication == null)
         {
@@ -115,4 +150,16 @@ public static class Blazor
         return -1;
     }
 
+    public static void SetCurrentComponent(CustomComponentBase? customComponentBase)
+    {
+        CurrentComponent = customComponentBase;
+    }
+
+    public static void ClearCurrentComponent(CustomComponentBase customComponentBase)
+    {
+        if (CurrentComponent == customComponentBase)
+        {
+            CurrentComponent = null;
+        }
+    }
 }

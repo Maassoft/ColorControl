@@ -107,6 +107,8 @@ namespace ColorControl.Services.LG
 
         public bool UseSecureConnection { get; set; } = true;
 
+        public bool UseNewHandshake { get; set; }
+
         private List<string> _actionsForGameBar;
 
         public List<string> ActionsOnGameBar
@@ -311,6 +313,7 @@ namespace ColorControl.Services.LG
         private void UpdateOptions(LgDeviceOptions options)
         {
             UseSecureConnection = options.UseSecureConnection;
+            UseNewHandshake = options.UseNewHandshake;
             TurnScreenOffOnScreenSaver = options.TurnScreenOffOnScreenSaver;
             TurnScreenOnAfterScreenSaver = options.TurnScreenOnAfterScreenSaver;
             ScreenSaverMinimalDuration = options.ScreenSaverMinimalDuration;
@@ -501,7 +504,7 @@ namespace ColorControl.Services.LG
                 try
                 {
                     await DisposeConnection();
-                    _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries, UseSecureConnection);
+                    _lgTvApi = await LgTvApi.CreateLgTvApi(IpAddress, retries, UseSecureConnection, UseNewHandshake);
 
                     //Test();
                     //_lgTvApi.Test3();

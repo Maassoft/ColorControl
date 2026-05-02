@@ -50,46 +50,6 @@ These methods are available:
 
 The best and suggested method to provide this is via a Windows Service. Only when installing the service a User Account Control window may popup.";
 
-        public static Bitmap SubPixelShift(Bitmap bitmap)
-        {
-            Bitmap bitmap2 = (Bitmap)bitmap.Clone();
-
-            int shift = -1;
-            bool shiftRed = true;
-            bool shiftGreen = true;
-            bool shiftBlue = false;
-
-            for (int i = 0; i < bitmap.Width; i++)
-            {
-                for (int j = 0; j < bitmap.Height; j++)
-                {
-                    Color pixel = bitmap.GetPixel(i, j);
-
-                    if (shift > 0 && i < bitmap.Width - shift)
-                    {
-                        Color pixel2 = bitmap2.GetPixel(i + shift, j);
-
-                        Color pixel3 = Color.FromArgb(shiftRed ? pixel.R : pixel2.R, shiftGreen ? pixel.G : pixel2.G, shiftBlue ? pixel.B : pixel2.B);
-
-                        bitmap2.SetPixel(i + shift, j, pixel3);
-
-                    }
-                    else if (i + shift >= 0)
-                    {
-                        Color pixel2 = bitmap2.GetPixel(i + shift, j);
-
-                        Color pixel3 = Color.FromArgb(shiftRed ? pixel.R : pixel2.R, shiftGreen ? pixel.G : pixel2.G, shiftBlue ? pixel.B : pixel2.B);
-
-                        bitmap2.SetPixel(i + shift, j, pixel3);
-
-                    }
-                }
-            }
-
-            return bitmap2;
-            //bitmap2.Save("d:\\ss_shifted.bmp");
-        }
-
         public static string GetDataPath(string subDir = "")
         {
             var path = Directory.GetParent(Application.UserAppDataPath).FullName;
@@ -465,20 +425,75 @@ The best and suggested method to provide this is via a Windows Service. Only whe
 
         public static FileInfo SelectFile(string ext = "*.exe", string filter = "Application EXE Name|*.exe|Application Absolute Path|*.exe")
         {
-            var openDialog = new System.Windows.Forms.OpenFileDialog();
-            openDialog.DefaultExt = ext;
-            openDialog.Filter = filter;
+            var openDialog = new OpenFileDialog
+            {
+                DefaultExt = ext,
+                Filter = filter
+            };
 
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
                 return new FileInfo(openDialog.FileName);
-                //if (openDialog.FilterIndex == 2)
-                //    applicationName = openDialog.FileName;
-
-                //return applicationName;
             }
 
             return null;
+        }
+
+        public static FileInfo SelectFileFromNonUiThread(SynchronizationContext synchronizationContext, string ext = "*.exe", string filter = "Application EXE Name|*.exe|Application Absolute Path|*.exe")
+        {
+            var completionSource = new TaskCompletionSource<FileInfo>();
+
+            var workerThread = new Thread(() =>
+            {
+                // Post back to the main thread
+                synchronizationContext?.Post(_ =>
+                {
+                    var openDialog = new OpenFileDialog
+                    {
+                        DefaultExt = ext,
+                        Filter = filter
+                    };
+
+                    if (openDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        completionSource.SetResult(new FileInfo(openDialog.FileName));
+                    }
+                    else
+                    {
+                        completionSource.SetResult(null);
+                    }
+                }, null);
+            });
+
+            workerThread.Start();
+
+            completionSource.Task.Wait();
+            return completionSource.Task.Result;
+        }
+
+        public static void ExecuteOnMainThread(Action action)
+        {
+            if (GlobalContext.CurrentContext.MainThreadId == Environment.CurrentManagedThreadId)
+            {
+                action();
+                return;
+            }
+
+            var completionSource = new TaskCompletionSource();
+
+            var workerThread = new Thread(() =>
+            {
+                // Post back to the main thread
+                GlobalContext.CurrentContext.SynchronizationContext?.Post(_ =>
+                {
+                    action();
+                    completionSource.SetResult();
+                }, null);
+            });
+
+            workerThread.Start();
+
+            completionSource.Task.Wait();
         }
 
         public static bool NormEquals(this string str1, string str2)

@@ -5,7 +5,9 @@
 @using ColorControl.Shared.Contracts.DisplayInfo
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
+@using ColorControl.UI.Pages.Generic
 @using ColorControl.UI.Services
+@inherits SummaryComponentBase
 
 @rendermode Constants.RenderMode
 
@@ -190,7 +192,15 @@ else
 
 	private FieldDefinition AskHdrAssociationField = new FieldDefinition { Label = "Associate as HDR profile", FieldType = FieldType.CheckBox, Value = false };
 
+
 	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		await Refresh();
+	}
+
+	protected override async Task Refresh()
 	{
 		await RefreshDisplays();
 	}

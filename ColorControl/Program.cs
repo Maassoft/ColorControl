@@ -12,7 +12,6 @@ using ColorControl.Shared.Forms;
 using ColorControl.Shared.Native;
 using ColorControl.Shared.Services;
 using ColorControl.Svc;
-using ColorControl.UI;
 using ColorControl.XForms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -44,6 +43,7 @@ namespace ColorControl
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static Mutex _mutex;
+        public static string MutexId;
         public static MainForm _mainForm;
         private static LoggingRule _loggingRule;
 
@@ -96,11 +96,11 @@ namespace ColorControl
                 Logger.Debug($"Result of setting SetHighDpiMode: {result}");
             }
 
-            var mutexId = $"Global\\{typeof(MainForm).GUID}";
+            MutexId = $"Global\\{typeof(MainForm).GUID}";
 
             var startUpParams = StartUpParams.Parse(args);
 
-            AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, null, startTime, mutexId);
+            AppContext = new GlobalContext(Config, startUpParams, DataDir, _loggingRule, null, startTime, MutexId);
 
             var host = CreateHostBuilder().Build();
             ServiceProvider = host.Services;
@@ -168,6 +168,8 @@ namespace ColorControl
                             var winApiAdminService = ServiceProvider.GetRequiredService<WinApiAdminService>();
                             winApiAdminService.StopService();
                         }
+
+                        await BlazorUiManager.Stop();
                     }
                     catch (Exception ex)
                     {
@@ -233,31 +235,43 @@ namespace ColorControl
 
         public static async Task OpenNewUi()
         {
-            if (await StartUiServer())
-            {
-                await Task.Delay(500);
-            }
-
-            var winApi = AppContext.ServiceProvider.GetRequiredService<WinApiAdminService>();
-
-            winApi.StartProcess(Blazor.GetCurrentUrl());
+            await OpenNewUi(false);
         }
 
         public static async Task OpenNewUiEmbedded()
         {
+            await OpenNewUi(true);
+        }
+
+        public static async Task OpenNewUi(bool embedded)
+        {
             if (await StartUiServer())
             {
-                await Task.Delay(500);
+                await Task.Delay(1000);
             }
 
-            BrowserWindow.CreateAndShow(Blazor.GetCurrentUrl());
+            if (BlazorUiManager.GetCurrentPort(Config) <= 0)
+            {
+                await OpenMainForm();
+                return;
+            }
+
+            if (embedded)
+            {
+                BrowserWindow.CreateAndShow(BlazorUiManager.GetCurrentUrl(Config));
+            }
+            else
+            {
+                var winApi = AppContext.ServiceProvider.GetRequiredService<WinApiAdminService>();
+                winApi.StartProcess(BlazorUiManager.GetCurrentUrl(Config));
+            }
         }
 
         public static async Task<bool> StartOrStopUiServer()
         {
             if (Config.UiType == UiType.WinForms)
             {
-                var _ = Task.Run(() => UI.Blazor.Stop());
+                var _ = Task.Run(() => BlazorUiManager.Stop());
                 return true;
             }
 
@@ -266,11 +280,6 @@ namespace ColorControl
 
         public static async Task<bool> StartUiServer()
         {
-            if (UI.Blazor.IsRunning(Config))
-            {
-                return false;
-            }
-
             var backgroundService = ServiceProvider.GetRequiredService<ColorControlBackgroundService>();
 
             if (backgroundService.PipeName != PipeUtils.MainPipe)
@@ -280,9 +289,7 @@ namespace ColorControl
                 await backgroundService.StartAsync(CancellationToken.None);
             }
 
-            var _ = Task.Run(() => UI.Blazor.Start(Config));
-
-            return true;
+            return await BlazorUiManager.Start(Config);
         }
 
         private static void InitLogger(bool runAsService, bool runElevated)

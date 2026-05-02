@@ -1,32 +1,20 @@
-//using ColorControl.UI;
+using ColorControl.Shared.Contracts;
+using ColorControl.UI;
+using ColorControl.UI.Services;
+using System.Diagnostics;
 
-//Blazor.Start();
+var arguments = args;
 
-//var builder = WebApplication.CreateBuilder(args);
+if (Debugger.IsAttached)
+{
+    var rpcServer = new RpcUiClientService(null);
+    var options = new RpcUiClientOptions
+    {
+        Timeout = 10000
+    };
 
-//// Add services to the container.
-//builder.Services.AddRazorComponents()
-//    .AddInteractiveServerComponents();
+    var config = await rpcServer.CallWithOptionsAsync<Config>("OptionsService", "GetConfig", options);
+    arguments = ["", config.UseDarkMode.ToString(), config.UiPort.ToString(), config.UiAllowRemoteConnections.ToString()];
+}
 
-//builder.Services.AddSingleton<AppState>();
-//builder.Services.AddSingleton<OptionsService>();
-
-//var app = builder.Build();
-
-//// Configure the HTTP request pipeline.
-//if (!app.Environment.IsDevelopment())
-//{
-//    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-//    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-//    app.UseHsts();
-//}
-
-//app.UseHttpsRedirection();
-
-//app.UseStaticFiles();
-//app.UseAntiforgery();
-
-//app.MapRazorComponents<App>()
-//    .AddInteractiveServerRenderMode();
-
-//app.Run();
+await Blazor.Start(arguments);

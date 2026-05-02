@@ -102,8 +102,8 @@
         SecondaryAction = FactoryMenuSecondStepEnterWithoutExecute;
         Fields = 
         [
-            AddField("Service Menu - Advanced", null, FieldType.Label, "If the service menu opened and you want to access the Advanced settings, click 'Next >' or click 'Skip' to skip"),
-        AddField("Advanced Unlock Type", AdvancedUnlockType.TV, subLabel: "Select the desired unlock type for the Advanced section. If the target is a TV choose TV, otherwise choose Monitor")
+            AddField("Service Menu - Advanced", null, FieldType.Label, "If the service menu opened and you want to access the Advanced settings, click 'Next >' or click 'Skip' to skip. You can also manually enter the unlock codes 0098 (for TV's) and 0038 (for monitors) while the 'Advanced' item is highlighted."),
+            AddField("Advanced Unlock Type", AdvancedUnlockType.TV, subLabel: "Select the desired unlock type for the Advanced section. If the target is a TV choose TV, otherwise choose Monitor")
         ];
 
         StateHasChanged();

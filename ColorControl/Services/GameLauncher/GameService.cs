@@ -337,7 +337,7 @@ namespace ColorControl.Services.GameLauncher
 
         public string SelectPath()
         {
-            var fileInfo = Utils.SelectFile();
+            var fileInfo = Utils.SelectFileFromNonUiThread(_globalContext.SynchronizationContext);
 
             if (fileInfo == null)
             {

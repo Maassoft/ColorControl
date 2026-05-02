@@ -15,7 +15,7 @@ namespace ColorControl.Services.NVIDIA
 
         public string Name { get; private set; }
 
-        public string DisplayId { get; private set; }
+        public string DisplayId { get; set; }
 
         public NvDisplayInfo(Display display, List<string> values, string infoLine, string name = null)
         {

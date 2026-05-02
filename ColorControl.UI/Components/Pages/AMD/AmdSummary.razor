@@ -3,10 +3,12 @@
 @using ColorControl.Shared.Common
 @using ColorControl.Shared.Contracts
 @using ColorControl.Shared.Contracts.AMD
+@using ColorControl.UI.Pages.Generic
 @using ColorControl.UI.Services;
 @using ColorControl.UI.Components.Pages.Generic
 @using ColorControl.UI.Generics
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inherits SummaryComponentBase
 
 @rendermode Constants.RenderMode
 
@@ -144,6 +146,13 @@ else
 	private PresetOrder PresetOrder;
 
 	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		await Refresh();
+	}
+
+	protected override async Task Refresh()
 	{
 		await RefreshPresets();
 		DisplayPresets = await _rpcClientService.CallAsync<List<AmdPreset>>("AmdService", "GetDisplayPresets");

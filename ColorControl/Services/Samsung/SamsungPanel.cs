@@ -328,11 +328,11 @@ namespace ColorControl.Services.Samsung
 
             FormUtils.BuildComboBox(cbxSamsungPresetTrigger, PresetTriggerType.Reserved5);
 
-            if (!string.IsNullOrEmpty(_tabMessage))
-            {
-                MessageForms.WarningOk(_tabMessage);
-                _tabMessage = null;
-            }
+            //if (!string.IsNullOrEmpty(_tabMessage))
+            //{
+            //    MessageForms.WarningOk(_tabMessage);
+            //    _tabMessage = null;
+            //}
         }
 
         private void FillSamsungDevices()
@@ -361,16 +361,7 @@ namespace ColorControl.Services.Samsung
 
             if (!devices.Any())
             {
-                var message = "It seems there's no Samsung TV available! Please make sure it's connected to the same network as this PC.";
-
-                if (Visible)
-                {
-                    MessageForms.WarningOk(message);
-                }
-                else
-                {
-                    _tabMessage = message;
-                }
+                _tabMessage = "It seems there's no Samsung TV available! Please make sure it's connected to the same network as this PC.";
             }
 
             //if (cbxSamsungApps.Items.Count == 0 && device != null)

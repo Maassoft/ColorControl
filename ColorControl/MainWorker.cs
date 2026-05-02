@@ -177,6 +177,8 @@ internal class MainWorker
 
     private void StartScreenSaver()
     {
+        //NativeMethods.SendMessageW(-1, NativeConstants.WM_SYSCOMMAND, NativeConstants.SC_MONITORPOWER, (int)WinApi.MonitorState.OFF);
+
         var screenSaver = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "scrnsave.scr");
         Process.Start("explorer.exe", screenSaver);
     }

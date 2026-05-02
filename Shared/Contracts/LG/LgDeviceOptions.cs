@@ -21,5 +21,5 @@ public class LgDeviceOptions
     public int HDMIPortNumber { get; set; }
 
     public bool UseSecureConnection { get; set; } = true;
+    public bool UseNewHandshake { get; set; }
 }
-

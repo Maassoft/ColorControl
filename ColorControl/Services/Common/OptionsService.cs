@@ -2,7 +2,6 @@
 using ColorControl.Shared.Contracts;
 using ColorControl.Shared.EventDispatcher;
 using ColorControl.Shared.Services;
-using ColorControl.UI;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -35,7 +34,7 @@ public class OptionsService
     public Config GetConfig()
     {
         _globalContext.Config.AutoStart = _winApiService.TaskExists(Program.TS_TASKNAME);
-        _globalContext.Config.CurrentUiPort = Blazor.GetCurrentPort();
+        _globalContext.Config.CurrentUiPort = BlazorUiManager.GetCurrentPort(Program.Config);
 
         return _globalContext.Config;
     }
@@ -48,6 +47,14 @@ public class OptionsService
         }
 
         _globalContext.Config.Update(config);
+        return true;
+    }
+
+    public bool SetCurrentUiSettings(int port, bool allowRemoteConnections)
+    {
+        _globalContext.Config.CurrentUiPort = port;
+        _globalContext.Config.CurrentUiAllowRemoteConnections = allowRemoteConnections;
+
         return true;
     }
 

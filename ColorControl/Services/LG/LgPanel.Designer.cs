@@ -179,7 +179,7 @@
             lblLgPresetConnectedDisplaysRegex.Location = new System.Drawing.Point(475, 404);
             lblLgPresetConnectedDisplaysRegex.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             lblLgPresetConnectedDisplaysRegex.Name = "lblLgPresetConnectedDisplaysRegex";
-            lblLgPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(149, 15);
+            lblLgPresetConnectedDisplaysRegex.Size = new System.Drawing.Size(148, 15);
             lblLgPresetConnectedDisplaysRegex.TabIndex = 67;
             lblLgPresetConnectedDisplaysRegex.Text = "Connected Displays Regex:";
             // 
@@ -330,7 +330,7 @@
             lblLgPresetExcludedProcesses.Location = new System.Drawing.Point(475, 370);
             lblLgPresetExcludedProcesses.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblLgPresetExcludedProcesses.Name = "lblLgPresetExcludedProcesses";
-            lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(112, 15);
+            lblLgPresetExcludedProcesses.Size = new System.Drawing.Size(111, 15);
             lblLgPresetExcludedProcesses.TabIndex = 52;
             lblLgPresetExcludedProcesses.Text = "Excluded processes:";
             // 
@@ -395,7 +395,7 @@
             lblLgPresetTrigger.Location = new System.Drawing.Point(475, 277);
             lblLgPresetTrigger.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblLgPresetTrigger.Name = "lblLgPresetTrigger";
-            lblLgPresetTrigger.Size = new System.Drawing.Size(46, 15);
+            lblLgPresetTrigger.Size = new System.Drawing.Size(47, 15);
             lblLgPresetTrigger.TabIndex = 45;
             lblLgPresetTrigger.Text = "Trigger:";
             // 
@@ -834,7 +834,7 @@
             clbLgPower.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             clbLgPower.ColumnWidth = 240;
             clbLgPower.FormattingEnabled = true;
-            clbLgPower.Items.AddRange(new object[] { "Power on after startup", "Power on after resume from standby", "Power off on shutdown", "Power off on standby", "Power off when screensaver activates", "Power on when screensaver deactivates", "Power on even after manual power off", "Allow triggers to be fired for this device", "Use Windows power settings to power on", "Use Windows power settings to power off", "Power off when locking the pc", "Power on when unlocking the pc", "Use secure connection" });
+            clbLgPower.Items.AddRange(new object[] { "Power on after startup", "Power on after resume from standby", "Power off on shutdown", "Power off on standby", "Power off when screensaver activates", "Power on when screensaver deactivates", "Power on even after manual power off", "Allow triggers to be fired for this device", "Use Windows power settings to power on", "Use Windows power settings to power off", "Power off when locking the pc", "Power on when unlocking the pc", "Use secure connection", "Enable webOS 26 compatibility" });
             clbLgPower.Location = new System.Drawing.Point(6, 70);
             clbLgPower.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             clbLgPower.MultiColumn = true;
@@ -860,19 +860,19 @@
             mnuLgSettings.ImageScalingSize = new System.Drawing.Size(20, 20);
             mnuLgSettings.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { miTestPowerOffOn, miNvSettings });
             mnuLgSettings.Name = "mnuLgButtons";
-            mnuLgSettings.Size = new System.Drawing.Size(168, 48);
+            mnuLgSettings.Size = new System.Drawing.Size(169, 48);
             // 
             // miTestPowerOffOn
             // 
             miTestPowerOffOn.Name = "miTestPowerOffOn";
-            miTestPowerOffOn.Size = new System.Drawing.Size(167, 22);
+            miTestPowerOffOn.Size = new System.Drawing.Size(168, 22);
             miTestPowerOffOn.Text = "Test power off/on";
             miTestPowerOffOn.Click += miTestPowerOffOn_Click;
             // 
             // miNvSettings
             // 
             miNvSettings.Name = "miNvSettings";
-            miNvSettings.Size = new System.Drawing.Size(167, 22);
+            miNvSettings.Size = new System.Drawing.Size(168, 22);
             miNvSettings.Text = "Settings";
             miNvSettings.Click += miNvSettings_Click;
             // 
