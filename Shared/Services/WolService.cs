@@ -78,10 +78,10 @@ public class WolService
                             Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}, destination IP-address: {ipAddressString ?? "broadcast"}");
                             BroadcastWol(uip.Address, IPAddress.Broadcast, data);
 
-                            var parts = uip.Address.ToString().Split(".").ToList();
-                            parts[3] = "0";
-                            var broadcastAddress = IPAddress.Parse(string.Join(".", parts));
-                            BroadcastWol(uip.Address, broadcastAddress, data);
+                            if (uip.PrefixLength is > 0 and < 31)
+                            {
+                                BroadcastWol(uip.Address, GetDirectedBroadcast(uip.Address, uip.PrefixLength), data);
+                            }
 
                             result = true;
                         }
@@ -98,6 +98,34 @@ public class WolService
         }
 
         return result;
+    }
+
+    private static IPAddress GetDirectedBroadcast(IPAddress local, int prefixLength)
+    {
+        var localBytes = local.GetAddressBytes();
+        var maskBytes = GetMaskBytes(prefixLength);
+        var broadcastBytes = new byte[4];
+
+        for (var i = 0; i < 4; i++)
+        {
+            broadcastBytes[i] = (byte)(localBytes[i] | (byte)~maskBytes[i]);
+        }
+
+        return new IPAddress(broadcastBytes);
+    }
+
+    private static byte[] GetMaskBytes(int prefixLength)
+    {
+        // Guard prefixLength 0 explicitly: shifting a uint by 32 is undefined in C#.
+        var mask = prefixLength == 0 ? 0u : uint.MaxValue << (32 - prefixLength);
+
+        return
+        [
+            (byte)(mask >> 24),
+            (byte)(mask >> 16),
+            (byte)(mask >> 8),
+            (byte)mask
+        ];
     }
 
     /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
