@@ -59,38 +59,62 @@ public class WolService
             var physicalAddress = PhysicalAddress.Parse(macAddress);
             var addressBytes = physicalAddress.GetAddressBytes();
             var data = GetWolPacket(addressBytes);
-            var ipAddress = ipAddressString != null ? IPAddress.Parse(ipAddressString) : null;
+            var targetAddress = ipAddressString != null ? IPAddress.Parse(ipAddressString) : null;
 
-            var interfaces = NetworkInterface.GetAllNetworkInterfaces();
-
-            interfaces
+            // Gather every usable IPv4 unicast address across the viable interfaces.
+            var candidates = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(IsViableWOLInterface)
-                .Each(ni =>
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses
+                    .Where(uip => uip.Address.AddressFamily == AddressFamily.InterNetwork
+                        && !uip.Address.ToString().StartsWith("169.254"))
+                    .Select(uip => (ni, uip)))
+                .ToList();
+
+            // Preferred path: when the target IP is known, only broadcast on the interface that
+            // shares the target's subnet, using that subnet's directed broadcast address. This
+            // avoids spraying every NIC (e.g. a VPN adapter) which sources the packet from the
+            // wrong local address and never reaches a directly-connected target.
+            if (targetAddress != null)
+            {
+                var match = candidates.FirstOrDefault(c => IsInSameSubnet(c.uip.Address, targetAddress, c.uip.PrefixLength));
+
+                if (match.uip != null)
                 {
-                    foreach (var uip in ni.GetIPProperties().UnicastAddresses)
+                    var localAddress = match.uip.Address;
+                    var directedBroadcast = GetDirectedBroadcast(localAddress, match.uip.PrefixLength);
+                    Logger.Debug($"Sending WOL on subnet-matched interface: {match.ni.Name} ({match.ni.Description}), local address: {localAddress}, directed broadcast: {directedBroadcast}, target: {targetAddress}");
+
+                    BroadcastWol(localAddress, directedBroadcast, data);
+                    BroadcastWol(localAddress, IPAddress.Broadcast, data);
+
+                    return true;
+                }
+
+                Logger.Debug($"No local interface found on the target's subnet ({targetAddress}); falling back to broadcasting on all interfaces");
+            }
+
+            // Fallback: broadcast on every viable interface (target IP unknown, or no local
+            // interface shares its subnet).
+            foreach (var (ni, uip) in candidates)
+            {
+                try
+                {
+                    var localAddress = uip.Address;
+                    Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {localAddress}, destination IP-address: {ipAddressString ?? "broadcast"}");
+                    BroadcastWol(localAddress, IPAddress.Broadcast, data);
+
+                    if (uip.PrefixLength is > 0 and < 31)
                     {
-                        if (uip.Address.ToString().StartsWith("169.254") || uip.Address.AddressFamily != AddressFamily.InterNetwork)
-                        {
-                            continue;
-                        }
-                        try
-                        {
-                            Logger.Debug($"Broadcast WOL in network: {ni.Name} ({ni.Description}), local address: {uip.Address}, destination IP-address: {ipAddressString ?? "broadcast"}");
-                            BroadcastWol(uip.Address, IPAddress.Broadcast, data);
-
-                            var parts = uip.Address.ToString().Split(".").ToList();
-                            parts[3] = "0";
-                            var broadcastAddress = IPAddress.Parse(string.Join(".", parts));
-                            BroadcastWol(uip.Address, broadcastAddress, data);
-
-                            result = true;
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error($"WakeFunctionToAllNics: while sending to specific network: {ni.Name} ({ni.Description}): {ex.ToLogString()}");
-                        }
+                        BroadcastWol(localAddress, GetDirectedBroadcast(localAddress, uip.PrefixLength), data);
                     }
-                });
+
+                    result = true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"WakeFunctionToAllNics: while sending to specific network: {ni.Name} ({ni.Description}): {ex.ToLogString()}");
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -98,6 +122,60 @@ public class WolService
         }
 
         return result;
+    }
+
+    private static bool IsInSameSubnet(IPAddress local, IPAddress target, int prefixLength)
+    {
+        if (local.AddressFamily != AddressFamily.InterNetwork || target.AddressFamily != AddressFamily.InterNetwork)
+        {
+            return false;
+        }
+        if (prefixLength < 0 || prefixLength > 32)
+        {
+            return false;
+        }
+
+        var localBytes = local.GetAddressBytes();
+        var targetBytes = target.GetAddressBytes();
+        var maskBytes = GetMaskBytes(prefixLength);
+
+        for (var i = 0; i < 4; i++)
+        {
+            if ((localBytes[i] & maskBytes[i]) != (targetBytes[i] & maskBytes[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static IPAddress GetDirectedBroadcast(IPAddress local, int prefixLength)
+    {
+        var localBytes = local.GetAddressBytes();
+        var maskBytes = GetMaskBytes(prefixLength);
+        var broadcastBytes = new byte[4];
+
+        for (var i = 0; i < 4; i++)
+        {
+            broadcastBytes[i] = (byte)(localBytes[i] | (byte)~maskBytes[i]);
+        }
+
+        return new IPAddress(broadcastBytes);
+    }
+
+    private static byte[] GetMaskBytes(int prefixLength)
+    {
+        // Guard prefixLength 0 explicitly: shifting a uint by 32 is undefined in C#.
+        var mask = prefixLength == 0 ? 0u : uint.MaxValue << (32 - prefixLength);
+
+        return
+        [
+            (byte)(mask >> 24),
+            (byte)(mask >> 16),
+            (byte)(mask >> 8),
+            (byte)mask
+        ];
     }
 
     /// <exception cref="ArgumentNullException"><paramref name="macAddress"/> is null.</exception>
