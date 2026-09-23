@@ -7,48 +7,17 @@
     "client-key": "CLIENTKEYGOESHERE",
     "manifest": {
       "manifestVersion": 1,
-      "appVersion": "1.0",
-      "signed": {
-        "appId": "com.colorcontrol.app",
-        "created": "20260426",
-        "localizedAppNames": {
-          "": "ColorControl"
-        },
-        "localizedVendorNames": {
-          "": "ColorControl"
-        },
-        "permissions": [
-          "CONTROL_POWER",
-          "READ_POWER_STATE",
-          "READ_CURRENT_CHANNEL",
-          "READ_RUNNING_APPS",
-          "READ_NETWORK_STATE",
-          "READ_INPUT_DEVICE_LIST",
-          "READ_TV_CHANNEL_LIST",
-          "READ_SETTINGS",
-          "READ_COUNTRY_INFO",
-          "WRITE_NOTIFICATION_TOAST",
-          "CONTROL_AUDIO",
-          "CONTROL_DISPLAY",
-          "CONTROL_INPUT_JOYSTICK",
-          "CONTROL_INPUT_MEDIA_PLAYBACK",
-          "CONTROL_INPUT_TV",
-          "CONTROL_TV_SCREEN",
-          "LAUNCH",
-          "LAUNCH_WEBAPP",
-          "APP_TO_APP",
-          "CLOSE"
-        ],
-        "serial": "colorcontrol-webos26"
-      },
       "permissions": [
         "LAUNCH",
         "LAUNCH_WEBAPP",
         "APP_TO_APP",
         "CLOSE",
+        "TEST_OPEN",
+        "TEST_PROTECTED",
         "CONTROL_AUDIO",
         "CONTROL_DISPLAY",
         "CONTROL_INPUT_JOYSTICK",
+        "CONTROL_INPUT_MEDIA_RECORDING",
         "CONTROL_INPUT_MEDIA_PLAYBACK",
         "CONTROL_INPUT_TV",
         "CONTROL_POWER",
@@ -62,7 +31,13 @@
         "WRITE_NOTIFICATION_TOAST",
         "READ_POWER_STATE",
         "READ_COUNTRY_INFO",
-        "READ_SETTINGS"
+        "READ_SETTINGS",
+        "CONTROL_INPUT_TEXT",
+        "CONTROL_MOUSE_AND_KEYBOARD",
+        "WRITE_SETTINGS",
+        "WRITE_NOTIFICATION_ALERT",
+        "READ_INSTALLED_APPS",
+        "READ_UPDATE_INFO"
       ]
     }
   }

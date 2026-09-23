@@ -12,6 +12,8 @@ namespace LgTv
 
     public class LgTvApi : IAsyncDisposable
     {
+        private static readonly TimeSpan RegistrationTimeout = TimeSpan.FromSeconds(60);
+
         public bool ConnectionClosed { get => _connection?.ConnectionClosed ?? true; }
 
         private readonly LgTvApiCoreCws _connection;
@@ -53,8 +55,14 @@ namespace LgTv
                 var connected = await Connect();
                 if (connected)
                 {
-                    await MakeHandShake();
-                    return this;
+                    if (await MakeHandShake())
+                    {
+                        return this;
+                    }
+
+                    Logger.Warn($"Registration handshake with LG TV at {_ip} failed");
+                    await DisposeAsync();
+                    return null;
                 }
                 retries--;
                 await Task.Delay(500);
@@ -78,13 +86,20 @@ namespace LgTv
                 var key = _registerJson.Replace("CLIENTKEYGOESHERE", _currentPairKey);
                 try
                 {
-                    var conn = await _connection.SendCommandAsync(key);
+                    var conn = await _connection.SendCommandAsync(key, RegistrationTimeout);
                     ArgumentNullException.ThrowIfNull(conn);
-                    _keyStore.SaveClientKey((string)conn.clientKey);
+                    var clientKey = (string)conn.clientKey;
+                    if (string.IsNullOrWhiteSpace(clientKey))
+                    {
+                        throw new InvalidOperationException("No valid client key received");
+                    }
+
+                    _keyStore.SaveClientKey(clientKey);
                     return true;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.Warn($"Stored client key for LG TV at {_ip} was rejected: {ex.Message}");
                     // Re-register below
                 }
             }
@@ -92,17 +107,20 @@ namespace LgTv
             var registerJsonRemovedKey = _registerJson.Replace("CLIENTKEYGOESHERE", string.Empty);
             try
             {
-                var result = await _connection.SendCommandAsync(registerJsonRemovedKey);
-                if (result?.clientKey == null)
+                var result = await _connection.SendCommandAsync(registerJsonRemovedKey, RegistrationTimeout);
+                var clientKey = (string)result?.clientKey;
+                if (string.IsNullOrWhiteSpace(clientKey))
                 {
                     throw new InvalidOperationException("No valid client key received");
                 }
-                _keyStore.SaveClientKey(result.clientKey);
+
+                _keyStore.SaveClientKey(clientKey);
                 _keyStore.SaveHandShake(_registerJson);
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Warn($"Could not register with LG TV at {_ip}: {ex.Message}");
                 return false;
             }
         }

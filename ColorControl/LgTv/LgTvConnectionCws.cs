@@ -59,12 +59,16 @@ namespace LgTv
                 }
                 catch (TimeoutException te)
                 {
+                    ConnectionClosed = true;
+                    _clientWebSocket?.Dispose();
                     Logger.Error($"Timeout while connecting to {uri}: {te.Message}");
                     return false;
                 }
             }
             catch (Exception e)
             {
+                ConnectionClosed = true;
+                _clientWebSocket?.Dispose();
                 Logger.Error($"Connect to {uri}: {e.Message}");
                 return false;
             }
@@ -105,29 +109,46 @@ namespace LgTv
             }
         }
 
-        public async Task<dynamic> SendCommandAsync(string message)
+        public async Task<dynamic> SendCommandAsync(string message, TimeSpan? timeout = null)
         {
             var obj = JsonConvert.DeserializeObject<dynamic>(message);
-            return await SendCommandAsync((string)obj.id, message);
+            return await SendCommandAsync((string)obj.id, message, timeout);
         }
 
-        private async Task<dynamic> SendCommandAsync(string id, string message)
+        private async Task<dynamic> SendCommandAsync(string id, string message, TimeSpan? timeout = null)
         {
             try
             {
-                var taskSource = new TaskCompletionSource<dynamic>();
-                _tokens.TryAdd(id, taskSource);
+                var taskSource = new TaskCompletionSource<dynamic>(TaskCreationOptions.RunContinuationsAsynchronously);
+                if (!_tokens.TryAdd(id, taskSource))
+                {
+                    throw new InvalidOperationException($"A command with id '{id}' is already pending");
+                }
+
                 await SendMessageAsync(message);
                 if (ConnectionClosed)
                 {
                     throw new Exception("Connection closed");
                 }
 
-                return await taskSource.Task;
+                return timeout.HasValue
+                    ? await taskSource.Task.WaitAsync(timeout.Value)
+                    : await taskSource.Task;
+            }
+            catch (TimeoutException e)
+            {
+                throw new SendMessageExceptionCws($"Timed out after {timeout.Value.TotalSeconds:0} seconds waiting for LG TV response to command '{id}'", e);
             }
             catch (Exception e)
             {
-                throw new SendMessageExceptionCws("Can't send message", e);
+                throw new SendMessageExceptionCws($"Can't send command '{id}': {e.Message}", e);
+            }
+            finally
+            {
+                if (timeout.HasValue)
+                {
+                    _tokens.TryRemove(id, out _);
+                }
             }
         }
 
@@ -187,10 +208,11 @@ namespace LgTv
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 ConnectionClosed = true;
-                Logger.Debug("Connection closed");
+                Logger.Debug($"Connection closed: {ex.Message}");
+                SetExceptionOnAllTokens(ex);
                 IsConnected?.Invoke(false);
             }
         }
@@ -218,22 +240,25 @@ namespace LgTv
                     }
 
                 }
-                else if (_tokens.TryGetValue(id, out taskCompletion))
+                else if (type == "error")
                 {
-                    if (id == "register_0")
+                    if (_tokens.TryRemove(id, out taskCompletion))
                     {
-                        //taskCompletion.TrySetResult(null);
-                        return;
+                        taskCompletion.TrySetException(new Exception(obj.error?.ToString() ?? "Unknown error returned by LG TV"));
                     }
-                    if (obj.type == "error")
+                }
+                else if (id == "register_0")
+                {
+                    // Pairing can produce intermediate responses. Wait for the final
+                    // "registered" message or an explicit error/timeout.
+                    return;
+                }
+                else
+                {
+                    if (_tokens.TryGetValue(id, out taskCompletion))
                     {
-                        taskCompletion.SetException(new Exception(obj.error?.ToString()));
+                        taskCompletion.TrySetResult(obj.payload);
                     }
-                    //else if (args.Cancelled)
-                    //{
-                    //    taskSource.SetCanceled();
-                    //}
-                    taskCompletion.TrySetResult(obj.payload);
 
                     if (_callbacks.TryGetValue(id, out Func<dynamic, bool> callback))
                     {
@@ -272,6 +297,8 @@ namespace LgTv
                 }
                 _clientWebSocket?.Dispose();
             }
+
+            ConnectionClosed = true;
 
             GC.SuppressFinalize(this);
         }
