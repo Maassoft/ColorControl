@@ -110,7 +110,7 @@ namespace ColorControl.Services.GameLauncher
             if (preset == null)
             {
                 var name = process.ProcessName.Replace("-Win64-Shipping", "");
-                preset = presets.FirstOrDefault(p => Path.GetFileName(p.Path).Contains(name, System.StringComparison.OrdinalIgnoreCase));
+                preset = presets.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p.Path).Replace("-Win64-Shipping", "").Equals(name, System.StringComparison.OrdinalIgnoreCase));
             }
 
             if (preset == null)
