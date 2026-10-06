@@ -157,9 +157,11 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             applyHdmiSettings = keepChanges && applyHdmiSettings || HdmiInfoFrameSettings.IsDifferent(currentSettings.HdmiInfoFrameSettings);
             ApplyNovideoSettings = keepChanges && ApplyNovideoSettings || (NovideoSettings.ApplyClamp && !HDREnabled || applyHDR && !HDREnabled && !NovideoSettings.ApplyClamp);
             applyOverclocking = keepChanges && applyOverclocking || !HasEqualOverclockingSettings(currentSettings);
+            ColorEnhancementSettings.ApplyDesktopColor = ColorEnhancementSettings.ApplyDesktopColor || ColorEnhancementSettings.DesktopColorDiffers(currentSettings.ColorEnhancementSettings);
             ApplyColorEnhancements = keepChanges && ApplyColorEnhancements ||
                     ColorEnhancementSettings.DigitalVibranceLevel != currentSettings.ColorEnhancementSettings.DigitalVibranceLevel ||
-                    ColorEnhancementSettings.HueAngle != currentSettings.ColorEnhancementSettings.HueAngle;
+                    ColorEnhancementSettings.HueAngle != currentSettings.ColorEnhancementSettings.HueAngle ||
+                    ColorEnhancementSettings.ApplyDesktopColor;
             DpiScaling.ApplyScaling = keepChanges && DpiScaling.ApplyScaling || DpiScaling.Percentage != currentSettings.DpiScaling.Percentage;
             DdcSettings.ApplyDdc = keepChanges && DdcSettings.ApplyDdc ||
                 (!(DdcSettings.Settings.Count == 1 && DdcSettings.Settings[0].VcpCode == 0) &&
@@ -420,6 +422,10 @@ namespace ColorControl.Shared.Contracts.NVIDIA
             if (ColorEnhancementSettings.HueAngle != 0)
             {
                 values.Add($"Hue: {ColorEnhancementSettings.HueAngle}°");
+            }
+            if (ColorEnhancementSettings.ApplyDesktopColor)
+            {
+                values.Add($"Brightness: {ColorEnhancementSettings.Brightness}%, Contrast: {ColorEnhancementSettings.Contrast}%, Gamma: {ColorEnhancementSettings.Gamma:0.00}");
             }
 
             if (!values.Any())

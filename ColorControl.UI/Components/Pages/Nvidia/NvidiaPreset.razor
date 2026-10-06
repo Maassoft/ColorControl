@@ -299,6 +299,19 @@
                                     <div class="accordion-body">
                                         <RangeInput TValue="int" @bind-Value="Preset.ColorEnhancementSettings.DigitalVibranceLevel" Id="digitalVibrance" Label="Digital vibrance" />
                                         <RangeInput TValue="int" @bind-Value="Preset.ColorEnhancementSettings.HueAngle" Id="hue" Label="Hue" Unit="°" Max="359" />
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" @bind="Preset.ColorEnhancementSettings.ApplyDesktopColor" id="applyDesktopColor">
+                                            <label class="form-check-label" for="applyDesktopColor">
+                                                Apply brightness, contrast and gamma
+                                            </label>
+                                            <div class="form-text">Replaces any calibration loaded for this display.</div>
+                                        </div>
+                                        @if (Preset.ColorEnhancementSettings.ApplyDesktopColor)
+                                        {
+                                            <RangeInput TValue="int" @bind-Value="Preset.ColorEnhancementSettings.Brightness" Id="desktopBrightness" Label="Brightness" Unit="%" />
+                                            <RangeInput TValue="int" @bind-Value="Preset.ColorEnhancementSettings.Contrast" Id="desktopContrast" Label="Contrast" Unit="%" />
+                                            <RangeInput TValue="double" @bind-Value="Preset.ColorEnhancementSettings.Gamma" Id="desktopGamma" Label="Gamma" Min="ColorControl.Shared.Native.GammaRamp.MinGamma" Max="ColorControl.Shared.Native.GammaRamp.MaxGamma" Step="0.01" CustomLabelFunc="@(g => g.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" />
+                                        }
                                     </div>
                                 </div>
                             </div>

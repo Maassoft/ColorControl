@@ -107,6 +107,10 @@
         {
             Value = (TValue)Convert.ChangeType(uint.Parse(eventArgs.Value?.ToString() ?? "0"), typeof(TValue));
         }
+        else if (typeof(TValue) == typeof(double))
+        {
+            Value = (TValue)Convert.ChangeType(double.Parse(eventArgs.Value?.ToString() ?? "0", System.Globalization.CultureInfo.InvariantCulture), typeof(TValue));
+        }
 
         await ValueChanged.InvokeAsync(Value);
 

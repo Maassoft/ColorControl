@@ -446,6 +446,10 @@ namespace ColorControl.Services.NVIDIA
                 $"{preset.ColorEnhancementSettings.DigitalVibranceLevel}% (click to change)", nvPresetDvcMenuItem_Click);
             FormUtils.BuildMenuItemAndSub(mnuNvPresetsColorEnhancements, "Hue",
                 $"{preset.ColorEnhancementSettings.HueAngle}° (click to change)", nvPresetHueMenuItem_Click);
+            FormUtils.BuildMenuItemAndSub(mnuNvPresetsColorEnhancements, "Brightness, contrast and gamma",
+                (preset.ColorEnhancementSettings.ApplyDesktopColor
+                    ? $"{preset.ColorEnhancementSettings.Brightness}% / {preset.ColorEnhancementSettings.Contrast}% / {preset.ColorEnhancementSettings.Gamma:0.00}"
+                    : "Not applied") + " (click to change)", nvPresetDesktopColorMenuItem_Click);
 
             FormUtils.BuildMenuItemAndSub(miNvHDR, "SDR brightness",
                 (preset.SDRBrightness.HasValue ? $"{preset.SDRBrightness.Value}%" : "Unset") + " (click to change)", nvPresetBrightnessMenuItem_Click);
@@ -886,6 +890,67 @@ namespace ColorControl.Services.NVIDIA
             preset.ColorEnhancementSettings.HueAngle = intValue;
 
             AddOrUpdateItem();
+        }
+
+        private void nvPresetDesktopColorMenuItem_Click(object sender, EventArgs e)
+        {
+            var preset = GetSelectedNvPreset(true);
+            var current = preset.ColorEnhancementSettings;
+
+            var applyField = new FieldDefinition
+            {
+                Label = "Apply brightness, contrast and gamma",
+                SubLabel = "Replaces any calibration loaded for this display",
+                FieldType = FieldType.CheckBox,
+                Value = current.ApplyDesktopColor
+            };
+            var brightnessField = new FieldDefinition { Label = "Brightness in % (50 is neutral)", FieldType = FieldType.Numeric, MinValue = 0, MaxValue = 100, Value = current.Brightness };
+            var contrastField = new FieldDefinition { Label = "Contrast in % (50 is neutral)", FieldType = FieldType.Numeric, MinValue = 0, MaxValue = 100, Value = current.Contrast };
+            var gammaField = new FieldDefinition
+            {
+                Label = $"Gamma ({GammaRamp.MinGamma:0.00} - {GammaRamp.MaxGamma:0.00}, 1.00 is neutral)",
+                Value = current.Gamma.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+            };
+
+            var result = MessageForms.ShowDialog("Brightness, contrast and gamma", new[] { applyField, brightnessField, contrastField, gammaField },
+                fields => TryParseGamma(gammaField.StringValue, out _) ? null : $"Gamma must be a number between {GammaRamp.MinGamma:0.00} and {GammaRamp.MaxGamma:0.00}");
+
+            if (!result.Any())
+            {
+                return;
+            }
+
+            TryParseGamma(gammaField.StringValue, out var gamma);
+
+            var settings = new NvColorEnhancementSettings(current)
+            {
+                ApplyDesktopColor = applyField.BoolValue,
+                Brightness = Utils.ParseInt(brightnessField.StringValue, current.Brightness),
+                Contrast = Utils.ParseInt(contrastField.StringValue, current.Contrast),
+                Gamma = gamma
+            };
+
+            if (preset.IsDisplayPreset)
+            {
+                if (settings.ApplyDesktopColor && !_nvService.SetDesktopColor(preset.Display, settings))
+                {
+                    MessageForms.ErrorOk("Could not apply brightness, contrast and gamma. See the log for details.");
+                }
+
+                UpdateDisplayInfoItems();
+                return;
+            }
+
+            preset.ColorEnhancementSettings = settings;
+
+            AddOrUpdateItem();
+        }
+
+        private static bool TryParseGamma(string value, out double gamma)
+        {
+            var parsed = double.TryParse(value?.Replace(',', '.'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out gamma);
+
+            return parsed && gamma >= GammaRamp.MinGamma && gamma <= GammaRamp.MaxGamma;
         }
 
         private void nvPresetScalingMenuItem_Click(object sender, EventArgs e)

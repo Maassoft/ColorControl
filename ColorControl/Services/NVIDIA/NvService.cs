@@ -136,6 +136,7 @@ namespace ColorControl.Services.NVIDIA
         public bool OutputModeAvailable => DriverVersion >= 52500;
 
         private static readonly List<uint> _driverSettingIds = new();
+        private readonly Dictionary<string, NvColorEnhancementSettings> _appliedDesktopColors = new();
         private readonly WinApiService _winApiService;
         private readonly RpcClientService _rpcClientService;
         private readonly PowerEventDispatcher _powerEventDispatcher;
@@ -506,6 +507,11 @@ namespace ColorControl.Services.NVIDIA
             {
                 SetDigitalVibranceLevel(display, preset.ColorEnhancementSettings.DigitalVibranceLevel);
                 SetHueAngle(display, preset.ColorEnhancementSettings.HueAngle);
+
+                if (preset.ColorEnhancementSettings.ApplyDesktopColor && !SetDesktopColor(display, preset.ColorEnhancementSettings))
+                {
+                    result.AddError("Could not apply brightness, contrast and gamma");
+                }
             }
 
             if (preset.applyDriverSettings)
@@ -779,6 +785,22 @@ namespace ColorControl.Services.NVIDIA
         public int GetHueAngle(Display display)
         {
             return display.HUEControl.CurrentAngle;
+        }
+
+        public bool SetDesktopColor(Display display, NvColorEnhancementSettings settings)
+        {
+            var ramp = GammaRamp.Build(settings.Brightness, settings.Contrast, settings.Gamma);
+
+            if (GammaRamp.Apply(display.Name, ramp))
+            {
+                _appliedDesktopColors[display.Name] = new NvColorEnhancementSettings(settings) { ApplyDesktopColor = true };
+
+                return true;
+            }
+
+            Logger.Error($"Could not set gamma ramp on {display.Name} (brightness {settings.Brightness}, contrast {settings.Contrast}, gamma {settings.Gamma}): {WinError.GetMessage()}");
+
+            return false;
         }
 
         //public NV_HDR_METADATA_V1? GetHdrMetaData(Display display = null)
@@ -1741,11 +1763,14 @@ namespace ColorControl.Services.NVIDIA
 
         private NvColorEnhancementSettings GetCurrentColorEnhancements(Display display)
         {
-            return new NvColorEnhancementSettings
-            {
-                DigitalVibranceLevel = GetDigitalVibranceLevel(display),
-                HueAngle = GetHueAngle(display)
-            };
+            var settings = _appliedDesktopColors.TryGetValue(display.Name, out var desktopColor)
+                ? new NvColorEnhancementSettings(desktopColor)
+                : new NvColorEnhancementSettings();
+
+            settings.DigitalVibranceLevel = GetDigitalVibranceLevel(display);
+            settings.HueAngle = GetHueAngle(display);
+
+            return settings;
         }
 
         public List<SettingItem> GetVisibleSettings()
